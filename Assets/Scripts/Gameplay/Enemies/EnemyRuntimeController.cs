@@ -1,4 +1,4 @@
-using Corebound.Gameplay.Combat;
+﻿using Corebound.Gameplay.Combat;
 using Corebound.Gameplay.Shared;
 using UnityEngine;
 
@@ -658,7 +658,14 @@ namespace Corebound.Gameplay.Enemies
             _telegraphRenderer.transform.localPosition = (Vector3)(direction * traveledDistance);
             _telegraphRenderer.transform.up = direction;
             _telegraphRenderer.transform.localScale = Vector3.one * Mathf.Max(0.6f, attackData != null ? attackData.AttackRange * 0.16f : 0.8f);
-            _telegraphRenderer.color = new Color(1f, 0.52f, 0.22f, 0.86f);
+            // Playtest feedback (2026-09-16): using the real bolt sprite at near-full opacity made
+            // the telegraph read as a second, redundant shot ("did it already fire at me?") rather
+            // than a warning of the shot to come - the dedicated telegraph art this used to use is
+            // gone, so distinguish it by tint/opacity instead: bright warning-yellow (matching
+            // BruiserChargeWarningColor's established "this is a warning, not a resolved hit"
+            // language) and noticeably translucent, growing more solid as the windup completes.
+            var telegraphAlpha = Mathf.Lerp(0.35f, 0.7f, Mathf.Clamp01(progress01));
+            _telegraphRenderer.color = new Color(1f, 0.92f, 0.35f, telegraphAlpha);
             _telegraphRenderer.enabled = true;
         }
 

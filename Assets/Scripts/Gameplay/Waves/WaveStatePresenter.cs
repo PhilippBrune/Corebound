@@ -58,14 +58,19 @@ namespace Corebound.Gameplay.Waves
         [SerializeField] private Vector4 _waveBannerBorder = new Vector4(220f, 140f, 220f, 140f);
         [SerializeField] private Vector4 _modalPanelBorder = new Vector4(220f, 140f, 220f, 140f);
         [SerializeField] private string _mainMenuSceneName = "MainMenu";
-        [SerializeField] private RectTransform _authoredHudRoot;
-        [SerializeField] private Image _authoredStatusPanelImage;
-        [SerializeField] private Text _authoredCurrencyText;
-        [SerializeField] private Text _authoredPlayerHealthText;
-        [SerializeField] private Text _authoredCoreHealthText;
-        [SerializeField] private Text _authoredWaveText;
-        [SerializeField] private Text _authoredTowerText;
-        [SerializeField] private Text _authoredStateText;
+        // Deliberately NOT [SerializeField] - see CardRewardPresenter's identical fields for why:
+        // cross-scene references (HUDCanvas.unity is a separate scene), always re-resolved fresh
+        // via GameObject.Find() in TryBindAuthoredHud(), and [SerializeField] made Unity log
+        // "Cross scene references are not supported" and null the field out on domain reload/exit
+        // Play Mode.
+        private RectTransform _authoredHudRoot;
+        private Image _authoredStatusPanelImage;
+        private Text _authoredCurrencyText;
+        private Text _authoredPlayerHealthText;
+        private Text _authoredCoreHealthText;
+        private Text _authoredWaveText;
+        private Text _authoredTowerText;
+        private Text _authoredStateText;
 
         private Canvas _canvas;
         private RectTransform _statusPanelRect;
@@ -140,17 +145,23 @@ namespace Corebound.Gameplay.Waves
             }
         }
 
+        // See CardRewardPresenter.Awake() for the full root-cause writeup (2026-09-16 playtest:
+        // HUD showed as a blank white box via MainMenu -> New Run, fine when opening SampleScene
+        // directly). Calling the fallback-capable EnsureInitialized() from Awake() let
+        // ResolveOrBuildHud()'s local-build fallback (BuildCanvas()) run before HUDCanvas.unity's
+        // additive load completes, permanently satisfying EnsureInitialized()'s "_pausePanel !=
+        // null" guard and defeating Start()'s later retry. Awake() now only attempts a bind (safe
+        // no-op if the canvas is not yet loaded).
         private void Awake()
         {
-            EnsureInitialized();
+            TryBindAuthoredHud();
             ApplyHudScale();
             Refresh();
         }
 
-        // See CardRewardPresenter.Start() for why this exists: HUDCanvas.unity loads additively
-        // between this scene's OnEnable and Start phases (AdditiveCanvasSceneLoader), so a bind
-        // attempted only from Awake()/OnEnable() can run before it exists. EnsureInitialized()'s
-        // own guard makes this safe to call redundantly.
+        // The one place guaranteed to run after HUDCanvas.unity's additive load has completed -
+        // see the Awake() comment above for why the fallback-capable EnsureInitialized() must not
+        // be called any earlier than this.
         private void Start()
         {
             EnsureInitialized();
@@ -227,7 +238,9 @@ namespace Corebound.Gameplay.Waves
 
         private void OnEnable()
         {
-            EnsureInitialized();
+            // Same reasoning as Awake() above - OnEnable() runs in the same early phase, before
+            // HUDCanvas.unity's additive load can complete on the MainMenu-transition path.
+            TryBindAuthoredHud();
             ApplyHudScale();
 
             if (_waveManager != null)

@@ -46,12 +46,19 @@ namespace Corebound.Gameplay.Cards
         [SerializeField] private MainMenuSkinData _skinData;
         [SerializeField] private Texture2D _rewardChoicePanelTexture;
         [SerializeField] private Vector4 _rewardChoicePanelBorder = new Vector4(220f, 140f, 220f, 140f);
-        [SerializeField] private RectTransform _authoredPresenterRoot;
-        [SerializeField] private CanvasGroup _authoredCanvasGroup;
-        [SerializeField] private Text _authoredTitleText;
-        [SerializeField] private Text _authoredResourceText;
-        [SerializeField] private Text _authoredTowerText;
-        [SerializeField] private Text _authoredDescriptionText;
+        // Deliberately NOT [SerializeField]: these are cross-scene references (RewardCanvas.unity
+        // is a separate scene from this presenter), always re-resolved fresh via GameObject.Find()
+        // in TryBindAuthoredLayout() - never read back from a serialized value. Marking them
+        // [SerializeField] made Unity try to persist a cross-scene reference on domain reload/exit
+        // Play Mode, logging "Cross scene references are not supported" and nulling the field out
+        // (2026-09-16 playtest: 40+ such warnings flooding the Console during a single Play
+        // session), which could then be read as a stale null before the next rebind ran.
+        private RectTransform _authoredPresenterRoot;
+        private CanvasGroup _authoredCanvasGroup;
+        private Text _authoredTitleText;
+        private Text _authoredResourceText;
+        private Text _authoredTowerText;
+        private Text _authoredDescriptionText;
 
         private RectTransform _presenterRoot;
         private CanvasGroup _canvasGroup;
@@ -75,36 +82,56 @@ namespace Corebound.Gameplay.Cards
         private const string RewardRootName = "RewardScreen";
         private const string RewardPanelName = "CardRewardChoicePanel";
 
+        // Playtest feedback (2026-09-16): going through MainMenu -> New Run left the reward
+        // screen broken/empty; opening SampleScene directly and pressing Play worked fine. Root
+        // cause: RewardCanvas.unity loads additively between this scene's OnEnable and Start
+        // phases (see AdditiveCanvasSceneLoader), so on the MainMenu-transition path this Awake()
+        // runs BEFORE it exists - the old code called the fallback-capable EnsureInitialized()
+        // here, which (since TryBindAuthoredLayout() fails at this point) fell through to
+        // BuildPanel()'s local fallback and set _slotRoots[0], permanently satisfying
+        // EnsureInitialized()'s "already initialized" guard. Start()'s later retry (by which
+        // point the additive scene load HAS completed) then saw the guard already satisfied and
+        // never re-attempted the real bind, leaving the wrong locally-built panel in place
+        // forever. Opening SampleScene directly in the Editor worked because
+        // AdditiveCanvasSceneAutoLoader had RewardCanvas already loaded before Play Mode even
+        // started, so the very first Awake()-time bind attempt already succeeded. Fix: Awake()
+        // now only ever attempts a bind (a safe no-op if the canvas is not yet loaded - it does
+        // not build anything), so the guard stays unsatisfied until Start()'s retry can actually
+        // succeed or genuinely needs to fall back.
         private void Awake()
         {
-            EnsureInitialized();
+            TryBindAuthoredLayout();
             Refresh();
         }
 
-        // See AdditiveCanvasSceneLoader's class comment: the RewardCanvas.unity scene loads
-        // additively between this scene's OnEnable and Start phases, so a call from Awake() or
-        // OnEnable() alone can run before it exists. Start() is the one place guaranteed to run
-        // after that additive load has completed - EnsureInitialized()'s own guard makes this safe
-        // to call redundantly alongside Awake()/OnEnable().
+        // The one place guaranteed to run after RewardCanvas.unity's additive load has completed
+        // - see the Awake() comment above for why the fallback-capable EnsureInitialized() must
+        // not be called any earlier than this.
         private void Start()
         {
             EnsureInitialized();
             Refresh();
         }
 
+        // Guarded by a dedicated flag rather than _slotRoots[0] != null: Awake()/OnEnable() now
+        // call TryBindAuthoredLayout() directly (2026-09-16 fix, see Awake()'s comment), and a
+        // successful early bind already populates _slotRoots - guarding on that would make this
+        // whole method, including RegisterWithUIManager(), silently skip forever once Start()
+        // runs. _isFullyInitialized is set only at the end of this method, once every step
+        // (including registration) has actually completed.
+        //
         // _slotRoots and the other runtime fields populated here are plain (non-serialized)
-        // fields, so a domain reload (script recompile in the Editor, or entering Play Mode with
-        // "Reload Domain" enabled) resets them to their default/empty state. Unity's backup/restore
-        // cycle for already-existing scene objects re-invokes OnEnable() after a reload but NOT
-        // Awake() - so without this guard, the first OnEnable()->Refresh()->RebuildCards() after
-        // any reload hit a null _slotRoots[index] and threw a NullReferenceException instead of
-        // ever showing card content (see 2026-09-15 reward-screen investigation). Guarded by
-        // _slotRoots[0] so it is safe to call from both Awake() (fresh instantiation) and
-        // OnEnable() (reload-restoration) without double-building the panel or double-registering
-        // with UIManager on a normal first-time activation, where both run back to back.
+        // fields, so a domain reload (script recompile, or entering Play Mode with "Reload
+        // Domain" enabled) resets them to their default/empty state. Unity's backup/restore cycle
+        // for already-existing scene objects re-invokes OnEnable() after a reload but NOT Awake()
+        // - so without this guard, the first OnEnable()->Refresh()->RebuildCards() after any
+        // reload hit a null _slotRoots[index] and threw a NullReferenceException instead of ever
+        // showing card content (see 2026-09-15 reward-screen investigation).
+        private bool _isFullyInitialized;
+
         private void EnsureInitialized()
         {
-            if (_slotRoots[0] != null)
+            if (_isFullyInitialized)
             {
                 return;
             }
@@ -116,6 +143,7 @@ namespace Corebound.Gameplay.Cards
             ResolveCardFrameSprites();
             ResolveOrBuildPanel();
             RegisterWithUIManager();
+            _isFullyInitialized = true;
         }
 
 #if UNITY_EDITOR
@@ -148,7 +176,9 @@ namespace Corebound.Gameplay.Cards
 
         private void OnEnable()
         {
-            EnsureInitialized();
+            // Same reasoning as Awake() above - OnEnable() runs in the same early phase, before
+            // RewardCanvas.unity's additive load can complete on the MainMenu-transition path.
+            TryBindAuthoredLayout();
 
             if (_controller != null)
             {
@@ -590,6 +620,20 @@ namespace Corebound.Gameplay.Cards
         // fields, matching the same "domain reload resets non-serialized state" lesson already
         // applied elsewhere this session - here the risk is instead a stale reference surviving
         // into a save where the canvas scene was not yet loaded when this last ran.
+        // Playtest feedback (2026-09-16): the extracted RewardCanvas.unity scene's Image
+        // components were saved with no sprite (the Editor-only EnsureSceneRewardLayout/
+        // EnsureEditorImage methods below that used to assign them got disconnected from the
+        // live flow by an earlier fix, and even reconnected they use AssetDatabase, which does
+        // not exist in a real build) and several Text elements kept stale/default positions -
+        // "card frames not in the slot, card title at the bottom, description at the wrong
+        // position". This is a REAL runtime bug (the reward screen is genuinely built from this
+        // scene's saved data at Play Mode / in a real build), not just an Editor cosmetic issue,
+        // so the fix lives here rather than in the Editor-only methods: every bind re-applies
+        // the canonical sprite (via the build-safe DebugSpriteFactory.LoadProjectSprite, only
+        // when a sprite is not already assigned - never overwrites art already set by hand) and
+        // the canonical position (unconditionally - these positions are code-authored, not meant
+        // to be hand-tuned per instance, matching how BuildPanel()'s runtime-fallback path below
+        // already defines the same layout).
         private bool TryBindAuthoredLayout()
         {
             var canvasObject = GameObject.Find(RewardCanvasName);
@@ -604,10 +648,32 @@ namespace Corebound.Gameplay.Cards
             _authoredPresenterRoot = rewardRoot;
             _authoredCanvasGroup = rewardRoot.GetComponent<CanvasGroup>();
             var panel = rewardRoot.Find(RewardPanelName) as RectTransform;
-            _authoredTitleText = panel != null && panel.Find("Title") != null ? panel.Find("Title").GetComponent<Text>() : null;
-            _authoredResourceText = panel != null && panel.Find("Resources") != null ? panel.Find("Resources").GetComponent<Text>() : null;
-            _authoredTowerText = panel != null && panel.Find("TowerInfo") != null ? panel.Find("TowerInfo").GetComponent<Text>() : null;
-            _authoredDescriptionText = panel != null && panel.Find("Description") != null ? panel.Find("Description").GetComponent<Text>() : null;
+
+            if (panel == null)
+            {
+                return false;
+            }
+
+            RepairSprite(panel.GetComponent<Image>(), RewardChoicePanelTexturePath);
+            SetAnchoredBox(panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180f, 680f));
+
+            var overlayTransform = rewardRoot.Find("Overlay") as RectTransform;
+
+            if (overlayTransform != null)
+            {
+                StretchToParent(overlayTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                var overlayImage = overlayTransform.GetComponent<Image>();
+
+                if (overlayImage != null)
+                {
+                    overlayImage.color = OverlayColor;
+                }
+            }
+
+            _authoredTitleText = RepairText(panel, "Title", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(180f, -125f), new Vector2(-180f, -54f));
+            _authoredResourceText = RepairText(panel, "Resources", new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(381f, -196f), new Vector2(-20f, -148f));
+            _authoredTowerText = RepairText(panel, "TowerInfo", new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(20f, -196f), new Vector2(-353f, -148f));
+            _authoredDescriptionText = RepairText(panel, "Description", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(288f, 71f), new Vector2(-288f, 133f));
 
             if (_authoredPresenterRoot == null || _authoredCanvasGroup == null || _authoredTitleText == null || _authoredDescriptionText == null)
             {
@@ -634,12 +700,25 @@ namespace Corebound.Gameplay.Cards
                     return false;
                 }
 
+                slotTransform.anchorMin = new Vector2(0.5f, 0.5f);
+                slotTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                slotTransform.pivot = new Vector2(0.5f, 0.5f);
+                slotTransform.anchoredPosition = new Vector2((index - 1) * SlotSpacing, SlotCenterY);
+                slotTransform.sizeDelta = new Vector2(SlotWidth, SlotHeight);
+
                 _slotRoots[index] = slotTransform;
                 _slotHighlights[index] = slotTransform.GetComponent<Image>();
-                _slotFrameImages[index] = slotTransform.Find("SlotFrame") != null ? slotTransform.Find("SlotFrame").GetComponent<Image>() : null;
-                _slotTitleTexts[index] = slotTransform.Find("SlotTitle") != null ? slotTransform.Find("SlotTitle").GetComponent<Text>() : null;
-                _slotRarityTexts[index] = slotTransform.Find("SlotRarity") != null ? slotTransform.Find("SlotRarity").GetComponent<Text>() : null;
-                _slotDescriptionTexts[index] = slotTransform.Find("SlotDescription") != null ? slotTransform.Find("SlotDescription").GetComponent<Text>() : null;
+                _slotFrameImages[index] = RepairImage(slotTransform, "SlotFrame", CommonFramePath, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                _slotTitleTexts[index] = RepairText(slotTransform, "SlotTitle", Vector2.zero, Vector2.one, new Vector2(22f, 28f), new Vector2(-22f, -286f));
+                _slotRarityTexts[index] = RepairText(slotTransform, "SlotRarity", Vector2.zero, Vector2.one, new Vector2(22f, 58f), new Vector2(-22f, -286f));
+                _slotDescriptionTexts[index] = RepairText(slotTransform, "SlotDescription", Vector2.zero, Vector2.one, new Vector2(22f, 140f), new Vector2(-22f, -24f));
+
+                var revealFlashImage = RepairImage(slotTransform, "RevealFlash", RevealFlashSpritePath, new Vector2(-0.15f, -0.15f), new Vector2(1.15f, 1.15f), Vector2.zero, Vector2.zero);
+
+                if (revealFlashImage != null)
+                {
+                    revealFlashImage.color = Color.clear;
+                }
 
                 // Rarity is already conveyed by the frame color/art - the "Common"/"Rare"/etc.
                 // label duplicated that information as clutter inside the card box. Kept bound
@@ -650,6 +729,8 @@ namespace Corebound.Gameplay.Cards
                     _slotRarityTexts[index].gameObject.SetActive(false);
                 }
 
+                _slotRevealFlashImages[index] = revealFlashImage;
+
                 // Tag icons are optional and not part of the bind-success check below: the
                 // authored RewardSlot hierarchy in SampleScene.unity predates this field and
                 // adding it requires the Unity Editor (the scene has many same-named
@@ -658,11 +739,6 @@ namespace Corebound.Gameplay.Cards
                 // null, so nothing breaks; opening this component once in the Editor after
                 // clearing _authoredCanvasGroup would let EnsureSceneRewardLayout() create them.
                 _slotTagIcons[index] = ResolveAuthoredTagIcons(slotTransform);
-
-                // Same optional, non-blocking treatment as tag icons above: missing in the
-                // current authored scene until Editor access adds it via EnsureSceneRewardLayout().
-                var revealFlashChild = slotTransform.Find("RevealFlash");
-                _slotRevealFlashImages[index] = revealFlashChild != null ? revealFlashChild.GetComponent<Image>() : null;
 
                 if (_slotFrameImages[index] == null || _slotTitleTexts[index] == null || _slotRarityTexts[index] == null || _slotDescriptionTexts[index] == null)
                 {
@@ -708,6 +784,46 @@ namespace Corebound.Gameplay.Cards
             rectTransform.pivot = anchor;
             rectTransform.anchoredPosition = anchoredPosition;
             rectTransform.sizeDelta = size;
+        }
+
+        // Only assigns when missing - never overwrites a sprite already set (by hand in the
+        // Editor, or by an earlier successful bind), so this is safe to call on every bind.
+        private static void RepairSprite(Image image, string spritePath)
+        {
+            if (image == null || image.sprite != null || string.IsNullOrWhiteSpace(spritePath))
+            {
+                return;
+            }
+
+            image.sprite = DebugSpriteFactory.LoadProjectSprite(spritePath);
+        }
+
+        private static Text RepairText(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            var child = parent != null ? parent.Find(name) as RectTransform : null;
+
+            if (child == null)
+            {
+                return null;
+            }
+
+            StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
+            return child.GetComponent<Text>();
+        }
+
+        private static Image RepairImage(RectTransform parent, string name, string spritePath, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            var child = parent != null ? parent.Find(name) as RectTransform : null;
+
+            if (child == null)
+            {
+                return null;
+            }
+
+            StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
+            var image = child.GetComponent<Image>();
+            RepairSprite(image, spritePath);
+            return image;
         }
 
         private void RegisterWithUIManager()

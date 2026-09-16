@@ -37,12 +37,17 @@ namespace Corebound.Gameplay.Shop
         private readonly Text[] _slotDescriptionTexts = new Text[3];
 
         [SerializeField] private ShopService _service;
-        [SerializeField] private RectTransform _authoredPresenterRoot;
-        [SerializeField] private CanvasGroup _authoredCanvasGroup;
-        [SerializeField] private Text _authoredTitleText;
-        [SerializeField] private Text _authoredSummaryText;
-        [SerializeField] private Text _authoredResourceText;
-        [SerializeField] private Text _authoredFooterText;
+        // Deliberately NOT [SerializeField] - see CardRewardPresenter's identical fields for why:
+        // cross-scene references (ShopCanvas.unity is a separate scene), always re-resolved fresh
+        // via GameObject.Find() in TryBindAuthoredLayout(), and [SerializeField] made Unity log
+        // "Cross scene references are not supported" and null the field out on domain reload/exit
+        // Play Mode.
+        private RectTransform _authoredPresenterRoot;
+        private CanvasGroup _authoredCanvasGroup;
+        private Text _authoredTitleText;
+        private Text _authoredSummaryText;
+        private Text _authoredResourceText;
+        private Text _authoredFooterText;
 
         private RectTransform _presenterRoot;
         private CanvasGroup _canvasGroup;
@@ -66,6 +71,13 @@ namespace Corebound.Gameplay.Shop
         private const string ShopRootName = "ShopScreen";
         private const string ShopPanelName = "ShopOfferPanel";
 
+        // See CardRewardPresenter.Awake() for the full root-cause writeup (2026-09-16 playtest:
+        // reward/shop screens broken via MainMenu -> New Run, fine when opening SampleScene
+        // directly). Same bug applied here: calling the fallback-capable EnsureInitialized() from
+        // Awake() let ResolveOrBuildPanel()'s local-build fallback run before ShopCanvas.unity's
+        // additive load completes, permanently satisfying EnsureInitialized()'s guard and
+        // defeating Start()'s later retry. Awake() now only attempts a bind (safe no-op if the
+        // canvas is not yet loaded).
         private void Awake()
         {
             if (_service == null)
@@ -73,30 +85,36 @@ namespace Corebound.Gameplay.Shop
                 _service = GetComponent<ShopService>();
             }
 
-            EnsureInitialized();
+            TryBindAuthoredLayout();
             Refresh();
         }
 
-        // See CardRewardPresenter.Start() for why this exists: ShopCanvas.unity loads additively
-        // between this scene's OnEnable and Start phases (AdditiveCanvasSceneLoader), so a bind
-        // attempted only from Awake()/OnEnable() can run before it exists. EnsureInitialized()'s
-        // own guard makes this safe to call redundantly.
+        // The one place guaranteed to run after ShopCanvas.unity's additive load has completed -
+        // see the Awake() comment above for why the fallback-capable EnsureInitialized() must not
+        // be called any earlier than this.
         private void Start()
         {
             EnsureInitialized();
             Refresh();
         }
 
-        // See CardRewardPresenter.EnsureInitialized() for why this guard exists: _slotRoots and
-        // the other runtime fields below are plain (non-serialized) fields, so a domain reload
-        // (script recompile, or entering Play Mode with "Reload Domain" enabled) resets them, but
-        // Unity's backup/restore cycle re-invokes OnEnable() on already-existing scene objects
-        // without calling Awake() again - without this guard, the shop panel crashed the same way
-        // the reward panel did (NullReferenceException on a null _slotRoots[index] the first time
-        // OnEnable()->Refresh() ran after a reload).
+        // Guarded by a dedicated flag rather than _slotRoots[0] != null: Awake()/OnEnable() now
+        // call TryBindAuthoredLayout() directly, and a successful early bind already populates
+        // _slotRoots - guarding on that would make this whole method, including
+        // RegisterWithUIManager(), silently skip forever once Start() runs. See
+        // CardRewardPresenter.EnsureInitialized() for the full writeup, including why any guard
+        // is needed here at all: _slotRoots and the other runtime fields below are plain
+        // (non-serialized) fields, so a domain reload (script recompile, or entering Play Mode
+        // with "Reload Domain" enabled) resets them, but Unity's backup/restore cycle re-invokes
+        // OnEnable() on already-existing scene objects without calling Awake() again - without
+        // this guard, the shop panel crashed the same way the reward panel did
+        // (NullReferenceException on a null _slotRoots[index] the first time OnEnable()->Refresh()
+        // ran after a reload).
+        private bool _isFullyInitialized;
+
         private void EnsureInitialized()
         {
-            if (_slotRoots[0] != null)
+            if (_isFullyInitialized)
             {
                 return;
             }
@@ -105,6 +123,7 @@ namespace Corebound.Gameplay.Shop
             LoadSprites();
             ResolveOrBuildPanel();
             RegisterWithUIManager();
+            _isFullyInitialized = true;
         }
 
 #if UNITY_EDITOR
@@ -136,7 +155,9 @@ namespace Corebound.Gameplay.Shop
 
         private void OnEnable()
         {
-            EnsureInitialized();
+            // Same reasoning as Awake() above - OnEnable() runs in the same early phase, before
+            // ShopCanvas.unity's additive load can complete on the MainMenu-transition path.
+            TryBindAuthoredLayout();
 
             if (_service != null)
             {
@@ -427,6 +448,11 @@ namespace Corebound.Gameplay.Shop
         // See CardRewardPresenter.TryBindAuthoredLayout() for why this searches globally instead
         // of using transform.Find()/cached serialized fields: ShopCanvas.unity is loaded additively
         // by AdditiveCanvasSceneLoader, so it is never a child of this presenter's own GameObject.
+        // Same root cause and fix as CardRewardPresenter.TryBindAuthoredLayout() (2026-09-16
+        // playtest): the extracted scene's Image components saved with no sprite, and this
+        // presenter's own EnsureSceneShopLayout/EnsureEditorImage below never runs anymore for
+        // the same reason - and use Editor-only AssetDatabase besides. Repairs are applied here,
+        // build-safe, on every bind.
         private bool TryBindAuthoredLayout()
         {
             var canvasObject = GameObject.Find(ShopCanvasName);
@@ -441,10 +467,32 @@ namespace Corebound.Gameplay.Shop
             _authoredPresenterRoot = shopRoot;
             _authoredCanvasGroup = shopRoot.GetComponent<CanvasGroup>();
             var panel = shopRoot.Find(ShopPanelName) as RectTransform;
-            _authoredTitleText = panel != null && panel.Find("Title") != null ? panel.Find("Title").GetComponent<Text>() : null;
-            _authoredSummaryText = panel != null && panel.Find("Summary") != null ? panel.Find("Summary").GetComponent<Text>() : null;
-            _authoredResourceText = panel != null && panel.Find("Resources") != null ? panel.Find("Resources").GetComponent<Text>() : null;
-            _authoredFooterText = panel != null && panel.Find("Footer") != null ? panel.Find("Footer").GetComponent<Text>() : null;
+
+            if (panel == null)
+            {
+                return false;
+            }
+
+            RepairSprite(panel.GetComponent<Image>(), PanelTexturePath, PanelTextureFallbackPath);
+            SetAnchoredBox(panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180f, 680f));
+
+            var overlayTransform = shopRoot.Find("Overlay") as RectTransform;
+
+            if (overlayTransform != null)
+            {
+                StretchToParent(overlayTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                var overlayImage = overlayTransform.GetComponent<Image>();
+
+                if (overlayImage != null)
+                {
+                    overlayImage.color = new Color(0.02f, 0.04f, 0.06f, 0.88f);
+                }
+            }
+
+            _authoredTitleText = RepairText(panel, "Title", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(180f, -125f), new Vector2(-180f, -54f));
+            _authoredSummaryText = RepairText(panel, "Summary", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(287f, 71f), new Vector2(-289f, 133f));
+            _authoredResourceText = RepairText(panel, "Resources", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -70f), new Vector2(174f, -40f));
+            _authoredFooterText = RepairText(panel, "Footer", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(180f, -196f), new Vector2(-180f, -148f));
 
             if (_authoredPresenterRoot == null || _authoredCanvasGroup == null || _authoredTitleText == null || _authoredSummaryText == null || _authoredResourceText == null || _authoredFooterText == null)
             {
@@ -471,14 +519,20 @@ namespace Corebound.Gameplay.Shop
                     return false;
                 }
 
+                slotTransform.anchorMin = new Vector2(0.5f, 0.5f);
+                slotTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                slotTransform.pivot = new Vector2(0.5f, 0.5f);
+                slotTransform.anchoredPosition = new Vector2((index - 1) * SlotSpacing, SlotCenterY);
+                slotTransform.sizeDelta = new Vector2(SlotWidth, SlotHeight);
+
                 _slotRoots[index] = slotTransform;
                 _slotHighlights[index] = slotTransform.GetComponent<Image>();
-                _slotFrameImages[index] = slotTransform.Find("SlotFrame") != null ? slotTransform.Find("SlotFrame").GetComponent<Image>() : null;
-                _slotCostChipImages[index] = slotTransform.Find("SlotCostChip") != null ? slotTransform.Find("SlotCostChip").GetComponent<Image>() : null;
-                _slotTitleTexts[index] = slotTransform.Find("SlotTitle") != null ? slotTransform.Find("SlotTitle").GetComponent<Text>() : null;
-                _slotCostTexts[index] = slotTransform.Find("SlotCostText") != null ? slotTransform.Find("SlotCostText").GetComponent<Text>() : null;
-                _slotDescriptionTexts[index] = slotTransform.Find("SlotDescription") != null ? slotTransform.Find("SlotDescription").GetComponent<Text>() : null;
-                _slotTypeBadgeImages[index] = slotTransform.Find("SlotTypeBadge") != null ? slotTransform.Find("SlotTypeBadge").GetComponent<Image>() : null;
+                _slotFrameImages[index] = RepairImage(slotTransform, "SlotFrame", CommonFramePath, null, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                _slotTitleTexts[index] = RepairText(slotTransform, "SlotTitle", Vector2.zero, Vector2.one, new Vector2(22f, 26f), new Vector2(-22f, -320f));
+                _slotCostChipImages[index] = RepairImagePivot(slotTransform, "SlotCostChip", PriceChipTexturePath, null, new Vector2(0.5f, 1f), new Vector2(0f, -62f), new Vector2(126f, 34f));
+                _slotCostTexts[index] = RepairText(slotTransform, "SlotCostText", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-55f, -88f), new Vector2(55f, -58f));
+                _slotDescriptionTexts[index] = RepairText(slotTransform, "SlotDescription", Vector2.zero, Vector2.one, new Vector2(22f, 112f), new Vector2(-22f, -24f));
+                _slotTypeBadgeImages[index] = RepairImagePivot(slotTransform, "SlotTypeBadge", TowerUpgradeIconPath, null, new Vector2(1f, 1f), new Vector2(-8f, -8f), new Vector2(TypeBadgeSize, TypeBadgeSize));
 
                 if (_slotTypeBadgeImages[index] != null)
                 {
@@ -492,6 +546,72 @@ namespace Corebound.Gameplay.Shop
             }
 
             return true;
+        }
+
+        // Only assigns when missing - never overwrites a sprite already set by hand, so this is
+        // safe to call on every bind. Tries primaryPath first, then fallbackPath (some source art
+        // in this project was imported with a doubled ".png.png" extension).
+        private static void RepairSprite(Image image, string primaryPath, string fallbackPath)
+        {
+            if (image == null || image.sprite != null)
+            {
+                return;
+            }
+
+            var sprite = !string.IsNullOrWhiteSpace(primaryPath) ? DebugSpriteFactory.LoadProjectSprite(primaryPath) : null;
+
+            if (sprite == null && !string.IsNullOrWhiteSpace(fallbackPath))
+            {
+                sprite = DebugSpriteFactory.LoadProjectSprite(fallbackPath);
+            }
+
+            image.sprite = sprite;
+        }
+
+        private static Text RepairText(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            var child = parent != null ? parent.Find(name) as RectTransform : null;
+
+            if (child == null)
+            {
+                return null;
+            }
+
+            StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
+            return child.GetComponent<Text>();
+        }
+
+        private static Image RepairImage(RectTransform parent, string name, string primaryPath, string fallbackPath, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            var child = parent != null ? parent.Find(name) as RectTransform : null;
+
+            if (child == null)
+            {
+                return null;
+            }
+
+            StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
+            var image = child.GetComponent<Image>();
+            RepairSprite(image, primaryPath, fallbackPath);
+            return image;
+        }
+
+        // For elements point-anchored (not stretched) in the original EnsureSceneShopLayout -
+        // unlike offsetMin/offsetMax, anchoredPosition is defined relative to pivot, so anchor
+        // and pivot must be set to the same point together (matching SetAnchoredBox's pattern).
+        private static Image RepairImagePivot(RectTransform parent, string name, string primaryPath, string fallbackPath, Vector2 anchor, Vector2 anchoredPosition, Vector2 sizeDelta)
+        {
+            var child = parent != null ? parent.Find(name) as RectTransform : null;
+
+            if (child == null)
+            {
+                return null;
+            }
+
+            SetAnchoredBox(child, anchor, anchoredPosition, sizeDelta);
+            var image = child.GetComponent<Image>();
+            RepairSprite(image, primaryPath, fallbackPath);
+            return image;
         }
 
         private Text CreateText(string name, RectTransform parent, int fontSize, FontStyle fontStyle, Color color, TextAnchor anchor)
