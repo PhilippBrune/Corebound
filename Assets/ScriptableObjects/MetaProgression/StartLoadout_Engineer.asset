@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52d28cbb932543ffad3fb010b3f51ee9, type: 3}
+  m_Name: StartLoadout_Engineer
+  m_EditorClassIdentifier: 
+  _loadoutId: loadout_engineer
+  _displayName: Engineer Start
+  _summary: Starts future Runs with the Spread Weapon, an extra Tower option and a prepared economy Card path.
+  _startingWeaponId: weapon_spread
+  _startingTowerIds:
+  - tower_support
+  _startingCardIds:
+  - card_salvage_protocol

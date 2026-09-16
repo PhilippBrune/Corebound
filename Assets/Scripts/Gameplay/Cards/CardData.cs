@@ -1,0 +1,36 @@
+using UnityEngine;
+
+namespace Corebound.Gameplay.Cards
+{
+    [CreateAssetMenu(menuName = "Corebound/Gameplay/Cards/Card Data", fileName = "CardData")]
+    public sealed class CardData : ScriptableObject
+    {
+        [SerializeField] private string _cardId = "card_default";
+        [SerializeField] private string _displayName = "Card";
+        [SerializeField] [TextArea(2, 3)] private string _description = string.Empty;
+        [SerializeField] private CardRarity _rarity = CardRarity.Common;
+        [SerializeField] private string _requiredUnlockId = string.Empty;
+        [SerializeField] private CardTagType[] _tags;
+        [SerializeField] private CardEffectData[] _effects;
+        [SerializeField] private bool _stackable;
+
+        public string CardId => _cardId;
+
+        public string DisplayName => _displayName;
+
+        public string Description => _description;
+
+        public CardRarity Rarity => _rarity;
+
+        public string RequiredUnlockId => _requiredUnlockId;
+
+        // Authored per Docs/Specs/Cards.md's planned synergy/archetype/filtering system, but no
+        // runtime code reads this yet (offer selection and card effects don't consult it).
+        // Deliberately kept rather than deleted: several CardData assets already have tags set.
+        public CardTagType[] Tags => _tags;
+
+        public CardEffectData[] Effects => _effects;
+
+        public bool Stackable => _stackable;
+    }
+}

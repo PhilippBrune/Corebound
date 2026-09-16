@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04b43e4f37ab4f7ba068087eaf824db0, type: 3}
+  m_Name: Card_OverdriveInjector
+  m_EditorClassIdentifier:
+  _cardId: card_overdrive_injector
+  _displayName: Overdrive Injector
+  _description: A real trade, not just a number - a solid Weapon damage boost, but the Player and Core take 8% more damage for the rest of the run.
+  _rarity: 1
+  _requiredUnlockId:
+  _effects:
+  - {fileID: 11400000, guid: 903c3c7d3e1b400ea372e60a20ee0c7e, type: 2}
+  - {fileID: 11400000, guid: 57d2d70163574f8f8d53d50197c66c45, type: 2}
+  _stackable: 1

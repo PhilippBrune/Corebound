@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 866988846fbcee94db9b2e315b27225c, type: 3}
+  m_Name: Weapon_Beam
+  m_EditorClassIdentifier: 
+  _weaponId: weapon_beam
+  _displayName: Beam Weapon
+  _summary: Focused high-impact shot pattern for precise burst and piercing themes.
+  _attackPattern: {fileID: 11400000, guid: bd87b9e7bdf34e9d82502685e61e47c0, type: 2}
+  _damageProfile: {fileID: 11400000, guid: 0d9ee73df45c4a719b2cf0a3c8744dcf, type: 2}
+  _projectile: {fileID: 11400000, guid: edbf4f0d9d044cc8a0c7f3ddc3426372, type: 2}
+  _aimAssistProfile: 0

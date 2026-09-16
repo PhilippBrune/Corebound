@@ -1,0 +1,477 @@
+using System;
+using Corebound.Gameplay.Combat;
+using Corebound.Gameplay.Enemies;
+using Corebound.Gameplay.Shared;
+using Corebound.Gameplay.Waves;
+using UnityEngine;
+
+namespace Corebound.Gameplay.Bosses
+{
+    public sealed class BossRuntimeController : MonoBehaviour
+    {
+        private const string BossStage1SpritePath = "Assets/Art/Characters/Bosses/boss_stage1_topdown.png";
+        private const string BossStage2SpritePath = "Assets/Art/Characters/Bosses/boss_stage2_topdown.png";
+        private const string BossStage3SpritePath = "Assets/Art/Characters/Bosses/boss_stage3_topdown.png";
+        private const string BossStage4SpritePath = "Assets/Art/Characters/Bosses/boss_stage4_topdown.png";
+        private const string BossStage5SpritePath = "Assets/Art/Characters/Bosses/boss_stage5_topdown.png";
+        private static readonly Color BossAttackWarningColor = new Color(1f, 0.3f, 0.28f, 1f);
+
+        // Mirrors WaveManager.WaveStartSpawnDelaySeconds - gives the player the same beat to
+        // reposition/prepare before the boss engages that a normal wave's spawn delay gives
+        // before its first enemy appears. Applied unconditionally in Initialize() (fresh start
+        // and save-restore alike), matching how StartCurrentWave() re-arms its own delay on
+        // every call regardless of path.
+        private const float BossEngageDelaySeconds = 2f;
+
+        private BossData _bossData;
+        private Transform _playerTarget;
+        private Transform _coreTarget;
+        private CombatProjectile _projectilePrototype;
+        private Transform _projectileParent;
+        private EnemyPool _enemyPool;
+
+        private CombatHitReceiver _hitReceiver;
+        private Rigidbody2D _rigidbody2D;
+        private SpriteRenderer _spriteRenderer;
+        private ProjectilePool _projectilePool;
+        private bool[] _helperPhaseTriggered;
+        private float _attackCooldownTimer;
+        private float _attackWindupTimer;
+        private float _targetSwapTimer;
+        private int _currentPhaseIndex;
+        private bool _preferPlayerTarget = true;
+        private float _engageDelayTimer;
+
+        public event Action<int> PhaseChanged;
+
+        public bool IsAlive => _hitReceiver != null && _hitReceiver.IsAlive;
+
+        public int CurrentPhaseIndex => _currentPhaseIndex;
+
+        public string BossName => _bossData != null ? _bossData.DisplayName : string.Empty;
+
+        public string CurrentPhaseLabel => ResolvePhase() != null ? ResolvePhase().PhaseLabel : string.Empty;
+
+        public float CurrentHealthNormalized => _hitReceiver != null ? _hitReceiver.CurrentHealthNormalized : 1f;
+
+        public BossRewardData BossRewardData => _bossData != null ? _bossData.BossRewardData : null;
+
+        public void Initialize(BossData bossData, Transform playerTarget, Transform coreTarget, CombatProjectile projectilePrototype, Transform projectileParent, EnemyPool enemyPool, int restoredPhaseIndex)
+        {
+            _bossData = bossData;
+            _playerTarget = playerTarget;
+            _coreTarget = coreTarget;
+            _projectilePrototype = projectilePrototype;
+            _projectileParent = projectileParent;
+            _enemyPool = enemyPool;
+            _attackCooldownTimer = 0f;
+            _targetSwapTimer = 1.8f;
+            _preferPlayerTarget = true;
+            _engageDelayTimer = BossEngageDelaySeconds;
+
+            EnsureComponents();
+
+            if (_hitReceiver != null && _bossData != null)
+            {
+                _hitReceiver.InitializeRuntime(_bossData.CombatTargetData, _bossData.HitReactionData, _bossData.StatusDefinitions, 1f, true, _bossData.Sprite != null ? Color.white : _bossData.DebugColor);
+            }
+
+            _projectilePool = _projectileParent != null ? new ProjectilePool(_projectileParent) : null;
+            _helperPhaseTriggered = _bossData != null && _bossData.Phases != null ? new bool[_bossData.Phases.Length] : Array.Empty<bool>();
+            _currentPhaseIndex = Mathf.Clamp(restoredPhaseIndex, 0, Mathf.Max(0, (_bossData != null && _bossData.Phases != null ? _bossData.Phases.Length : 1) - 1));
+            TriggerPhase(_currentPhaseIndex);
+        }
+
+        private void OnEnable()
+        {
+            CombatEvents.DamageTaken += OnDamageTaken;
+            CombatEvents.CombatantDied += OnCombatantDied;
+        }
+
+        private void OnDisable()
+        {
+            CombatEvents.DamageTaken -= OnDamageTaken;
+            CombatEvents.CombatantDied -= OnCombatantDied;
+        }
+
+        private void FixedUpdate()
+        {
+            if (_bossData == null || _rigidbody2D == null || !IsAlive)
+            {
+                return;
+            }
+
+            if (_engageDelayTimer > 0f)
+            {
+                _engageDelayTimer = Mathf.Max(0f, _engageDelayTimer - Time.fixedDeltaTime);
+                _rigidbody2D.linearVelocity = Vector2.zero;
+                return;
+            }
+
+            _attackCooldownTimer = Mathf.Max(0f, _attackCooldownTimer - Time.fixedDeltaTime);
+            _targetSwapTimer = Mathf.Max(0f, _targetSwapTimer - Time.fixedDeltaTime);
+
+            if (_targetSwapTimer <= 0f)
+            {
+                _preferPlayerTarget = !_preferPlayerTarget;
+                _targetSwapTimer = 1.8f;
+            }
+
+            var phase = ResolvePhase();
+            var attackPattern = phase != null ? phase.AttackPatternData : null;
+            var target = ResolvePrimaryTarget(attackPattern);
+            var secondaryTarget = ResolveSecondaryTarget(target);
+
+            if (target == null)
+            {
+                _rigidbody2D.linearVelocity = Vector2.zero;
+                return;
+            }
+
+            var direction = (Vector2)target.position - _rigidbody2D.position;
+            var distance = direction.magnitude;
+            var preferredDistance = attackPattern != null ? attackPattern.PreferredDistance : 3.5f;
+
+            if (distance > preferredDistance * 0.55f)
+            {
+                _rigidbody2D.linearVelocity = direction.normalized * (_bossData.MoveSpeed * 1.15f);
+            }
+            else
+            {
+                var strafeDirection = new Vector2(-direction.y, direction.x).normalized;
+                _rigidbody2D.linearVelocity = strafeDirection * (_bossData.MoveSpeed * 0.35f);
+            }
+
+            if (attackPattern != null && (distance <= attackPattern.AttackRange || _attackWindupTimer > 0f))
+            {
+                TryFireProjectiles(target, secondaryTarget, attackPattern);
+            }
+        }
+
+        private void OnDamageTaken(DamageEventArgs eventArgs)
+        {
+            if (eventArgs.Target != gameObject || _bossData == null || _bossData.Phases == null)
+            {
+                return;
+            }
+
+            var nextPhaseIndex = _currentPhaseIndex + 1;
+
+            if (nextPhaseIndex >= _bossData.Phases.Length)
+            {
+                return;
+            }
+
+            var nextPhase = _bossData.Phases[nextPhaseIndex];
+
+            if (nextPhase != null && CurrentHealthNormalized <= nextPhase.TriggerHealthNormalized)
+            {
+                TriggerPhase(nextPhaseIndex);
+            }
+        }
+
+        private void OnCombatantDied(DeathEventArgs eventArgs)
+        {
+            if (eventArgs.Victim != gameObject || _rigidbody2D == null)
+            {
+                return;
+            }
+
+            _rigidbody2D.linearVelocity = Vector2.zero;
+            gameObject.SetActive(false);
+        }
+
+        private void TriggerPhase(int phaseIndex)
+        {
+            _currentPhaseIndex = Mathf.Clamp(phaseIndex, 0, Mathf.Max(0, (_bossData != null && _bossData.Phases != null ? _bossData.Phases.Length : 1) - 1));
+
+            if (_helperPhaseTriggered.Length > _currentPhaseIndex && !_helperPhaseTriggered[_currentPhaseIndex])
+            {
+                SpawnPhaseHelpers();
+                _helperPhaseTriggered[_currentPhaseIndex] = true;
+            }
+
+            PhaseChanged?.Invoke(_currentPhaseIndex);
+        }
+
+        private void SpawnPhaseHelpers()
+        {
+            if (_enemyPool == null)
+            {
+                return;
+            }
+
+            var phase = ResolvePhase();
+            var helperGroups = phase != null ? phase.HelperSpawnGroups : null;
+
+            if (helperGroups == null)
+            {
+                return;
+            }
+
+            for (var groupIndex = 0; groupIndex < helperGroups.Length; groupIndex++)
+            {
+                var helperGroup = helperGroups[groupIndex];
+
+                if (helperGroup == null || helperGroup.EnemyData == null)
+                {
+                    continue;
+                }
+
+                for (var spawnIndex = 0; spawnIndex < helperGroup.Count; spawnIndex++)
+                {
+                    var enemy = _enemyPool.Get();
+                    enemy.transform.position = transform.position + (Vector3)ResolveHelperOffset(groupIndex, spawnIndex);
+                    enemy.Initialize(helperGroup.EnemyData, helperGroup.EliteModifierData, _playerTarget, _coreTarget, _projectilePrototype, _projectileParent);
+                }
+            }
+        }
+
+        private void TryFireProjectiles(Transform primaryTarget, Transform secondaryTarget, BossAttackPatternData attackPattern)
+        {
+            if (_projectilePrototype == null || _projectilePool == null || attackPattern == null || attackPattern.ProjectileData == null)
+            {
+                return;
+            }
+
+            // Windup re-aims at the current target position every tick (like the Ranged Pressure
+            // enemy telegraph) rather than locking a direction up front, so the burst still reads
+            // as reactive while giving the player a fair, visible window to dodge before it fires.
+            if (_attackWindupTimer > 0f)
+            {
+                var windupSeconds = attackPattern.WindupSeconds;
+                _attackWindupTimer = Mathf.Max(0f, _attackWindupTimer - Time.fixedDeltaTime);
+                ApplyAttackTelegraphColor(windupSeconds > Mathf.Epsilon ? 1f - (_attackWindupTimer / windupSeconds) : 1f);
+
+                if (_attackWindupTimer > 0f)
+                {
+                    return;
+                }
+
+                FireLockedBurst(primaryTarget, secondaryTarget, attackPattern);
+                ResetTelegraphColor();
+                return;
+            }
+
+            if (_attackCooldownTimer > 0f)
+            {
+                return;
+            }
+
+            if (attackPattern.WindupSeconds <= Mathf.Epsilon)
+            {
+                FireLockedBurst(primaryTarget, secondaryTarget, attackPattern);
+                return;
+            }
+
+            _attackWindupTimer = attackPattern.WindupSeconds;
+            ApplyAttackTelegraphColor(0f);
+        }
+
+        private void FireLockedBurst(Transform primaryTarget, Transform secondaryTarget, BossAttackPatternData attackPattern)
+        {
+            var didFire = false;
+
+            if (primaryTarget != null)
+            {
+                var direction = ((Vector2)primaryTarget.position - _rigidbody2D.position).normalized;
+                FireProjectileBurst(direction, attackPattern.ProjectileCount, attackPattern.SpreadAngleDegrees, attackPattern);
+                didFire = true;
+            }
+
+            if (secondaryTarget != null)
+            {
+                var secondaryDirection = ((Vector2)secondaryTarget.position - _rigidbody2D.position);
+
+                if (secondaryDirection.sqrMagnitude > Mathf.Epsilon)
+                {
+                    FireProjectileBurst(secondaryDirection.normalized, 1, 0f, attackPattern);
+                    didFire = true;
+                }
+            }
+
+            if (didFire)
+            {
+                _attackCooldownTimer = attackPattern.FireIntervalSeconds;
+            }
+        }
+
+        private void ApplyAttackTelegraphColor(float progress)
+        {
+            if (_spriteRenderer == null)
+            {
+                return;
+            }
+
+            _spriteRenderer.color = Color.Lerp(ResolveIdleColor(), BossAttackWarningColor, Mathf.Clamp01(progress));
+        }
+
+        private void ResetTelegraphColor()
+        {
+            if (_spriteRenderer != null)
+            {
+                _spriteRenderer.color = ResolveIdleColor();
+            }
+        }
+
+        private Color ResolveIdleColor()
+        {
+            return _bossData != null && _bossData.Sprite != null ? Color.white : (_bossData != null ? _bossData.DebugColor : Color.white);
+        }
+
+        private void FireProjectileBurst(Vector2 direction, int projectileCount, float spreadAngleDegrees, BossAttackPatternData attackPattern)
+        {
+            if (_projectilePrototype == null || _projectilePool == null || attackPattern == null || attackPattern.ProjectileData == null)
+            {
+                return;
+            }
+
+            projectileCount = Mathf.Max(1, projectileCount);
+            var startAngle = -spreadAngleDegrees * 0.5f;
+            var angleStep = projectileCount > 1 ? spreadAngleDegrees / (projectileCount - 1) : 0f;
+
+            for (var index = 0; index < projectileCount; index++)
+            {
+                var shotDirection = CombatMath.Rotate(direction, startAngle + angleStep * index);
+                var projectile = _projectilePool.Get(_projectilePrototype);
+                var damageContext = new DamageContext(DamageSourceType.Enemy, DamageKind.Direct, attackPattern.DamageAmount, transform.position, shotDirection, null);
+                projectile.Launch(gameObject, attackPattern.ProjectileData, transform.position, shotDirection, damageContext);
+            }
+        }
+
+        private Transform ResolvePrimaryTarget(BossAttackPatternData attackPattern)
+        {
+            if (_playerTarget == null)
+            {
+                return _coreTarget;
+            }
+
+            if (_coreTarget == null)
+            {
+                return _playerTarget;
+            }
+
+            var playerDistance = Vector2.Distance(transform.position, _playerTarget.position);
+            var coreDistance = Vector2.Distance(transform.position, _coreTarget.position);
+
+            if (Mathf.Abs(playerDistance - coreDistance) > 1.25f)
+            {
+                return playerDistance < coreDistance ? _playerTarget : _coreTarget;
+            }
+
+            if (attackPattern != null && attackPattern.TrackPlayer)
+            {
+                return _preferPlayerTarget ? _playerTarget : _coreTarget;
+            }
+
+            return _preferPlayerTarget ? _coreTarget : _playerTarget;
+        }
+
+        private Transform ResolveSecondaryTarget(Transform primaryTarget)
+        {
+            if (primaryTarget == null)
+            {
+                return null;
+            }
+
+            if (primaryTarget == _playerTarget)
+            {
+                return _coreTarget;
+            }
+
+            if (primaryTarget == _coreTarget)
+            {
+                return _playerTarget;
+            }
+
+            return _coreTarget != null ? _coreTarget : _playerTarget;
+        }
+
+        private BossPhaseData ResolvePhase()
+        {
+            if (_bossData == null || _bossData.Phases == null || _bossData.Phases.Length == 0)
+            {
+                return null;
+            }
+
+            return _bossData.Phases[Mathf.Clamp(_currentPhaseIndex, 0, _bossData.Phases.Length - 1)];
+        }
+
+        private void EnsureComponents()
+        {
+            _hitReceiver = GetComponent<CombatHitReceiver>();
+
+            if (_hitReceiver == null)
+            {
+                _hitReceiver = gameObject.AddComponent<CombatHitReceiver>();
+            }
+
+            _rigidbody2D = GetComponent<Rigidbody2D>();
+
+            if (_rigidbody2D == null)
+            {
+                _rigidbody2D = gameObject.AddComponent<Rigidbody2D>();
+            }
+
+            _rigidbody2D.bodyType = RigidbodyType2D.Dynamic;
+            _rigidbody2D.gravityScale = 0f;
+            _rigidbody2D.freezeRotation = true;
+            _rigidbody2D.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            _rigidbody2D.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+            _spriteRenderer = GetComponent<SpriteRenderer>();
+
+            if (_spriteRenderer == null)
+            {
+                _spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
+            }
+
+            // Several Boss_StageN.asset's serialized _sprite guids point at the wrong (often
+            // boss_stage1_topdown.png's own) sprite - same "sprite reference silently broke" class
+            // of bug as Mortar/Sentinel towers elsewhere in this project - so BossId is resolved
+            // against its known art path first and loads that directly instead of trusting the
+            // asset reference. Falls through to the asset's own _sprite for any future boss that
+            // isn't in this table and does have a correctly wired reference.
+            var sprite = ResolveBossIdSpritePath(_bossData != null ? _bossData.BossId : null) is string bossSpritePath
+                ? Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(bossSpritePath)
+                : (_bossData != null ? _bossData.Sprite : null);
+
+            if (sprite != null)
+            {
+                _spriteRenderer.sprite = sprite;
+                var targetSize = _bossData != null && _bossData.CombatTargetData != null ? _bossData.CombatTargetData.Size * 1.8f : new Vector2(2.4f, 2.4f);
+                Corebound.Gameplay.Shared.DebugSpriteFactory.FitTransformToSprite(transform, sprite, targetSize);
+            }
+            else if (_spriteRenderer.sprite == null)
+            {
+                _spriteRenderer.sprite = Corebound.Gameplay.Shared.DebugSpriteFactory.CreateSquare(32f);
+            }
+        }
+
+        private static string ResolveBossIdSpritePath(string bossId)
+        {
+            switch (bossId)
+            {
+                case "boss_stage1":
+                    return BossStage1SpritePath;
+                case "boss_stage2":
+                    return BossStage2SpritePath;
+                case "boss_stage3":
+                    return BossStage3SpritePath;
+                case "boss_stage4":
+                    return BossStage4SpritePath;
+                case "boss_stage5":
+                    return BossStage5SpritePath;
+                default:
+                    return null;
+            }
+        }
+
+        private static Vector2 ResolveHelperOffset(int groupIndex, int spawnIndex)
+        {
+            var angle = (groupIndex * 90f + spawnIndex * 30f) * Mathf.Deg2Rad;
+            return new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 1.6f;
+        }
+
+    }
+}

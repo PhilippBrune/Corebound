@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c74591a2b3e48f109283746501928374, type: 3}
+  m_Name: BossAudioCue_Default
+  m_EditorClassIdentifier: 
+  _warningClip: {fileID: 8300000, guid: dbc28db878554a819132aeefe1c02587, type: 3}
+  _warningFrequency: 220
+  _warningDurationSeconds: 0.25
+  _warningVolume: 0.15
+  _spawnClip: {fileID: 8300000, guid: 2b2d69fde5244798bf86323efba12b20, type: 3}
+  _spawnFrequency: 180
+  _spawnDurationSeconds: 0.35
+  _spawnVolume: 0.2
+  _phaseChangeClip: {fileID: 8300000, guid: ca132a5d680a40679153154a7b859660, type: 3}
+  _phaseChangeFrequency: 440
+  _phaseChangeDurationSeconds: 0.2
+  _phaseChangeVolume: 0.18
+  _defeatClip: {fileID: 8300000, guid: 63aef2c15da94fda89096451984935d7, type: 3}
+  _defeatFrequency: 587.33
+  _defeatDurationSeconds: 0.4
+  _defeatVolume: 0.25

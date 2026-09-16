@@ -1,0 +1,174 @@
+using System;
+using System.Collections.Generic;
+using Corebound.Gameplay.Cards;
+using Corebound.Gameplay.Towers;
+using Corebound.Gameplay.Weapons;
+using Corebound.SaveSystem;
+using UnityEngine;
+
+namespace Corebound.MetaProgression
+{
+    public sealed class MetaProgressionService : MonoBehaviour
+    {
+        [SerializeField] private MetaProgressionDefinitionData _definitionData;
+        [SerializeField] private UnityEngine.Object _saveManagerSource;
+
+        private MetaProgressionSaveData _saveData;
+
+        public event Action ProgressionChanged;
+
+        public MetaProgressionDefinitionData DefinitionData => _definitionData;
+
+        public int CurrencyAmount => EnsureLoaded().MetaCurrencyAmount;
+
+        public bool HasSeenTutorial => EnsureLoaded().HasSeenTutorial;
+
+        public bool IsMetaProgressionUnlocked => _definitionData != null && _definitionData.Unlocks != null && _definitionData.Unlocks.Length > 0;
+
+        private ISaveManager SaveManager => SaveManagerResolver.Resolve(_saveManagerSource);
+
+        private void Awake()
+        {
+            EnsureLoaded();
+        }
+
+        public bool IsUnlocked(string unlockId)
+        {
+            return EnsureLoaded().HasPurchased(unlockId);
+        }
+
+        public bool IsCardUnlocked(CardData cardData)
+        {
+            return cardData != null && (string.IsNullOrWhiteSpace(cardData.RequiredUnlockId) || IsUnlocked(cardData.RequiredUnlockId));
+        }
+
+        public bool IsTowerUnlocked(TowerData towerData)
+        {
+            return towerData != null && (string.IsNullOrWhiteSpace(towerData.RequiredUnlockId) || IsUnlocked(towerData.RequiredUnlockId));
+        }
+
+        // Shared by CardService/TowerService so the "prefer the live service, else read the
+        // save file directly" fallback chain exists in exactly one place.
+        public static bool IsUnlockSatisfied(MetaProgressionService service, ISaveManager saveManager, string requiredUnlockId)
+        {
+            if (string.IsNullOrWhiteSpace(requiredUnlockId))
+            {
+                return true;
+            }
+
+            if (service != null)
+            {
+                return service.IsUnlocked(requiredUnlockId);
+            }
+
+            if (saveManager == null)
+            {
+                return false;
+            }
+
+            var metaSaveData = saveManager.LoadMetaProgressionSaveData(new MetaProgressionSaveData());
+            return metaSaveData != null && metaSaveData.HasPurchased(requiredUnlockId);
+        }
+
+        public WeaponData ResolvePreferredWeapon(WeaponData fallbackWeapon)
+        {
+            EnsureLoaded();
+
+            if (_definitionData == null || _definitionData.Unlocks == null)
+            {
+                return fallbackWeapon;
+            }
+
+            for (var index = _definitionData.Unlocks.Length - 1; index >= 0; index--)
+            {
+                var unlockDefinition = _definitionData.Unlocks[index];
+
+                if (!_saveData.HasPurchased(unlockDefinition.UnlockId) || unlockDefinition.WeaponReward == null)
+                {
+                    continue;
+                }
+
+                return unlockDefinition.WeaponReward;
+            }
+
+            return fallbackWeapon;
+        }
+
+        public IReadOnlyList<StartLoadoutData> GetUnlockedStartLoadouts()
+        {
+            EnsureLoaded();
+            var loadouts = new List<StartLoadoutData>();
+
+            if (_definitionData == null || _definitionData.Unlocks == null)
+            {
+                return loadouts;
+            }
+
+            for (var index = 0; index < _definitionData.Unlocks.Length; index++)
+            {
+                var unlockDefinition = _definitionData.Unlocks[index];
+
+                if (_saveData.HasPurchased(unlockDefinition.UnlockId) && unlockDefinition.StartLoadoutReward != null)
+                {
+                    loadouts.Add(unlockDefinition.StartLoadoutReward);
+                }
+            }
+
+            return loadouts;
+        }
+
+        public bool TryPurchase(int index)
+        {
+            if (_definitionData == null || _definitionData.Unlocks == null || index < 0 || index >= _definitionData.Unlocks.Length)
+            {
+                return false;
+            }
+
+            var unlockDefinition = _definitionData.Unlocks[index];
+
+            if (!_saveData.TryPurchase(unlockDefinition.UnlockId, unlockDefinition.Cost))
+            {
+                return false;
+            }
+
+            if (SaveManager != null)
+            {
+                SaveManager.SaveMetaProgressionSaveData(_saveData);
+            }
+
+            ProgressionChanged?.Invoke();
+            return true;
+        }
+
+        public void SetHasSeenTutorial(bool hasSeenTutorial)
+        {
+            var saveData = EnsureLoaded();
+
+            if (saveData.HasSeenTutorial == hasSeenTutorial)
+            {
+                return;
+            }
+
+            saveData.SetHasSeenTutorial(hasSeenTutorial);
+
+            if (SaveManager != null)
+            {
+                SaveManager.SaveMetaProgressionSaveData(saveData);
+            }
+
+            ProgressionChanged?.Invoke();
+        }
+
+        private MetaProgressionSaveData EnsureLoaded()
+        {
+            if (_saveData != null)
+            {
+                return _saveData;
+            }
+
+            var defaults = _definitionData != null ? _definitionData.CreateDefaultSaveData() : new MetaProgressionSaveData();
+            _saveData = SaveManager != null ? SaveManager.LoadMetaProgressionSaveData(defaults) : defaults;
+            return _saveData;
+        }
+    }
+}

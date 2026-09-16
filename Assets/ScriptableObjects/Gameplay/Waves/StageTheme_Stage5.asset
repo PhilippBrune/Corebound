@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f4b9a1d2cbe4c8ab1e1d93f4b8b1131, type: 3}
+  m_Name: StageTheme_Stage5
+  m_EditorClassIdentifier:
+  _themeId: theme_stage_05
+  _displayName: Core Nexus
+  _groundTexture: {fileID: 0}
+  _groundTexturePath: Assets/Art/Environment/Arena/stage5_ground_tileset.png
+  _boundaryTexture: {fileID: 0}
+  _boundaryTexturePath: Assets/Art/Environment/Arena/stage5_boundary_set.png
+  _propTexture: {fileID: 0}
+  _propTexturePath: Assets/Art/Environment/Arena/stage5_prop_set.png
+  _coreTexture: {fileID: 0}
+  _coreTexturePath: Assets/Art/Environment/Arena/core_main_sprite.png
+  _spawnGateTexture: {fileID: 0}
+  _spawnGateTexturePath: Assets/Art/Environment/Arena/stage1_spawn_gate.png
+  _groundTint: {r: 1, g: 0.95, b: 0.75, a: 1}
+  _boundaryTint: {r: 0.85, g: 0.75, b: 0.35, a: 0.95}
+  _propTint: {r: 1, g: 0.96, b: 0.8, a: 1}
+  _spawnGateTint: {r: 1, g: 0.9, b: 0.5, a: 0.96}
+  _arenaSize: {x: 20, y: 13}
+  _boundaryThickness: 0.8
+  _coreScale: 1.6
+  _spawnGateWorldSize: {x: 3.2, y: 1.8}
+  _spawnGateLocalPosition: {x: 0, y: -5}

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2454c4bc552c43248007165f393ed78c, type: 3}
+  m_Name: AudioCue_CombatDeath
+  m_EditorClassIdentifier:
+  _clipVariations:
+  - {fileID: 8300000, guid: bd37655dfbe149d4bb1de26d82c1885a, type: 3}
+  _frequencyVariations:
+  - 220
+  - 196
+  - 246.94
+  _durationSeconds: 0.22
+  _volume: 0.2
+  _pitchRange: {x: 0.92, y: 1.04}

@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c0bf1b7559340a18d3824e1c3d7bb26, type: 3}
+  m_Name: Stage_04
+  m_EditorClassIdentifier:
+  _stageId: stage_04
+  _stageIndex: 4
+  _displayName: Cryo Vaults
+  _themeData: {fileID: 11400000, guid: 45b025fc479643f1b647383c1c7bdb49, type: 2}
+  _stageRewardData: {fileID: 11400000, guid: 3467bfc60aed467e823aa70f0ee8dcb0, type: 2}
+  _stageEnemyPoolData: {fileID: 11400000, guid: adc94635888a44f1995e8d375daacb17, type: 2}
+  _progressionData: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}
+  _shopData: {fileID: 11400000, guid: 0ce1469f9a4449c79f5c7a0eb0b4d2f8, type: 2}
+  _intermissionDurationSeconds: 20
+  _enemySpawnOrigin: {x: 0, y: -4.5}
+  _playerStartPosition: {x: 0, y: -1}
+  _postRewardPlayerPosition: {x: 0, y: -2.4}
+  _waves:
+  - {fileID: 11400000, guid: 348ca9e43e4f469ca73135df875478c8, type: 2}
+  - {fileID: 11400000, guid: 4799d4e3b7a94a50b6257bf2f4b49761, type: 2}
+  - {fileID: 11400000, guid: b363391b58d14cc5be2ffbac0f53b4e8, type: 2}
+  - {fileID: 11400000, guid: 26bfa68dcb7e4518ad2b9574067dbf72, type: 2}
+  - {fileID: 11400000, guid: 2802f0f0f7f2476888dfcc6633c0e8cb, type: 2}
+  - {fileID: 11400000, guid: af41d1dc791b4565b46c8a40986ce1be, type: 2}
+  _bossData: {fileID: 11400000, guid: 79efd988b32f4ed28972d66ad4ecf7a7, type: 2}
+  _spawnPoints:
+  - _position: {x: -5.5, y: -3.5}
+    _fanRadius: {x: 2.0, y: 1.6}
+    _fanAngleStepDegrees: 80
+  - _position: {x: 5.5, y: 3.5}
+    _fanRadius: {x: 2.0, y: 1.6}
+    _fanAngleStepDegrees: 80
+  _towerSlotPositions:
+  - {x: -4.0, y: -1.2}
+  - {x: -1.2, y: -2.8}
+  - {x: 1.6, y: -2.4}
+  - {x: 4.4, y: -0.6}

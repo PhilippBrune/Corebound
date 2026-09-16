@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5d5ec13c89c4146953d6072f26106f6, type: 3}
+  m_Name: BossPhase_02
+  m_EditorClassIdentifier: 
+  _phaseLabel: Enrage Burst
+  _triggerHealthNormalized: 0.5
+  _attackPatternData: {fileID: 11400000, guid: 4788cebb5a154bf3ab6b42e545054e16, type: 2}
+  _helperSpawnGroups:
+  - {fileID: 11400000, guid: 85d095963fbe46c88ca2ce590ad99a3f, type: 2}

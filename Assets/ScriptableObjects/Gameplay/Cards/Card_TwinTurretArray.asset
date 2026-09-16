@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04b43e4f37ab4f7ba068087eaf824db0, type: 3}
+  m_Name: Card_TwinTurretArray
+  m_EditorClassIdentifier:
+  _cardId: card_twin_turret_array
+  _displayName: Twin Turret Array
+  _description: A major surge to Tower damage for a heavily fortified Build.
+  _rarity: 2
+  _requiredUnlockId:
+  _effects:
+  - {fileID: 11400000, guid: 5585ba2869c34260a4c1c45d9effa7ce, type: 2}
+  _stackable: 0

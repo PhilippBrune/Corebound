@@ -1,0 +1,546 @@
+fileFormatVersion: 2
+guid: ebcd540f461e3de4d81f38e0fa5a4732
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 8426533956963816998
+    second: vfx_enemy_death_burst_0
+  - first:
+      213: -2921851388389063818
+    second: vfx_enemy_death_burst_1
+  - first:
+      213: 4520741551248713566
+    second: vfx_enemy_death_burst_2
+  - first:
+      213: -985059299508815009
+    second: vfx_enemy_death_burst_3
+  - first:
+      213: -7148393448732424709
+    second: vfx_enemy_death_burst_4
+  - first:
+      213: 7570737352298132853
+    second: vfx_enemy_death_burst_5
+  - first:
+      213: 2527626451780280977
+    second: vfx_enemy_death_burst_6
+  - first:
+      213: 4477055572808961482
+    second: vfx_enemy_death_burst_7
+  - first:
+      213: 1419902341445709360
+    second: vfx_enemy_death_burst_8
+  - first:
+      213: -8904256842279001445
+    second: vfx_enemy_death_burst_9
+  - first:
+      213: -8444917758399179041
+    second: vfx_enemy_death_burst_10
+  - first:
+      213: 2721633255156700948
+    second: vfx_enemy_death_burst_11
+  - first:
+      213: -4212296318469404476
+    second: vfx_enemy_death_burst_12
+  - first:
+      213: 5934231771483499415
+    second: vfx_enemy_death_burst_13
+  - first:
+      213: 4440299488573441638
+    second: vfx_enemy_death_burst_14
+  - first:
+      213: 8154998951362159127
+    second: vfx_enemy_death_burst_15
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_0
+      rect:
+        serializedVersion: 2
+        x: 122
+        y: 117
+        width: 696
+        height: 672
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6265898fcff01f470800000000000000
+      internalID: 8426533956963816998
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_1
+      rect:
+        serializedVersion: 2
+        x: 352
+        y: 776
+        width: 14
+        height: 31
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 673869494af7377d0800000000000000
+      internalID: -2921851388389063818
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_2
+      rect:
+        serializedVersion: 2
+        x: 418
+        y: 785
+        width: 14
+        height: 22
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e57278b2d76ecbe30800000000000000
+      internalID: 4520741551248713566
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_3
+      rect:
+        serializedVersion: 2
+        x: 477
+        y: 771
+        width: 19
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5bf41249cd5452f0800000000000000
+      internalID: -985059299508815009
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_4
+      rect:
+        serializedVersion: 2
+        x: 511
+        y: 734
+        width: 52
+        height: 73
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf5039d380ecbcc90800000000000000
+      internalID: -7148393448732424709
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_5
+      rect:
+        serializedVersion: 2
+        x: 104
+        y: 483
+        width: 93
+        height: 98
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 575f28ba289a01960800000000000000
+      internalID: 7570737352298132853
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_6
+      rect:
+        serializedVersion: 2
+        x: 97
+        y: 392
+        width: 63
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 192ae3faddee31320800000000000000
+      internalID: 2527626451780280977
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_7
+      rect:
+        serializedVersion: 2
+        x: 120
+        y: 423
+        width: 44
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: acd06f0b252b12e30800000000000000
+      internalID: 4477055572808961482
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_8
+      rect:
+        serializedVersion: 2
+        x: 787
+        y: 389
+        width: 33
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 03eed9518a184b310800000000000000
+      internalID: 1419902341445709360
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_9
+      rect:
+        serializedVersion: 2
+        x: 120
+        y: 326
+        width: 29
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b926e172499bd6480800000000000000
+      internalID: -8904256842279001445
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_10
+      rect:
+        serializedVersion: 2
+        x: 786
+        y: 297
+        width: 34
+        height: 24
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd69a35ba00adca80800000000000000
+      internalID: -8444917758399179041
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_11
+      rect:
+        serializedVersion: 2
+        x: 286
+        y: 100
+        width: 43
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4175186960f25c520800000000000000
+      internalID: 2721633255156700948
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_12
+      rect:
+        serializedVersion: 2
+        x: 321
+        y: 109
+        width: 32
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4c802f8e0daea85c0800000000000000
+      internalID: -4212296318469404476
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_13
+      rect:
+        serializedVersion: 2
+        x: 361
+        y: 86
+        width: 16
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79b6c12fa50aa5250800000000000000
+      internalID: 5934231771483499415
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_14
+      rect:
+        serializedVersion: 2
+        x: 503
+        y: 71
+        width: 23
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 666c4c0fbdc1f9d30800000000000000
+      internalID: 4440299488573441638
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: vfx_enemy_death_burst_15
+      rect:
+        serializedVersion: 2
+        x: 543
+        y: 98
+        width: 35
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 712ef97d6506c2170800000000000000
+      internalID: 8154998951362159127
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      vfx_enemy_death_burst_0: 8426533956963816998
+      vfx_enemy_death_burst_1: -2921851388389063818
+      vfx_enemy_death_burst_10: -8444917758399179041
+      vfx_enemy_death_burst_11: 2721633255156700948
+      vfx_enemy_death_burst_12: -4212296318469404476
+      vfx_enemy_death_burst_13: 5934231771483499415
+      vfx_enemy_death_burst_14: 4440299488573441638
+      vfx_enemy_death_burst_15: 8154998951362159127
+      vfx_enemy_death_burst_2: 4520741551248713566
+      vfx_enemy_death_burst_3: -985059299508815009
+      vfx_enemy_death_burst_4: -7148393448732424709
+      vfx_enemy_death_burst_5: 7570737352298132853
+      vfx_enemy_death_burst_6: 2527626451780280977
+      vfx_enemy_death_burst_7: 4477055572808961482
+      vfx_enemy_death_burst_8: 1419902341445709360
+      vfx_enemy_death_burst_9: -8904256842279001445
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

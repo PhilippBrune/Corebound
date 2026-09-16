@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f4b9a1d2cbe4c8ab1e1d93f4b8b1131, type: 3}
+  m_Name: StageTheme_Stage1
+  m_EditorClassIdentifier: 
+  _themeId: theme_stage_01_foundry
+  _displayName: Foundry Approach
+  _groundTexture: {fileID: 0}
+  _groundTexturePath: Assets/Art/Environment/Arena/stage1_ground_tileset.png
+  _boundaryTexture: {fileID: 0}
+  _boundaryTexturePath: Assets/Art/Environment/Arena/stage1_boundary_set.png
+  _propTexture: {fileID: 0}
+  _propTexturePath: Assets/Art/Environment/Arena/stage1_prop_set.png
+  _coreTexture: {fileID: 0}
+  _coreTexturePath: Assets/Art/Environment/Arena/core_main_sprite.png
+  _spawnGateTexture: {fileID: 0}
+  _spawnGateTexturePath: Assets/Art/Environment/Arena/stage1_spawn_gate.png
+  _groundTint: {r: 1, g: 1, b: 1, a: 1}
+  _boundaryTint: {r: 0.12, g: 0.16, b: 0.22, a: 0.95}
+  _propTint: {r: 1, g: 1, b: 1, a: 0.92}
+  _spawnGateTint: {r: 1, g: 1, b: 1, a: 0.96}
+  _arenaSize: {x: 16, y: 10}
+  _boundaryThickness: 1.25
+  _coreScale: 1.4
+  _spawnGateWorldSize: {x: 3.2, y: 1.8}
+  _spawnGateLocalPosition: {x: 0, y: -5}

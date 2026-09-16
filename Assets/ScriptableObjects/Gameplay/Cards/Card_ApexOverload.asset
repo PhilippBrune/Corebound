@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04b43e4f37ab4f7ba068087eaf824db0, type: 3}
+  m_Name: Card_ApexOverload
+  m_EditorClassIdentifier:
+  _cardId: card_apex_overload
+  _displayName: Apex Overload
+  _description: Legendary dual-scaling surge that raises both Weapon and Tower damage at once.
+  _rarity: 3
+  _requiredUnlockId:
+  _effects:
+  - {fileID: 11400000, guid: 05f8ab5d2edd496696b72df07985ad0f, type: 2}
+  - {fileID: 11400000, guid: ff51a25cf81a4497b354ec6bb553a526, type: 2}
+  _stackable: 0

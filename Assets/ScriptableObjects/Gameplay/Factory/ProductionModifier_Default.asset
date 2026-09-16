@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2580d9a7807c40c7a3804cd244a8bc63, type: 3}
+  m_Name: ProductionModifier_Default
+  m_EditorClassIdentifier:
+  _duplicateProducerEfficiencyMultiplier: 0.5
+  _maxDuplicateProducersCounted: 4

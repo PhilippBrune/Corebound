@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00e2a1c4ce2f4891aa0a9b1355b5c013, type: 3}
+  m_Name: SpawnGroup_Wave4
+  m_EditorClassIdentifier: 
+  _enemyData: {fileID: 11400000, guid: 9c061785ab0041f1ba5b63011a3964d2, type: 2}
+  _eliteModifierData: {fileID: 0}
+  _count: 4
+  _initialDelaySeconds: 0
+  _spawnIntervalSeconds: 0.35

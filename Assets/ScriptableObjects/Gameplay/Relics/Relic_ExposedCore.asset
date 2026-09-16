@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 930fa148050e41ad9c0c5da6afc2366b, type: 3}
+  m_Name: Relic_ExposedCore
+  m_EditorClassIdentifier:
+  _relicId: relic_exposed_core
+  _displayName: Exposed Core
+  _description: Strips the Core's shielding to feed its Towers - a massive Tower damage surge, but the Player and Core take 18% more damage for the rest of the run.
+  _effects:
+  - {fileID: 11400000, guid: c8d1e274f9b841278ab15913a4eb0099, type: 2}
+  - {fileID: 11400000, guid: f7f1803485d449c8b4e7d44e454a3630, type: 2}
+  _requiredUnlockId:

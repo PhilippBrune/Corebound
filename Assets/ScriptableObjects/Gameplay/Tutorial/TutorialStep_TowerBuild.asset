@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3a6c524aac44297a46a9e5b3bf5afe5, type: 3}
+  m_Name: TutorialStep_TowerBuild
+  m_EditorClassIdentifier:
+  _stepType: 3
+  _promptText: Stand at a glowing Tower Slot and press Interact to build a Tower.
+  _beatTitle: Build a Tower
+  _beatBody: Glowing Tower Slots around the arena let you build defenses. Stand
+    near one and press Interact to build - Towers fight alongside you and can
+    also generate Resources over time.

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04df448d9a2d4a53a4ce4d81d2372ae7, type: 3}
+  m_Name: EnemyBehaviour_Chaser
+  m_EditorClassIdentifier: 
+  _role: 0
+  _moveSpeed: 2.8
+  _playerAggroRange: 4
+  _preferredCombatDistance: 1.1
+  _strafeSpeedMultiplier: 0.3
+  _chargeSpeedMultiplier: 1.6
+  _chargeDurationSeconds: 0.35
+  _chargeCooldownSeconds: 2.6

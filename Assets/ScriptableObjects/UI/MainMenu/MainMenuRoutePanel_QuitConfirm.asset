@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93f44c1fb01f4d988191ec8f2756b199, type: 3}
+  m_Name: MainMenuRoutePanel_QuitConfirm
+  m_EditorClassIdentifier: 
+  _route: 5
+  _title: Quit Corebound
+  _subtitle: Leave the current session
+  _summary: This closes the application. In the Unity Editor, the same action leaves Play Mode instead.
+  _detailLines:
+  - Continue data remains available for the next session.
+  - Confirm quits immediately.
+  - Cancel returns to the Main Menu.
+  _footerHint: Confirm quits the application. Cancel returns to the Main Menu.

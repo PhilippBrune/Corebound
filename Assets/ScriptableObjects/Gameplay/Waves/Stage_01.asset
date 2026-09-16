@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c0bf1b7559340a18d3824e1c3d7bb26, type: 3}
+  m_Name: Stage_01
+  m_EditorClassIdentifier: 
+  _stageId: stage_01
+  _stageIndex: 1
+  _displayName: Stage 1
+  _themeData: {fileID: 11400000, guid: b4830fcd680847a69741c368c2a65c3e, type: 2}
+  _stageRewardData: {fileID: 11400000, guid: 889ae94d2fc34d61b5ea4da28a0c5118, type: 2}
+  _stageEnemyPoolData: {fileID: 11400000, guid: 6df7c4d0a2d3497d998e1e3a0b277ace, type: 2}
+  _progressionData: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}
+  _shopData: {fileID: 11400000, guid: 0ce1469f9a4449c79f5c7a0eb0b4d2f8, type: 2}
+  _intermissionDurationSeconds: 20
+  _enemySpawnOrigin: {x: 0, y: -4.5}
+  _playerStartPosition: {x: 0, y: -1}
+  _postRewardPlayerPosition: {x: 0, y: -2.4}
+  _waves:
+  - {fileID: 11400000, guid: 348ca9e43e4f469ca73135df875478c8, type: 2}
+  - {fileID: 11400000, guid: 4799d4e3b7a94a50b6257bf2f4b49761, type: 2}
+  - {fileID: 11400000, guid: b363391b58d14cc5be2ffbac0f53b4e8, type: 2}
+  - {fileID: 11400000, guid: 26bfa68dcb7e4518ad2b9574067dbf72, type: 2}
+  - {fileID: 11400000, guid: 2802f0f0f7f2476888dfcc6633c0e8cb, type: 2}
+  - {fileID: 11400000, guid: af41d1dc791b4565b46c8a40986ce1be, type: 2}
+  _bossData: {fileID: 11400000, guid: 6095d2d88fbf4eb8ab93e5555a12cbec, type: 2}

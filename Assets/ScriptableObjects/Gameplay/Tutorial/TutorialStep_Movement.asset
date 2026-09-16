@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3a6c524aac44297a46a9e5b3bf5afe5, type: 3}
+  m_Name: TutorialStep_Movement
+  m_EditorClassIdentifier:
+  _stepType: 0
+  _promptText: Move around the arena to get a feel for the Core you are defending.
+  _beatTitle: Welcome to Corebound
+  _beatBody: The glowing structure at the center of the arena is the Core. Protect
+    it at all costs - if it is destroyed, the run ends. Use the Left Stick or WASD
+    to move. Confirm to begin.

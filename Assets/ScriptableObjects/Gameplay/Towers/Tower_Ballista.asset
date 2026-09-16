@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46cbc8ec87fc416ba2ef95170a7fb6c4, type: 3}
+  m_Name: Tower_Ballista
+  m_EditorClassIdentifier: 
+  _towerId: tower_ballista
+  _displayName: Ballista Tower
+  _description: Reliable single-target support tower for the first Stage.
+  _sprite: {fileID: 21300000, guid: 9a3ef56cb96f29a469e713d6c306924d, type: 3}
+  _buildCost: 14
+  _range: 7
+  _fireIntervalSeconds: 1.05
+  _requiredUnlockId: 
+  _upgradeLevels:
+  - {fileID: 11400000, guid: 4abce1c640f54b4bb2e0f93875f3f76d, type: 2}
+  - {fileID: 11400000, guid: d9b07f6c35bb4df9bbca22b4d7d3e14f, type: 2}
+  _damageProfile: {fileID: 11400000, guid: 69f70f457c6d4411e967afe4bdd66c72, type: 2}
+  _projectile: {fileID: 11400000, guid: d15088a6b81b4927b674572c54fdd0c8, type: 2}
+  _debugColor: {r: 1, g: 0.93, b: 0.52, a: 1}

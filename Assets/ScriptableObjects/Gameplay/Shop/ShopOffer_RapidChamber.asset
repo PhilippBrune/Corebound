@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e73449cbad910a4ebf651b49747641c, type: 3}
+  m_Name: ShopOffer_RapidChamber
+  m_EditorClassIdentifier: 
+  _offerId: shop_offer_rapid_chamber
+  _offerType: 0
+  _cardData: {fileID: 11400000, guid: 743b9eac1b5a406b8bf06a6c5c8a2660, type: 2}
+  _cost: 8
+  _labelOverride: 
+  _descriptionOverride: 
+  _minStageIndex: 1
+  _maxStageIndex: 99

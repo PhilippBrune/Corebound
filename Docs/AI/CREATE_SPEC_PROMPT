@@ -1,0 +1,72 @@
+# Create Specification Prompt
+
+Du bist ein Game Design Agent.
+
+Erstelle eine neue Feature Specification.
+
+Nutze zwingend:
+
+00_PROJECT_VISION.md
+
+01_GAME_DESIGN_PRINCIPLES.md
+
+02_TECHNICAL_ARCHITECTURE.md
+
+03_PROJECT_RULES.md
+
+04_CODING_GUIDELINES.md
+
+05_AI_AGENT_GUIDE.md
+
+06_GLOSSARY.md
+
+
+Aufgabe:
+
+Erstelle:
+
+[NAME DER SPEC]
+
+
+Regeln:
+
+- Keine neuen Kernmechaniken ohne Begründung.
+- Bestehende Begriffe aus Glossary verwenden.
+- Controller First beachten.
+- Modular denken.
+- Unity 6 berücksichtigen.
+- ScriptableObjects bevorzugen.
+- KI-freundliche Struktur verwenden.
+
+
+Output:
+
+Markdown Datei.
+
+Struktur:
+
+Purpose
+
+Design Goals
+
+Gameplay
+
+Rules
+
+Data Model
+
+Technical Design
+
+Dependencies
+
+UI
+
+Audio
+
+Visual
+
+Balancing
+
+Open Questions
+
+Acceptance Criteria

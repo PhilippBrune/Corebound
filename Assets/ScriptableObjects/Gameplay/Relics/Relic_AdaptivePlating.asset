@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 930fa148050e41ad9c0c5da6afc2366b, type: 3}
+  m_Name: Relic_AdaptivePlating
+  m_EditorClassIdentifier:
+  _relicId: relic_adaptive_plating
+  _displayName: Adaptive Plating
+  _description: Unpowered armor plating weighs the Player down - 10% slower movement - until it calibrates. Evolves after 8 waves are cleared.
+  _effects:
+  - {fileID: 11400000, guid: 6388f015e4434de989c6743f61f559bc, type: 2}
+  _requiredUnlockId:
+  _evolutionCondition: 2
+  _evolutionThreshold: 8
+  _evolvedDisplayName: Adaptive Plating (Calibrated)
+  _evolvedDescription: Calibration complete - the plating now moves with you, granting bonus movement speed and reducing damage taken for the rest of the run.
+  _evolvedEffects:
+  - {fileID: 11400000, guid: 1e3856f7944f4170b6fe4f3d9764ef0c, type: 2}
+  - {fileID: 11400000, guid: 04ed60f64abb4adcb8df460b68216e70, type: 2}

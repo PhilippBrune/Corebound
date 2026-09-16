@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c0bf1b7559340a18d3824e1c3d7bb26, type: 3}
+  m_Name: Stage_05
+  m_EditorClassIdentifier:
+  _stageId: stage_05
+  _stageIndex: 5
+  _displayName: Core Nexus
+  _themeData: {fileID: 11400000, guid: 1087de0a14564d73aa8c816028ebe01c, type: 2}
+  _stageRewardData: {fileID: 11400000, guid: 15c4a9672ae544f8b91ebc3437c8542c, type: 2}
+  _stageEnemyPoolData: {fileID: 11400000, guid: 66a2f0e6d3ca457888830192c5a6850c, type: 2}
+  _progressionData: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}
+  _shopData: {fileID: 11400000, guid: 0ce1469f9a4449c79f5c7a0eb0b4d2f8, type: 2}
+  _intermissionDurationSeconds: 22
+  _enemySpawnOrigin: {x: 0, y: -4.5}
+  _playerStartPosition: {x: 0, y: -1}
+  _postRewardPlayerPosition: {x: 0, y: -2.4}
+  _waves:
+  - {fileID: 11400000, guid: 348ca9e43e4f469ca73135df875478c8, type: 2}
+  - {fileID: 11400000, guid: 4799d4e3b7a94a50b6257bf2f4b49761, type: 2}
+  - {fileID: 11400000, guid: b363391b58d14cc5be2ffbac0f53b4e8, type: 2}
+  - {fileID: 11400000, guid: 26bfa68dcb7e4518ad2b9574067dbf72, type: 2}
+  - {fileID: 11400000, guid: 2802f0f0f7f2476888dfcc6633c0e8cb, type: 2}
+  - {fileID: 11400000, guid: af41d1dc791b4565b46c8a40986ce1be, type: 2}
+  _bossData: {fileID: 11400000, guid: 150468403bca45feb1221eda0c984438, type: 2}
+  _spawnPoints:
+  - _position: {x: -8.5, y: -4.5}
+    _fanRadius: {x: 2.4, y: 2.0}
+    _fanAngleStepDegrees: 60
+  - _position: {x: 8.5, y: -4.5}
+    _fanRadius: {x: 2.4, y: 2.0}
+    _fanAngleStepDegrees: 60
+  - _position: {x: 0.0, y: 5.5}
+    _fanRadius: {x: 2.6, y: 1.8}
+    _fanAngleStepDegrees: 90
+  - _position: {x: 0.0, y: -6.0}
+    _fanRadius: {x: 2.2, y: 1.6}
+    _fanAngleStepDegrees: 90
+  _towerSlotPositions:
+  - {x: -6.5, y: -1.8}
+  - {x: -3.2, y: -3.4}
+  - {x: 0.0, y: -4.0}
+  - {x: 3.2, y: -3.4}
+  - {x: 6.5, y: -1.8}

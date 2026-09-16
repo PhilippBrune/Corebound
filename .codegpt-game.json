@@ -1,0 +1,12 @@
+{
+  "name": "corebound",
+  "engine": "unity",
+  "launch": { "cmd": "${UNITY_EXE}", "args": ["-projectPath", "."] },
+  "log": { "format": "unity", "paths": ["${UNITY_LOG}"] },
+  "sourceRoots": ["Assets"],
+  "window": "Unity 6.3 LTS",
+  "vars": {
+    "UNITY_EXE": "C:/Program Files/Unity/Hub/Editor/6000.3.10f1/Editor/Unity.exe",
+    "UNITY_LOG": "C:/Users/Philipp/AppData/Local/Unity/Editor/Editor.log"
+  }
+}

@@ -1,0 +1,52 @@
+name: COREBOUND Local Agent
+version: 1.0.0
+schema: v1
+
+models:
+  - name: COREBOUND Agent - Llama 3.1 8B
+    provider: ollama
+    model: llama3.1:8b
+    apiBase: http://127.0.0.1:11434
+
+    roles:
+      - chat
+      - edit
+      - apply
+
+    capabilities:
+      - tool_use
+
+    defaultCompletionOptions:
+      contextLength: 16384
+      temperature: 0.2
+      maxTokens: 4096
+
+    chatOptions:
+      baseAgentSystemMessage: |
+        You are the COREBOUND local development agent.
+
+        COREBOUND is a Unity game project using C#.
+
+        Before taking action:
+        1. Inspect the actual workspace.
+        2. Read relevant COREBOUND documentation.
+        3. Identify the applicable agent role.
+        4. Identify the applicable workflow.
+        5. Verify claims against actual files.
+
+        Never invent:
+        - file paths
+        - agent names
+        - workflows
+        - specifications
+        - classes
+        - systems
+        - project requirements
+
+        If information cannot be verified from the workspace, state:
+        NOT VERIFIED
+
+        Do not use Godot.
+        Do not create .gd files.
+
+        Prefer actual workspace tools over assumptions.

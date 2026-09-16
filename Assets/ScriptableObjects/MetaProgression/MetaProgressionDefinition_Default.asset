@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11dfc418ab7e00e41ab7c5eae2878777, type: 3}
+  m_Name: MetaProgressionDefinition_Default
+  m_EditorClassIdentifier: 
+  _metaCurrencyLabel: Core Shards
+  _startingCurrencyAmount: 8
+  _startingTutorialSeen: 0
+  _unlocks:
+  - _unlockId: unlock_weapon_spread
+    _title: Spread Weapon License
+    _summary: Unlocks the third starter Weapon path for wider crowd control builds.
+    _cost: 3
+    _targetSystem: Weapons
+    _weaponReward: {fileID: 11400000, guid: dd8dfd6c3cc144698807a6cba3ca3b5f, type: 2}
+    _towerReward: {fileID: 0}
+    _cardReward: {fileID: 0}
+    _startLoadoutReward: {fileID: 0}
+  - _unlockId: unlock_tower_support
+    _title: Support Tower Blueprint
+    _summary: Expands the Tower roster with a supportive automation option for later slices.
+    _cost: 5
+    _targetSystem: Towers
+    _weaponReward: {fileID: 0}
+    _towerReward: {fileID: 11400000, guid: 2d70c0b8d10e4b34904ff1c282c1b646, type: 2}
+    _cardReward: {fileID: 0}
+    _startLoadoutReward: {fileID: 0}
+  - _unlockId: unlock_card_status
+    _title: Status Card Archive
+    _summary: Grants access to future Burn and Freeze leaning Card pools.
+    _cost: 7
+    _targetSystem: Cards
+    _weaponReward: {fileID: 0}
+    _towerReward: {fileID: 0}
+    _cardReward: {fileID: 11400000, guid: 67d6fe7422bb4f55a1f16a0df6760ca7, type: 2}
+    _startLoadoutReward: {fileID: 0}
+  - _unlockId: unlock_loadout_engineer
+    _title: Engineer Start Package
+    _summary: Grants a future Start Loadout focused on Spread Weapon, support infrastructure and early economy.
+    _cost: 9
+    _targetSystem: Start Loadout
+    _weaponReward: {fileID: 0}
+    _towerReward: {fileID: 0}
+    _cardReward: {fileID: 0}
+    _startLoadoutReward: {fileID: 11400000, guid: 8120ba8cae284dba8b9462c0c20fe8d9, type: 2}

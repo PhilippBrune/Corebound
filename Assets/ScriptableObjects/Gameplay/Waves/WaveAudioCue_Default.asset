@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c5b4a3d2e1f0987abcdeffedcba5678, type: 3}
+  m_Name: WaveAudioCue_Default
+  m_EditorClassIdentifier: 
+  _waveStartClip: {fileID: 8300000, guid: cb2f85014f3344f7aa7a3288fe38a8ca, type: 3}
+  _waveStartFrequency: 392
+  _waveStartDurationSeconds: 0.14
+  _waveStartVolume: 0.12
+  _eliteWaveClip: {fileID: 8300000, guid: c2abb42f5cc14d70bab9a59045559075, type: 3}
+  _eliteWaveFrequency: 311.13
+  _eliteWaveDurationSeconds: 0.18
+  _eliteWaveVolume: 0.14
+  _waveCompleteClip: {fileID: 8300000, guid: a77dd540379e4f72a7fd801ffa25cb5b, type: 3}
+  _waveCompleteFrequency: 659.25
+  _waveCompleteDurationSeconds: 0.18
+  _waveCompleteVolume: 0.14
+  _intermissionClip: {fileID: 8300000, guid: 658df7f188624de980616e453d6c24c1, type: 3}
+  _intermissionFrequency: 523.25
+  _intermissionDurationSeconds: 0.12
+  _intermissionVolume: 0.1
+  _stageCompleteClip: {fileID: 8300000, guid: 9304409d742f461699e964ccc351ff19, type: 3}
+  _stageCompleteFrequency: 783.99
+  _stageCompleteDurationSeconds: 0.26
+  _stageCompleteVolume: 0.18

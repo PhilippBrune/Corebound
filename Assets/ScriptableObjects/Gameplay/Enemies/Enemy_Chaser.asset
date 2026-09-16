@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a28e884a6cd64c0f9f6329b10d1b6da7, type: 3}
+  m_Name: Enemy_Chaser
+  m_EditorClassIdentifier: 
+  _enemyId: enemy_chaser
+  _displayName: Chaser
+  _sprite: {fileID: 21300000, guid: cef00a4d60a10fc4a80842c7fe6af5ff, type: 3}
+  _behaviourData: {fileID: 11400000, guid: 494baa80fa744d6182e98f7b7841ccdd, type: 2}
+  _attackData: {fileID: 11400000, guid: 56f44c08ece749f89d88ea2fb2d3ad64, type: 2}
+  _rewardData: {fileID: 11400000, guid: 3ff9af9d2be04dc5bd54633a5f67aaea, type: 2}
+  _combatTargetData: {fileID: 11400000, guid: f7a9b3e2b5bf4f3a94df4c3f06a45d84, type: 2}
+  _hitReactionData: {fileID: 11400000, guid: 36ed1d2345654632a480b87d8b892e9a, type: 2}
+  _statusDefinitions:
+  - {fileID: 11400000, guid: 4600659f79d547258c7e3da3a7aa32e1, type: 2}
+  - {fileID: 11400000, guid: a06061af6f3942ce8f1140eb13f0e7cf, type: 2}
+  _debugColor: {r: 1, g: 0.36, b: 0.36, a: 1}

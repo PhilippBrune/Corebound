@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b1d44866d4449ff8f0ca4c85141dbe3, type: 3}
+  m_Name: EnemyAttack_Ranged
+  m_EditorClassIdentifier: 
+  _attackMode: 1
+  _contactDamage: 1.2
+  _contactIntervalSeconds: 0.8
+  _attackRange: 7.5
+  _windupSeconds: 0.35
+  _fireIntervalSeconds: 1.4
+  _projectileCount: 1
+  _spreadAngleDegrees: 0
+  _projectileData: {fileID: 11400000, guid: 13370106cf1742c98cb82fb95fb9f4f9, type: 2}
+  _appliesStatusEffect: 1
+  _statusEffectType: 1

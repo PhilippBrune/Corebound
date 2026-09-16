@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c9a91dfc84841a4bfefc9c4e6fb21a5, type: 3}
+  m_Name: StageEnemyPool_Stage5
+  m_EditorClassIdentifier:
+  _entries:
+  - _enemyData: {fileID: 11400000, guid: 9c061785ab0041f1ba5b63011a3964d2, type: 2}
+    _weight: 1.2
+    _canSpawnAsElite: 1
+  - _enemyData: {fileID: 11400000, guid: 030d7cf4ef604a11825a2663933c43e5, type: 2}
+    _weight: 1.2
+    _canSpawnAsElite: 1
+  - _enemyData: {fileID: 11400000, guid: 211e102329f949c7bed27392178e3990, type: 2}
+    _weight: 1.2
+    _canSpawnAsElite: 1

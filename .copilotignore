@@ -1,0 +1,6 @@
+# Exclude build outputs, heavy assets, and logs
+Build/
+Library/
+Logs/
+*.meta
+Docs/Specs/Drafts/

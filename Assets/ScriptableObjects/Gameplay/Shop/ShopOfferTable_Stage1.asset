@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88c5e56f0eaf4c1b98885f9c6d7ab143, type: 3}
+  m_Name: ShopOfferTable_Stage1
+  m_EditorClassIdentifier: 
+  _offers:
+  - {fileID: 11400000, guid: 40c333f83f0e47129f6c4239514a4ffd, type: 2}
+  - {fileID: 11400000, guid: 5f8e0a12b0c84b8a90d56a671f7af291, type: 2}
+  - {fileID: 11400000, guid: b1d63e5a3f1c4f62b1d29f99d2a8fe11, type: 2}
+  - {fileID: 11400000, guid: c7e4a1d98f9646e4b829dd084eb1a204, type: 2}
+  _maxOfferCount: 3

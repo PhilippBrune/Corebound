@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0840f8ae6d184190ae4664fed7fc2948, type: 3}
+  m_Name: Boss_Stage1
+  m_EditorClassIdentifier: 
+  _bossId: boss_stage1
+  _displayName: Corebreaker Warden
+  _moveSpeed: 1.8
+  _sprite: {fileID: 21300000, guid: 24de0babbfafd3d4a859c8efb31a4b17, type: 3}
+  _combatTargetData: {fileID: 11400000, guid: 652723f34b394721a1bb8b2955fa1ce0, type: 2}
+  _hitReactionData: {fileID: 11400000, guid: 36ed1d2345654632a480b87d8b892e9a, type: 2}
+  _statusDefinitions:
+  - {fileID: 11400000, guid: 4600659f79d547258c7e3da3a7aa32e1, type: 2}
+  - {fileID: 11400000, guid: a06061af6f3942ce8f1140eb13f0e7cf, type: 2}
+  _phases:
+  - {fileID: 11400000, guid: 07fb7d1dffb94828bf8a2e4b40e8a5f0, type: 2}
+  - {fileID: 11400000, guid: d7d5da097f5f49d797e88f43b414dc2c, type: 2}
+  _bossRewardData: {fileID: 11400000, guid: 3d94646231644c178827dbf10d572e20, type: 2}
+  _debugColor: {r: 0.92, g: 0.24, b: 0.24, a: 1}

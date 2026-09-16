@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cf89878779fb724db66a45c122dcb03, type: 3}
+  m_Name: MainMenuSkin_Default
+  m_EditorClassIdentifier: 
+  _backgroundTexture: {fileID: 2800000, guid: 7f38eb5d76a40e347aae1abf6dc71700, type: 3}
+  _logoTexture: {fileID: 2800000, guid: 34aa42a0489af2544994da0b1193f390, type: 3}
+  _buttonFrameTexture: {fileID: 2800000, guid: 8a2bfe86da10e034689b01634ed91a47, type: 3}
+  _focusMarkerTexture: {fileID: 2800000, guid: 748fca316ce0f364f8e8ef2612c3bd2b, type: 3}
+  _controllerGlyphData: {fileID: 11400000, guid: e756a5fdd6be4a4d9c4d46c99d712799, type: 2}
+  _audioCueData: {fileID: 11400000, guid: 1c562d61db1c492aa4902e8f61ea7937, type: 2}
+  _buttonFrameBorder: {x: 220, y: 140, z: 220, w: 140}
+  _focusMarkerBorder: {x: 240, y: 132, z: 240, w: 132}
+  _backgroundTint: {r: 1, g: 1, b: 1, a: 1}
+  _backgroundShadeColor: {r: 0.03, g: 0.05, b: 0.08, a: 0.45}
+  _idleFrameTint: {r: 0.86, g: 0.9, b: 0.96, a: 0.92}
+  _selectedFrameTint: {r: 1, g: 1, b: 1, a: 1}
+  _introLockedFrameTint: {r: 0.74, g: 0.79, b: 0.86, a: 0.76}
+  _focusMarkerTint: {r: 1, g: 1, b: 1, a: 1}
+  _idleLabelColor: {r: 0.84, g: 0.89, b: 0.95, a: 1}
+  _selectedLabelColor: {r: 1, g: 0.87, b: 0.46, a: 1}
+  _promptLabelColor: {r: 0.99, g: 0.95, b: 0.88, a: 1}
+  _statusLabelColor: {r: 0.78, g: 0.84, b: 0.91, a: 1}
+  _glyphHintFrameTint: {r: 0.84, g: 0.9, b: 0.97, a: 0.88}
+  _glyphHintActionColor: {r: 0.08, g: 0.12, b: 0.17, a: 0.95}
+  _glyphHintKeyColor: {r: 1, g: 0.87, b: 0.46, a: 1}

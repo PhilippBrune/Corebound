@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93f44c1fb01f4d988191ec8f2756b199, type: 3}
+  m_Name: MainMenuRoutePanel_Settings
+  m_EditorClassIdentifier: 
+  _route: 3
+  _title: Settings
+  _subtitle: Controller-first configuration
+  _summary: Adjust audio, graphics, controls and accessibility from the same Main Menu flow without entering an active Run.
+  _detailLines:
+  - Audio categories stay separated for Music, SFX and UI cues.
+  - Controls include bindings, deadzones and assist-oriented tuning hooks.
+  - Graphics stays aligned to the 2D URP presentation and safe presets.
+  - Accessibility keeps readability and comfort visible without hidden side menus.
+  _footerHint: Confirm or Cancel returns to the Main Menu.

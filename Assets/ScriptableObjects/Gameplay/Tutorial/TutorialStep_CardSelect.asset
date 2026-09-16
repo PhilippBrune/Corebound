@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3a6c524aac44297a46a9e5b3bf5afe5, type: 3}
+  m_Name: TutorialStep_CardSelect
+  m_EditorClassIdentifier:
+  _stepType: 4
+  _promptText: Choose a Card to permanently strengthen your build for this run.
+  _beatTitle: Build Your Deck
+  _beatBody: After clearing a wave you will be offered Cards. Each Card permanently
+    strengthens your build for the rest of this run - pick the one that fits your
+    playstyle. Choices here are what make each run feel different.

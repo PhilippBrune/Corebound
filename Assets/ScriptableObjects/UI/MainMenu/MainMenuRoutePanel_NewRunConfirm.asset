@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93f44c1fb01f4d988191ec8f2756b199, type: 3}
+  m_Name: MainMenuRoutePanel_NewRunConfirm
+  m_EditorClassIdentifier: 
+  _route: 1
+  _title: Start New Run
+  _subtitle: Replace the current continue state
+  _summary: Starting a new run resets the current run checkpoint to the configured stage-start bootstrap before loading gameplay.
+  _detailLines:
+  - The current continue run will be replaced by a fresh stage-start state.
+  - Audio, settings and meta progression stay untouched.
+  - Confirm starts gameplay immediately. Cancel returns to the menu.
+  _footerHint: Confirm starts a new run. Cancel returns to the Main Menu.

@@ -1,0 +1,45 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Validate MainMenu Rework",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"Assembly-CSharp.csproj"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Validate MainMenu Visibility Fix",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"Assembly-CSharp.csproj"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Validate CanvasGroup Fix",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"Assembly-CSharp.csproj"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Validate WaveManager Fix",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"Assembly-CSharp.csproj"
+			],
+			"isBackground": false
+		}
+	]
+}

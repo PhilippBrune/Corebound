@@ -1,0 +1,598 @@
+fileFormatVersion: 2
+guid: e80befb9c09ed384a9e4dab564d85d3f
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -6517131354841923726
+    second: stage1_boundary_set_0
+  - first:
+      213: -7128278457623844220
+    second: stage1_boundary_set_1
+  - first:
+      213: 115861457290349327
+    second: stage1_boundary_set_2
+  - first:
+      213: 4794181157872715647
+    second: stage1_boundary_set_3
+  - first:
+      213: 7315977723187610845
+    second: stage1_boundary_set_4
+  - first:
+      213: -5155590346780426316
+    second: stage1_boundary_set_5
+  - first:
+      213: -7006723401607796332
+    second: stage1_boundary_set_6
+  - first:
+      213: 3056924457365377436
+    second: stage1_boundary_set_7
+  - first:
+      213: 1622549998123070166
+    second: stage1_boundary_set_8
+  - first:
+      213: -1962198993512377903
+    second: stage1_boundary_set_9
+  - first:
+      213: -3858340776665083096
+    second: stage1_boundary_set_10
+  - first:
+      213: 8721336027736270617
+    second: stage1_boundary_set_11
+  - first:
+      213: -811413018453717905
+    second: stage1_boundary_set_12
+  - first:
+      213: 6004465760244205132
+    second: stage1_boundary_set_13
+  - first:
+      213: -4805319916758109142
+    second: stage1_boundary_set_14
+  - first:
+      213: -8981320318630351459
+    second: stage1_boundary_set_15
+  - first:
+      213: -7799506193402971061
+    second: stage1_boundary_set_16
+  - first:
+      213: -6313938631745273258
+    second: stage1_boundary_set_17
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: stage1_boundary_set_0
+      rect:
+        serializedVersion: 2
+        x: 34
+        y: 464
+        width: 137
+        height: 109
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 27f3610ef8f7e85a0800000000000000
+      internalID: -6517131354841923726
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_1
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 464
+        width: 166
+        height: 108
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 48ae2419284431d90800000000000000
+      internalID: -7128278457623844220
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_2
+      rect:
+        serializedVersion: 2
+        x: 401
+        y: 464
+        width: 320
+        height: 109
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f0b43fca16f9b9100800000000000000
+      internalID: 115861457290349327
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_3
+      rect:
+        serializedVersion: 2
+        x: 760
+        y: 447
+        width: 148
+        height: 139
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f77cfd7cc5a588240800000000000000
+      internalID: 4794181157872715647
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_4
+      rect:
+        serializedVersion: 2
+        x: 928
+        y: 444
+        width: 146
+        height: 140
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dd4c44f3af2978560800000000000000
+      internalID: 7315977723187610845
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_5
+      rect:
+        serializedVersion: 2
+        x: 34
+        y: 344
+        width: 137
+        height: 69
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4bf38b425e9a378b0800000000000000
+      internalID: -5155590346780426316
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_6
+      rect:
+        serializedVersion: 2
+        x: 199
+        y: 344
+        width: 244
+        height: 69
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 49920cf703e13ce90800000000000000
+      internalID: -7006723401607796332
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_7
+      rect:
+        serializedVersion: 2
+        x: 479
+        y: 344
+        width: 243
+        height: 69
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c91977209906c6a20800000000000000
+      internalID: 3056924457365377436
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_8
+      rect:
+        serializedVersion: 2
+        x: 750
+        y: 327
+        width: 155
+        height: 106
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d2bf6c60a4748610800000000000000
+      internalID: 1622549998123070166
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_9
+      rect:
+        serializedVersion: 2
+        x: 929
+        y: 327
+        width: 152
+        height: 104
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1d1d01d596ed4c4e0800000000000000
+      internalID: -1962198993512377903
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_10
+      rect:
+        serializedVersion: 2
+        x: 34
+        y: 120
+        width: 226
+        height: 183
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8231978818b647ac0800000000000000
+      internalID: -3858340776665083096
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_11
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 120
+        width: 224
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 917690cd8e8680970800000000000000
+      internalID: 8721336027736270617
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_12
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 120
+        width: 232
+        height: 179
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f6c40f4a8284db4f0800000000000000
+      internalID: -811413018453717905
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_13
+      rect:
+        serializedVersion: 2
+        x: 849
+        y: 120
+        width: 230
+        height: 179
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c460a51cbc5245350800000000000000
+      internalID: 6004465760244205132
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_14
+      rect:
+        serializedVersion: 2
+        x: 34
+        y: 38
+        width: 241
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a24f581def2105db0800000000000000
+      internalID: -4805319916758109142
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_15
+      rect:
+        serializedVersion: 2
+        x: 303
+        y: 38
+        width: 240
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9d2a0a51c0fb5380800000000000000
+      internalID: -8981320318630351459
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_16
+      rect:
+        serializedVersion: 2
+        x: 571
+        y: 38
+        width: 240
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4cb1cec07692c390800000000000000
+      internalID: -7799506193402971061
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: stage1_boundary_set_17
+      rect:
+        serializedVersion: 2
+        x: 839
+        y: 38
+        width: 240
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 652053164426068a0800000000000000
+      internalID: -6313938631745273258
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      stage1_boundary_set_0: -6517131354841923726
+      stage1_boundary_set_1: -7128278457623844220
+      stage1_boundary_set_10: -3858340776665083096
+      stage1_boundary_set_11: 8721336027736270617
+      stage1_boundary_set_12: -811413018453717905
+      stage1_boundary_set_13: 6004465760244205132
+      stage1_boundary_set_14: -4805319916758109142
+      stage1_boundary_set_15: -8981320318630351459
+      stage1_boundary_set_16: -7799506193402971061
+      stage1_boundary_set_17: -6313938631745273258
+      stage1_boundary_set_2: 115861457290349327
+      stage1_boundary_set_3: 4794181157872715647
+      stage1_boundary_set_4: 7315977723187610845
+      stage1_boundary_set_5: -5155590346780426316
+      stage1_boundary_set_6: -7006723401607796332
+      stage1_boundary_set_7: 3056924457365377436
+      stage1_boundary_set_8: 1622549998123070166
+      stage1_boundary_set_9: -1962198993512377903
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

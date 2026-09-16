@@ -1,0 +1,849 @@
+using System.Collections.Generic;
+using Corebound.Gameplay.Shared;
+using Corebound.UI;
+using Corebound.UI.MainMenu;
+using UnityEngine;
+using UnityEngine.UI;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+namespace Corebound.Gameplay.Cards
+{
+    [ExecuteAlways]
+    public sealed class CardRewardPresenter : MonoBehaviour
+    {
+        private const string RewardChoicePanelTexturePath = "Assets/Art/UI/HUD/card_reward_choice_panel.png";
+        private static readonly Color OverlayColor = new Color(0.02f, 0.04f, 0.06f, 0.88f);
+        private static readonly Color PanelFillColor = new Color(0.96f, 0.94f, 0.9f, 0.08f);
+        private static readonly Color CardFillColor = new Color(0.06f, 0.08f, 0.12f, 0.08f);
+        private static readonly Color CardSelectedFillColor = new Color(0.96f, 0.72f, 0.22f, 0.18f);
+        private const string CommonFramePath = "Assets/Art/Cards/Frames/card_frame_common.png";
+        private const string RareFramePath = "Assets/Art/Cards/Frames/card_frame_rare.png";
+        private const string EpicFramePath = "Assets/Art/Cards/Frames/card_frame_epic.png";
+        private const string LegendaryFramePath = "Assets/Art/Cards/Frames/card_frame_legendary.png";
+        private const string RevealFlashSpritePath = "Assets/Art/Combat/VFX/vfx_card_reveal_flash.png";
+        private const float RevealFlashFadeSeconds = 0.4f;
+
+        private const float SlotWidth = 282f;
+        private const float SlotHeight = 414f;
+        private const float SlotSpacing = 332f;
+        private const float SlotCenterY = -8f;
+
+        private const int MaxTagIconsPerSlot = 4;
+
+        private readonly RectTransform[] _slotRoots = new RectTransform[3];
+        private readonly Text[] _slotTitleTexts = new Text[3];
+        private readonly Text[] _slotRarityTexts = new Text[3];
+        private readonly Text[] _slotDescriptionTexts = new Text[3];
+        private readonly Image[] _slotHighlights = new Image[3];
+        private readonly Image[] _slotFrameImages = new Image[3];
+        private readonly Image[] _slotRevealFlashImages = new Image[3];
+        private readonly Image[][] _slotTagIcons = new Image[3][];
+
+        [SerializeField] private CardRewardController _controller;
+        [SerializeField] private MainMenuSkinData _skinData;
+        [SerializeField] private Texture2D _rewardChoicePanelTexture;
+        [SerializeField] private Vector4 _rewardChoicePanelBorder = new Vector4(220f, 140f, 220f, 140f);
+        [SerializeField] private RectTransform _authoredPresenterRoot;
+        [SerializeField] private CanvasGroup _authoredCanvasGroup;
+        [SerializeField] private Text _authoredTitleText;
+        [SerializeField] private Text _authoredResourceText;
+        [SerializeField] private Text _authoredTowerText;
+        [SerializeField] private Text _authoredDescriptionText;
+
+        private RectTransform _presenterRoot;
+        private CanvasGroup _canvasGroup;
+        private Text _titleText;
+        private Text _resourceText;
+        private Text _towerText;
+        private Text _descriptionText;
+        private Font _font;
+        private Sprite _frameSprite;
+        private Sprite _panelSprite;
+        private Texture2D _runtimeLoadedPanelTexture;
+        private Sprite _commonFrameSprite;
+        private Sprite _rareFrameSprite;
+        private Sprite _epicFrameSprite;
+        private Sprite _legendaryFrameSprite;
+        private Sprite _revealFlashSprite;
+        private UIManagedPanel _managedPanel;
+        private bool _wasVisible;
+
+        private const string RewardCanvasName = "RewardCanvas";
+        private const string RewardRootName = "RewardScreen";
+        private const string RewardPanelName = "CardRewardChoicePanel";
+
+        private void Awake()
+        {
+            EnsureInitialized();
+            Refresh();
+        }
+
+        // See AdditiveCanvasSceneLoader's class comment: the RewardCanvas.unity scene loads
+        // additively between this scene's OnEnable and Start phases, so a call from Awake() or
+        // OnEnable() alone can run before it exists. Start() is the one place guaranteed to run
+        // after that additive load has completed - EnsureInitialized()'s own guard makes this safe
+        // to call redundantly alongside Awake()/OnEnable().
+        private void Start()
+        {
+            EnsureInitialized();
+            Refresh();
+        }
+
+        // _slotRoots and the other runtime fields populated here are plain (non-serialized)
+        // fields, so a domain reload (script recompile in the Editor, or entering Play Mode with
+        // "Reload Domain" enabled) resets them to their default/empty state. Unity's backup/restore
+        // cycle for already-existing scene objects re-invokes OnEnable() after a reload but NOT
+        // Awake() - so without this guard, the first OnEnable()->Refresh()->RebuildCards() after
+        // any reload hit a null _slotRoots[index] and threw a NullReferenceException instead of
+        // ever showing card content (see 2026-09-15 reward-screen investigation). Guarded by
+        // _slotRoots[0] so it is safe to call from both Awake() (fresh instantiation) and
+        // OnEnable() (reload-restoration) without double-building the panel or double-registering
+        // with UIManager on a normal first-time activation, where both run back to back.
+        private void EnsureInitialized()
+        {
+            if (_slotRoots[0] != null)
+            {
+                return;
+            }
+
+            _font = ResolveFont();
+            _frameSprite = CreateRuntimeSprite(_skinData != null ? _skinData.ButtonFrameTexture : null, _skinData != null ? _skinData.ButtonFrameBorder : Vector4.zero);
+            _revealFlashSprite = DebugSpriteFactory.LoadProjectSprite(RevealFlashSpritePath);
+            _panelSprite = ResolvePanelSprite();
+            ResolveCardFrameSprites();
+            ResolveOrBuildPanel();
+            RegisterWithUIManager();
+        }
+
+#if UNITY_EDITOR
+        // RewardCanvas.unity is a separate authored scene now (Assets/Scenes/RewardCanvas.unity),
+        // not something this presenter creates - OnValidate no longer builds anything (that used to
+        // create a duplicate, locally-parented canvas fighting the real one). It only retries the
+        // bind, which is a no-op once EnsureInitialized() has already succeeded, and picks the
+        // canvas up if the user opens RewardCanvas.unity additively alongside this scene later.
+        private void OnValidate()
+        {
+            if (Application.isPlaying)
+            {
+                return;
+            }
+
+            UnityEditor.EditorApplication.delayCall += DeferredEnsureInitialized;
+        }
+
+        private void DeferredEnsureInitialized()
+        {
+            if (this == null || Application.isPlaying)
+            {
+                return;
+            }
+
+            EnsureInitialized();
+            Refresh();
+        }
+#endif
+
+        private void OnEnable()
+        {
+            EnsureInitialized();
+
+            if (_controller != null)
+            {
+                _controller.StateChanged += Refresh;
+            }
+
+            Refresh();
+        }
+
+        private void OnDisable()
+        {
+            if (_controller != null)
+            {
+                _controller.StateChanged -= Refresh;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            // The rarity frame sprites now come from DebugSpriteFactory's shared LoadProjectSpriteRect
+            // cache (see ResolveCardFrameSprites) - destroying them here would leave a dangling
+            // reference in that cache for the next presenter instance to hand out. Only _frameSprite
+            // and _panelSprite are still created per-instance via CreateRuntimeSprite and need cleanup.
+            DestroySprite(_frameSprite);
+            DestroySprite(_panelSprite);
+            CleanupTexture(_runtimeLoadedPanelTexture);
+            UIManager.UnregisterPanel(_managedPanel);
+        }
+
+        private void BuildPanel()
+        {
+            if (TryBindAuthoredLayout())
+            {
+                return;
+            }
+
+            _presenterRoot = EnsurePresenterRoot("CardRewardPresenterRoot");
+            _canvasGroup = _presenterRoot.GetComponent<CanvasGroup>();
+
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = _presenterRoot.gameObject.AddComponent<CanvasGroup>();
+            }
+
+            var overlay = CreateImage("Overlay", _presenterRoot, null, OverlayColor, Image.Type.Simple);
+            StretchToParent(overlay.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+
+            var panelSprite = _panelSprite != null ? _panelSprite : _frameSprite;
+            var panel = CreateImage("Panel", _presenterRoot, panelSprite, Color.white, panelSprite != null ? Image.Type.Sliced : Image.Type.Simple);
+            var panelRect = panel.rectTransform;
+            SetAnchoredBox(panelRect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180f, 680f));
+
+            // Vertical bands below are measured directly off card_reward_choice_panel.png's pixel
+            // data (title tan bar, bright summary strip, footer tan bar), not guessed - the previous
+            // offsets put Resources/TowerInfo well above the actual bright strip (overlapping the
+            // ornate corner brackets of the title bar instead) and Description below the footer bar
+            // entirely, onto the dark background outside the panel art.
+            _titleText = CreateText("Title", panelRect, 28, FontStyle.Bold, new Color(0.16f, 0.14f, 0.11f, 0.98f), TextAnchor.MiddleCenter);
+            StretchToParent(_titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(180f, -125f), new Vector2(-180f, -54f));
+
+            _resourceText = CreateText("Resources", panelRect, 18, FontStyle.Normal, new Color(0.18f, 0.16f, 0.12f, 0.96f), TextAnchor.MiddleLeft);
+            StretchToParent(_resourceText.rectTransform, new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(381f, -196f), new Vector2(-20f, -148f));
+
+            _towerText = CreateText("TowerInfo", panelRect, 18, FontStyle.Normal, new Color(0.18f, 0.16f, 0.12f, 0.96f), TextAnchor.MiddleRight);
+            StretchToParent(_towerText.rectTransform, new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(20f, -196f), new Vector2(-353f, -148f));
+
+            for (var index = 0; index < _slotRoots.Length; index++)
+            {
+                // Find-existing-first for the same reason as ShopPresenter's ShopSlot loop: this
+                // fallback only runs when TryBindAuthoredLayout() fails, but [ExecuteAlways] re-runs
+                // Awake() on every script recompile.
+                var existingSlot = panelRect.Find("RewardSlot" + index);
+                var slotObject = existingSlot != null ? existingSlot.gameObject : new GameObject("RewardSlot" + index, typeof(RectTransform), typeof(Image));
+
+                if (existingSlot == null)
+                {
+                    slotObject.transform.SetParent(panelRect, false);
+                }
+
+                var slotRect = slotObject.GetComponent<RectTransform>();
+                slotRect.anchorMin = new Vector2(0.5f, 0.5f);
+                slotRect.anchorMax = new Vector2(0.5f, 0.5f);
+                slotRect.pivot = new Vector2(0.5f, 0.5f);
+                slotRect.anchoredPosition = new Vector2((index - 1) * SlotSpacing, SlotCenterY);
+                slotRect.sizeDelta = new Vector2(SlotWidth, SlotHeight);
+                _slotRoots[index] = slotRect;
+
+                var highlight = slotObject.GetComponent<Image>();
+                highlight.color = Color.clear;
+                highlight.raycastTarget = false;
+                _slotHighlights[index] = highlight;
+
+                var revealFlash = CreateImage("RevealFlash", slotRect, _revealFlashSprite, Color.clear, Image.Type.Simple);
+                StretchToParent(revealFlash.rectTransform, new Vector2(-0.15f, -0.15f), new Vector2(1.15f, 1.15f), Vector2.zero, Vector2.zero);
+                revealFlash.raycastTarget = false;
+                _slotRevealFlashImages[index] = revealFlash;
+
+                var frameImage = CreateImage("SlotFrame", slotRect, _frameSprite, Color.white, Image.Type.Sliced);
+                StretchToParent(frameImage.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                _slotFrameImages[index] = frameImage;
+
+                var titleText = CreateText("SlotTitle", slotRect, 18, FontStyle.Bold, new Color(0.14f, 0.12f, 0.1f, 0.98f), TextAnchor.UpperLeft);
+                // Extended up into the band the now-hidden SlotRarity label used to occupy
+                // (-316 -> -286) so the title has more wrap room instead of leaving that space dead.
+                StretchToParent(titleText.rectTransform, Vector2.zero, Vector2.one, new Vector2(22f, 28f), new Vector2(-22f, -286f));
+                _slotTitleTexts[index] = titleText;
+
+                var rarityText = CreateText("SlotRarity", slotRect, 16, FontStyle.Bold, new Color(0.28f, 0.24f, 0.18f, 0.98f), TextAnchor.UpperLeft);
+                StretchToParent(rarityText.rectTransform, Vector2.zero, Vector2.one, new Vector2(22f, 58f), new Vector2(-22f, -286f));
+                // Rarity is already conveyed by the frame color/art - the text label is redundant
+                // clutter inside the card box. Kept bound (not removed) since the rest of this class
+                // still references the field; just hidden.
+                rarityText.gameObject.SetActive(false);
+                _slotRarityTexts[index] = rarityText;
+
+                var descriptionText = CreateText("SlotDescription", slotRect, 14, FontStyle.Normal, new Color(0.14f, 0.12f, 0.1f, 0.96f), TextAnchor.UpperLeft);
+                // Bottom edge at 140, not 112 - SlotTitle's own box (see rarityText/titleText above,
+                // "SlotTitle" via `new Vector2(22f, 28f), new Vector2(-22f, -286f)`) sits at y 28-128,
+                // so a description long enough to wrap this box's full 278px height down to y=112
+                // would overlap SlotTitle's text for a few lines. 140 leaves a clean 12px gap above it.
+                StretchToParent(descriptionText.rectTransform, Vector2.zero, Vector2.one, new Vector2(22f, 140f), new Vector2(-22f, -24f));
+                // Card descriptions vary in length same as Relic descriptions do (see
+                // RelicRevealPresenter's equivalent fix, 2026-09-15) - ProceduralUIFactory.CreateText
+                // defaults to VerticalWrapMode.Overflow, which let a long card description spill
+                // past this slot's frame instead of clipping cleanly at its own box.
+                descriptionText.verticalOverflow = VerticalWrapMode.Truncate;
+                _slotDescriptionTexts[index] = descriptionText;
+
+                // Card-Tag-Icons (Graphics.md's UI asset list): a small row in the previously
+                // empty strip below the description, using card_tag_icon_sheet.png - imported
+                // since the original Graphics asset pass but referenced by no code until now.
+                var tagIcons = new Image[MaxTagIconsPerSlot];
+
+                for (var iconIndex = 0; iconIndex < MaxTagIconsPerSlot; iconIndex++)
+                {
+                    var iconImage = CreateImage("TagIcon" + iconIndex, slotRect, null, Color.white, Image.Type.Simple);
+                    var iconRect = iconImage.rectTransform;
+                    iconRect.anchorMin = new Vector2(0f, 0f);
+                    iconRect.anchorMax = new Vector2(0f, 0f);
+                    iconRect.pivot = new Vector2(0f, 0f);
+                    iconRect.anchoredPosition = new Vector2(22f + iconIndex * 36f, 14f);
+                    iconRect.sizeDelta = new Vector2(30f, 30f);
+                    iconImage.gameObject.SetActive(false);
+                    tagIcons[iconIndex] = iconImage;
+                }
+
+                _slotTagIcons[index] = tagIcons;
+            }
+
+            _descriptionText = CreateText("Description", panelRect, 18, FontStyle.Normal, new Color(0.16f, 0.14f, 0.11f, 0.96f), TextAnchor.MiddleCenter);
+            StretchToParent(_descriptionText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(288f, 71f), new Vector2(-288f, 133f));
+        }
+
+        private void Refresh()
+        {
+            if (_canvasGroup == null)
+            {
+                return;
+            }
+
+            var isVisible = _controller != null && _controller.IsOpen;
+            _canvasGroup.alpha = isVisible ? 1f : 0f;
+            _canvasGroup.blocksRaycasts = isVisible;
+            _canvasGroup.interactable = isVisible;
+
+            if (!isVisible)
+            {
+                _wasVisible = false;
+                return;
+            }
+
+            _titleText.text = _controller.PendingRewardLabel;
+            _resourceText.text = _controller.ResourceSummary;
+            _towerText.text = _controller.TowerSummary;
+            _descriptionText.text = _controller.SelectedDescription + "  Confirm accepts the selected card.";
+
+            RebuildCards();
+
+            // Only on the closed->open edge, not every StateChanged (selection changes also raise
+            // it) - VFX.md calls reward reveals "selten und eindeutig", not a repeat-per-navigation
+            // flourish.
+            if (!_wasVisible)
+            {
+                TriggerRevealFlash();
+            }
+
+            _wasVisible = true;
+            UIManager.NotifyPanelChanged(_managedPanel);
+        }
+
+        private void TriggerRevealFlash()
+        {
+            if (_revealFlashSprite == null)
+            {
+                return;
+            }
+
+            for (var index = 0; index < _slotRoots.Length; index++)
+            {
+                var flashImage = index < _slotRevealFlashImages.Length ? _slotRevealFlashImages[index] : null;
+
+                if (flashImage == null || !_slotRoots[index].gameObject.activeSelf)
+                {
+                    continue;
+                }
+
+                StartCoroutine(FadeOutRevealFlash(flashImage));
+            }
+        }
+
+        private System.Collections.IEnumerator FadeOutRevealFlash(Image flashImage)
+        {
+            flashImage.color = Color.white;
+            var elapsed = 0f;
+
+            while (elapsed < RevealFlashFadeSeconds)
+            {
+                elapsed += Time.deltaTime;
+                var alpha = Mathf.Lerp(1f, 0f, elapsed / RevealFlashFadeSeconds);
+                flashImage.color = new Color(1f, 1f, 1f, alpha);
+                yield return null;
+            }
+
+            flashImage.color = Color.clear;
+        }
+
+        private void RebuildCards()
+        {
+            var offer = _controller.GetCurrentOffer();
+
+            for (var index = 0; index < _slotRoots.Length; index++)
+            {
+                var hasCard = index < offer.Count && offer[index] != null;
+                _slotRoots[index].gameObject.SetActive(hasCard);
+
+                if (!hasCard)
+                {
+                    continue;
+                }
+
+                var card = offer[index];
+                // SetNativeSize() used to run here, which resized the frame to the sprite's raw
+                // pixel dimensions (1113x607 - the frame texture's full padded canvas, see
+                // ResolveCardFrameSprites) instead of respecting the slot's stretch-anchored
+                // 282x414 rect. That is what made all three reward cards balloon out and overlap
+                // across the whole panel, burying the description text. The frame now stays sized
+                // to its slot via the anchors set up above; only its sprite changes per rarity.
+                // Type is set explicitly (not just at creation) because the authored SampleScene
+                // layout's SlotFrame Image predates this fix and was saved with Type=Simple, which
+                // TryBindAuthoredLayout() picks up as-is without touching component settings.
+                _slotFrameImages[index].sprite = ResolveCardFrameSprite(card);
+                _slotFrameImages[index].type = Image.Type.Sliced;
+                _slotHighlights[index].color = index == _controller.SelectedIndex ? CardSelectedFillColor : CardFillColor;
+                _slotTitleTexts[index].text = card.DisplayName;
+                _slotTitleTexts[index].color = index == _controller.SelectedIndex ? (_skinData != null ? _skinData.SelectedLabelColor : Color.white) : new Color(0.14f, 0.12f, 0.1f, 0.98f);
+                _slotRarityTexts[index].text = card.Rarity.ToString();
+                _slotDescriptionTexts[index].text = card.Description;
+                ApplyTagIcons(index, card);
+            }
+        }
+
+        private void ApplyTagIcons(int slotIndex, CardData card)
+        {
+            var icons = slotIndex < _slotTagIcons.Length ? _slotTagIcons[slotIndex] : null;
+
+            if (icons == null)
+            {
+                return;
+            }
+
+            var tags = card.Tags;
+
+            for (var iconIndex = 0; iconIndex < icons.Length; iconIndex++)
+            {
+                var icon = icons[iconIndex];
+
+                if (icon == null)
+                {
+                    continue;
+                }
+
+                if (tags == null || iconIndex >= tags.Length)
+                {
+                    icon.gameObject.SetActive(false);
+                    continue;
+                }
+
+                var sprite = CardTagIconAtlas.ResolveIcon(tags[iconIndex]);
+                icon.sprite = sprite;
+                icon.gameObject.SetActive(sprite != null);
+            }
+        }
+
+        private Text CreateText(string name, RectTransform parent, int fontSize, FontStyle fontStyle, Color color, TextAnchor anchor)
+        {
+            return ProceduralUIFactory.CreateText(name, parent, _font, fontSize, fontStyle, color, anchor);
+        }
+
+        private static Image CreateImage(string name, RectTransform parent, Sprite sprite, Color color, Image.Type type)
+        {
+            return ProceduralUIFactory.CreateImage(name, parent, sprite, color, type);
+        }
+
+        private static Sprite CreateRuntimeSprite(Texture2D texture, Vector4 border)
+        {
+            return DebugSpriteFactory.CreateSprite(texture, 100f, border);
+        }
+
+        private Sprite ResolvePanelSprite()
+        {
+            if (_rewardChoicePanelTexture != null)
+            {
+                return CreateRuntimeSprite(_rewardChoicePanelTexture, _rewardChoicePanelBorder);
+            }
+
+            _runtimeLoadedPanelTexture = DebugSpriteFactory.LoadTextureFromProjectFile(RewardChoicePanelTexturePath);
+            return CreateRuntimeSprite(_runtimeLoadedPanelTexture, _rewardChoicePanelBorder);
+        }
+
+        // The four card_frame_*.png files are each a 1113x607 canvas with the actual frame artwork
+        // occupying only a ~445x545 portrait region in the middle (confirmed by reading each file's
+        // alpha bounding box directly) - the rest is transparent padding. Loading the raw full-canvas
+        // rect (as CreateRuntimeSprite/_frameSprite do) and then calling SetNativeSize() on it, as
+        // RebuildCards() used to, sized each slot's frame to that whole padded 1113x607 canvas -
+        // vastly larger than the 282x414 slot, which is why frames overlapped across the whole
+        // reward panel. Cropping to the shared visible-content rect and slicing it fixes both the
+        // oversized-canvas problem and lets the frame's corner art stay crisp when
+        // stretched into the slot instead of being squished.
+        private static readonly Rect CardFrameContentRect = new Rect(335f, 25f, 465f, 560f);
+        // Measured directly off the art: the metal border inside the 465x560 crop is ~90px left,
+        // ~75px right, ~100px top, ~80px bottom - a border that size renders at a fixed pixel
+        // thickness regardless of the target Image's RectTransform size, so on the much smaller
+        // 282x414 slot it consumed most of the card as decorative metal instead of stretched middle,
+        // reading as "too thick". Scaled down by the same ratio the slot is smaller than the source
+        // crop (~0.67x) so the border reads at roughly the same visual proportion at this size.
+        // Halved again from 55 per playtest feedback ("frame is still too thick") - the metal trim
+        // now renders at roughly a quarter of its native-art thickness relative to the 282x414 slot.
+        private static readonly Vector4 CardFrameBorder = new Vector4(27f, 27f, 27f, 27f);
+
+        private void ResolveCardFrameSprites()
+        {
+            _commonFrameSprite = DebugSpriteFactory.LoadProjectSpriteRect(CommonFramePath, CardFrameContentRect, 100f, CardFrameBorder);
+            _rareFrameSprite = DebugSpriteFactory.LoadProjectSpriteRect(RareFramePath, CardFrameContentRect, 100f, CardFrameBorder);
+            _epicFrameSprite = DebugSpriteFactory.LoadProjectSpriteRect(EpicFramePath, CardFrameContentRect, 100f, CardFrameBorder);
+            _legendaryFrameSprite = DebugSpriteFactory.LoadProjectSpriteRect(LegendaryFramePath, CardFrameContentRect, 100f, CardFrameBorder);
+        }
+
+        private Sprite ResolveCardFrameSprite(CardData card)
+        {
+            if (card == null)
+            {
+                return _frameSprite;
+            }
+
+            switch (card.Rarity)
+            {
+                case CardRarity.Rare:
+                    return _rareFrameSprite != null ? _rareFrameSprite : _frameSprite;
+                case CardRarity.Epic:
+                    return _epicFrameSprite != null ? _epicFrameSprite : _frameSprite;
+                case CardRarity.Legendary:
+                    return _legendaryFrameSprite != null ? _legendaryFrameSprite : _frameSprite;
+                default:
+                    return _commonFrameSprite != null ? _commonFrameSprite : _frameSprite;
+            }
+        }
+
+        private static void DestroySprite(Sprite sprite)
+        {
+            if (sprite == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(sprite);
+            }
+            else
+            {
+                DestroyImmediate(sprite);
+            }
+        }
+
+        private static void CleanupTexture(Texture2D texture)
+        {
+            if (texture == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(texture);
+            }
+            else
+            {
+                DestroyImmediate(texture);
+            }
+        }
+
+        private RectTransform EnsurePresenterRoot(string childName)
+        {
+            var childTransform = transform.Find(childName);
+
+            if (childTransform == null)
+            {
+                var childObject = new GameObject(childName, typeof(RectTransform));
+                childObject.transform.SetParent(transform, false);
+                childTransform = childObject.transform;
+            }
+
+            var rectTransform = childTransform as RectTransform;
+
+            if (rectTransform == null)
+            {
+                rectTransform = childTransform.gameObject.AddComponent<RectTransform>();
+            }
+
+            StretchToParent(rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            rectTransform.SetAsLastSibling();
+            return rectTransform;
+        }
+
+        private void ResolveOrBuildPanel()
+        {
+            if (TryBindAuthoredLayout())
+            {
+                return;
+            }
+
+            BuildPanel();
+        }
+
+        // RewardCanvas.unity (Assets/Scenes/RewardCanvas.unity) is loaded additively by
+        // AdditiveCanvasSceneLoader, so it is never a child of this presenter's own GameObject -
+        // GameObject.Find() searches every loaded scene, which transform.Find() (own-children-only)
+        // cannot do. Re-resolved fresh on every call rather than trusting the cached _authored*
+        // fields, matching the same "domain reload resets non-serialized state" lesson already
+        // applied elsewhere this session - here the risk is instead a stale reference surviving
+        // into a save where the canvas scene was not yet loaded when this last ran.
+        private bool TryBindAuthoredLayout()
+        {
+            var canvasObject = GameObject.Find(RewardCanvasName);
+            var canvasRoot = canvasObject != null ? canvasObject.transform as RectTransform : null;
+            var rewardRoot = canvasRoot != null ? canvasRoot.Find(RewardRootName) as RectTransform : null;
+
+            if (rewardRoot == null)
+            {
+                return false;
+            }
+
+            _authoredPresenterRoot = rewardRoot;
+            _authoredCanvasGroup = rewardRoot.GetComponent<CanvasGroup>();
+            var panel = rewardRoot.Find(RewardPanelName) as RectTransform;
+            _authoredTitleText = panel != null && panel.Find("Title") != null ? panel.Find("Title").GetComponent<Text>() : null;
+            _authoredResourceText = panel != null && panel.Find("Resources") != null ? panel.Find("Resources").GetComponent<Text>() : null;
+            _authoredTowerText = panel != null && panel.Find("TowerInfo") != null ? panel.Find("TowerInfo").GetComponent<Text>() : null;
+            _authoredDescriptionText = panel != null && panel.Find("Description") != null ? panel.Find("Description").GetComponent<Text>() : null;
+
+            if (_authoredPresenterRoot == null || _authoredCanvasGroup == null || _authoredTitleText == null || _authoredDescriptionText == null)
+            {
+                return false;
+            }
+
+            _presenterRoot = _authoredPresenterRoot;
+            _canvasGroup = _authoredCanvasGroup;
+            _titleText = _authoredTitleText;
+            _resourceText = _authoredResourceText;
+            _towerText = _authoredTowerText;
+            _descriptionText = _authoredDescriptionText;
+
+            for (var index = 0; index < _slotRoots.Length; index++)
+            {
+                // RewardSlot0/1/2 are children of the CardRewardChoicePanel image, not direct
+                // children of the presenter root (see EnsureSceneRewardLayout: slots are parented
+                // under panelRect, one level below rewardRoot) - Find() only searches immediate
+                // children, so the lookup has to go through the panel by name.
+                var slotTransform = _authoredPresenterRoot.Find(RewardPanelName + "/RewardSlot" + index) as RectTransform;
+
+                if (slotTransform == null)
+                {
+                    return false;
+                }
+
+                _slotRoots[index] = slotTransform;
+                _slotHighlights[index] = slotTransform.GetComponent<Image>();
+                _slotFrameImages[index] = slotTransform.Find("SlotFrame") != null ? slotTransform.Find("SlotFrame").GetComponent<Image>() : null;
+                _slotTitleTexts[index] = slotTransform.Find("SlotTitle") != null ? slotTransform.Find("SlotTitle").GetComponent<Text>() : null;
+                _slotRarityTexts[index] = slotTransform.Find("SlotRarity") != null ? slotTransform.Find("SlotRarity").GetComponent<Text>() : null;
+                _slotDescriptionTexts[index] = slotTransform.Find("SlotDescription") != null ? slotTransform.Find("SlotDescription").GetComponent<Text>() : null;
+
+                // Rarity is already conveyed by the frame color/art - the "Common"/"Rare"/etc.
+                // label duplicated that information as clutter inside the card box. Kept bound
+                // (not removed) since ApplyTagIcons()-style code and the bind-success check below
+                // still reference the field; just hidden.
+                if (_slotRarityTexts[index] != null)
+                {
+                    _slotRarityTexts[index].gameObject.SetActive(false);
+                }
+
+                // Tag icons are optional and not part of the bind-success check below: the
+                // authored RewardSlot hierarchy in SampleScene.unity predates this field and
+                // adding it requires the Unity Editor (the scene has many same-named
+                // SlotFrame/SlotDescription children across other presenters, too ambiguous to
+                // hand-edit the raw YAML safely). ApplyTagIcons() no-ops per-slot when these are
+                // null, so nothing breaks; opening this component once in the Editor after
+                // clearing _authoredCanvasGroup would let EnsureSceneRewardLayout() create them.
+                _slotTagIcons[index] = ResolveAuthoredTagIcons(slotTransform);
+
+                // Same optional, non-blocking treatment as tag icons above: missing in the
+                // current authored scene until Editor access adds it via EnsureSceneRewardLayout().
+                var revealFlashChild = slotTransform.Find("RevealFlash");
+                _slotRevealFlashImages[index] = revealFlashChild != null ? revealFlashChild.GetComponent<Image>() : null;
+
+                if (_slotFrameImages[index] == null || _slotTitleTexts[index] == null || _slotRarityTexts[index] == null || _slotDescriptionTexts[index] == null)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static Image[] ResolveAuthoredTagIcons(RectTransform slotTransform)
+        {
+            var icons = new Image[MaxTagIconsPerSlot];
+            var foundAny = false;
+
+            for (var iconIndex = 0; iconIndex < MaxTagIconsPerSlot; iconIndex++)
+            {
+                var child = slotTransform.Find("TagIcon" + iconIndex);
+                icons[iconIndex] = child != null ? child.GetComponent<Image>() : null;
+                foundAny |= icons[iconIndex] != null;
+            }
+
+            return foundAny ? icons : null;
+        }
+
+        private static Font ResolveFont()
+        {
+            return Corebound.UI.UIFontResolver.Resolve();
+        }
+
+        private static void StretchToParent(RectTransform rectTransform, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        {
+            rectTransform.anchorMin = anchorMin;
+            rectTransform.anchorMax = anchorMax;
+            rectTransform.offsetMin = offsetMin;
+            rectTransform.offsetMax = offsetMax;
+        }
+
+        private static void SetAnchoredBox(RectTransform rectTransform, Vector2 anchor, Vector2 anchoredPosition, Vector2 size)
+        {
+            rectTransform.anchorMin = anchor;
+            rectTransform.anchorMax = anchor;
+            rectTransform.pivot = anchor;
+            rectTransform.anchoredPosition = anchoredPosition;
+            rectTransform.sizeDelta = size;
+        }
+
+        private void RegisterWithUIManager()
+        {
+            var root = _authoredPresenterRoot != null ? _authoredPresenterRoot : _presenterRoot;
+            _managedPanel = UIManager.RegisterPanel(root, "reward_screen", UIPanelLayer.BlockingOverlay, true, true, _canvasGroup);
+        }
+
+#if UNITY_EDITOR
+        private void EnsureSceneRewardLayout()
+        {
+            if (_authoredPresenterRoot != null && _authoredCanvasGroup != null && _authoredTitleText != null)
+            {
+                return;
+            }
+
+            var canvasTransform = transform.Find(RewardCanvasName) as RectTransform;
+
+            if (canvasTransform == null)
+            {
+                var canvasObject = new GameObject(RewardCanvasName, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+                canvasObject.transform.SetParent(transform, false);
+                canvasTransform = canvasObject.GetComponent<RectTransform>();
+                StretchToParent(canvasTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                var canvas = canvasObject.GetComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                var scaler = canvasObject.GetComponent<CanvasScaler>();
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920f, 1080f);
+            }
+
+            var rewardRoot = EnsureEditorUiChild(canvasTransform, RewardRootName, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            _authoredPresenterRoot = rewardRoot;
+            var isNewCanvasGroup = rewardRoot.GetComponent<CanvasGroup>() == null;
+            _authoredCanvasGroup = rewardRoot.GetComponent<CanvasGroup>() ?? rewardRoot.gameObject.AddComponent<CanvasGroup>();
+
+            if (isNewCanvasGroup)
+            {
+                // This method runs from OnValidate() (via delayCall), independent of the normal
+                // Awake()->Refresh() lifecycle that would otherwise immediately correct visibility.
+                // AddComponent<CanvasGroup>() defaults to alpha=1/interactable=true/blocksRaycasts=
+                // true, so a freshly (re)built reward panel sat fully visible and blocking gameplay
+                // until something unrelated happened to trigger Refresh() (2026-09-15 playtest: "The
+                // screen is shown the full time"). Start hidden like every other on-demand overlay in
+                // this codebase does (see WaveStatePresenter's PausePanel/WaveBanner SetActive(false)
+                // right after creation) - Refresh() still runs immediately after and will correctly
+                // flip this back to visible if a reward is actually pending at that moment.
+                _authoredCanvasGroup.alpha = 0f;
+                _authoredCanvasGroup.interactable = false;
+                _authoredCanvasGroup.blocksRaycasts = false;
+            }
+            var overlay = EnsureEditorImage(rewardRoot, "Overlay", null, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            overlay.color = OverlayColor;
+            var panel = EnsureEditorImage(rewardRoot, RewardPanelName, RewardChoicePanelTexturePath, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180f, 680f));
+
+            var panelRect = panel.rectTransform;
+            _authoredTitleText = EnsureEditorText(panelRect, "Title", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f), new Vector2(180f, -125f), new Vector2(-180f, -54f), TextAnchor.MiddleCenter, 28);
+            _authoredResourceText = EnsureEditorText(panelRect, "Resources", new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 1f), new Vector2(381f, -196f), new Vector2(-20f, -148f), TextAnchor.MiddleLeft, 18);
+            _authoredTowerText = EnsureEditorText(panelRect, "TowerInfo", new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(20f, -196f), new Vector2(-353f, -148f), TextAnchor.MiddleRight, 18);
+            _authoredDescriptionText = EnsureEditorText(panelRect, "Description", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f), new Vector2(288f, 71f), new Vector2(-288f, 133f), TextAnchor.MiddleCenter, 18);
+
+            for (var index = 0; index < 3; index++)
+            {
+                var slotRect = EnsureEditorUiChild(panelRect, "RewardSlot" + index, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2((index - 1) * SlotSpacing, SlotCenterY), new Vector2(SlotWidth, SlotHeight));
+                var slotImage = slotRect.GetComponent<Image>() ?? slotRect.gameObject.AddComponent<Image>();
+                slotImage.color = Color.clear;
+                slotImage.raycastTarget = false;
+                EnsureEditorImage(slotRect, "RevealFlash", RevealFlashSpritePath, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(60f, 60f));
+                EnsureEditorImage(slotRect, "SlotFrame", CommonFramePath, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+                EnsureEditorText(slotRect, "SlotTitle", Vector2.zero, Vector2.one, new Vector2(0f, 1f), new Vector2(22f, 28f), new Vector2(-22f, -286f), TextAnchor.UpperLeft, 18);
+                var editorRarityText = EnsureEditorText(slotRect, "SlotRarity", Vector2.zero, Vector2.one, new Vector2(0f, 1f), new Vector2(22f, 58f), new Vector2(-22f, -286f), TextAnchor.UpperLeft, 16);
+                editorRarityText.gameObject.SetActive(false);
+                var editorDescriptionText = EnsureEditorText(slotRect, "SlotDescription", Vector2.zero, Vector2.one, new Vector2(0f, 1f), new Vector2(22f, 140f), new Vector2(-22f, -24f), TextAnchor.UpperLeft, 14);
+                editorDescriptionText.verticalOverflow = VerticalWrapMode.Truncate;
+
+                for (var iconIndex = 0; iconIndex < MaxTagIconsPerSlot; iconIndex++)
+                {
+                    EnsureEditorImage(slotRect, "TagIcon" + iconIndex, null, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(22f + iconIndex * 36f, 14f), new Vector2(30f, 30f));
+                }
+            }
+
+            EditorUtility.SetDirty(this);
+        }
+
+        private static RectTransform EnsureEditorUiChild(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta)
+        {
+            var child = parent.Find(name) as RectTransform;
+
+            if (child == null)
+            {
+                var childObject = new GameObject(name, typeof(RectTransform));
+                childObject.layer = 5;
+                childObject.transform.SetParent(parent, false);
+                child = childObject.GetComponent<RectTransform>();
+            }
+
+            child.anchorMin = anchorMin;
+            child.anchorMax = anchorMax;
+            child.pivot = pivot;
+            child.anchoredPosition = anchoredPosition;
+            child.sizeDelta = sizeDelta;
+            return child;
+        }
+
+        private Image EnsureEditorImage(RectTransform parent, string name, string spritePath, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta)
+        {
+            var child = EnsureEditorUiChild(parent, name, anchorMin, anchorMax, pivot, anchoredPosition, sizeDelta);
+            var renderer = child.GetComponent<CanvasRenderer>() ?? child.gameObject.AddComponent<CanvasRenderer>();
+            var image = child.GetComponent<Image>() ?? child.gameObject.AddComponent<Image>();
+            image.sprite = string.IsNullOrWhiteSpace(spritePath) ? null : AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+            image.color = Color.white;
+            image.raycastTarget = false;
+            return image;
+        }
+
+        private Text EnsureEditorText(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 offsetMin, Vector2 offsetMax, TextAnchor alignment, int fontSize)
+        {
+            var child = EnsureEditorUiChild(parent, name, anchorMin, anchorMax, pivot, Vector2.zero, Vector2.zero);
+            StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
+            var renderer = child.GetComponent<CanvasRenderer>() ?? child.gameObject.AddComponent<CanvasRenderer>();
+            var text = child.GetComponent<Text>() ?? child.gameObject.AddComponent<Text>();
+            text.font = ResolveFont();
+            text.fontSize = fontSize;
+            text.alignment = alignment;
+            text.color = new Color(0.14f, 0.12f, 0.1f, 0.98f);
+            text.raycastTarget = false;
+            // resizeTextForBestFit used to be on here, but combined with the HUD/reward canvases'
+            // CanvasScaler (ScaleWithScreenSize) it rasterizes the dynamic font's glyph atlas at the
+            // best-fit-computed size and then lets the canvas scale factor stretch that already-
+            // rasterized bitmap non-1:1 - exactly the "text is blurry" symptom. The runtime-authored
+            // path (ProceduralUIFactory.CreateText) never set this, so scene-authored text rendered
+            // blurrier than freshly-built text; matching it here keeps both paths crisp.
+            text.resizeTextForBestFit = false;
+            text.text = name;
+            return text;
+        }
+#endif
+    }
+}

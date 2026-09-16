@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 930fa148050e41ad9c0c5da6afc2366b, type: 3}
+  m_Name: Relic_SingularityCore
+  m_EditorClassIdentifier:
+  _relicId: relic_singularity_core
+  _displayName: Singularity Core
+  _description: The rarest find in any run - a stable core that lifts Weapon damage, Tower damage, and resource gain all at once, no matter what the Build looks like.
+  _effects:
+  - {fileID: 11400000, guid: e5822adcf4cf45f9a77e48426c572401, type: 2}
+  - {fileID: 11400000, guid: 8d7366883090403e8bbd0e0d31192140, type: 2}
+  - {fileID: 11400000, guid: 0e376d36d14c4a99bf38cf36a0f4b2df, type: 2}
+  _requiredUnlockId:
