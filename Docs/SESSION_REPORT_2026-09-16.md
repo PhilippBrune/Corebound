@@ -48,7 +48,7 @@ I want to be upfront: **I have no way to actually hear audio** — I can read co
 
 ### 1.6 Tower slots missing / can't reach Wave 2
 
-Not independently investigated this pass — the additive-scene-loading bug (1.2) is the most likely shared root cause, since it's exactly the "works when opening SampleScene directly, breaks via the normal MainMenu flow" pattern you described for HUD too. Worth retesting after the 1.2 fix before assuming there's a separate bug here.
+Checked whether this shares 1.2's root cause — it doesn't. `TowerService.CreateSlotRuntimes()` (called from `Awake()`) reads slot positions straight from `WaveManager.StageDataAsset.TowerSlotPositions`, a direct serialized reference with no additive-scene involvement at all, so the MainMenu-transition timing bug can't be the explanation here. This is a genuinely separate, still-open issue — not independently root-caused this pass given remaining time, and I can't reliably reproduce it myself (placing a tower requires the same synthetic-input-to-Input-System path that doesn't work). Worth a fresh look next session with a screenshot of the exact moment slots are missing, ideally with the Hierarchy showing whether any `TowerSlot_N` GameObjects exist under the TowerService GameObject at all (missing GameObjects vs. GameObjects existing but not rendering would point to very different bugs).
 
 ---
 
@@ -70,7 +70,50 @@ Not independently investigated this pass — the additive-scene-loading bug (1.2
 
 ## 4. Unused-assets review (for your approval — nothing deleted)
 
-*[This section is being filled in by a background audit; if you're reading this before it's marked complete below, check back or ask me to finish it.]*
+Method: for every candidate file, extracted its GUID from the `.meta` and grepped the entire `Assets/` tree for the file's full path, bare filename, and GUID (all three, since this project mixes GUID-based references with string-path loading via `AssetDatabase.LoadAssetAtPath`/`DebugSpriteFactory.LoadProjectSprite`). Everything below returned **zero hits** outside its own `.meta`. Nothing was deleted — this is for you to review and approve.
+
+### Godot `.import` cruft — 28 files, ~27 KB, highest confidence
+
+These aren't even Unity files — they're Godot's texture-import metadata format, sitting alongside PNGs as leftover cross-tool contamination (consistent with the Godot project scaffold already found and removed from the repo root this session). Unity auto-generated a `.meta` for each, so deleting the `.import` means deleting its `.meta` too.
+
+`card_frame_common/epic/legendary/rare.png.import`, `card_tag_icon_sheet.png.import`, `boss_stage1_topdown.png.import`, `enemy_bruiser/chaser/ranged_pressure_topdown.png.import`, `player_base_topdown.png.import`, `projectile_sheet_core.png.import`, `weapon_beam/rapid/spread_sprite.png.import`, `combat_vfx_sheet_essentials.png.import`, `core_main_sprite.png.import`, `stage1_ground_tileset.png.import`, `stage1_prop_set.png.import`, `resource_primary_icon.png.import`, `tower_slot_marker.png.import`, `hud_frame_panel.png.import`, `wave_banner.png.import`, `button_primary_frame.png.import`, `corebound_logo.png.import`, `focus_marker.png.import`, `mainmenu_background.png.import`, `tutorial_glyph_strip/prompt_panel.png.import` (all under their respective `Assets/Art/**` folders).
+
+### Real orphaned sprites — 13 files, ~11.5 MB, high confidence
+
+Per-stage enemy reskins that nothing loads: `EnemyRuntimeController.cs` only has base sprite-path constants (no stage suffix), unlike `BossRuntimeController.cs` which genuinely has `BossStage1..5SpritePath`. No stage-aware enemy reskin logic exists anywhere in code or in any `StageTheme_*`/`StageEnemyPool_*` asset.
+
+- `Assets/Art/Characters/Enemies/enemy_bruiser_stage2/3/4/5_topdown.png` (4 files, ~4.3 MB)
+- `Assets/Art/Characters/Enemies/enemy_chaser_stage2/3/4/5_topdown.png` (4 files, ~3.1 MB)
+- `Assets/Art/Characters/Enemies/enemy_ranged_pressure_stage2/3/4/5_topdown.png` (4 files, ~3.7 MB)
+- `Assets/Art/UI/MainMenu/route_panel_frame.png` (0.61 MB) — `MainMenuRoutePanelData.cs` has no sprite/frame field at all, only text.
+
+*(Worth noting: this is a real gap, not just cleanup fodder — Stage 3/4/5 have distinct enemy art sitting unused. Wiring per-stage enemy reskins into `EnemyRuntimeController` the same way `BossRuntimeController` already does would be a legitimate, low-risk visual improvement using art you already have, rather than deleting it. Flagging as an option, not doing it without your steer.)*
+
+### Audio — 4 files, ~27.3 MB, high confidence
+
+`MusicState_Boss.asset` only references `music_boss_loop.mp3` — no stage-aware boss music selection exists anywhere in code, matching the enemy-sprite finding above.
+
+- `Assets/Audio/Music/music_boss_stage2/3/4/5_loop.mp3` (4 files)
+
+*(Same note as above: this is stage-specific boss music sitting unused, not clearly "junk" — could be wired into `BossRuntimeController`/`MusicStateController` alongside the visual reskins if you want stage variety, rather than deleted.)*
+
+### ScriptableObject data assets — 4 files, negligible size
+
+- `Assets/ScriptableObjects/Input/InputContext_Build.asset` — sibling contexts (Gameplay/MainMenu/Reward) are wired into manager fields; this one isn't.
+- `Assets/ScriptableObjects/Gameplay/Enemies/EnemyAttack_Default.asset` — siblings (`_Bruiser/Chaser/Ranged`) are referenced; this fallback isn't.
+- `Assets/ScriptableObjects/Gameplay/Enemies/EnemyElite_Default.asset` — same pattern (`_Anchor/Relentless/Splitshot` are wired, this isn't).
+- `Assets/ScriptableObjects/UI/MainMenu/TutorialEntry_Default.asset` — zero references; its backing class (`TutorialEntryData.cs`) also isn't used as a field type anywhere else, so the whole type looks like dead scaffolding.
+
+### Scripts — 2 files, negligible size
+
+- `Assets/Scripts/Gameplay/Player/PlayerInteractionPriorityResolver.cs` — static utility, `GetPriority()` never called anywhere.
+- `Assets/Scripts/UI/MainMenu/SerializedMainMenuStateProvider.cs` — an `IMainMenuStateProvider` implementation never attached to anything; `SaveBackedMainMenuStateProvider.cs` (a sibling) is the one actually wired into `MainMenu.unity`.
+
+**Lower-confidence, flagged only:** `Assets/Scripts/UI/MainMenu/TutorialEntryData.cs` has exactly one reference (the orphaned `TutorialEntry_Default.asset` above) — not a clean zero, but would become fully dead if that asset is removed.
+
+### Total: 51 files, ~39 MB
+
+My recommendation: delete the Godot `.import` cruft and the two dead scripts outright (unambiguous). For the enemy sprites and boss music, I'd lean toward **wiring them in** rather than deleting — you already paid for that art/audio and it's a straightforward, low-risk extension of a pattern (`BossRuntimeController`'s per-stage sprite resolution) that already exists and works. Your call either way — nothing touched yet.
 
 ---
 
