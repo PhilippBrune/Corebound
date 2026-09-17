@@ -9,6 +9,7 @@ using Corebound.Gameplay.Shared;
 using Corebound.Input;
 using Corebound.MetaProgression;
 using Corebound.SaveSystem;
+using Corebound.UI;
 using UnityEngine;
 using Corebound.Gameplay.Waves;
 
@@ -550,13 +551,13 @@ namespace Corebound.Gameplay.Towers
         public string SelectedTowerUpgradeTitle()
         {
             var occupant = ResolveSelectedSlotOccupant();
-            return occupant != null ? occupant.DisplayName + " Upgrade" : "Tower Upgrade";
+            return occupant != null ? occupant.DisplayName + LocalizationService.Resolve(" Upgrade", "-Upgrade") : LocalizationService.Resolve("Tower Upgrade", "Turm-Upgrade");
         }
 
         public string SelectedTowerUpgradeDescription()
         {
             var occupant = ResolveSelectedSlotOccupant();
-            return occupant != null ? "Upgrades " + occupant.DisplayName + " to: " + occupant.UpgradeLabel : string.Empty;
+            return occupant != null ? LocalizationService.Resolve("Upgrades ", "Verbessert ") + occupant.DisplayName + LocalizationService.Resolve(" to: ", " auf: ") + occupant.UpgradeLabel : string.Empty;
         }
 
         public bool TryApplyUpgradeFromShop()
@@ -728,7 +729,7 @@ namespace Corebound.Gameplay.Towers
         {
             if (_runtimeSlots.Count == 0)
             {
-                return "No Tower Slots";
+                return LocalizationService.Resolve("No Tower Slots", "Keine Turm-Slots");
             }
 
             var slot = _runtimeSlots[Mathf.Clamp(_selectedSlotIndex, 0, _runtimeSlots.Count - 1)];
@@ -737,19 +738,21 @@ namespace Corebound.Gameplay.Towers
             {
                 var occupant = slot.Occupant;
                 return occupant != null && occupant.CanUpgrade
-                    ? "Tower Placement | Slot " + (_selectedSlotIndex + 1) + ": " + occupant.name + " | " + occupant.UpgradeLabel + " | Cost " + ResolveTowerCost(occupant.NextUpgradeCost) + " | Press " + ResolveBuildInteractKeyLabel() + " to upgrade"
-                    : "Slot " + (_selectedSlotIndex + 1) + ": " + (occupant != null ? occupant.name : "Tower") + " | Max level";
+                    ? LocalizationService.Resolve("Tower Placement | Slot ", "Turmplatzierung | Slot ") + (_selectedSlotIndex + 1) + ": " + occupant.name + " | " + occupant.UpgradeLabel + LocalizationService.Resolve(" | Cost ", " | Kosten ") + ResolveTowerCost(occupant.NextUpgradeCost) + LocalizationService.Resolve(" | Press ", " | Drücke ") + ResolveBuildInteractKeyLabel() + LocalizationService.Resolve(" to upgrade", " zum Verbessern")
+                    : "Slot " + (_selectedSlotIndex + 1) + ": " + (occupant != null ? occupant.name : LocalizationService.Resolve("Tower", "Turm")) + LocalizationService.Resolve(" | Max level", " | Maximalstufe");
             }
 
             var towerData = ResolveBuildTowerData();
 
             if (towerData == null)
             {
-                return "No Buildable Tower";
+                return LocalizationService.Resolve("No Buildable Tower", "Kein bebaubarer Turm");
             }
 
-            var rangeState = IsPlayerNearSlot(slot.Position) ? "Press " + ResolveBuildInteractKeyLabel() + " to build" : "Move closer";
-            var summary = "Tower Placement | Slot " + (_selectedSlotIndex + 1) + ": " + towerData.DisplayName + " | Cost " + ResolveTowerCost(towerData.BuildCost) + " | " + rangeState;
+            var rangeState = IsPlayerNearSlot(slot.Position)
+                ? LocalizationService.Resolve("Press ", "Drücke ") + ResolveBuildInteractKeyLabel() + LocalizationService.Resolve(" to build", " zum Bauen")
+                : LocalizationService.Resolve("Move closer", "Näher herangehen");
+            var summary = LocalizationService.Resolve("Tower Placement | Slot ", "Turmplatzierung | Slot ") + (_selectedSlotIndex + 1) + ": " + towerData.DisplayName + LocalizationService.Resolve(" | Cost ", " | Kosten ") + ResolveTowerCost(towerData.BuildCost) + " | " + rangeState;
 
             // ResolveBuildTowerData() only ever returns the tower at _selectedTowerTypeIndex - without
             // this hint, cycling tower types (bound on the Build map, not the always-visible Interact
@@ -757,7 +760,7 @@ namespace Corebound.Gameplay.Towers
             // have no way to learn how to pick a different one to build.
             if (_unlockedTowerBuffer.Count > 1)
             {
-                summary += " | " + ResolvePreviousTowerTypeKeyLabel() + "/" + ResolveNextTowerTypeKeyLabel() + " to change tower";
+                summary += " | " + ResolvePreviousTowerTypeKeyLabel() + "/" + ResolveNextTowerTypeKeyLabel() + LocalizationService.Resolve(" to change tower", " zum Turmwechsel");
             }
 
             return summary;

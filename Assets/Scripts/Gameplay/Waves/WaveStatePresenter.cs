@@ -462,11 +462,13 @@ namespace Corebound.Gameplay.Waves
             // takes a 100px band below it with a gap in between.
             _pauseTitleText = CreateText("PauseTitle", pauseRect, 30, TextAnchor.UpperCenter, new Color(0.08f, 0.12f, 0.17f, 0.98f));
             StretchToParent(_pauseTitleText.rectTransform, Vector2.zero, Vector2.one, new Vector2(FrameBorderHorizontal, 255f), new Vector2(-FrameBorderHorizontal, -FrameBorderTop));
-            _pauseTitleText.text = "Paused";
+            _pauseTitleText.text = LocalizationService.Resolve("Paused", "Pausiert");
 
             _pauseBodyText = CreateText("PauseBody", pauseRect, 18, TextAnchor.MiddleCenter, new Color(0.1f, 0.12f, 0.16f, 0.96f));
             StretchToParent(_pauseBodyText.rectTransform, Vector2.zero, Vector2.one, new Vector2(FrameBorderHorizontal, FrameBorderBottom), new Vector2(-FrameBorderHorizontal, -260f));
-            _pauseBodyText.text = "Press Pause or Cancel to resume.\nPress Confirm to return to the Main Menu.";
+            _pauseBodyText.text = LocalizationService.Resolve(
+                "Press Pause or Cancel to resume.\nPress Confirm to return to the Main Menu.",
+                "Pause oder Abbrechen zum Fortsetzen.\nBestätigen kehrt zum Hauptmenü zurück.");
         }
 
         private void Refresh()
@@ -492,7 +494,10 @@ namespace Corebound.Gameplay.Waves
             {
                 // Playtest feedback (2026-09-17): "Run Failed should contain 'player Died' or 'core
                 // destroyed'" - the generic message didn't say which.
-                OpenOverlay(OverlayMode.Failed, "Run Failed", _waveManager.FailureCauseLabel + ". Confirm returns to the Main Menu.");
+                OpenOverlay(
+                    OverlayMode.Failed,
+                    LocalizationService.Resolve("Run Failed", "Run gescheitert"),
+                    _waveManager.FailureCauseLabel + LocalizationService.Resolve(". Confirm returns to the Main Menu.", ". Bestätigen kehrt zum Hauptmenü zurück."));
             }
 
             _waveText.text = _waveManager.StageLabel + " | " + ResolveHeaderLabel();
@@ -527,29 +532,29 @@ namespace Corebound.Gameplay.Waves
             switch (_waveManager.State)
             {
                 case WaveState.Combat:
-                    _stateText.text = "Combat | Remaining Enemies: " + _waveManager.RemainingAliveEnemies;
+                    _stateText.text = LocalizationService.Resolve("Combat | Remaining Enemies: ", "Kampf | Verbleibende Gegner: ") + _waveManager.RemainingAliveEnemies;
                     return;
                 case WaveState.BossCombat:
                     _stateText.text = "Boss | " + _waveManager.BossLabel + " | " + _waveManager.BossPhaseLabel + " | " + (_waveManager.BossHealthNormalized * 100f).ToString("0") + "%";
                     return;
                 case WaveState.Reward:
-                    _stateText.text = "Reward | Choose a Card to continue.";
+                    _stateText.text = LocalizationService.Resolve("Reward | Choose a Card to continue.", "Belohnung | Wähle eine Karte, um fortzufahren.");
                     return;
                 case WaveState.Intermission:
                     // Playtest feedback (2026-09-17): Confirm now always ends Intermission
                     // (WaveManager.OnConfirmPressed no longer gates on RequiresIntermissionTowerAction
                     // - building is optional), so this no longer claims a tower action is required.
                     _stateText.text = _waveManager.RequiresIntermissionShopAction
-                        ? "Shop | Confirm buys. Cancel skips."
+                        ? LocalizationService.Resolve("Shop | Confirm buys. Cancel skips.", "Shop | Bestätigen kauft. Abbrechen überspringt.")
                         : _waveManager.RequiresIntermissionTowerAction
-                        ? "Intermission | Optionally place or upgrade a tower. Confirm to continue."
-                        : "Intermission | " + _waveManager.IntermissionSecondsRemaining.ToString("0.0") + "s or Confirm to continue.";
+                        ? LocalizationService.Resolve("Intermission | Optionally place or upgrade a tower. Confirm to continue.", "Zwischenphase | Optional einen Turm bauen oder verbessern. Bestätigen zum Fortfahren.")
+                        : LocalizationService.Resolve("Intermission | ", "Zwischenphase | ") + _waveManager.IntermissionSecondsRemaining.ToString("0.0") + LocalizationService.Resolve("s or Confirm to continue.", "s oder Bestätigen zum Fortfahren.");
                     return;
                 case WaveState.Failed:
-                    _stateText.text = "Run Failed | " + _waveManager.FailureCauseLabel + ".";
+                    _stateText.text = LocalizationService.Resolve("Run Failed | ", "Run gescheitert | ") + _waveManager.FailureCauseLabel + ".";
                     return;
                 default:
-                    _stateText.text = "Stage Complete";
+                    _stateText.text = LocalizationService.Resolve("Stage Complete", "Stage abgeschlossen");
                     UIManager.NotifyPanelChanged(_managedPanel);
                     return;
             }
@@ -592,7 +597,7 @@ namespace Corebound.Gameplay.Waves
                 return;
             }
 
-            OpenOverlay(OverlayMode.Pause, "Paused", ResolvePauseBodyText());
+            OpenOverlay(OverlayMode.Pause, LocalizationService.Resolve("Paused", "Pausiert"), ResolvePauseBodyText());
         }
 
         // Playtest feedback: "pause menu should show all current active effects" - the selected
@@ -602,14 +607,16 @@ namespace Corebound.Gameplay.Waves
         // rather than a new tracked-effects system.
         private string ResolvePauseBodyText()
         {
-            const string baseText = "Press Confirm to return to the Main Menu.\nPress Pause or Cancel to resume.";
+            var baseText = LocalizationService.Resolve(
+                "Press Confirm to return to the Main Menu.\nPress Pause or Cancel to resume.",
+                "Bestätigen kehrt zum Hauptmenü zurück.\nPause oder Abbrechen zum Fortsetzen.");
 
             if (_cardService == null || _cardService.SelectedCards == null || _cardService.SelectedCards.Count == 0)
             {
                 return baseText;
             }
 
-            var effectsList = "Active Effects: ";
+            var effectsList = LocalizationService.Resolve("Active Effects: ", "Aktive Effekte: ");
 
             for (var index = 0; index < _cardService.SelectedCards.Count; index++)
             {
@@ -673,38 +680,38 @@ namespace Corebound.Gameplay.Waves
         {
             if (_waveManager.State == WaveState.BossCombat)
             {
-                return "Boss Encounter";
+                return LocalizationService.Resolve("Boss Encounter", "Boss-Begegnung");
             }
 
             if (_waveManager.State == WaveState.Failed)
             {
-                return "Run Failed";
+                return LocalizationService.Resolve("Run Failed", "Run gescheitert");
             }
 
-            return "Wave " + _waveManager.CurrentWaveNumber + "/" + _waveManager.TotalWaveCount;
+            return LocalizationService.Resolve("Wave ", "Welle ") + _waveManager.CurrentWaveNumber + "/" + _waveManager.TotalWaveCount;
         }
 
         private void OnWaveStarted(WaveProgressEventArgs eventArgs)
         {
-            var label = string.IsNullOrWhiteSpace(eventArgs.Label) ? "Wave " + eventArgs.WaveIndex : eventArgs.Label;
+            var label = string.IsNullOrWhiteSpace(eventArgs.Label) ? LocalizationService.Resolve("Wave ", "Welle ") + eventArgs.WaveIndex : eventArgs.Label;
             ShowBanner(label, ResolveBannerColor(eventArgs.IsEliteEncounter, false));
 
             if (!_hasShownStartOverlay && eventArgs.WaveIndex == 1 && _overlayMode != OverlayMode.Tutorial)
             {
                 _hasShownStartOverlay = true;
-                OpenOverlay(OverlayMode.Start, label, "Confirm begins the encounter.");
+                OpenOverlay(OverlayMode.Start, label, LocalizationService.Resolve("Confirm begins the encounter.", "Bestätigen startet die Begegnung."));
             }
         }
 
         private void OnWaveCompleted(WaveProgressEventArgs eventArgs)
         {
-            ShowBanner("Wave Clear", new Color(0.84f, 0.97f, 0.9f, 0.98f));
+            ShowBanner(LocalizationService.Resolve("Wave Clear", "Welle geschafft"), new Color(0.84f, 0.97f, 0.9f, 0.98f));
         }
 
         private void OnIntermissionStarted(WaveProgressEventArgs eventArgs)
         {
             var isBossIncoming = !string.IsNullOrWhiteSpace(eventArgs.Label) && eventArgs.Label.IndexOf("Boss", System.StringComparison.OrdinalIgnoreCase) >= 0;
-            ShowBanner(isBossIncoming ? "Boss Incoming" : "Intermission", ResolveBannerColor(eventArgs.IsEliteEncounter, isBossIncoming));
+            ShowBanner(isBossIncoming ? LocalizationService.Resolve("Boss Incoming", "Boss naht") : LocalizationService.Resolve("Intermission", "Zwischenphase"), ResolveBannerColor(eventArgs.IsEliteEncounter, isBossIncoming));
         }
 
         private void OnStageStarted(StageEventArgs eventArgs)
@@ -715,7 +722,7 @@ namespace Corebound.Gameplay.Waves
 
         private void OnStageCompleted(StageEventArgs eventArgs)
         {
-            var detailLabel = string.IsNullOrWhiteSpace(eventArgs.DetailLabel) ? "Stage Complete" : eventArgs.DetailLabel;
+            var detailLabel = string.IsNullOrWhiteSpace(eventArgs.DetailLabel) ? LocalizationService.Resolve("Stage Complete", "Stage abgeschlossen") : eventArgs.DetailLabel;
             ShowBanner(detailLabel, new Color(0.95f, 0.96f, 1f, 0.98f));
         }
 
@@ -756,14 +763,14 @@ namespace Corebound.Gameplay.Waves
         {
             return _resourceWalletService != null
                 ? _resourceWalletService.DisplayLabel + ": " + _resourceWalletService.CurrentAmount
-                : "Resources: --";
+                : LocalizationService.Resolve("Resources: --", "Ressourcen: --");
         }
 
         private string ResolvePlayerHealthText()
         {
             return _playerCombatController != null
-                ? "Player " + (_playerCombatController.CurrentHealthNormalized * 100f).ToString("0") + "%"
-                : "Player --";
+                ? LocalizationService.Resolve("Player ", "Spieler ") + (_playerCombatController.CurrentHealthNormalized * 100f).ToString("0") + "%"
+                : LocalizationService.Resolve("Player --", "Spieler --");
         }
 
         private string ResolveCoreHealthText()

@@ -11,6 +11,7 @@ using Corebound.Gameplay.Towers;
 using Corebound.Input;
 using Corebound.MetaProgression;
 using Corebound.SaveSystem;
+using Corebound.UI;
 using UnityEngine;
 
 namespace Corebound.Gameplay.Waves
@@ -88,7 +89,9 @@ namespace Corebound.Gameplay.Waves
 
         public bool RequiresIntermissionTowerAction => _requiresIntermissionTowerAction;
 
-        public string FailureCauseLabel => _wasCoreDestroyedOnFailure ? "Core Destroyed" : "Player Died";
+        public string FailureCauseLabel => _wasCoreDestroyedOnFailure
+            ? LocalizationService.Resolve("Core Destroyed", "Core zerstört")
+            : LocalizationService.Resolve("Player Died", "Spieler gestorben");
 
         public StageData StageDataAsset => _stageData;
 

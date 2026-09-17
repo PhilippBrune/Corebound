@@ -64,7 +64,7 @@ namespace Corebound.Gameplay.Shop
                     return string.Empty;
                 }
 
-                return ResolveOfferDescription(_currentOffers[_selectedIndex]) + "  Cost " + ResolveOfferCost(_currentOffers[_selectedIndex]);
+                return ResolveOfferDescription(_currentOffers[_selectedIndex]) + LocalizationService.Resolve("  Cost ", "  Kosten ") + ResolveOfferCost(_currentOffers[_selectedIndex]);
             }
         }
 
