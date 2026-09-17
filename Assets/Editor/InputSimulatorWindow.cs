@@ -40,6 +40,24 @@ namespace Corebound.EditorTools
     // same one InputTestFixture uses for automated tests), which is why this looked like the
     // right tool for the job despite not fully panning out here.
     //
+    // INVESTIGATED (2026-09-17): tried InputTestFixture (Unity.InputSystem.TestFramework) as a
+    // structurally different alternative - it drives input from inside NUnit's own test execution
+    // rather than injecting from a separate floating EditorWindow into a live Play session, so it
+    // isn't just a retry of the approach above. Dead end for a different reason, found before
+    // writing much code: Unity.InputSystem.TestFramework.asmdef has "autoReferenced": false, so
+    // using InputTestFixture at all requires a dedicated .asmdef that explicitly references it.
+    // This project's own game code (everything under Assets/Scripts/, all of Corebound.*) has no
+    // .asmdef and compiles into the default Assembly-CSharp - and predefined assemblies like that
+    // one compile AFTER every custom .asmdef-based assembly, so a new test assembly can reference
+    // Unity.InputSystem.TestFramework or Corebound.* but structurally never both at the same time.
+    // A minimal test proved the compile error (CS0234/CS0246 on the missing assembly reference)
+    // but was deleted rather than kept half-working, since without access to the game's own
+    // CoreboundInputReader/InputSystem_Actions it can't test anything this project actually needs.
+    // Unlocking this would mean giving Assets/Scripts/ its own Assembly-CSharp.asmdef first - a
+    // real restructuring (compile-order and accessibility implications across ~2300 scripts, not
+    // just adding a file) and a deliberate call for a future session with that specific goal, not
+    // a byproduct of chasing this input-simulation problem.
+    //
     // Held keys (movement) can't block inside OnGUI, so PressKey's optional hold duration is
     // driven by a small queue ticked from EditorApplication.update instead.
     public sealed class InputSimulatorWindow : EditorWindow
