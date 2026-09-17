@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_glass_cannon_matrix
   _displayName: Glass Cannon Matrix
+  _displayNameDe: Glaskanonen-Matrix
   _description: A build-defining trade of Weapon fire interval for far greater Weapon damage.
+  _descriptionDe: Ein build-prägender Tausch von Feuerintervall gegen deutlich höheren Waffenschaden.
   _rarity: 2
   _requiredUnlockId:
   _effects:

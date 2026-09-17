@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_brace_for_impact
   _displayName: Brace for Impact
+  _displayNameDe: Abwehrhaltung
   _description: A small, reliable reduction to damage taken by the Player and Core.
+  _descriptionDe: Eine kleine, zuverlässige Reduzierung des Schadens, den Spieler und Core erleiden.
   _rarity: 0
   _requiredUnlockId:
   _effects:

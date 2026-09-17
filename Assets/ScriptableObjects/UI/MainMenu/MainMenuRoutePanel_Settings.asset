@@ -14,11 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _route: 3
   _title: Settings
+  _titleDe: Einstellungen
   _subtitle: Controller-first configuration
+  _subtitleDe: Controller-first-Konfiguration
   _summary: Adjust audio, graphics, controls and accessibility from the same Main Menu flow without entering an active Run.
+  _summaryDe: Passe Audio, Grafik, Steuerung und Barrierefreiheit direkt im Hauptmenü an, ohne einen aktiven Run zu starten.
   _detailLines:
   - Audio categories stay separated for Music, SFX and UI cues.
   - Controls include bindings, deadzones and assist-oriented tuning hooks.
   - Graphics stays aligned to the 2D URP presentation and safe presets.
   - Accessibility keeps readability and comfort visible without hidden side menus.
+  _detailLinesDe:
+  - Audio-Kategorien bleiben getrennt für Musik, SFX und UI-Signale.
+  - Steuerung umfasst Belegungen, Deadzones und unterstützende Feineinstellungen.
+  - Grafik bleibt auf die 2D-URP-Darstellung und sichere Voreinstellungen abgestimmt.
+  - Barrierefreiheit hält Lesbarkeit und Komfort sichtbar, ohne versteckte Untermenüs.
   _footerHint: Confirm or Cancel returns to the Main Menu.
+  _footerHintDe: Bestätigen oder Abbrechen kehrt zum Hauptmenü zurück.

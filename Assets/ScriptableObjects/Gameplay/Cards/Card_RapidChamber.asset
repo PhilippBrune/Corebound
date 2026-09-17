@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _cardId: card_rapid_chamber
   _displayName: Rapid Chamber
+  _displayNameDe: Schnellladekammer
   _description: Increase Weapon damage for tighter burst pressure.
+  _descriptionDe: Erhöht den Waffenschaden für dichteren Salvendruck.
   _rarity: 0
   _requiredUnlockId: 
   _tags: 00000000

@@ -347,7 +347,7 @@ namespace Corebound.Gameplay.Shop
                 }
                 _slotHighlights[index].color = index == _service.SelectedIndex ? new Color(0.96f, 0.72f, 0.22f, 0.18f) : new Color(0.06f, 0.08f, 0.12f, 0.08f);
                 _slotTitleTexts[index].text = _service.ResolveOfferTitle(offer);
-                _slotCostTexts[index].text = "Cost " + _service.ResolveOfferCost(offer);
+                _slotCostTexts[index].text = LocalizationService.Resolve("Cost ", "Kosten ") + _service.ResolveOfferCost(offer);
                 _slotDescriptionTexts[index].text = _service.ResolveOfferDescription(offer);
 
                 if (_slotTypeBadgeImages[index] != null)

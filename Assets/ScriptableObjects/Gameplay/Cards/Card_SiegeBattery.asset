@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_siege_battery
   _displayName: Siege Battery
+  _displayNameDe: Belagerungsbatterie
   _description: A major surge to Tower damage for a support-heavy Build.
+  _descriptionDe: Ein großer Schub für den Turmschaden - für einen unterstützungslastigen Build.
   _rarity: 2
   _requiredUnlockId:
   _effects:

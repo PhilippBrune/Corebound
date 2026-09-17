@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_assembly_line
   _displayName: Assembly Line
+  _displayNameDe: Fließband
   _description: A notable boost to primary Run Resource gains from Combat rewards.
+  _descriptionDe: Eine spürbare Steigerung der primären Run-Ressource aus Combat-Belohnungen.
   _rarity: 1
   _requiredUnlockId:
   _effects:

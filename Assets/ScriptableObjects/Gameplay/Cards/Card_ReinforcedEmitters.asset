@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_reinforced_emitters
   _displayName: Reinforced Emitters
+  _displayNameDe: Verstärkte Emitter
   _description: A solid Tower damage increase for support-heavy Builds.
+  _descriptionDe: Eine solide Turmschadenssteigerung für unterstützungslastige Builds.
   _rarity: 1
   _requiredUnlockId:
   _effects:

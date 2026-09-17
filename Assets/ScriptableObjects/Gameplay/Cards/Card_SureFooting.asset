@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_sure_footing
   _displayName: Sure Footing
+  _displayNameDe: Sicherer Stand
   _description: Slightly faster on your feet. A small, reliable edge for staying out of harm's way.
+  _descriptionDe: Etwas schneller auf den Beinen. Ein kleiner, zuverlässiger Vorteil, um Gefahren auszuweichen.
   _rarity: 0
   _requiredUnlockId:
   _effects:

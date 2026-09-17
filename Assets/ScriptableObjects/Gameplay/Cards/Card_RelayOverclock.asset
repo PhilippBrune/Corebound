@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _cardId: card_relay_overclock
   _displayName: Relay Overclock
+  _displayNameDe: Relais-Übertaktung
   _description: Increase Tower damage so support fire stays relevant into later Waves.
+  _descriptionDe: Erhöht den Turmschaden, damit Unterstützungsfeuer auch in späteren Waves relevant bleibt.
   _rarity: 1
   _requiredUnlockId: 
   _tags: 02000000

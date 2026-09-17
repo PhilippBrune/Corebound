@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_redundant_capacitors
   _displayName: Redundant Capacitors
+  _displayNameDe: Redundante Kondensatoren
   _description: Slightly increase Tower damage. Stacks cleanly with other builds.
+  _descriptionDe: Erhöht den Turmschaden leicht. Stapelt sich sauber mit anderen Builds.
   _rarity: 0
   _requiredUnlockId:
   _effects:

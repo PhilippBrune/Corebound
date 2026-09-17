@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_endless_supply_line
   _displayName: Endless Supply Line
+  _displayNameDe: Endlose Versorgungslinie
   _description: A major, uncapped surge to resource gain for an economy Build.
+  _descriptionDe: Ein großer, unbegrenzter Schub für den Ressourcengewinn - für einen Wirtschafts-Build.
   _rarity: 2
   _requiredUnlockId:
   _effects:

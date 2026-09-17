@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_volatile_payload
   _displayName: Volatile Payload
+  _displayNameDe: Volatile Ladung
   _description: A major, unstable surge to Weapon damage for an aggressive Build.
+  _descriptionDe: Ein großer, instabiler Schub für den Waffenschaden - für einen aggressiven Build.
   _rarity: 2
   _requiredUnlockId:
   _effects:

@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_overdrive_core
   _displayName: Overdrive Core
+  _displayNameDe: Overdrive-Kern
   _description: A build-defining surge that drives Weapon damage far past standard limits.
+  _descriptionDe: Ein build-prägender Schub, der den Waffenschaden weit über die üblichen Grenzen treibt.
   _rarity: 3
   _requiredUnlockId:
   _tags: 00000000

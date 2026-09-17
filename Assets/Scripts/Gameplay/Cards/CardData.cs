@@ -1,3 +1,4 @@
+using Corebound.UI;
 using UnityEngine;
 
 namespace Corebound.Gameplay.Cards
@@ -7,7 +8,9 @@ namespace Corebound.Gameplay.Cards
     {
         [SerializeField] private string _cardId = "card_default";
         [SerializeField] private string _displayName = "Card";
+        [SerializeField] private string _displayNameDe = string.Empty;
         [SerializeField] [TextArea(2, 3)] private string _description = string.Empty;
+        [SerializeField] [TextArea(2, 3)] private string _descriptionDe = string.Empty;
         [SerializeField] private CardRarity _rarity = CardRarity.Common;
         [SerializeField] private string _requiredUnlockId = string.Empty;
         [SerializeField] private CardTagType[] _tags;
@@ -16,9 +19,9 @@ namespace Corebound.Gameplay.Cards
 
         public string CardId => _cardId;
 
-        public string DisplayName => _displayName;
+        public string DisplayName => LocalizationService.Resolve(_displayName, _displayNameDe);
 
-        public string Description => _description;
+        public string Description => LocalizationService.Resolve(_description, _descriptionDe);
 
         public CardRarity Rarity => _rarity;
 

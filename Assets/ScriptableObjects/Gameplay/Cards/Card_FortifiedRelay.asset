@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_fortified_relay
   _displayName: Fortified Relay
+  _displayNameDe: Verstärktes Relais
   _description: Increase Tower damage so support fire hits harder.
+  _descriptionDe: Erhöht den Turmschaden, damit Unterstützungsfeuer härter trifft.
   _rarity: 1
   _requiredUnlockId:
   _effects:

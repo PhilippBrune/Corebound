@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _cardId: card_status_archive
   _displayName: Status Archive
+  _displayNameDe: Status-Archiv
   _description: Advanced Card line unlocked through Meta Progression for future Burn and Freeze leaning Builds.
+  _descriptionDe: Fortgeschrittene Kartenlinie, freigeschaltet über Meta Progression, für künftige Burn- und Freeze-lastige Builds.
   _rarity: 2
   _requiredUnlockId: unlock_card_status
   _tags: 04000000

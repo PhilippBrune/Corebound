@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_apex_overload
   _displayName: Apex Overload
+  _displayNameDe: Apex-Überladung
   _description: Legendary dual-scaling surge that raises both Weapon and Tower damage at once.
+  _descriptionDe: Legendärer Doppelschub, der gleichzeitig Waffen- und Turmschaden erhöht.
   _rarity: 3
   _requiredUnlockId:
   _effects:

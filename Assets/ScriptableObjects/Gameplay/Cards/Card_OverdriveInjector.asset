@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_overdrive_injector
   _displayName: Overdrive Injector
+  _displayNameDe: Overdrive-Injektor
   _description: A real trade, not just a number - a solid Weapon damage boost, but the Player and Core take 8% more damage for the rest of the run.
+  _descriptionDe: Ein echter Tausch, keine bloße Zahl - eine solide Waffenschadenssteigerung, aber Spieler und Core erleiden für den Rest des Runs 8% mehr Schaden.
   _rarity: 1
   _requiredUnlockId:
   _effects:

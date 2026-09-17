@@ -14,10 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _route: 5
   _title: Quit Corebound
+  _titleDe: Corebound beenden
   _subtitle: Leave the current session
+  _subtitleDe: Aktuelle Sitzung verlassen
   _summary: This closes the application. In the Unity Editor, the same action leaves Play Mode instead.
+  _summaryDe: Dies schließt die Anwendung. Im Unity-Editor verlässt dieselbe Aktion stattdessen den Play-Modus.
   _detailLines:
   - Continue data remains available for the next session.
   - Confirm quits immediately.
   - Cancel returns to the Main Menu.
+  _detailLinesDe:
+  - Fortsetzungsdaten bleiben für die nächste Sitzung erhalten.
+  - Bestätigen beendet sofort.
+  - Abbrechen kehrt zum Hauptmenü zurück.
   _footerHint: Confirm quits the application. Cancel returns to the Main Menu.
+  _footerHintDe: Bestätigen beendet die Anwendung. Abbrechen kehrt zum Hauptmenü zurück.

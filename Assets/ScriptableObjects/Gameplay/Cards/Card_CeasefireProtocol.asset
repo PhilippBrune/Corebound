@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_ceasefire_protocol
   _displayName: Ceasefire Protocol
+  _displayNameDe: Waffenstillstandsprotokoll
   _description: Increase Weapon damage at a small cost to fire interval. Stacks for a heavy-hitter Build.
+  _descriptionDe: Erhöht den Waffenschaden zu einem kleinen Preis beim Feuerintervall. Stapelt sich für einen Heavy-Hitter-Build.
   _rarity: 1
   _requiredUnlockId:
   _effects:

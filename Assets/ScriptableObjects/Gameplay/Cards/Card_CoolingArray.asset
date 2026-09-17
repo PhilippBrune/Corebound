@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _cardId: card_cooling_array
   _displayName: Cooling Array
+  _displayNameDe: Kühlfeld
   _description: Reduce Weapon fire interval to sustain faster output.
+  _descriptionDe: Verkürzt das Feuerintervall der Waffe für schnelleren Dauerausstoß.
   _rarity: 1
   _requiredUnlockId: 
   _tags: 00000000

@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_rapid_cycler
   _displayName: Rapid Cycler
+  _displayNameDe: Schnellzykler
   _description: Noticeably shorten weapon fire interval for a faster-paced Build.
+  _descriptionDe: Verkürzt das Waffen-Feuerintervall spürbar für einen temporeicheren Build.
   _rarity: 1
   _requiredUnlockId:
   _effects:

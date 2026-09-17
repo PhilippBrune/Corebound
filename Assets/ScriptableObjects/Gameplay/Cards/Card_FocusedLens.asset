@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_focused_lens
   _displayName: Focused Lens
+  _displayNameDe: Fokussierte Linse
   _description: Sharpen weapon optics for a solid, reliable damage increase.
+  _descriptionDe: Schärft die Waffenoptik für eine solide, zuverlässige Schadenssteigerung.
   _rarity: 1
   _requiredUnlockId:
   _effects:

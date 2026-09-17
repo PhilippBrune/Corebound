@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _cardId: card_salvage_protocol
   _displayName: Salvage Protocol
+  _displayNameDe: Bergungsprotokoll
   _description: Increase primary Run Resource gains from Combat rewards.
+  _descriptionDe: Erhöht die primären Run-Ressourcengewinne aus Combat-Belohnungen.
   _rarity: 0
   _requiredUnlockId: 
   _tags: 03000000

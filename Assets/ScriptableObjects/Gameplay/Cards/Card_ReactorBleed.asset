@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_reactor_bleed
   _displayName: Reactor Bleed
+  _displayNameDe: Reaktorleck
   _description: Legendary dual-scaling surge that raises both Weapon and Tower damage together.
+  _descriptionDe: Legendärer Doppelschub, der Waffen- und Turmschaden gemeinsam erhöht.
   _rarity: 3
   _requiredUnlockId:
   _effects:

@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_scrap_magnet
   _displayName: Scrap Magnet
+  _displayNameDe: Schrottmagnet
   _description: Increase primary Run Resource gains from Combat rewards.
+  _descriptionDe: Erhöht die primären Run-Ressourcengewinne aus Combat-Belohnungen.
   _rarity: 0
   _requiredUnlockId:
   _effects:

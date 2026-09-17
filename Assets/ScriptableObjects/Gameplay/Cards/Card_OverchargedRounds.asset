@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_overcharged_rounds
   _displayName: Overcharged Rounds
+  _displayNameDe: Überladene Munition
   _description: Increase Weapon damage for a steady output boost.
+  _descriptionDe: Erhöht den Waffenschaden für eine gleichmäßig stärkere Ausbeute.
   _rarity: 0
   _requiredUnlockId:
   _effects:

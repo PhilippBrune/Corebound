@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_twin_turret_array
   _displayName: Twin Turret Array
+  _displayNameDe: Doppelturm-Batterie
   _description: A major surge to Tower damage for a heavily fortified Build.
+  _descriptionDe: Ein großer Schub für den Turmschaden - für einen stark befestigten Build.
   _rarity: 2
   _requiredUnlockId:
   _effects:

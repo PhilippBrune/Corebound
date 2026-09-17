@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_hair_trigger
   _displayName: Hair Trigger
+  _displayNameDe: Federleichter Abzug
   _description: Slightly reduce Weapon fire interval. Stacks cleanly with other builds.
+  _descriptionDe: Verringert das Feuerintervall der Waffe leicht. Stapelt sich sauber mit anderen Builds.
   _rarity: 0
   _requiredUnlockId:
   _effects:

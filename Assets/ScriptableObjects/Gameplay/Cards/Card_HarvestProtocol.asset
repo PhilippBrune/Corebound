@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_harvest_protocol
   _displayName: Harvest Protocol
+  _displayNameDe: Ernteprotokoll
   _description: A reliable boost to resource gain across all Resource sources.
+  _descriptionDe: Ein zuverlässiger Schub für den Ressourcengewinn aus allen Ressourcenquellen.
   _rarity: 1
   _requiredUnlockId:
   _effects:

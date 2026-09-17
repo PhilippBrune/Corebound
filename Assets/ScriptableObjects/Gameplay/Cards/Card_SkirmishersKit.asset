@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_skirmishers_kit
   _displayName: Skirmisher's Kit
+  _displayNameDe: Plänkler-Ausrüstung
   _description: Faster projectiles, faster trigger - a hit-and-run package for a mobile ranged Build.
+  _descriptionDe: Schnellere Projektile, schnellerer Abzug - ein Hit-and-Run-Paket für einen mobilen Fernkampf-Build.
   _rarity: 1
   _requiredUnlockId:
   _effects:

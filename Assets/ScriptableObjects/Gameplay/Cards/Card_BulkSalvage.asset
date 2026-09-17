@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_bulk_salvage
   _displayName: Bulk Salvage
+  _displayNameDe: Massenbergung
   _description: A major surge to primary Run Resource gains from Combat rewards.
+  _descriptionDe: Ein großer Schub für die primäre Run-Ressource aus Combat-Belohnungen.
   _rarity: 2
   _requiredUnlockId:
   _effects:

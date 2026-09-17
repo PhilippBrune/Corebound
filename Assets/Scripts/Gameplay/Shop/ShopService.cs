@@ -5,6 +5,7 @@ using Corebound.Gameplay.Economy;
 using Corebound.Gameplay.Resources;
 using Corebound.Input;
 using Corebound.SaveSystem;
+using Corebound.UI;
 using Corebound.UI.MainMenu;
 using UnityEngine;
 
@@ -42,15 +43,15 @@ namespace Corebound.Gameplay.Shop
 
         public string Title => _activeShopData != null && _activeShopData.PresentationData != null && !string.IsNullOrWhiteSpace(_activeShopData.PresentationData.Title)
             ? _activeShopData.PresentationData.Title
-            : (_activeShopData != null ? _activeShopData.DisplayName : "Foundry Exchange");
+            : (_activeShopData != null ? _activeShopData.DisplayName : LocalizationService.Resolve("Foundry Exchange", "Schmiedebörse"));
 
         public string Summary => _activeShopData != null && _activeShopData.PresentationData != null
             ? _activeShopData.PresentationData.Summary
-            : "Spend Scrap on one targeted upgrade before tower placement.";
+            : LocalizationService.Resolve("Spend Scrap on one targeted upgrade before tower placement.", "Gib Schrott für ein gezieltes Upgrade aus, bevor du Towers platzierst.");
 
         public string FooterHint => _activeShopData != null && _activeShopData.PresentationData != null
             ? _activeShopData.PresentationData.FooterHint
-            : "Confirm buys. Cancel skips the shop.";
+            : LocalizationService.Resolve("Confirm buys. Cancel skips the shop.", "Bestätigen kauft. Abbrechen überspringt den Shop.");
 
         public string ResourceSummary => _resourceWalletService != null ? _resourceWalletService.DisplayLabel + ": " + _resourceWalletService.CurrentAmount : string.Empty;
 

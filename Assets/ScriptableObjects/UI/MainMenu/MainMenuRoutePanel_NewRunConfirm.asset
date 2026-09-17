@@ -14,10 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _route: 1
   _title: Start New Run
+  _titleDe: Neuen Run starten
   _subtitle: Replace the current continue state
+  _subtitleDe: Ersetzt den aktuellen Fortsetzungsstand
   _summary: Starting a new run resets the current run checkpoint to the configured stage-start bootstrap before loading gameplay.
+  _summaryDe: Ein neuer Run setzt den aktuellen Run-Checkpoint auf den konfigurierten Stage-Start zurück, bevor das Gameplay geladen wird.
   _detailLines:
   - The current continue run will be replaced by a fresh stage-start state.
   - Audio, settings and meta progression stay untouched.
   - Confirm starts gameplay immediately. Cancel returns to the menu.
+  _detailLinesDe:
+  - Der aktuelle Fortsetzungs-Run wird durch einen frischen Stage-Start-Zustand ersetzt.
+  - Audio, Einstellungen und Meta-Progression bleiben unberührt.
+  - Bestätigen startet das Gameplay sofort. Abbrechen kehrt zum Menü zurück.
   _footerHint: Confirm starts a new run. Cancel returns to the Main Menu.
+  _footerHintDe: Bestätigen startet einen neuen Run. Abbrechen kehrt zum Hauptmenü zurück.
