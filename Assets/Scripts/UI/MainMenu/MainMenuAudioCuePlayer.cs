@@ -32,7 +32,13 @@ namespace Corebound.UI.MainMenu
                 _inputHandler.CancelSubmitted += OnCancelSubmitted;
             }
 
-            PlayCue(_openClip, AudioCueData != null ? AudioCueData.OpenVolume : 0f);
+            // Playtest feedback (2026-09-17): "After a run the main menu plays two soundfiles" -
+            // this used to fire _openClip the instant MainMenu.unity loads, landing in the same
+            // frame as MusicStateController.OnEnable()'s SwitchToState(MusicState.Calm) (also
+            // scene-load-triggered) and audibly overlapping it. _openClip is a UI "panel appeared"
+            // cue; the whole scene loading isn't a navigation action the way opening Settings or a
+            // route panel is, so it no longer plays here - Navigate/Confirm/Cancel cues (genuine
+            // player-initiated actions) are unaffected.
         }
 
         private void OnDisable()

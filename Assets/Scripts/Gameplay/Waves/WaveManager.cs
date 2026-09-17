@@ -70,6 +70,7 @@ namespace Corebound.Gameplay.Waves
         private bool _hasRaisedStageStarted;
         private bool _requiresIntermissionShopAction;
         private bool _requiresIntermissionTowerAction;
+        private bool _wasCoreDestroyedOnFailure;
 
         public event Action StateChanged;
 
@@ -86,6 +87,8 @@ namespace Corebound.Gameplay.Waves
         public bool RequiresIntermissionShopAction => _requiresIntermissionShopAction;
 
         public bool RequiresIntermissionTowerAction => _requiresIntermissionTowerAction;
+
+        public string FailureCauseLabel => _wasCoreDestroyedOnFailure ? "Core Destroyed" : "Player Died";
 
         public StageData StageDataAsset => _stageData;
 
@@ -597,9 +600,13 @@ namespace Corebound.Gameplay.Waves
 
         private void OnConfirmPressed()
         {
+            // Playtest feedback (2026-09-17): "Intermission should be ended via btn press 'Enter'
+            // even if nothing was built" - the mandatory build-a-tower gate (below,
+            // _requiresIntermissionTowerAction) used to block Confirm entirely until the player
+            // placed or upgraded something. Building a tower is now purely optional during
+            // Intermission; only the Shop's own mandatory buy/skip gate still blocks Confirm.
             if (_state == WaveState.Intermission
                 && !_requiresIntermissionShopAction
-                && !_requiresIntermissionTowerAction
                 && (_cardRewardController == null || !_cardRewardController.IsOpen))
             {
                 AdvanceEncounter();
@@ -667,6 +674,10 @@ namespace Corebound.Gameplay.Waves
             if ((_playerTarget != null && eventArgs.Victim == _playerTarget.gameObject)
                 || (_coreTarget != null && eventArgs.Victim == _coreTarget.gameObject))
             {
+                // Playtest feedback (2026-09-17): "Run Failed should contain 'player Died' or 'core
+                // destroyed'" - the generic message didn't say which. Captured here since this is
+                // the one place that already distinguishes the two victims.
+                _wasCoreDestroyedOnFailure = _coreTarget != null && eventArgs.Victim == _coreTarget.gameObject;
                 _state = WaveState.Failed;
                 RecordRunOutcomeStatistic(false);
                 GrantMetaCurrencyReward(_metaProgressionDefinitionData != null ? _metaProgressionDefinitionData.RunFailureCurrencyReward : 0);

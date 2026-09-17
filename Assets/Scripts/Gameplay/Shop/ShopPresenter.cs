@@ -71,6 +71,13 @@ namespace Corebound.Gameplay.Shop
         private const string ShopRootName = "ShopScreen";
         private const string ShopPanelName = "ShopOfferPanel";
 
+        // Entry point for Assets/Editor/AuthoredCanvasRepairTool.cs - see CardRewardPresenter's
+        // identical method for why this exists.
+        public bool RepairAuthoredLayoutForEditorTool()
+        {
+            return TryBindAuthoredLayout();
+        }
+
         // See CardRewardPresenter.Awake() for the full root-cause writeup (2026-09-16 playtest:
         // reward/shop screens broken via MainMenu -> New Run, fine when opening SampleScene
         // directly). Same bug applied here: calling the fallback-capable EnsureInitialized() from
@@ -474,25 +481,11 @@ namespace Corebound.Gameplay.Shop
             }
 
             RepairSprite(panel.GetComponent<Image>(), PanelTexturePath, PanelTextureFallbackPath);
-            SetAnchoredBox(panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180f, 680f));
 
-            var overlayTransform = shopRoot.Find("Overlay") as RectTransform;
-
-            if (overlayTransform != null)
-            {
-                StretchToParent(overlayTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-                var overlayImage = overlayTransform.GetComponent<Image>();
-
-                if (overlayImage != null)
-                {
-                    overlayImage.color = new Color(0.02f, 0.04f, 0.06f, 0.88f);
-                }
-            }
-
-            _authoredTitleText = RepairText(panel, "Title", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(180f, -125f), new Vector2(-180f, -54f));
-            _authoredSummaryText = RepairText(panel, "Summary", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(287f, 71f), new Vector2(-289f, 133f));
-            _authoredResourceText = RepairText(panel, "Resources", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -70f), new Vector2(174f, -40f));
-            _authoredFooterText = RepairText(panel, "Footer", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(180f, -196f), new Vector2(-180f, -148f));
+            _authoredTitleText = FindText(panel, "Title");
+            _authoredSummaryText = FindText(panel, "Summary");
+            _authoredResourceText = FindText(panel, "Resources");
+            _authoredFooterText = FindText(panel, "Footer");
 
             if (_authoredPresenterRoot == null || _authoredCanvasGroup == null || _authoredTitleText == null || _authoredSummaryText == null || _authoredResourceText == null || _authoredFooterText == null)
             {
@@ -519,20 +512,14 @@ namespace Corebound.Gameplay.Shop
                     return false;
                 }
 
-                slotTransform.anchorMin = new Vector2(0.5f, 0.5f);
-                slotTransform.anchorMax = new Vector2(0.5f, 0.5f);
-                slotTransform.pivot = new Vector2(0.5f, 0.5f);
-                slotTransform.anchoredPosition = new Vector2((index - 1) * SlotSpacing, SlotCenterY);
-                slotTransform.sizeDelta = new Vector2(SlotWidth, SlotHeight);
-
                 _slotRoots[index] = slotTransform;
                 _slotHighlights[index] = slotTransform.GetComponent<Image>();
-                _slotFrameImages[index] = RepairImage(slotTransform, "SlotFrame", CommonFramePath, null, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-                _slotTitleTexts[index] = RepairText(slotTransform, "SlotTitle", Vector2.zero, Vector2.one, new Vector2(22f, 26f), new Vector2(-22f, -320f));
-                _slotCostChipImages[index] = RepairImagePivot(slotTransform, "SlotCostChip", PriceChipTexturePath, null, new Vector2(0.5f, 1f), new Vector2(0f, -62f), new Vector2(126f, 34f));
-                _slotCostTexts[index] = RepairText(slotTransform, "SlotCostText", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-55f, -88f), new Vector2(55f, -58f));
-                _slotDescriptionTexts[index] = RepairText(slotTransform, "SlotDescription", Vector2.zero, Vector2.one, new Vector2(22f, 112f), new Vector2(-22f, -24f));
-                _slotTypeBadgeImages[index] = RepairImagePivot(slotTransform, "SlotTypeBadge", TowerUpgradeIconPath, null, new Vector2(1f, 1f), new Vector2(-8f, -8f), new Vector2(TypeBadgeSize, TypeBadgeSize));
+                _slotFrameImages[index] = FindImage(slotTransform, "SlotFrame", CommonFramePath, null);
+                _slotTitleTexts[index] = FindText(slotTransform, "SlotTitle");
+                _slotCostChipImages[index] = FindImage(slotTransform, "SlotCostChip", PriceChipTexturePath, null);
+                _slotCostTexts[index] = FindText(slotTransform, "SlotCostText");
+                _slotDescriptionTexts[index] = FindText(slotTransform, "SlotDescription");
+                _slotTypeBadgeImages[index] = FindImage(slotTransform, "SlotTypeBadge", TowerUpgradeIconPath, null);
 
                 if (_slotTypeBadgeImages[index] != null)
                 {
@@ -568,20 +555,16 @@ namespace Corebound.Gameplay.Shop
             image.sprite = sprite;
         }
 
-        private static Text RepairText(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        // Find-only, no position/anchor/size touched - ShopCanvas.unity's own saved RectTransform
+        // values are the sole source of truth (2026-09-17: "I want the no code driven way"). Hand-
+        // drag something in the Scene view and it stays put.
+        private static Text FindText(RectTransform parent, string name)
         {
             var child = parent != null ? parent.Find(name) as RectTransform : null;
-
-            if (child == null)
-            {
-                return null;
-            }
-
-            StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
-            return child.GetComponent<Text>();
+            return child != null ? child.GetComponent<Text>() : null;
         }
 
-        private static Image RepairImage(RectTransform parent, string name, string primaryPath, string fallbackPath, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        private static Image FindImage(RectTransform parent, string name, string primaryPath, string fallbackPath)
         {
             var child = parent != null ? parent.Find(name) as RectTransform : null;
 
@@ -590,25 +573,6 @@ namespace Corebound.Gameplay.Shop
                 return null;
             }
 
-            StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
-            var image = child.GetComponent<Image>();
-            RepairSprite(image, primaryPath, fallbackPath);
-            return image;
-        }
-
-        // For elements point-anchored (not stretched) in the original EnsureSceneShopLayout -
-        // unlike offsetMin/offsetMax, anchoredPosition is defined relative to pivot, so anchor
-        // and pivot must be set to the same point together (matching SetAnchoredBox's pattern).
-        private static Image RepairImagePivot(RectTransform parent, string name, string primaryPath, string fallbackPath, Vector2 anchor, Vector2 anchoredPosition, Vector2 sizeDelta)
-        {
-            var child = parent != null ? parent.Find(name) as RectTransform : null;
-
-            if (child == null)
-            {
-                return null;
-            }
-
-            SetAnchoredBox(child, anchor, anchoredPosition, sizeDelta);
             var image = child.GetComponent<Image>();
             RepairSprite(image, primaryPath, fallbackPath);
             return image;

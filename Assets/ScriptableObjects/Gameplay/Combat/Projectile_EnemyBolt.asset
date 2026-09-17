@@ -16,5 +16,5 @@ MonoBehaviour:
   _projectSpritePath: Assets/Art/Combat/Projectiles/enemy_bolt_projectile.png
   _speed: 7
   _lifetimeSeconds: 1.4
-  _radius: 0.2
+  _radius: 0.3
   _debugColor: {r: 1, g: 0.38, b: 0.16, a: 1}

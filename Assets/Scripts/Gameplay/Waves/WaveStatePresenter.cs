@@ -1,4 +1,4 @@
-using Corebound.Gameplay.Cards;
+﻿using Corebound.Gameplay.Cards;
 using Corebound.Gameplay.Combat;
 using Corebound.Gameplay.Resources;
 using Corebound.Gameplay.Shop;
@@ -93,7 +93,11 @@ namespace Corebound.Gameplay.Waves
         private Texture2D _runtimeLoadedModalTexture;
         private UIManagedPanel _managedPanel;
 
-    #if UNITY_EDITOR
+        // NOT #if UNITY_EDITOR-gated: TryBindAuthoredHud() (used by Awake()/OnEnable()/Start() at
+        // real runtime, not just in-Editor) reads these. They were incorrectly gated before,
+        // which would have failed to compile in an actual Standalone build despite compiling fine
+        // in the Editor (UNITY_EDITOR is always defined there) - caught while adding
+        // RepairAuthoredLayoutForEditorTool() below, which needed the same names.
         private const string HudCanvasName = "HUDCanvas";
         private const string HudRootName = "HUD";
         private const string HudFrameName = "HUD_Frame_Panel";
@@ -103,7 +107,38 @@ namespace Corebound.Gameplay.Waves
         private const string WaveName = "Wave";
         private const string TowerInfoName = "TowerInfo";
         private const string StateInfoName = "StateInfo";
-    #endif
+
+        // Entry point for Assets/Editor/AuthoredCanvasRepairTool.cs - see
+        // CardRewardPresenter.RepairAuthoredLayoutForEditorTool() for why this exists. Also runs
+        // EnsureOverlayWidgets() so WaveBanner/PausePanel get correctly re-parented onto the full
+        // canvas (not left nested under the small HUD status box) and that gets baked into the
+        // saved scene too.
+        //
+        // Unlike CardRewardPresenter/ShopPresenter (which build their own sprites directly inside
+        // TryBindAuthoredLayout via DebugSpriteFactory), TryBindAuthoredHud() unconditionally
+        // assigns _authoredStatusPanelImage.sprite = _statusPanelSprite - a field only populated
+        // by CreateRuntimeSprites(), a separate step normally run earlier by EnsureInitialized().
+        // Calling TryBindAuthoredHud() alone left _statusPanelSprite null and actively overwrote
+        // the panel's sprite with null (the exact white-box bug this tool exists to fix) -
+        // CreateRuntimeSprites() must run first.
+        public bool RepairAuthoredLayoutForEditorTool()
+        {
+            if (_font == null)
+            {
+                _font = ResolveFont();
+            }
+
+            ResolveRuntimeReferences();
+            CreateRuntimeSprites();
+            var bound = TryBindAuthoredHud();
+
+            if (bound)
+            {
+                EnsureOverlayWidgets();
+            }
+
+            return bound;
+        }
 
         private ResourceWalletService _resourceWalletService;
         private PlayerCombatController _playerCombatController;
@@ -455,7 +490,9 @@ namespace Corebound.Gameplay.Waves
 
             if (_waveManager.State == WaveState.Failed && _overlayMode != OverlayMode.Failed && _overlayMode != OverlayMode.Tutorial)
             {
-                OpenOverlay(OverlayMode.Failed, "Run Failed", "Confirm returns to the Main Menu.");
+                // Playtest feedback (2026-09-17): "Run Failed should contain 'player Died' or 'core
+                // destroyed'" - the generic message didn't say which.
+                OpenOverlay(OverlayMode.Failed, "Run Failed", _waveManager.FailureCauseLabel + ". Confirm returns to the Main Menu.");
             }
 
             _waveText.text = _waveManager.StageLabel + " | " + ResolveHeaderLabel();
@@ -499,22 +536,17 @@ namespace Corebound.Gameplay.Waves
                     _stateText.text = "Reward | Choose a Card to continue.";
                     return;
                 case WaveState.Intermission:
+                    // Playtest feedback (2026-09-17): Confirm now always ends Intermission
+                    // (WaveManager.OnConfirmPressed no longer gates on RequiresIntermissionTowerAction
+                    // - building is optional), so this no longer claims a tower action is required.
                     _stateText.text = _waveManager.RequiresIntermissionShopAction
                         ? "Shop | Confirm buys. Cancel skips."
                         : _waveManager.RequiresIntermissionTowerAction
-                        // Placing/upgrading a tower only satisfies this requirement - it no longer
-                        // ends the intermission by itself (see WaveManager.OnIntermissionBuildCommitted).
-                        // The old "...to continue" wording here still claimed it did, and a player who
-                        // took that literally and stopped after placing one tower would sit stuck in
-                        // Intermission forever with no further on-screen indication anything was
-                        // still expected of them - silently blocking every later wave, the Shop
-                        // (wave 3) and the boss (wave 6) alike. Spelling out the still-required
-                        // Confirm step here up front fixes that at the source.
-                        ? "Intermission | Place or upgrade a tower, then Confirm to continue."
+                        ? "Intermission | Optionally place or upgrade a tower. Confirm to continue."
                         : "Intermission | " + _waveManager.IntermissionSecondsRemaining.ToString("0.0") + "s or Confirm to continue.";
                     return;
                 case WaveState.Failed:
-                    _stateText.text = "Run Failed | Player or Core destroyed.";
+                    _stateText.text = "Run Failed | " + _waveManager.FailureCauseLabel + ".";
                     return;
                 default:
                     _stateText.text = "Stage Complete";
@@ -795,7 +827,14 @@ namespace Corebound.Gameplay.Waves
             _waveText = _authoredWaveText;
             _towerText = _authoredTowerText;
             _stateText = _authoredStateText;
-            _canvas = _authoredHudRoot.GetComponentInParent<Canvas>();
+
+            // GetComponentInParent<Canvas>() includes the object it's called on, not just true
+            // ancestors - "HUD" (_authoredHudRoot) carries its own nested Canvas (m_OverrideSorting
+            // so the small status box gets a local sort order), so this used to resolve to that
+            // nested Canvas instead of HUDCanvas's true root. .rootCanvas walks the rest of the way
+            // up regardless of how many nested Canvases sit in between.
+            var nearestHudCanvas = _authoredHudRoot.GetComponentInParent<Canvas>();
+            _canvas = nearestHudCanvas != null ? nearestHudCanvas.rootCanvas : null;
             return _statusPanelRect != null && _waveText != null && _stateText != null;
         }
 
@@ -811,18 +850,19 @@ namespace Corebound.Gameplay.Waves
             // instead of _authoredHudRoot. Falls back to _authoredHudRoot only if the canvas
             // somehow can't be resolved, so overlays never end up unparented.
             //
-            // Resolved fresh via GetComponentInParent here instead of reusing the cached _canvas
-            // field: _canvas is a private, non-serialized field, so it resets to null on every
-            // script recompile (domain reload) in the Editor. TryBindAuthoredHud() normally
-            // repopulates it before this method runs, but a 2026-09-15 scene diff showed a second,
-            // empty WaveBanner/PausePanel pair created under _authoredHudRoot ("HUD") alongside the
-            // correct ones under HUDCanvas - exactly what happens if this method ever runs with
-            // _canvas still null (overlayParent silently falls back to _authoredHudRoot, doesn't
-            // find anything named "WaveBanner"/"PausePanel" there since the real ones live under
-            // HUDCanvas, and creates fresh ones instead). Resolving independently of the cached
-            // field's timing removes that whole failure window.
-            var canvasRect = _authoredHudRoot.GetComponentInParent<Canvas>() is Canvas resolvedCanvas
-                ? resolvedCanvas.transform as RectTransform
+            // Root cause of the recurring "WaveBanner/PausePanel duplicated under HUD" bug
+            // (2026-09-15, again 2026-09-17): _authoredHudRoot ("HUD") carries its own nested
+            // Canvas (m_OverrideSorting, for the status box's local sort order).
+            // GetComponentInParent<Canvas>() includes the object it's called on, not just true
+            // ancestors, so this always resolved to that nested Canvas on "HUD" itself -
+            // overlayParent silently collapsed to _authoredHudRoot every time. WaveBanner/
+            // PausePanel actually live one level up, under HUDCanvas's true root, so
+            // overlayParent.Find(...) below always missed and created fresh duplicates inside
+            // "HUD" instead of reusing them. .rootCanvas walks the rest of the way up past any
+            // number of nested Canvases to the real outermost one.
+            var nearestCanvas = _authoredHudRoot.GetComponentInParent<Canvas>();
+            var canvasRect = nearestCanvas != null
+                ? nearestCanvas.rootCanvas.transform as RectTransform
                 : null;
             var overlayParent = canvasRect != null ? canvasRect : _authoredHudRoot;
 
@@ -1272,3 +1312,4 @@ namespace Corebound.Gameplay.Waves
 #endif
     }
 }
+

@@ -82,6 +82,14 @@ namespace Corebound.Gameplay.Cards
         private const string RewardRootName = "RewardScreen";
         private const string RewardPanelName = "CardRewardChoicePanel";
 
+        // Entry point for Assets/Editor/AuthoredCanvasRepairTool.cs - a one-time, explicit bake of
+        // correct sprite/position data into RewardCanvas.unity itself (see that tool's own comment
+        // for why: playtest 2026-09-16, "I still cannot see the image in the Unity Scene window").
+        public bool RepairAuthoredLayoutForEditorTool()
+        {
+            return TryBindAuthoredLayout();
+        }
+
         // Playtest feedback (2026-09-16): going through MainMenu -> New Run left the reward
         // screen broken/empty; opening SampleScene directly and pressing Play worked fine. Root
         // cause: RewardCanvas.unity loads additively between this scene's OnEnable and Start
@@ -624,16 +632,19 @@ namespace Corebound.Gameplay.Cards
         // components were saved with no sprite (the Editor-only EnsureSceneRewardLayout/
         // EnsureEditorImage methods below that used to assign them got disconnected from the
         // live flow by an earlier fix, and even reconnected they use AssetDatabase, which does
-        // not exist in a real build) and several Text elements kept stale/default positions -
-        // "card frames not in the slot, card title at the bottom, description at the wrong
-        // position". This is a REAL runtime bug (the reward screen is genuinely built from this
-        // scene's saved data at Play Mode / in a real build), not just an Editor cosmetic issue,
-        // so the fix lives here rather than in the Editor-only methods: every bind re-applies
-        // the canonical sprite (via the build-safe DebugSpriteFactory.LoadProjectSprite, only
-        // when a sprite is not already assigned - never overwrites art already set by hand) and
-        // the canonical position (unconditionally - these positions are code-authored, not meant
-        // to be hand-tuned per instance, matching how BuildPanel()'s runtime-fallback path below
-        // already defines the same layout).
+        // not exist in a real build). This is a REAL runtime bug (the reward screen is genuinely
+        // built from this scene's saved data at Play Mode / in a real build), not just an Editor
+        // cosmetic issue - every bind re-applies the canonical sprite (via the build-safe
+        // DebugSpriteFactory.LoadProjectSprite, only when a sprite is not already assigned - never
+        // overwrites art already set by hand).
+        //
+        // Playtest feedback (2026-09-17): "I want the no code driven way" - positions used to also
+        // be reasserted unconditionally on every bind, fighting any hand-adjustment made in the
+        // Scene view. This method no longer touches position/anchor/size at all - RewardCanvas.unity
+        // is the sole source of truth for layout now that AuthoredCanvasRepairTool (Corebound >
+        // Repair Authored Canvases menu) has baked correct starting positions into the scene file.
+        // Drag things in the Scene view and it sticks; run that menu command again only if the
+        // scene's layout data ever gets corrupted/lost again.
         private bool TryBindAuthoredLayout()
         {
             var canvasObject = GameObject.Find(RewardCanvasName);
@@ -655,25 +666,11 @@ namespace Corebound.Gameplay.Cards
             }
 
             RepairSprite(panel.GetComponent<Image>(), RewardChoicePanelTexturePath);
-            SetAnchoredBox(panel, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180f, 680f));
 
-            var overlayTransform = rewardRoot.Find("Overlay") as RectTransform;
-
-            if (overlayTransform != null)
-            {
-                StretchToParent(overlayTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-                var overlayImage = overlayTransform.GetComponent<Image>();
-
-                if (overlayImage != null)
-                {
-                    overlayImage.color = OverlayColor;
-                }
-            }
-
-            _authoredTitleText = RepairText(panel, "Title", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(180f, -125f), new Vector2(-180f, -54f));
-            _authoredResourceText = RepairText(panel, "Resources", new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(381f, -196f), new Vector2(-20f, -148f));
-            _authoredTowerText = RepairText(panel, "TowerInfo", new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(20f, -196f), new Vector2(-353f, -148f));
-            _authoredDescriptionText = RepairText(panel, "Description", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(288f, 71f), new Vector2(-288f, 133f));
+            _authoredTitleText = FindText(panel, "Title");
+            _authoredResourceText = FindText(panel, "Resources");
+            _authoredTowerText = FindText(panel, "TowerInfo");
+            _authoredDescriptionText = FindText(panel, "Description");
 
             if (_authoredPresenterRoot == null || _authoredCanvasGroup == null || _authoredTitleText == null || _authoredDescriptionText == null)
             {
@@ -700,20 +697,14 @@ namespace Corebound.Gameplay.Cards
                     return false;
                 }
 
-                slotTransform.anchorMin = new Vector2(0.5f, 0.5f);
-                slotTransform.anchorMax = new Vector2(0.5f, 0.5f);
-                slotTransform.pivot = new Vector2(0.5f, 0.5f);
-                slotTransform.anchoredPosition = new Vector2((index - 1) * SlotSpacing, SlotCenterY);
-                slotTransform.sizeDelta = new Vector2(SlotWidth, SlotHeight);
-
                 _slotRoots[index] = slotTransform;
                 _slotHighlights[index] = slotTransform.GetComponent<Image>();
-                _slotFrameImages[index] = RepairImage(slotTransform, "SlotFrame", CommonFramePath, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-                _slotTitleTexts[index] = RepairText(slotTransform, "SlotTitle", Vector2.zero, Vector2.one, new Vector2(22f, 28f), new Vector2(-22f, -286f));
-                _slotRarityTexts[index] = RepairText(slotTransform, "SlotRarity", Vector2.zero, Vector2.one, new Vector2(22f, 58f), new Vector2(-22f, -286f));
-                _slotDescriptionTexts[index] = RepairText(slotTransform, "SlotDescription", Vector2.zero, Vector2.one, new Vector2(22f, 140f), new Vector2(-22f, -24f));
+                _slotFrameImages[index] = FindImage(slotTransform, "SlotFrame", CommonFramePath);
+                _slotTitleTexts[index] = FindText(slotTransform, "SlotTitle");
+                _slotRarityTexts[index] = FindText(slotTransform, "SlotRarity");
+                _slotDescriptionTexts[index] = FindText(slotTransform, "SlotDescription");
 
-                var revealFlashImage = RepairImage(slotTransform, "RevealFlash", RevealFlashSpritePath, new Vector2(-0.15f, -0.15f), new Vector2(1.15f, 1.15f), Vector2.zero, Vector2.zero);
+                var revealFlashImage = FindImage(slotTransform, "RevealFlash", RevealFlashSpritePath);
 
                 if (revealFlashImage != null)
                 {
@@ -798,20 +789,16 @@ namespace Corebound.Gameplay.Cards
             image.sprite = DebugSpriteFactory.LoadProjectSprite(spritePath);
         }
 
-        private static Text RepairText(RectTransform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        // Find-only, no position/anchor/size touched - RewardCanvas.unity's own saved
+        // RectTransform values are the sole source of truth (2026-09-17: "I want the no code
+        // driven way"). Hand-drag something in the Scene view and it stays put.
+        private static Text FindText(RectTransform parent, string name)
         {
             var child = parent != null ? parent.Find(name) as RectTransform : null;
-
-            if (child == null)
-            {
-                return null;
-            }
-
-            StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
-            return child.GetComponent<Text>();
+            return child != null ? child.GetComponent<Text>() : null;
         }
 
-        private static Image RepairImage(RectTransform parent, string name, string spritePath, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+        private static Image FindImage(RectTransform parent, string name, string spritePath)
         {
             var child = parent != null ? parent.Find(name) as RectTransform : null;
 
@@ -820,7 +807,6 @@ namespace Corebound.Gameplay.Cards
                 return null;
             }
 
-            StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
             var image = child.GetComponent<Image>();
             RepairSprite(image, spritePath);
             return image;

@@ -74,7 +74,24 @@ namespace Corebound.Gameplay.Combat
                 return;
             }
 
-            hitbox.ReceiveHit(_owner, _damageContext);
+            // Playtest feedback (2026-09-17): "the hit effect is shown on the enemy when it hits
+            // the player or core - should be on player or core depending what was hit". Root
+            // cause: _damageContext.HitPoint is baked in at Launch() time from the shooter's own
+            // position (see EnemyRuntimeController.FireProjectileBurst/PlayerCombatController's
+            // fire methods) and never updated as the projectile travels, so CombatVfxSpawner's
+            // hit-spark/core-flare - which reads HitPoint, not the victim's current position -
+            // rendered at the shooter's position instead of the actual impact point. Rebuilding
+            // with the projectile's real position at the moment of collision fixes this for every
+            // projectile (enemy and player alike) without needing to touch the VFX spawner itself.
+            var impactContext = new DamageContext(
+                _damageContext.SourceType,
+                _damageContext.DamageKind,
+                _damageContext.Amount,
+                transform.position,
+                _damageContext.HitDirection,
+                _damageContext.StatusEffect);
+
+            hitbox.ReceiveHit(_owner, impactContext);
 
             if (_remainingPierceCount > 0)
             {

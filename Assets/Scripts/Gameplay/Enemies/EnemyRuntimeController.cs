@@ -280,11 +280,14 @@ namespace Corebound.Gameplay.Enemies
                 damageAmount *= _eliteModifierData.DamageMultiplier;
             }
 
+            // HitPoint uses the target's position, not this enemy's own - see CombatProjectile's
+            // identical fix (2026-09-17 playtest) for the ranged case; contact damage has the same
+            // bug (hit-spark/core-flare rendering on the attacker instead of the victim).
             var damageContext = new DamageContext(
                 DamageSourceType.Enemy,
                 DamageKind.Direct,
                 damageAmount,
-                transform.position,
+                hitTarget.position,
                 ((Vector2)hitTarget.position - (Vector2)transform.position).normalized,
                 attackData != null ? attackData.ResolveStatusEffect() : null);
 
