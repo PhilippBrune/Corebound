@@ -805,6 +805,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 58110385518d4dc598ae2aca83f8a5e1, type: 2}
   - {fileID: 11400000, guid: 4a2c98e95ebf41f78bc4be3a69d76e1a, type: 2}
   _settingsManager: {fileID: 100002004}
+  _bossStage2Clip: {fileID: 8300000, guid: 77888265a9b93a841b9adac2ad0db6da, type: 3}
+  _bossStage3Clip: {fileID: 8300000, guid: f737475dd409c364b996a1a419f2dfc2, type: 3}
+  _bossStage4Clip: {fileID: 8300000, guid: df717972008774d458b4b0b2dcadbcd6, type: 3}
+  _bossStage5Clip: {fileID: 8300000, guid: aa8c327eb9794154ca35af68c4f3c31b, type: 3}
 --- !u!114 &100002027
 MonoBehaviour:
   m_ObjectHideFlags: 0

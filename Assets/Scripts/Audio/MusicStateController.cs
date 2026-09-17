@@ -17,11 +17,23 @@ namespace Corebound.Audio
         [SerializeField] private MusicStateData[] _states;
         [SerializeField] private SettingsManager _settingsManager;
 
+        // Unused-assets review (2026-09-16/17): these 4 tracks existed on disk but MusicState_Boss
+        // (the single MusicStateData for MusicState.Boss) only ever pointed at music_boss_loop.mp3,
+        // so every stage's boss fight used Stage 1's music. BossEventArgs already carries BossId
+        // ("boss_stage2" etc.), so no live stage lookup is needed here the way the enemy sprite fix
+        // needed one - ResolveClip() just prefers the matching override over MusicStateData.Clip
+        // when the active state is Boss and the id matches.
+        [SerializeField] private AudioClip _bossStage2Clip;
+        [SerializeField] private AudioClip _bossStage3Clip;
+        [SerializeField] private AudioClip _bossStage4Clip;
+        [SerializeField] private AudioClip _bossStage5Clip;
+
         private readonly Dictionary<MusicStateData, AudioClip> _proceduralClipCache = new Dictionary<MusicStateData, AudioClip>();
 
         private AudioSource _activeSource;
         private AudioSource _fadingSource;
         private MusicStateData _currentStateData;
+        private string _currentBossId;
         private float _blendTimer;
         private float _blendDuration;
         private float _activeTargetVolume;
@@ -105,6 +117,7 @@ namespace Corebound.Audio
 
         private void OnBossSpawned(BossEventArgs eventArgs)
         {
+            _currentBossId = eventArgs != null ? eventArgs.BossId : null;
             SwitchToState(MusicState.Boss);
         }
 
@@ -145,6 +158,16 @@ namespace Corebound.Audio
 
         private AudioClip ResolveClip(MusicStateData data)
         {
+            if (data.State == MusicState.Boss)
+            {
+                var stageClip = ResolveBossStageClip(_currentBossId);
+
+                if (stageClip != null)
+                {
+                    return stageClip;
+                }
+            }
+
             if (data.HasRealClip)
             {
                 return data.Clip;
@@ -158,6 +181,18 @@ namespace Corebound.Audio
             var clip = ProceduralToneFactory.BuildToneClip("Music_" + data.State, data.ProceduralFrequency, data.ProceduralLoopSeconds);
             _proceduralClipCache[data] = clip;
             return clip;
+        }
+
+        private AudioClip ResolveBossStageClip(string bossId)
+        {
+            switch (bossId)
+            {
+                case "boss_stage2": return _bossStage2Clip;
+                case "boss_stage3": return _bossStage3Clip;
+                case "boss_stage4": return _bossStage4Clip;
+                case "boss_stage5": return _bossStage5Clip;
+                default: return null;
+            }
         }
 
         private MusicStateData ResolveStateData(MusicState state)

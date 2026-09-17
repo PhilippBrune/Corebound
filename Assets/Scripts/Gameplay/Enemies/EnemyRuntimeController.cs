@@ -1,5 +1,6 @@
 ﻿using Corebound.Gameplay.Combat;
 using Corebound.Gameplay.Shared;
+using Corebound.Gameplay.Waves;
 using UnityEngine;
 
 namespace Corebound.Gameplay.Enemies
@@ -9,6 +10,25 @@ namespace Corebound.Gameplay.Enemies
         private const string ChaserSpritePath = "Assets/Art/Characters/Enemies/enemy_chaser_topdown.png";
         private const string RangedSpritePath = "Assets/Art/Characters/Enemies/enemy_ranged_pressure_topdown.png";
         private const string BruiserSpritePath = "Assets/Art/Characters/Enemies/enemy_bruiser_topdown.png";
+
+        // Unused-assets review (2026-09-16/17): these per-stage variants existed on disk but were
+        // never referenced by any code path - every stage rendered Stage 1's enemy art. Resolved
+        // against the active stage's StageThemeData.ThemeId (same "WaveManager first, live lookup"
+        // pattern already used by StageArenaArtPresenter.ResolveStageThemeData()), cached once in
+        // Initialize() rather than re-resolved per call - ResolveSprite() is on the hot path via
+        // ResolveAliveColor(), which runs every frame during a Bruiser's charge windup.
+        private const string ChaserStage2SpritePath = "Assets/Art/Characters/Enemies/enemy_chaser_stage2_topdown.png";
+        private const string ChaserStage3SpritePath = "Assets/Art/Characters/Enemies/enemy_chaser_stage3_topdown.png";
+        private const string ChaserStage4SpritePath = "Assets/Art/Characters/Enemies/enemy_chaser_stage4_topdown.png";
+        private const string ChaserStage5SpritePath = "Assets/Art/Characters/Enemies/enemy_chaser_stage5_topdown.png";
+        private const string RangedStage2SpritePath = "Assets/Art/Characters/Enemies/enemy_ranged_pressure_stage2_topdown.png";
+        private const string RangedStage3SpritePath = "Assets/Art/Characters/Enemies/enemy_ranged_pressure_stage3_topdown.png";
+        private const string RangedStage4SpritePath = "Assets/Art/Characters/Enemies/enemy_ranged_pressure_stage4_topdown.png";
+        private const string RangedStage5SpritePath = "Assets/Art/Characters/Enemies/enemy_ranged_pressure_stage5_topdown.png";
+        private const string BruiserStage2SpritePath = "Assets/Art/Characters/Enemies/enemy_bruiser_stage2_topdown.png";
+        private const string BruiserStage3SpritePath = "Assets/Art/Characters/Enemies/enemy_bruiser_stage3_topdown.png";
+        private const string BruiserStage4SpritePath = "Assets/Art/Characters/Enemies/enemy_bruiser_stage4_topdown.png";
+        private const string BruiserStage5SpritePath = "Assets/Art/Characters/Enemies/enemy_bruiser_stage5_topdown.png";
         // Playtest request (2026-09-16): use the actual bolt sprite as the telegraph instead of the
         // separate ranged_pressure_telegraph.png art, so the "ghost" that flies toward the target
         // during the windup (see ShowTelegraph()) looks identical to the real shot that follows it,
@@ -30,6 +50,7 @@ namespace Corebound.Gameplay.Enemies
         private SpriteRenderer _telegraphRenderer;
         private SpriteRenderer _eliteMarkerRenderer;
         private ProjectilePool _projectilePool;
+        private string _activeStageThemeId;
 
         private bool _hasTakenDamage;
         private float _contactCooldownTimer;
@@ -64,6 +85,11 @@ namespace Corebound.Gameplay.Enemies
             _coreTarget = coreTarget;
             _projectilePrototype = projectilePrototype;
             _projectileParent = projectileParent;
+            _activeStageThemeId = FindFirstObjectByType<WaveManager>() is WaveManager waveManager
+                && waveManager.StageDataAsset != null
+                && waveManager.StageDataAsset.ThemeData != null
+                    ? waveManager.StageDataAsset.ThemeData.ThemeId
+                    : null;
             _hasTakenDamage = false;
             _contactCooldownTimer = 0f;
             _attackCooldownTimer = 0f;
@@ -599,24 +625,58 @@ namespace Corebound.Gameplay.Enemies
 
         private Sprite ResolveSprite()
         {
-            if (_enemyData != null && _enemyData.Sprite != null)
-            {
-                return _enemyData.Sprite;
-            }
-
             if (_enemyData == null)
             {
                 return null;
             }
 
-            switch (_enemyData.EnemyId)
+            // Resolved by (EnemyId, active stage theme) before ever trusting _enemyData.Sprite -
+            // Enemy_Chaser/Ranged/Bruiser.asset's own _sprite reference always points at Stage 1's
+            // art (correctly, just stage-agnostic), so returning it first the way this used to would
+            // permanently shadow ResolveStageSpritePath() below and every stage would keep rendering
+            // Stage 1's enemies. Same "resolve by known id first" precedent as
+            // BossRuntimeController.ResolveBossIdSpritePath().
+            var stageSpritePath = ResolveStageSpritePath(_enemyData.EnemyId, _activeStageThemeId);
+
+            if (stageSpritePath != null)
+            {
+                return Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(stageSpritePath);
+            }
+
+            return _enemyData.Sprite;
+        }
+
+        private static string ResolveStageSpritePath(string enemyId, string stageThemeId)
+        {
+            switch (enemyId)
             {
                 case "enemy_chaser":
-                    return Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(ChaserSpritePath);
+                    switch (stageThemeId)
+                    {
+                        case "theme_stage_02": return ChaserStage2SpritePath;
+                        case "theme_stage_03": return ChaserStage3SpritePath;
+                        case "theme_stage_04": return ChaserStage4SpritePath;
+                        case "theme_stage_05": return ChaserStage5SpritePath;
+                        default: return ChaserSpritePath;
+                    }
                 case "enemy_ranged":
-                    return Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(RangedSpritePath);
+                    switch (stageThemeId)
+                    {
+                        case "theme_stage_02": return RangedStage2SpritePath;
+                        case "theme_stage_03": return RangedStage3SpritePath;
+                        case "theme_stage_04": return RangedStage4SpritePath;
+                        case "theme_stage_05": return RangedStage5SpritePath;
+                        default: return RangedSpritePath;
+                    }
                 case "enemy_bruiser":
-                    return Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(BruiserSpritePath);
+                    switch (stageThemeId)
+                    {
+                        case "theme_stage_02": return BruiserStage2SpritePath;
+                        case "theme_stage_03": return BruiserStage3SpritePath;
+                        case "theme_stage_04": return BruiserStage4SpritePath;
+                        case "theme_stage_05": return BruiserStage5SpritePath;
+                        default: return BruiserSpritePath;
+                    }
                 default:
                     return null;
             }
