@@ -4,7 +4,7 @@ document: PROJECT_VISION
 version: 2.0
 status: Draft
 priority: Critical
-last_updated: 2026-09-15
+last_updated: 2026-09-17
 ------------------------
 
 # PROJECT VISION
@@ -799,25 +799,43 @@ The following principles guide future design decisions:
 The following decisions must be resolved in dedicated specifications or design reviews:
 
 * Is the game fully top-down 2D, 2.5D, or another camera arrangement?
+  → **Implemented (2026-09-17):** fully top-down 2D. `StageArenaArtPresenter` builds a top-down tiled arena; all character/enemy/boss art is top-down.
 * Is movement free in an arena, room-based, or exploration-based?
+  → **Implemented:** free movement within a single bounded arena per stage (not room-based, not exploration-based). Explicitly settled in `Docs/Slices/15_DYNAMIC_ARENA_SLICE.md`'s Scope Out.
 * How exactly does the player aim?
+  → **Implemented:** `PlayerAimResolver` + `CoreboundInputReader.Aim`, bound to mouse position (Keyboard&Mouse) or the right stick (Gamepad) — free continuous aim, not target-lock/tab-targeting.
 * Is the Core stationary or can it be upgraded or moved?
+  → **Implemented:** stationary, at a fixed `CoreAnchor` GameObject (`CoreController`/`CoreData`). No movement API exists. Whether it can be *upgraded* (stat-wise, not repositioned) is not yet exercised by any current card/economy effect and remains genuinely open.
 * How are buildable tower locations determined?
+  → **Implemented:** a fixed, hand-authored list of slot points per stage (`StageData.TowerSlotPositions`, falling back to `TowerService`'s own serialized default) — not freely placed by the player. See `Docs/Slices/15_DYNAMIC_ARENA_SLICE.md`.
 * How are resources collected?
+  → **Implemented:** enemies drop pickups (`ResourcePickupRuntime`) that the player walks over; no separate transport/logistics step.
 * Which resource types are needed?
+  → **Implemented:** a single resource currency ("Scrap", `ResourceWalletService._currentAmount` is a plain `int`) — no multiple resource types exist in code.
 * How does the Factory generate and transport resources?
+  → Partially answered: resource-producing towers exist and feed the same single wallet directly (no physical transport/logistics layer, consistent with Section 7.3's "not a separate automation simulator"). The deeper production-chain design (Section 6.1/7.3's "improved systems generate greater value" loop) is still open.
 * Are cards selected from random offers, purchased, drafted, or acquired through rewards?
+  → **Implemented:** both — post-wave reward offers (`CardRewardController`/`CardRewardPresenter`, pick 1 of 3) and direct purchase (`ShopService`/`ShopPresenter`).
 * How does the player's deck work?
+  → **Implemented:** there is no deck/hand/draw mechanic. `CardService._selectedCards` is a flat, ever-growing list of permanently-active effects (Brotato/Hades-style item pool), not a played-one-at-a-time card game.
 * Are cards permanent for a run, stackable, consumable, or replaceable?
+  → **Implemented:** permanent for the run and additive (same list as above); not consumable, not replaceable once taken. Stacking behavior is per-card via `CardEffectTarget`, not a universal rule.
 * How many towers can be active?
+  → **Implemented:** bounded by the active stage's slot count (4 for Stage 1 and Stage 2 currently) — see `TowerService.ResolveActiveSlotPositions()`.
 * How many weapons can the player use simultaneously?
+  → **Implemented:** exactly one. `PlayerCombatController._activeWeapon` is a single field, resolved once at run start from run save / meta-progression unlock / default, with no in-run switching action in `InputSystem_Actions.inputactions`.
 * How are stages and waves structured?
+  → **Implemented:** `StageProgression_VerticalSlice.asset` orders 5 stages; each stage runs a fixed wave count (`WaveManager.TotalWaveCount`) ending in a boss encounter before advancing.
 * How does the boss system work?
+  → **Implemented:** one boss per stage, spawned after that stage's final wave (`WaveManager.StartBossEncounter`), with stage-specific sprite/music resolved by `BossRuntimeController`/`MusicStateController`. Attack-pattern variety across the 5 bosses is uneven — see `Docs/Slices/14_WAVE_BOSS_BALANCE_SLICE.md`.
 * What is the precise meta progression?
+  → Partially answered: `MetaProgressionService` grants a meta-currency on run completion and gates unlocks (towers, weapons) via `IsUnlockSatisfied`. The full unlock tree/progression curve is not yet documented and remains open.
 * What is the final visual art direction?
+  → **Implemented (de facto):** the "techno-fantasy" / dark sci-fi-industrial direction from Section 13's suggested options — crystalline energy Core, mechanical towers, industrial tilesets — is consistently what's actually in the art (cards, enemies, bosses, stage themes). Not formally ratified as final, but no longer genuinely undecided.
 * What content is essential for the first Early Access release?
+  → Answered by Section 9 itself; not a separate implementation question.
 
-These questions must be resolved before the affected systems are considered fully specified.
+These annotations describe what the current implementation actually does, established by reading the relevant code and data assets directly (2026-09-17) — they are a snapshot of de facto behavior, not a substitute for the formal specification/design-review resolution this section still calls for. Questions without a `→` marker remain genuinely open.
 
 ---
 
