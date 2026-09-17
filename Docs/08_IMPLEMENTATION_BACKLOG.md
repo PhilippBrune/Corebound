@@ -1,12 +1,14 @@
 # Unity 6 Implementation Backlog
 
-Version: 1.3
+Version: 1.4
 
 Status: Active
 
 Basis: Projektvision, Technical Architecture, geschlossene Specs, Graphics Spec, 07_DESIGN_DECISIONS.md und Docs/Slices
 
 Update 2026-09-07: Gegen den "Corebound Repository Audit" (Repository-Analyse · 2026-09-07) abgeglichen und aufgefrischt. Der vorherige Stand (Version 1.2, 2026-07-28) war in beide Richtungen veraltet — u.a. wurden MainMenu-Quit und Grafik-Asset-Produktion fälschlich als offen geführt, während die Statistics-Save-Domain und Tutorial korrekt als offen erkannt waren. Seither wurden die vollständigen R1–R22-Rework-Pläne aus dem Audit (vier Prioritäts-Durchläufe P0–P3), ein eigener Technical-Debt-Pass und das Factory-System umgesetzt.
+
+Update 2026-09-17 (Version 1.4): Jede "Noch offen"-Aussage in diesem Dokument gegen den tatsächlichen Code-/Asset-Stand geprüft (Lesen der jeweiligen Klassen, GUID-Verfolgung durch die ScriptableObject-Referenzketten). Sieben Einträge waren stale und wurden korrigiert: Shop-Tower-Upgrades (Towers, Shop), Card-Stack-/Duplikat-Regeln (Cards), UIThemeData.Font-Anbindung (UI), Beam-Weapon-Pierce-Verhalten (Weapons), Tower-Typ-Anzahl (Towers), importierte Audiodateien und zentrales Musikzustands-System (Audio, jetzt Completed). Details und Belege in den jeweiligen Abschnitten sowie in der Recommended-Next-Slice-Sektion.
 
 ---
 
@@ -43,17 +45,17 @@ MainMenu -> Input -> Player -> Combat -> Weapons -> Cards -> Towers -> Resources
 - Card-Rarity beeinflusst Angebots-Gewichtung inklusive Legendary-Mindestfenster
 - SaveSystem ist gehärtet: atomare Writes (.tmp -> File.Replace -> .bak), eigene Statistics-Domain, Save-Format-Versions-Warnungen, Save-Fehler-Events mit UI-Feedback (NotificationPresenter)
 - Tutorial hat echten Inhalt (TutorialSequenceData/TutorialStepData) statt eines reinen Routing-Stubs
+- Audio: echte importierte Audiodateien (23 .mp3 unter Assets/Audio/) belegen alle Clip-Slots der Wave-, Boss-, MainMenu-, Factory- und Combat-Cue-Player; MusicStateController/MusicState bilden ein zentrales, in SampleScene verdrahtetes Musikzustands-System (Calm/Combat/Boss, inkl. per-Stage-Boss-Musik) — Update 2026-09-17, Version 1.3 führte dies noch unter Partially Completed/Open
 
 - Partially Completed
 - Factory-System (FactoryService, drei Production Triggers, ProductionChainData/-NodeData/-ModifierData, Soft-Cap-Snowball-Schutz) neu aufgesetzt und in SampleScene verdrahtet, aber nur eine Beispiel-Chain autoriert
 - UI-Lokalisierung: LocalizationService existiert und wird von einem Teil der Oberflächen genutzt (u.a. NotificationPresenter, BossHudPresenter, MainMenu-Route-Panels), aber längst nicht von allen Gameplay-/UI-Texten
-- Audio: mehrere ereignisgetriebene, datengetriebene Cue-Player (Wave, Boss, MainMenu, Factory) mit prozeduraler Tongenerierung sind verdrahtet; es existieren weiterhin keine importierten echten Audiodateien im Projekt
 - Bekannte, bewusst zurückgestellte Technical-Debt-Punkte (siehe Docs/09_CHANGELOG.md bzw. den Repository Audit, Abschnitt 08): drei große "God-Object"-Klassen (WaveManager, WaveStatePresenter, StageArenaArtPresenter) sowie mehrfach duplizierte Presenter-UI-Bausteine
 
 - Open
 - Relics-System (spec-seitig bewusst für diesen Vertical Slice zurückgestellt, kein Defekt)
 - Weitere Factory-Production-Chains und echte Balance-Iteration über die eine Beispiel-Chain hinaus
-- Volle UI-Lokalisierungsabdeckung, echte importierte Audiodateien, God-Object-Refactors der drei oben genannten Klassen
+- Volle UI-Lokalisierungsabdeckung, God-Object-Refactors der drei oben genannten Klassen
 
 ---
 
@@ -279,7 +281,7 @@ Bereits umgesetzt:
 
 - TowerData und TowerCatalogData angelegt
 - TowerService hält save-gebundene aktive Tower-Liste
-- ein Runtime-Tower in SampleScene nutzt dieselbe Projectile- und Combat-Pipeline wie Weapons
+- vier eigenständige Tower-Typen (Support, Ballista, Mortar, Sentinel — je eigene TowerData mit eigenem Range/Cost/FireInterval/DamageProfile/Projectile) sind in TowerCatalog_Default katalogisiert und nutzen dieselbe Projectile- und Combat-Pipeline wie Weapons — Version 1.3 führte hier noch "ein Runtime-Tower"
 - Meta-Unlocks und Card-Modifikatoren können bereits auf Tower-Zustand wirken
 - Tower-Bau und -Upgrade sind während Combat, BossCombat und Intermission möglich (IsBuildableWaveState), nicht mehr nur während Intermission — vorher ein Widerspruch zur dokumentierten Design-Entscheidung
 - fehlgeschlagene Tower-Upgrades nach bereits erfolgter Zahlung werden jetzt erstattet (TowerService.RefundPurchase), vorher ein potenzieller stiller Resource-Verlust
@@ -296,7 +298,7 @@ Lieferobjekte:
 
 Noch offen:
 
-- TowerLevelData und weitere Rollen über den ersten Runtime-Tower hinaus
+- keine bekannten offenen Kernpunkte für den ersten Vertical Slice (TowerLevelData ist bereits pro Tower autoriert — siehe "drei Stufen pro Tower" oben — und vier Tower-Typen decken die von der Vision geforderten "ungefähr drei" bereits ab)
 
 ## 8. Resources
 
@@ -515,18 +517,19 @@ Noch offen:
 
 ## Audio
 
-Status: Partially Completed
+Status: Completed
 
 Bereits umgesetzt:
 
 - ereignisgetriebene, datengetriebene Audio-Cue-Player für Wave-, Boss-, MainMenu- und jetzt auch Factory-Events, jeweils mit eigenem *AudioCueData-Asset
 - ProceduralToneFactory als gemeinsame Tongenerierung statt dreifach dupliziertem Sinuswellen-Code
 - Rate-Limiting gegen Audio-Spam bei hochfrequenten Events (Factory-Produktionstrigger)
+- echte importierte Audiodateien (23 .mp3 unter Assets/Audio/) sind alle 14 Clip-Slots der vier *AudioCueData-Assets plus AudioCue_CombatHit zugewiesen; ProceduralToneFactory dient jetzt nur noch als automatischer Fallback für künftig unbefüllte Felder — Version 1.3 führte dies noch als offen
+- MusicStateController/MusicState bilden bereits ein zentrales Musikzustands-System (Calm/Combat/Boss inkl. per-Stage-Boss-Clip-Auflösung) und sind in SampleScene verdrahtet — Version 1.3 führte dies noch als offen
 
 Noch offen:
 
-- weiterhin keine importierten echten Audiodateien im Projekt — alle Cues sind synthetisierte Platzhalter-Töne
-- kein zentrales Audio-Datenmodell/Musikzustands-System über die verteilten Cue-Player hinaus
+- keine bekannten offenen Kernpunkte für den ersten Vertical Slice
 
 ## Meta Progression
 
@@ -567,13 +570,12 @@ Bosses, Elite Variants und Wave Boss Balance (vormals hier als nächster Schnitt
 
 Konkrete Reihenfolge für den nächsten Arbeitsblock, nach Aufwand/Nutzen sortiert:
 
-1. Weitere Factory Production Chains autorieren und im Playtest balancieren — aktuell existiert nur eine Beispiel-Chain (Enemy-Kill-Trickle, Support-Tower-Pulse, Wave-Clear-Bonus).
-2. Echte importierte Audiodateien statt der weiterhin synthetisierten Platzhalter-Töne, sobald Content-Produktion dafür ansteht.
-3. UIThemeData.PrimaryTextColor/SecondaryTextColor/AccentColor/PanelFrameSprite tatsächlich an die Presenter anbinden statt der aktuell pro Presenter hartcodierten Farben (Font läuft bereits über UIFontResolver, siehe UI-Abschnitt oben), idealerweise zusammen mit einem gemeinsamen procedural-UI-Builder, der die inzwischen leicht auseinandergedrifteten CreateText/CreateImage-Duplikate ersetzt.
-4. God-Object-Splits von WaveManager, WaveStatePresenter und StageArenaArtPresenter — größtenteils bewusst zurückgestellt, da diese Refactors Unity-Editor-Zugriff zum Kompilieren und Verifizieren brauchen (siehe Code-Kommentare in den jeweiligen Klassen). Update 2026-09-09: die rein lesende, seiteneffektfreie Label-/Elite-Flag-Auflösung von WaveManager (Wave-/Boss-/Stage-Beschriftungen) wurde ohne Editor gefahrlos nach `WaveEncounterLabelResolver` extrahiert (1035 → 905 Zeilen), da diese Methoden nur Felder lesen statt State zu mutieren und pro Aufrufstelle 1:1 durch explizite Parameter ersetzbar waren. Die verbleibenden, zustandsverändernden Anteile von WaveManager sowie WaveStatePresenter und StageArenaArtPresenter bleiben zurückgestellt.
-5. Vollständige UI-Lokalisierungsabdeckung über die bereits vorhandene LocalizationService-Basis hinaus.
+1. Weitere Factory Production Chains autorieren und im Playtest balancieren — aktuell existiert nur eine Beispiel-Chain (Enemy-Kill-Trickle, zwei Tower-Pulse-Knoten für Ballista/Support, Wave-Clear-Bonus). Echtes Balancing braucht Playtest; reine Content-Erweiterung ist ohne neue Trigger-Typen oder Tower-Rollen aber kaum noch sinnvoll möglich, da alle drei zulässigen Trigger-Typen (Kill/TowerPulse/WaveEnd) und beide Tower-Typen mit Pulse-Knoten bereits von der einen Kette abgedeckt sind — eine zweite, rein additive Kette würde ungeprüft auf die bestehende aufstacken (Chains laufen parallel, nicht alternativ), was gegen Factory.md's eigene Snowballing-Warnung liefe.
+2. UIThemeData.PrimaryTextColor/SecondaryTextColor/AccentColor/PanelFrameSprite tatsächlich an die Presenter anbinden statt der aktuell pro Presenter hartcodierten Farben (Font läuft bereits über UIFontResolver, siehe UI-Abschnitt oben), idealerweise zusammen mit einem gemeinsamen procedural-UI-Builder, der die inzwischen leicht auseinandergedrifteten CreateText/CreateImage-Duplikate ersetzt.
+3. God-Object-Splits von WaveManager, WaveStatePresenter und StageArenaArtPresenter — größtenteils bewusst zurückgestellt, da diese Refactors Unity-Editor-Zugriff zum Kompilieren und Verifizieren brauchen (siehe Code-Kommentare in den jeweiligen Klassen). Update 2026-09-09: die rein lesende, seiteneffektfreie Label-/Elite-Flag-Auflösung von WaveManager (Wave-/Boss-/Stage-Beschriftungen) wurde ohne Editor gefahrlos nach `WaveEncounterLabelResolver` extrahiert (1035 → 905 Zeilen), da diese Methoden nur Felder lesen statt State zu mutieren und pro Aufrufstelle 1:1 durch explizite Parameter ersetzbar waren. Die verbleibenden, zustandsverändernden Anteile von WaveManager sowie WaveStatePresenter und StageArenaArtPresenter bleiben zurückgestellt.
+4. Vollständige UI-Lokalisierungsabdeckung über die bereits vorhandene LocalizationService-Basis hinaus — verifiziert weiterhin nur 6 Consumer-Dateien (BossHudPresenter, NotificationStyleData, MainMenuRoutePanelData/IntroFlowData/ContinueStateData), WaveStatePresenter/ShopPresenter/CardRewardPresenter/RelicRevealPresenter u.a. bleiben unlokalisiert.
 
-Update 2026-09-17: Punkte 2 und 3 der vorherigen Liste ("Shop-Angebote für Tower Upgrades verkaufbar machen", "Card-Stack-/Duplikat-Regeln ergänzen") waren entgegen diesem Dokumentstand bereits vollständig umgesetzt (gegen den tatsächlichen Code-/Asset-Stand geprüft: ShopService/TowerService/ShopOffer_TowerUpgrade.asset bzw. CardData.Stackable/CardService) und sind daher aus der Liste entfernt. Bei dieser Gelegenheit stichprobenartig mitgeprüft: Factory hat tatsächlich weiterhin nur die eine ProductionChain_Default-Kette (Punkt 1 unten bleibt zutreffend); UIThemeData ist beim Font-Feld entgegen der vorherigen Pauschalaussage bereits über UIFontResolver an 11 Presenter angebunden, Farben/PanelFrameSprite dagegen tatsächlich noch nicht (Punkt 3 unten entsprechend präzisiert, siehe UI-Abschnitt oben) — die generelle Lehre: Einträge in diesem Dokument vor Wiederverwendung gegen den Code prüfen statt blind zu übernehmen, mehrfach war der dokumentierte Stand älter als der Code.
+Update 2026-09-17: Ein vollständiger Abgleich jeder "Noch offen"-Aussage in diesem Dokument gegen den tatsächlichen Code-/Asset-Stand ergab sieben stale Einträge (Shop-Tower-Upgrades, Card-Stacking, UIThemeData.Font, Beam-Pierce, Tower-Typ-Anzahl, importierte Audiodateien, zentrales Musikzustands-System) — alle waren bereits umgesetzt, das Dokument aber nicht nachgeführt worden. Alle sieben wurden in den jeweiligen Abschnitten oben korrigiert und aus dieser Liste entfernt; die verbleibenden vier Punkte wurden dabei gegengeprüft und sind tatsächlich noch offen. Lehre für zukünftige Durchläufe: Einträge in diesem Dokument vor Wiederverwendung gegen den Code prüfen statt blind zu übernehmen.
 
 Slice-Handoff-Historie:
 
