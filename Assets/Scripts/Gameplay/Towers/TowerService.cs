@@ -269,6 +269,38 @@ namespace Corebound.Gameplay.Towers
         // one indistinguishable blob instead of four separate glowing slots.
         private static readonly Vector2 SlotMarkerTargetWorldSize = new Vector2(1.8f, 1.8f);
 
+        // Dynamic Arena Slice (Docs/Slices/15_DYNAMIC_ARENA_SLICE.md) flagged this as a known,
+        // deliberately deferred gap: CreateSlotRuntimes() only ran once from Awake(), so a player who
+        // reached Stage 2 in the same run still saw Stage 1's slot layout ("Towerslots... still
+        // static placement" - playtest feedback, 2026-09-17). Mirrors
+        // StageArenaArtPresenter.RebuildForNewStage(), which WaveManager.AdvanceToNextStage() already
+        // calls right after swapping _stageData - called from the same place, right after.
+        // _builtTowerIds/_builtTowerUpgradeLevels (the actual owned-tower data, index-matched to slot
+        // index) are untouched here, so towers already built carry over onto the new stage's slots at
+        // the same index; if the new stage has fewer slots than towers owned, SpawnRuntimeTowers()'s
+        // existing `index >= _runtimeSlots.Count` guard already skips the excess safely.
+        public void RebuildSlotsForNewStage()
+        {
+            for (var index = 0; index < _runtimeTowers.Count; index++)
+            {
+                if (_runtimeTowers[index] != null)
+                {
+                    Destroy(_runtimeTowers[index].gameObject);
+                }
+            }
+
+            _runtimeTowers.Clear();
+
+            for (var index = 0; index < _runtimeSlots.Count; index++)
+            {
+                Destroy(_runtimeSlots[index].Transform.gameObject);
+            }
+
+            CreateSlotRuntimes();
+            SpawnRuntimeTowers();
+            UpdateSlotVisuals();
+        }
+
         private void CreateSlotRuntimes()
         {
             _runtimeSlots.Clear();

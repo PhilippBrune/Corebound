@@ -594,6 +594,7 @@ namespace Corebound.Gameplay.Waves
 
             var arenaPresenter = FindFirstObjectByType<StageArenaArtPresenter>();
             arenaPresenter?.RebuildForNewStage();
+            _towerService?.RebuildSlotsForNewStage();
 
             StartCurrentWave();
         }
