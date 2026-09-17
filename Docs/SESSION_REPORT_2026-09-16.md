@@ -70,6 +70,15 @@ Checked whether this shares 1.2's root cause — it doesn't. `TowerService.Creat
 
 ## 4. Unused-assets review (for your approval — nothing deleted)
 
+**Update 2026-09-17 — actioned per your approval.** All four categories below are now resolved:
+- Godot `.import` cruft (28 files + their `.meta` sidecars): **deleted**.
+- Real orphaned per-stage enemy sprites (12 of the 13 files — `route_panel_frame.png` wasn't part of this): **wired in**, not deleted. `EnemyRuntimeController` now resolves sprites by `(EnemyId, active stage theme)`, same precedent as `BossRuntimeController`.
+- Audio (4 boss music tracks): **wired in**. `MusicStateController` now picks the track by `BossEventArgs.BossId`.
+- ScriptableObject data assets (4 files): **deleted**, verified zero GUID references first.
+- Scripts (`PlayerInteractionPriorityResolver.cs`, `SerializedMainMenuStateProvider.cs`): **kept**, per your explicit "dont remove the Scripts."
+
+Original analysis below kept as-written for the record.
+
 Method: for every candidate file, extracted its GUID from the `.meta` and grepped the entire `Assets/` tree for the file's full path, bare filename, and GUID (all three, since this project mixes GUID-based references with string-path loading via `AssetDatabase.LoadAssetAtPath`/`DebugSpriteFactory.LoadProjectSprite`). Everything below returned **zero hits** outside its own `.meta`. Nothing was deleted — this is for you to review and approve.
 
 ### Godot `.import` cruft — 28 files, ~27 KB, highest confidence
@@ -155,11 +164,56 @@ RewardCanvas (Canvas root)
       │  └─ TagIcon0-3
 ```
 
-**The one thing to know before you touch anything:** every element's sprite and position is **reasserted by code every time the panel binds** (on Awake, on OnEnable, on Start, and on every Editor domain reload while `[ExecuteAlways]` is active). This is deliberate — it's what makes the panel self-healing instead of silently breaking if something ever gets corrupted again like it did this session. It means:
+**Updated 2026-09-17 — this is now the non-code-driven system you asked for.** Per your feedback ("Can this be disabled? ... I want the no code driven way"), `TryBindAuthoredLayout()` on `CardRewardPresenter`/`ShopPresenter` no longer reasserts any RectTransform anchor/position/size, ever. Everything below about "reasserted by code every time" and "drag it and it snaps back" is **no longer true** — it described the old behavior and is kept here only so the contrast is clear.
 
-- **If you drag-reposition something in the Inspector and it snaps back**, that's this system doing its job, not a bug. The position is defined by constants in `CardRewardPresenter.cs` (search for `TryBindAuthoredLayout` — each `RepairText`/`RepairImage` call has the anchor/offset numbers), not by whatever the RectTransform currently shows.
-- **To make a permanent layout change**, edit those constants in the C# file, not the scene. Then recompile (Ctrl+R in the Editor) and the new position applies everywhere automatically, including for anyone else's saved scene state.
-- **Sprites are the one exception**: `RepairSprite`/`RepairImage` only assign a sprite when the field is currently empty — they never overwrite a sprite you've set by hand. So if you want to swap the card frame art, you genuinely can drag a new sprite onto `SlotFrame`'s Image component in the Inspector and it'll stick (as long as you don't clear it back to None, or the code fills its default back in on the next bind).
-- **If you want to add a genuinely new visual element** (say, a new icon), the safest path is: add it in code inside `TryBindAuthoredLayout()` following the same `RepairImage`/`RepairText` pattern already there (find-by-name, reapply position, only fill sprite if missing) — not by hand-building it once in the Scene view, since a hand-built object with no matching code will just sit there un-repaired but also won't be recreated if the scene ever needs re-extracting.
+What actually happens now:
 
-If you want a *non-code-driven* way to lay things out (drag things around freely in the Scene view and have it stick), the actual fix would be to remove the position-reassertion from `TryBindAuthoredLayout()` and trust the scene file entirely — I didn't do that because the scene file is exactly what was broken this session (stale/missing data), so right now the code is the more reliable source of truth. Happy to flip that around later once the layout is in a state you're happy with and want to hand-tune from there instead.
+- **Position and size are read from the scene file only.** `RewardCanvas.unity`/`ShopCanvas.unity` are the sole source of truth. Drag something in the Scene view, save the scene (Ctrl+S), and it stays exactly where you put it — nothing will snap it back.
+- **Sprites are still self-healing**, but only the sprite: each element is found by name (`FindText`/`FindImage`) and, if its Image component's sprite is currently `None`, filled in from the known project art path. If a sprite is already assigned (including one you dragged on by hand), it's left alone. This is what lets a corrupted/stale scene file recover its art automatically without also fighting you over layout.
+- **To see this repair applied and baked into the .unity files directly** (not just live in memory during Play Mode), use the `Corebound > Repair Authored Canvases` menu command (`Assets/Editor/AuthoredCanvasRepairTool.cs`) — opens all four scenes together, runs each presenter's repair pass, and saves the three canvas scenes. Useful after editing art paths in code, or if a sprite reference ever goes stale again.
+- **If you add a genuinely new visual element**, you now do it by hand in the Scene view (or Prefab), naming it to match what the presenter's `FindText`/`FindImage` calls look for if you want it auto-wired at runtime — no C# constants to edit for position anymore.
+- **Seeing the images in the Scene view**: if a canvas scene ever looks blank/no-sprite in the Scene window even though Play Mode renders it correctly, that's stale sprite data baked into the file — run `Corebound > Repair Authored Canvases` once to fix it on disk.
+
+---
+
+## 7. Second pass — 2026-09-17, responding to your point-by-point feedback on this report
+
+You came back with per-section feedback on everything above (regression reports on 1.2, new complaints on 1.4/1.5/1.6, and explicit approvals on 4/5/6). This section covers what changed in response.
+
+### 7.1 The actual root cause of "WaveBanner again in HUD" / "Paus Menus again in HUD" (1.2 regression)
+
+This was the important find this pass. `WaveStatePresenter.EnsureOverlayWidgets()` needs to parent the wave banner and pause/failed modal on the **full-screen** canvas, not the small top-right HUD status box — its own comment said as much. It resolved that full-screen canvas via `_authoredHudRoot.GetComponentInParent<Canvas>()`. The bug: `GetComponentInParent` includes the object it's called on, not just true ancestors — and the small HUD status box (`_authoredHudRoot`, named "HUD") carries **its own nested `Canvas` component** (added at some point to give it a local sort order). So this always resolved to that nested Canvas on "HUD" itself, `overlayParent` silently collapsed to `_authoredHudRoot`, and since WaveBanner/PausePanel actually live one level up (parented directly under `HUDCanvas`'s true root), the `Find()` lookup always missed and created fresh duplicates *inside* "HUD" — exactly matching what you saw, and exactly why it kept coming back across multiple earlier "fixes" that only ever patched around the symptom (a 2026-09-15 comment in the same method already describes chasing this same duplication once before, without finding this root cause).
+
+**Fix:** switched to `Canvas.rootCanvas`, which walks past any number of nested Canvases to the actual outermost one, regardless of how the hierarchy is structured. Verified by running the repair tool three times in the same Editor session (previously guaranteed to duplicate by the second or third run) and entering Play Mode from a clean single-scene state — WaveBanner/PausePanel stayed at exactly one each every time.
+
+This also turned out to be the same underlying cause behind **"Player % and Core % and currency are missing" (also 1.2)** — the same broken binding chain. Fixed for free: a fresh Play Mode screenshot now shows `Scrap: 0 · Player 100% · Core 100% · Stage 1 | Wave 1/6` rendering correctly in the HUD status box.
+
+### 7.2 Ranged enemy hit effect on the wrong entity, projectile size (1.4)
+
+Confirmed and fixed. `DamageContext.HitPoint` was set once at attack-fire time from the attacker's position and never updated as the projectile traveled, so `CombatVfxSpawner` always rendered the hit flash at the *shooter's* position instead of the actual impact point. `CombatProjectile.OnTriggerEnter2D()` now rebuilds the `DamageContext` with `transform.position` (the projectile's real position at the moment of impact) right before delivering the hit — a blanket fix, since every damage source (player, enemy, boss, tower) routes through this same method. Enemy melee/contact damage had the identical bug in `EnemyRuntimeController` (used its own `transform.position` instead of the target's) and got the same fix. `Projectile_EnemyBolt.asset`'s `_radius` went from 0.2 → 0.3 for visibility, per your request.
+
+### 7.3 Main menu playing two sounds after a run (new, 1.5)
+
+`MainMenuAudioCuePlayer.OnEnable()` played its "panel opened" cue unconditionally every time `MainMenu.unity` loaded — landing in the same frame as `MusicStateController`'s own `SwitchToState(MusicState.Calm)` (also scene-load-triggered) and audibly overlapping it. Removed; the cue only fires now for genuine in-menu navigation (Navigate/Confirm/Cancel), not the scene load itself.
+
+### 7.4 Tower slots "still static placement" / Stage 2 "empty (Blue background)" (1.6)
+
+Two separate, previously-undiagnosed bugs, both now fixed:
+
+- **Tower slots**: `TowerService.CreateSlotRuntimes()` only ever ran once, from `Awake()`. The Dynamic Arena Slice doc (`Docs/Slices/15_DYNAMIC_ARENA_SLICE.md`) already flagged this as a known, deliberately-deferred gap — a player reaching Stage 2 mid-run kept seeing Stage 1's slot layout. Added `TowerService.RebuildSlotsForNewStage()`, called from `WaveManager.AdvanceToNextStage()` right next to the existing arena-rebuild call. Already-built towers carry over onto the new stage's slots at the same index (the underlying `_builtTowerIds` data is untouched).
+- **Stage 2 "empty"**: the ground texture was never actually broken — it's a real, detailed, intentionally blue-toned coolant/reactor tileset (I looked at the raw file to confirm). The actual bug: decorative prop placement (`StageArenaArtPresenter.CreatePropClusters`/`CreateMazeBlockers`) always used Stage 1's grid-coordinate assumptions, regardless of which stage's prop sheet was active. `stage1_prop_set.png` approximates a uniform grid; `stage2_prop_set.png` is a completely different hand-composed collage (pipe cluster, two energy orbs, three wire-junction boxes, two tall pylons), so Stage 1's coordinates cropped empty or unrelated regions of it — the arena rendered its correct blue floor with almost no readable scattered decoration on top, reading as "empty." Measured Stage 2's actual item bounds via connected-component analysis of the sheet's alpha channel (same method a code comment says was already used for Stage 1's sheet) and added real per-item placements, selected by the active `StageThemeData.ThemeId`.
+
+  Verified visually via a new `Corebound > Preview Stage 1/2 Arena` Editor menu command (temporarily repoints a `StageArenaArtPresenter`'s `_stageData` and calls its existing `RebuildForNewStage()` — preview-only, never saved) — Stage 2 now shows its props scattered around the arena, clear of the core, all four tower slots, and both spawn points.
+
+**Not yet re-verified**: "still no shop popping up after 3 waves" — unchanged from the previous report's finding (all relevant data/logic checked out; most likely explained by the same additive-scene-load race already fixed for Reward/HUD, needs a live retest rather than further code changes). "Reward screen positions... not as expected" (1.1) — with position now scene-file-driven (§6 above), I checked the actual current layout by temporarily forcing the reward panel's `CanvasGroup.Alpha` to 1 in the Editor (never saved) to see it without playing through to a reward moment: it renders as a complete, non-overlapping panel — title banner at top, three evenly-spaced card slots, description at bottom. Each slot's title text sits near the bottom of its card border rather than the top, which might be what read as "not as expected" — but that's a style choice, not a defect, and it's now something you can drag to a different position directly in the Scene view and have it stick.
+
+**"Enter always ends Intermission even with nothing built"** and **"Run Failed states the actual cause"**: both done. `WaveManager.OnConfirmPressed()` no longer gates on `_requiresIntermissionTowerAction`. `WaveManager.FailureCauseLabel` returns "Core Destroyed" or "Player Died" based on which one the killing blow actually hit, shown in both the HUD state line and the full-screen Failed overlay.
+
+### 7.5 Unused-assets cleanup and wiring (§4 above)
+
+Actioned in full — see the updated §4 status banner.
+
+### 7.6 What's still genuinely open
+
+- The two "approved for use" skills (Input System synthetic-input capability, RectTransform/layout-bounds inspector tool) — these were recommendations for tooling *I* could build to work more effectively, not player-facing fixes, and haven't been built yet. Lower priority than the bugs above; say the word if you want either built out.
+- Weapons.md UI/Audio/modifier-data implementation, remaining canvas splits (MainMenu route panels, Boss HUD, Notification, Relic reveal), Slice 12's missing boss audio cue and test coverage — all carried over unchanged from earlier reports, not touched this pass.
