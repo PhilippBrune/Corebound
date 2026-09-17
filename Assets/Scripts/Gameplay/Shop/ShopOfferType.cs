@@ -5,11 +5,10 @@ namespace Corebound.Gameplay.Shop
         Card = 0,
 
         // Declared per Shop.md's own Gameplay example ("Cards, Tower Upgrades oder andere
-        // Build-Verbesserungen"); ShopService.OnConfirmPressed does not yet resolve this case
-        // (there is no ShopOfferData field to name which tower/slot an upgrade offer targets),
-        // so offers of this type are not sellable through the Shop yet - the enum member exists
-        // so that follow-up work can extend the switch instead of first needing a data-model
-        // change.
+        // Build-Verbesserungen"). Resolved end-to-end: ShopService.OnConfirmPressed applies it via
+        // TowerService.TryApplyUpgradeFromShop(), which targets whichever slot is currently
+        // selected in the Build context rather than needing its own ShopOfferData target field.
+        // Authored as ShopOffer_TowerUpgrade.asset, wired into ShopOfferTable_Stage1.
         TowerUpgrade = 1
     }
 }

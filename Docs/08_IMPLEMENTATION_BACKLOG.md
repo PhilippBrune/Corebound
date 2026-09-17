@@ -227,6 +227,7 @@ Bereits umgesetzt:
 - Rapid-, Spread- und Beam-Starter-Assets verdrahtet
 - PlayerCombatController liest aktive Weapon aus WeaponCatalog, RunSaveData und MetaProgressionSaveData
 - erster Weapon-Unlock aus Meta Progression besitzt einen direkten Gameplay-Pfad
+- "Beam" unterscheidet sich von "Rapid" tatsächlich mechanisch, nicht nur parametrisch: ProjectileData._pierceCount (Projectile_PlayerBeam.asset: 2) wird von CombatProjectile.OnTriggerEnter2D echt ausgewertet (_remainingPierceCount überlebt bis zu zwei zusätzliche Treffer, statt beim ersten Treffer zu released) — Version 1.3 führte dies noch als offen ("kein echtes Pierce-Verhalten"), war aber bereits umgesetzt
 
 Lieferobjekte:
 
@@ -235,12 +236,12 @@ Lieferobjekte:
 - drei Starter-Archetypen
 - globale Controller-Aim-Assist-Stärke plus Weapon-Profile
 - gemeinsamer CombatMath.Rotate()-Helper statt vierfach dupliziertem Trigonometrie-Code (Boss/Enemy/Weapon)
+- echtes Pierce-Verhalten für die Beam-Weapon über ProjectileData.PierceCount
 
 Noch offen:
 
 - WeaponPresentationData und differenziertere Audio- oder Visual-Profile
-- Weapon-Modifier-Pipeline für spätere Card- und Tower-Hooks
-- "Beam" unterscheidet sich von "Rapid" weiterhin nur parametrisch (Feuerintervall, Spawn-Distanz), nicht mechanisch (kein echtes Pierce-/Dauerfeuer-Verhalten)
+- Weapon-Modifier-Pipeline für spätere Card- und Tower-Hooks (aktuell einzelne Float-Properties auf CardService statt eines eigenen Asset-Typs — siehe Weapons.md's Audit-Notiz vom 2026-09-16)
 
 ## 6. Cards
 
@@ -254,6 +255,7 @@ Bereits umgesetzt:
 - Card-Modifikatoren greifen bereits auf Weapon-, Resource- und Tower-Multiplikatoren
 - CardService gewichtet Angebote jetzt nach Rarity inklusive Legendary-Mindestfenster statt rein deterministischer Modulo-Rotation
 - Unlock-Auflösung über den gemeinsamen MetaProgressionService.IsUnlockSatisfied()-Helper statt dreifach dupliziertem Fallback-Code (Cards/Towers)
+- Stack-/Duplikat-Regeln sind umgesetzt: CardData._stackable ist pro Karte autoriert, CardService.CanOfferCard() und TryApplyCard() blocken beide nicht-stackable Duplikate über denselben ContainsSelected()-Check — Version 1.3 führte dies noch als offen, war aber bereits umgesetzt
 
 Lieferobjekte:
 
@@ -262,10 +264,10 @@ Lieferobjekte:
 - Card-Tag-Basis für Weapon, Projectile, Tower, Resource, Burn, Freeze und Critical
 - Modifier-Anbindung für Combat und Weapons
 - gewichtete, Rarity-sensitive Angebotslogik
+- Stack-/Duplikat-Regeln über CardData.Stackable
 
 Noch offen:
 
-- Stack-/Duplikat-Regeln für mehrfach gewählte Karten (Cards.md fordert das explizit)
 - tiefere Card-Effekte für Status, Economy und spätere Factory- oder Tower-Interaktionen
 - CardData.Tags wird weiterhin von keinem Code gelesen (bewusst nicht gelöscht, da bereits mehrere Card-Assets Tags autoriert haben — siehe Code-Kommentar in CardData.cs)
 
@@ -282,6 +284,7 @@ Bereits umgesetzt:
 - Tower-Bau und -Upgrade sind während Combat, BossCombat und Intermission möglich (IsBuildableWaveState), nicht mehr nur während Intermission — vorher ein Widerspruch zur dokumentierten Design-Entscheidung
 - fehlgeschlagene Tower-Upgrades nach bereits erfolgter Zahlung werden jetzt erstattet (TowerService.RefundPurchase), vorher ein potenzieller stiller Resource-Verlust
 - CountBuiltTowersById(string) für produzentenabhängige Systeme (u.a. Factory) ergänzt
+- Tower Upgrades als Shop-Angebot sind verkaufbar (ShopService löst ShopOfferType.TowerUpgrade über TowerService.CanUpgradeSelectedTowerForShop()/TryApplyUpgradeFromShop() vollständig auf, ShopOffer_TowerUpgrade.asset ist in ShopOfferTable_Stage1 autoriert und über Stage_01 erreichbar) — Version 1.3 führte dies noch als offen, war aber bereits umgesetzt
 
 Lieferobjekte:
 
@@ -289,11 +292,11 @@ Lieferobjekte:
 - Tower Slot Cycling für Controller
 - Mid-Wave- und Intermission-Building und Upgrades
 - drei Stufen pro Tower
+- Tower-Upgrade-Kauf über den Shop
 
 Noch offen:
 
 - TowerLevelData und weitere Rollen über den ersten Runtime-Tower hinaus
-- Tower Upgrades als Shop-Angebot (ShopOfferType.TowerUpgrade existiert als Enum-Wert, aber ShopService löst diesen Fall noch nicht auf — Shop.md nennt Tower Upgrades explizit als Beispiel)
 
 ## 8. Resources
 
@@ -501,11 +504,12 @@ Bereits umgesetzt:
 - MainMenu-, HUD-, Reward- und Boss-Overlay-Canvas-Hierarchien sind vorhanden und in beiden Szenen verdrahtet (nicht mehr fehlend wie in Version 1.2 behauptet)
 - Reward-Screen bindet jetzt zuverlässig an die handautorierte Szenen-Hierarchie (_authoredCanvasGroup war zuvor null, wodurch eine doppelte Fallback-UI mit Platzhaltertext parallel lief)
 - LocalizationService (EN/DE) existiert und wird von NotificationPresenter, BossHudPresenter und den MainMenu-Route-Panels genutzt
+- UIThemeData.Font wird jetzt über den gemeinsamen UIFontResolver.Resolve()-Helper von 11 Presenter-Klassen gelesen (vorher: toter Datenpfad) — Version 1.3 führte dies pauschal als ungenutzt, das galt aber nur noch für Farben/Sprite, nicht mehr für Font
 
 Noch offen:
 
 - Lokalisierung deckt weiterhin nur einen Teil der Oberflächen ab, nicht durchgängig alle Gameplay- und UI-Texte
-- UIThemeData ist definiert und an UIManager angebunden, wird aber von keinem Presenter tatsächlich gelesen — jeder Presenter hardcodet weiterhin eigene Farben/Font-Fallbacks
+- UIThemeData.PrimaryTextColor/SecondaryTextColor/AccentColor/PanelFrameSprite sind weiterhin von keinem Presenter gelesen (nur .Font ist inzwischen über UIFontResolver angebunden) — jeder Presenter hardcodet weiterhin eigene Farben
 - prozedurale UI-Bau-Bausteine (CreateText/CreateImage/ResolveFont u.ä.) sind über mindestens 6 Presenter-Klassen dupliziert und teils bereits leicht auseinandergedriftet; ein gemeinsamer Builder wäre wertvoll, wurde aber als zu riskant ohne Unity-Editor-Zugriff zur Verifikation zurückgestellt
 - WaveStatePresenter bleibt ein "God Object" aus vier separaten Verantwortlichkeiten (Runtime-UI-Bau, Editor-Szenen-Tooling, Daten-Binding, Pause-/Szenen-Flow-Steuerung)
 
@@ -564,12 +568,12 @@ Bosses, Elite Variants und Wave Boss Balance (vormals hier als nächster Schnitt
 Konkrete Reihenfolge für den nächsten Arbeitsblock, nach Aufwand/Nutzen sortiert:
 
 1. Weitere Factory Production Chains autorieren und im Playtest balancieren — aktuell existiert nur eine Beispiel-Chain (Enemy-Kill-Trickle, Support-Tower-Pulse, Wave-Clear-Bonus).
-2. Shop-Angebote für Tower Upgrades tatsächlich verkaufbar machen (ShopOfferType.TowerUpgrade existiert bereits als Enum-Wert, ShopService.OnConfirmPressed löst diesen Fall aber noch nicht auf) — Shop.md nennt das explizit als Beispiel.
-3. Card-Stack-/Duplikat-Regeln ergänzen (Cards.md fordert das explizit; aktuell unbegrenztes Stacking ohne Regel).
-4. Echte importierte Audiodateien statt der weiterhin synthetisierten Platzhalter-Töne, sobald Content-Produktion dafür ansteht.
-5. UIThemeData tatsächlich an die Presenter anbinden statt der aktuell pro Presenter hartcodierten Farben/Fonts, idealerweise zusammen mit einem gemeinsamen procedural-UI-Builder, der die inzwischen leicht auseinandergedrifteten CreateText/CreateImage-Duplikate ersetzt.
-6. God-Object-Splits von WaveManager, WaveStatePresenter und StageArenaArtPresenter — größtenteils bewusst zurückgestellt, da diese Refactors Unity-Editor-Zugriff zum Kompilieren und Verifizieren brauchen (siehe Code-Kommentare in den jeweiligen Klassen). Update 2026-09-09: die rein lesende, seiteneffektfreie Label-/Elite-Flag-Auflösung von WaveManager (Wave-/Boss-/Stage-Beschriftungen) wurde ohne Editor gefahrlos nach `WaveEncounterLabelResolver` extrahiert (1035 → 905 Zeilen), da diese Methoden nur Felder lesen statt State zu mutieren und pro Aufrufstelle 1:1 durch explizite Parameter ersetzbar waren. Die verbleibenden, zustandsverändernden Anteile von WaveManager sowie WaveStatePresenter und StageArenaArtPresenter bleiben zurückgestellt.
-7. Vollständige UI-Lokalisierungsabdeckung über die bereits vorhandene LocalizationService-Basis hinaus.
+2. Echte importierte Audiodateien statt der weiterhin synthetisierten Platzhalter-Töne, sobald Content-Produktion dafür ansteht.
+3. UIThemeData.PrimaryTextColor/SecondaryTextColor/AccentColor/PanelFrameSprite tatsächlich an die Presenter anbinden statt der aktuell pro Presenter hartcodierten Farben (Font läuft bereits über UIFontResolver, siehe UI-Abschnitt oben), idealerweise zusammen mit einem gemeinsamen procedural-UI-Builder, der die inzwischen leicht auseinandergedrifteten CreateText/CreateImage-Duplikate ersetzt.
+4. God-Object-Splits von WaveManager, WaveStatePresenter und StageArenaArtPresenter — größtenteils bewusst zurückgestellt, da diese Refactors Unity-Editor-Zugriff zum Kompilieren und Verifizieren brauchen (siehe Code-Kommentare in den jeweiligen Klassen). Update 2026-09-09: die rein lesende, seiteneffektfreie Label-/Elite-Flag-Auflösung von WaveManager (Wave-/Boss-/Stage-Beschriftungen) wurde ohne Editor gefahrlos nach `WaveEncounterLabelResolver` extrahiert (1035 → 905 Zeilen), da diese Methoden nur Felder lesen statt State zu mutieren und pro Aufrufstelle 1:1 durch explizite Parameter ersetzbar waren. Die verbleibenden, zustandsverändernden Anteile von WaveManager sowie WaveStatePresenter und StageArenaArtPresenter bleiben zurückgestellt.
+5. Vollständige UI-Lokalisierungsabdeckung über die bereits vorhandene LocalizationService-Basis hinaus.
+
+Update 2026-09-17: Punkte 2 und 3 der vorherigen Liste ("Shop-Angebote für Tower Upgrades verkaufbar machen", "Card-Stack-/Duplikat-Regeln ergänzen") waren entgegen diesem Dokumentstand bereits vollständig umgesetzt (gegen den tatsächlichen Code-/Asset-Stand geprüft: ShopService/TowerService/ShopOffer_TowerUpgrade.asset bzw. CardData.Stackable/CardService) und sind daher aus der Liste entfernt. Bei dieser Gelegenheit stichprobenartig mitgeprüft: Factory hat tatsächlich weiterhin nur die eine ProductionChain_Default-Kette (Punkt 1 unten bleibt zutreffend); UIThemeData ist beim Font-Feld entgegen der vorherigen Pauschalaussage bereits über UIFontResolver an 11 Presenter angebunden, Farben/PanelFrameSprite dagegen tatsächlich noch nicht (Punkt 3 unten entsprechend präzisiert, siehe UI-Abschnitt oben) — die generelle Lehre: Einträge in diesem Dokument vor Wiederverwendung gegen den Code prüfen statt blind zu übernehmen, mehrfach war der dokumentierte Stand älter als der Code.
 
 Slice-Handoff-Historie:
 
