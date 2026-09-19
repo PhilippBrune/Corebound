@@ -166,6 +166,12 @@ namespace Corebound.Gameplay.Shop
             // ShopCanvas.unity's additive load can complete on the MainMenu-transition path.
             TryBindAuthoredLayout();
 
+            // ShopCanvas.unity finishes loading at the end of the frame the gameplay scene loaded
+            // in, i.e. strictly after this component's Start(). Binding only in Start() therefore
+            // always missed it on the MainMenu -> New Run path and the shop silently never
+            // appeared. This is the callback that fires once its objects genuinely exist.
+            AdditiveCanvasSceneLoader.CanvasSceneReady += OnCanvasSceneReady;
+
             if (_service != null)
             {
                 _service.StateChanged += Refresh;
@@ -176,10 +182,26 @@ namespace Corebound.Gameplay.Shop
 
         private void OnDisable()
         {
+            AdditiveCanvasSceneLoader.CanvasSceneReady -= OnCanvasSceneReady;
+
             if (_service != null)
             {
                 _service.StateChanged -= Refresh;
             }
+        }
+
+        private void OnCanvasSceneReady(string sceneName)
+        {
+            if (sceneName != AdditiveCanvasSceneLoader.ShopCanvasSceneName)
+            {
+                return;
+            }
+
+            // Re-run the full initialize so RegisterWithUIManager() also happens against the real
+            // authored panel rather than against whatever was resolved before it existed.
+            _isFullyInitialized = false;
+            EnsureInitialized();
+            Refresh();
         }
 
         private void OnDestroy()
@@ -445,6 +467,15 @@ namespace Corebound.Gameplay.Shop
         private void ResolveOrBuildPanel()
         {
             if (TryBindAuthoredLayout())
+            {
+                return;
+            }
+
+            // ShopCanvas.unity is still being loaded additively - its objects appear at the end of
+            // this frame. Building the local fallback now would put a placeholder panel on screen
+            // that the real authored canvas then renders on top of. Wait for CanvasSceneReady
+            // instead; EnsureInitialized() is re-run from there.
+            if (AdditiveCanvasSceneLoader.IsScenePending(AdditiveCanvasSceneLoader.ShopCanvasSceneName))
             {
                 return;
             }

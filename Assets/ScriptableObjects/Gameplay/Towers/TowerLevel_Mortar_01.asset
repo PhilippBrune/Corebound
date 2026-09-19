@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: TowerLevel_Mortar_01
   m_EditorClassIdentifier:
   _label: Heavy Shell
+  _labelDe: Schwere Granate
   _upgradeCost: 14
   _rangeMultiplier: 1.05
   _fireIntervalMultiplier: 0.94

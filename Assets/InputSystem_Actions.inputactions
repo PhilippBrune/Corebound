@@ -533,7 +533,7 @@
                 {
                     "name": "Keyboard",
                     "id": "1ffb3f95-46c0-4593-8b76-d5ccd9a4c11f",
-                    "path": "<Keyboard>/e",
+                    "path": "<Keyboard>/tab",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",

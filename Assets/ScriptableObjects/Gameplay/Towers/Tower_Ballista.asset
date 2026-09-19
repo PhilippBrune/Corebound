@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _towerId: tower_ballista
   _displayName: Ballista Tower
+  _displayNameDe: Ballistenturm
   _description: Reliable single-target support tower for the first Stage.
+  _descriptionDe: Zuverlässiger Einzelziel-Unterstützungsturm für die erste Stage.
   _sprite: {fileID: 21300000, guid: 9a3ef56cb96f29a469e713d6c306924d, type: 3}
   _buildCost: 14
   _range: 7

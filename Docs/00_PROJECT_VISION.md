@@ -839,6 +839,36 @@ These annotations describe what the current implementation actually does, establ
 
 ---
 
+## 20.1 Proposed resolutions for the still-open questions (2026-09-19)
+
+The annotations above record what the code does. These are **proposals, not decisions** — each needs an explicit yes/no before anything is built. They are deliberately small, because every one of them has to earn its place under Section 19's design boundaries.
+
+**Can the Core be upgraded?**
+
+Section 5.3 already lists *"Invest in offense or strengthen the Core's defense?"* as one of the run's meaningful decisions, but there is currently no way to spend anything on the Core — so that decision does not exist in the game yet. Proposal: the Core stays permanently stationary (no movement, as built), and gains a **three-tier Scrap-funded upgrade track** purchasable during Intermission through the existing `EconomyService` + tower-slot interaction. Each tier grants max-HP, and the player picks one side effect per run: slow between-wave repair, a short damage-reflect pulse when hit, or a wider resource pickup radius. Three tiers only, so it can never become the dominant sink. This closes the gap between Section 5.3's promise and the actual choice set, and needs no new UI surface beyond one more selectable target in a flow the player already uses.
+
+**How deep should the Factory production chain go?**
+
+The vision's own example loop (Section 5.4) is a *closed, amplifying* circuit: towers make resources → resources buy cards → cards improve towers → towers make more. What exists implements the first two steps; the amplifying step is where it stops. Proposal: add exactly **one new node kind — an Amplifier** — that multiplies another node's output while a condition holds (e.g. *"+25% to all tower-pulse output while three or more towers are built"*). That is one data field on the existing `ProductionNodeData`, no new trigger type, no logistics layer, and no second currency — and it is the smallest change that makes "improved systems generate greater value" actually true. Pair it with surfacing the active chain in the Intermission HUD line, since Section 5.5 requires the player be able to *recognize* that a system is working, and a transient toast does not satisfy that.
+
+**What is the meta-progression curve?**
+
+Proposal: fix the tree at **three short tracks of three tiers each** — Weapons, Towers, Start Loadouts — with costs on a 1× / 2× / 4× curve, and one hard rule: *unlocks only ever widen the option pool, never raise base stats.* That rule is what keeps Section 10's "should not completely replace player skill" true by construction rather than by careful balancing. Nine unlocks is enough to give the first Early Access release a visible progression spine without committing to a tree that later content has to keep feeding.
+
+---
+
+## 20.2 Where this document and the build disagree (2026-09-19)
+
+Cross-checking Section 20 against the code surfaced places where the *vision text itself* is now out of date or internally inconsistent. These need a decision about which side to change — the doc or the game.
+
+* **Enemy count is the real content gap.** Section 9 targets *five distinct enemy types*; three roles exist (Chaser, Ranged Pressure, Bruiser). The three Elite variants are stat/behaviour modifiers layered on those same roles, not distinct types. This is the only Section 9 target that is still materially short, and it is worth deciding explicitly whether to build two more or to restate the target as three roles plus elite variants.
+* **Tower count already exceeds the stated target.** Sections 7.2 and 9 both say *approximately three tower types*; four exist and are catalogued (Support, Ballista, Mortar, Sentinel). Harmless, but the doc should say four so it stops reading as an open gap.
+* **"Resource conversion" contradicts the single-currency decision.** Section 7.3 lists *Resource conversion* as a Factory capability, but Section 20 records a single currency, and `ResourceWalletService` holds one `int`. With one currency there is nothing to convert. Either drop the phrase from 7.3, or accept a second resource — and a second resource is a much larger change than it looks, touching the wallet, HUD, every cost field and the Shop.
+* **The boss target is exceeded, not missed.** Section 9 asks for *one complete boss encounter*; five exist, one per stage. The open question there is variety, not count — attack-pattern differentiation across the five is uneven.
+* **Run duration is unvalidated.** Section 10 targets 60–70 minutes. Five stages × six waves plus a boss each has never been timed end to end, and nothing in the build enforces or measures it. Worth treating as an explicit open question rather than a settled figure.
+
+---
+
 # 21. Definition of Vision Success
 
 The vision is successfully represented in the game when a player can:

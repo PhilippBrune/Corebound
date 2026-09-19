@@ -1,4 +1,5 @@
 using Corebound.Gameplay.Combat;
+using Corebound.UI;
 using UnityEngine;
 
 namespace Corebound.Gameplay.Towers
@@ -8,7 +9,9 @@ namespace Corebound.Gameplay.Towers
     {
         [SerializeField] private string _towerId = "tower_default";
         [SerializeField] private string _displayName = "Tower";
+        [SerializeField] private string _displayNameDe = string.Empty;
         [SerializeField] [TextArea(2, 3)] private string _description = string.Empty;
+        [SerializeField] [TextArea(2, 3)] private string _descriptionDe = string.Empty;
         [SerializeField] private Sprite _sprite;
         [SerializeField] private int _buildCost = 12;
         [SerializeField] private float _range = 6f;
@@ -21,9 +24,9 @@ namespace Corebound.Gameplay.Towers
 
         public string TowerId => _towerId;
 
-        public string DisplayName => _displayName;
+        public string DisplayName => LocalizationService.Resolve(_displayName, _displayNameDe);
 
-        public string Description => _description;
+        public string Description => LocalizationService.Resolve(_description, _descriptionDe);
 
         public Sprite Sprite => _sprite;
 

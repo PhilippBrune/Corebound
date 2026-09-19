@@ -71,6 +71,18 @@ namespace Corebound.Gameplay.Waves
         private bool _hasRaisedStageStarted;
         private bool _requiresIntermissionShopAction;
         private bool _requiresIntermissionTowerAction;
+
+        // Several systems subscribe to the same IInputReader.ConfirmPressed event, so one physical
+        // Enter/A press is delivered to all of them in subscription order. When that press is what
+        // completed a mandatory Intermission gate (buying in the Shop, or committing a tower
+        // build), the gate flag flips to false *during* that same event - and if this component's
+        // own handler happens to run afterwards, it sees an already-satisfied gate and ends the
+        // Intermission on the very press the player meant as "buy this"/"build this" (playtest
+        // 2026-09-19: "Intermission phase should not end when pressing the btn for placing a
+        // tower"). Recording the frame a gate was satisfied lets OnConfirmPressed ignore the
+        // remainder of that frame regardless of subscription order, which is not otherwise
+        // guaranteed. Same pattern as WaveStatePresenter's _pauseOverlayClosedFrame.
+        private int _intermissionGateResolvedFrame = -1;
         private bool _wasCoreDestroyedOnFailure;
 
         public event Action StateChanged;
@@ -611,6 +623,7 @@ namespace Corebound.Gameplay.Waves
             // Intermission; only the Shop's own mandatory buy/skip gate still blocks Confirm.
             if (_state == WaveState.Intermission
                 && !_requiresIntermissionShopAction
+                && _intermissionGateResolvedFrame != Time.frameCount
                 && (_cardRewardController == null || !_cardRewardController.IsOpen))
             {
                 AdvanceEncounter();
@@ -646,6 +659,7 @@ namespace Corebound.Gameplay.Waves
             // already does for the shop's mandatory-action gate, so the player explicitly confirms
             // when they're done instead of the phase ending the instant they build one tower.
             _requiresIntermissionTowerAction = false;
+            _intermissionGateResolvedFrame = Time.frameCount;
             StateChanged?.Invoke();
         }
 
@@ -658,6 +672,7 @@ namespace Corebound.Gameplay.Waves
 
             _requiresIntermissionShopAction = false;
             _requiresIntermissionTowerAction = _towerService != null && _towerService.HasAvailableIntermissionAction;
+            _intermissionGateResolvedFrame = Time.frameCount;
             StateChanged?.Invoke();
         }
 

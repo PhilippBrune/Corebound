@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _towerId: tower_sentinel
   _displayName: Sentinel Tower
+  _displayNameDe: Sentinel-Turm
   _description: Fast-firing piercing rounds that punch through multiple enemies at once - low damage per hit, built for crowd control rather than single-target burst.
+  _descriptionDe: Schnellfeuernde durchschlagende Geschosse, die mehrere Gegner gleichzeitig durchbohren - niedriger Schaden pro Treffer, ausgelegt auf Crowd Control statt Einzelziel-Burst.
   _sprite: {fileID: 0}
   _buildCost: 16
   _range: 6.5

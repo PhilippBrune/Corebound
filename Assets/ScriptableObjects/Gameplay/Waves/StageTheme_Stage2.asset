@@ -15,7 +15,7 @@ MonoBehaviour:
   _themeId: theme_stage_02
   _displayName: Reactor Depths
   _groundTexture: {fileID: 0}
-  _groundTexturePath: Assets/Art/Environment/Arena/stage2_ground_tileset.png.jpg
+  _groundTexturePath: Assets/Art/Environment/Arena/stage2_ground_tileset.png
   _boundaryTexture: {fileID: 0}
   _boundaryTexturePath: Assets/Art/Environment/Arena/stage2_boundary_set.png
   _propTexture: {fileID: 0}

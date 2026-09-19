@@ -3,6 +3,7 @@ using Corebound.Gameplay.Bosses;
 using Corebound.Gameplay.Combat;
 using Corebound.Gameplay.Enemies;
 using Corebound.Gameplay.Shared;
+using Corebound.UI;
 using UnityEngine;
 
 namespace Corebound.Gameplay.Towers
@@ -29,13 +30,13 @@ namespace Corebound.Gameplay.Towers
 
         public int CurrentUpgradeLevel => _currentUpgradeLevel;
 
-        public string DisplayName => _towerData != null ? _towerData.DisplayName : "Tower";
+        public string DisplayName => _towerData != null ? _towerData.DisplayName : LocalizationService.Resolve("Tower", "Turm");
 
         public bool CanUpgrade => _towerData != null && _towerData.UpgradeLevels != null && _currentUpgradeLevel < _towerData.UpgradeLevels.Length;
 
         public int NextUpgradeCost => CanUpgrade ? _towerData.UpgradeLevels[_currentUpgradeLevel].UpgradeCost : 0;
 
-        public string UpgradeLabel => CanUpgrade ? _towerData.UpgradeLevels[_currentUpgradeLevel].Label : "Maxed";
+        public string UpgradeLabel => CanUpgrade ? _towerData.UpgradeLevels[_currentUpgradeLevel].Label : LocalizationService.Resolve("Maxed", "Maximiert");
 
         public void Initialize(TowerData towerData, TowerService towerService, CombatProjectile projectilePrototype, Transform projectileParent, int upgradeLevel = 0)
         {

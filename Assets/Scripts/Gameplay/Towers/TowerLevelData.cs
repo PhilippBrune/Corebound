@@ -1,3 +1,4 @@
+using Corebound.UI;
 using UnityEngine;
 
 namespace Corebound.Gameplay.Towers
@@ -6,13 +7,14 @@ namespace Corebound.Gameplay.Towers
     public sealed class TowerLevelData : ScriptableObject
     {
         [SerializeField] private string _label = "Upgrade";
+        [SerializeField] private string _labelDe = string.Empty;
         [SerializeField] private int _upgradeCost = 8;
         [SerializeField] private float _rangeMultiplier = 1.15f;
         [SerializeField] private float _fireIntervalMultiplier = 0.88f;
         [SerializeField] private float _damageMultiplier = 1.2f;
         [SerializeField] private Color _tint = Color.white;
 
-        public string Label => _label;
+        public string Label => LocalizationService.Resolve(_label, _labelDe);
 
         public int UpgradeCost => Mathf.Max(1, _upgradeCost);
 

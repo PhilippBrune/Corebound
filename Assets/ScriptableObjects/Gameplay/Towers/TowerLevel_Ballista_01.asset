@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: TowerLevel_Ballista_01
   m_EditorClassIdentifier: 
   _label: Precision Upgrade
+  _labelDe: Präzisions-Upgrade
   _upgradeCost: 10
   _rangeMultiplier: 1.12
   _fireIntervalMultiplier: 0.92

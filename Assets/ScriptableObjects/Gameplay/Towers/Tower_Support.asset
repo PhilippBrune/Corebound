@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _towerId: tower_support
   _displayName: Support Tower
+  _displayNameDe: Unterstützungsturm
   _description: Future support-focused tower unlocked through Meta Progression.
+  _descriptionDe: Zukünftiger, auf Unterstützung ausgerichteter Turm, freigeschaltet über Meta Progression.
   _sprite: {fileID: 21300000, guid: 88f496efad7915545a45dd11ea56bcb1, type: 3}
   _buildCost: 18
   _range: 6.5

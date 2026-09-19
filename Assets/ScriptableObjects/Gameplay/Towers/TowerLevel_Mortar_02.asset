@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: TowerLevel_Mortar_02
   m_EditorClassIdentifier:
   _label: Siege Payload
+  _labelDe: Belagerungsladung
   _upgradeCost: 22
   _rangeMultiplier: 1.1
   _fireIntervalMultiplier: 0.88

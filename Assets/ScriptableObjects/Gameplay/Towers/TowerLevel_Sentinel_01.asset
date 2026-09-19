@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: TowerLevel_Sentinel_01
   m_EditorClassIdentifier:
   _label: Focused Rounds
+  _labelDe: Fokussierte Geschosse
   _upgradeCost: 9
   _rangeMultiplier: 1.1
   _fireIntervalMultiplier: 0.9

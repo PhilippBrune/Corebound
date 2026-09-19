@@ -188,6 +188,11 @@ namespace Corebound.Gameplay.Cards
             // RewardCanvas.unity's additive load can complete on the MainMenu-transition path.
             TryBindAuthoredLayout();
 
+            // RewardCanvas.unity only finishes loading at the end of the frame the gameplay scene
+            // loaded in - after this component's Start(). Binding in Start() alone therefore always
+            // missed it on the MainMenu -> New Run path. This fires once its objects really exist.
+            AdditiveCanvasSceneLoader.CanvasSceneReady += OnCanvasSceneReady;
+
             if (_controller != null)
             {
                 _controller.StateChanged += Refresh;
@@ -198,10 +203,24 @@ namespace Corebound.Gameplay.Cards
 
         private void OnDisable()
         {
+            AdditiveCanvasSceneLoader.CanvasSceneReady -= OnCanvasSceneReady;
+
             if (_controller != null)
             {
                 _controller.StateChanged -= Refresh;
             }
+        }
+
+        private void OnCanvasSceneReady(string sceneName)
+        {
+            if (sceneName != AdditiveCanvasSceneLoader.RewardCanvasSceneName)
+            {
+                return;
+            }
+
+            _isFullyInitialized = false;
+            EnsureInitialized();
+            Refresh();
         }
 
         private void OnDestroy()
@@ -614,6 +633,14 @@ namespace Corebound.Gameplay.Cards
         private void ResolveOrBuildPanel()
         {
             if (TryBindAuthoredLayout())
+            {
+                return;
+            }
+
+            // Still waiting on RewardCanvas.unity's additive load - building the local fallback now
+            // would put a placeholder panel on screen that the real canvas renders over a frame
+            // later. OnCanvasSceneReady re-runs EnsureInitialized() once it has actually arrived.
+            if (AdditiveCanvasSceneLoader.IsScenePending(AdditiveCanvasSceneLoader.RewardCanvasSceneName))
             {
                 return;
             }

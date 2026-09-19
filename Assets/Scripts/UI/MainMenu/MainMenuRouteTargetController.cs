@@ -48,11 +48,18 @@ namespace Corebound.UI.MainMenu
             return _activeTarget != null && _activeTarget.IsOpen && _activeTarget.TryHandleNavigation(navigationInput);
         }
 
-        // Debug-only: [ and ] cycle the stage a fresh "New Run" starts on. Deliberately raw
+        // Debug-only: F9/F10 cycle the stage a fresh "New Run" starts on. Deliberately raw
         // Keyboard polling instead of the InputReader/Input Actions pipeline - this is a
         // development aid that must never consume or compete with real gameplay/menu input
         // bindings, and must compile out cleanly on the rare chance UnityEngine.InputSystem isn't
         // present, which a raw Keyboard check does not risk.
+        //
+        // Was [ and ] until 2026-09-19, which made this feature effectively non-existent for this
+        // project's own developer: Keyboard.leftBracketKey/rightBracketKey address a US-layout
+        // *physical* key position, which on the German QWERTZ keyboard actually in use is the "ü"
+        // and "+" keys - so the advertised "[ / ]" hint named keys that are not on the keyboard.
+        // Function keys occupy the same physical position on every layout, so F9/F10 are reachable
+        // and printable regardless of locale.
         private void Update()
         {
             if (!IsDebugModeAvailable || _activeTarget != null)
@@ -67,20 +74,43 @@ namespace Corebound.UI.MainMenu
                 return;
             }
 
-            if (keyboard.leftBracketKey.wasPressedThisFrame)
+            if (keyboard.f9Key.wasPressedThisFrame)
             {
                 SetDebugStartStageIndex(_debugStartStageIndex - 1);
             }
-            else if (keyboard.rightBracketKey.wasPressedThisFrame)
+            else if (keyboard.f10Key.wasPressedThisFrame)
             {
                 SetDebugStartStageIndex(_debugStartStageIndex + 1);
             }
         }
 
+        // The Main Menu scene has no NotificationPresenter in it (that lives in the gameplay
+        // scene), so the toast this used to rely on silently did nothing here - the debug mode gave
+        // no feedback at all and read as "not available". Drawing the state directly makes it
+        // self-evident that the mode exists, which key changes it, and what it is currently set to.
+        private void OnGUI()
+        {
+            if (!IsDebugModeAvailable)
+            {
+                return;
+            }
+
+            const float width = 430f;
+            const float height = 24f;
+            var rect = new Rect(8f, Screen.height - height - 8f, width, height);
+            var previousColor = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.Box(rect, GUIContent.none);
+            GUI.color = previousColor;
+            GUI.Label(
+                new Rect(rect.x + 8f, rect.y + 3f, width - 16f, height),
+                "DEBUG  ·  New Run starts on Stage " + _debugStartStageIndex + " of " + DebugMaxStageIndex + "  ·  F9 / F10 to change");
+        }
+
         private static void SetDebugStartStageIndex(int stageIndex)
         {
             _debugStartStageIndex = ((stageIndex - 1 + DebugMaxStageIndex) % DebugMaxStageIndex) + 1;
-            NotificationPresenter.Show("Debug: New Run will start on Stage " + _debugStartStageIndex + " ( [ / ] to change)");
+            NotificationPresenter.Show("Debug: New Run will start on Stage " + _debugStartStageIndex + " (F9 / F10 to change)");
         }
 
         private void OnEnable()

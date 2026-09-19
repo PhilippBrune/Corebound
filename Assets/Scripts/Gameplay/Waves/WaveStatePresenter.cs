@@ -278,6 +278,11 @@ namespace Corebound.Gameplay.Waves
             TryBindAuthoredHud();
             ApplyHudScale();
 
+            // HUDCanvas.unity only exists from the end of the frame the gameplay scene loaded in,
+            // which is after Start(). This is the first point at which binding can actually work
+            // on the MainMenu -> New Run path.
+            AdditiveCanvasSceneLoader.CanvasSceneReady += OnCanvasSceneReady;
+
             if (_waveManager != null)
             {
                 _waveManager.StateChanged += Refresh;
@@ -305,8 +310,27 @@ namespace Corebound.Gameplay.Waves
             Refresh();
         }
 
+        private void OnCanvasSceneReady(string sceneName)
+        {
+            if (sceneName != AdditiveCanvasSceneLoader.HudCanvasSceneName)
+            {
+                return;
+            }
+
+            if (TryBindAuthoredHud())
+            {
+                EnsureOverlayWidgets();
+                RegisterWithUIManager();
+                ApplyHudScale();
+            }
+
+            Refresh();
+        }
+
         private void OnDisable()
         {
+            AdditiveCanvasSceneLoader.CanvasSceneReady -= OnCanvasSceneReady;
+
             if (_waveManager != null)
             {
                 _waveManager.StateChanged -= Refresh;
@@ -785,6 +809,17 @@ namespace Corebound.Gameplay.Waves
             if (TryBindAuthoredHud())
             {
                 EnsureOverlayWidgets();
+                return;
+            }
+
+            // HUDCanvas.unity's additive load completes at the end of this frame, after Start().
+            // Building the procedural fallback HUD here is what produced the playtest report
+            // "Player %, Core % and currency are shown shortly in white but disappear after some
+            // seconds" (2026-09-19): the white placeholder rendered for a frame or so and was then
+            // covered by the real HUDCanvas arriving on top of it. Wait for CanvasSceneReady
+            // instead - OnCanvasSceneReady() drives the real bind once the objects exist.
+            if (AdditiveCanvasSceneLoader.IsScenePending(AdditiveCanvasSceneLoader.HudCanvasSceneName))
+            {
                 return;
             }
 

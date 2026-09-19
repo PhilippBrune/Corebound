@@ -15,7 +15,7 @@ MonoBehaviour:
   _themeId: theme_stage_03
   _displayName: Salvage Fields
   _groundTexture: {fileID: 0}
-  _groundTexturePath: Assets/Art/Environment/Arena/stage3_ground_tileset.png.jpg
+  _groundTexturePath: Assets/Art/Environment/Arena/stage3_ground_tileset.png
   _boundaryTexture: {fileID: 0}
   _boundaryTexturePath: Assets/Art/Environment/Arena/stage3_boundary_set.png
   _propTexture: {fileID: 0}
