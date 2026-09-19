@@ -48,7 +48,26 @@ namespace Corebound.Gameplay.Waves
         [SerializeField] private Transform _projectileParent;
         [SerializeField] private MetaProgressionDefinitionData _metaProgressionDefinitionData;
 
+        // Playtest feedback (2026-09-19): "Enemies spawns are still to static - it should be more
+        // random" / "Enemies per Wave should be more random but ballenced". Both knobs are
+        // deliberately bounded so a wave still reads as the encounter its data authored: enemies
+        // keep entering from the stage's authored spawn points, and a wave's total enemy count
+        // still averages out to the authored total rather than drifting.
+        [SerializeField] [Range(0f, 0.5f)] private float _spawnCountVariance = 0.25f;
+
+        // Fraction of one fan-angle step a spawn may be nudged by. At 0 the old exactly-repeating
+        // geometry comes back, which is useful for A/B checks.
+        [SerializeField] [Range(0f, 1f)] private float _spawnAngleJitter = 0.5f;
+
         private readonly List<SpawnGroupRuntime> _spawnGroups = new List<SpawnGroupRuntime>();
+
+        // Re-rolled per wave. The spawn counter is what actually fixes the "all enemies of a group
+        // appear on the exact same tile" problem: ResolveSpawnPosition() used to be handed the
+        // spawn *group* index, so a group of six enemies produced six identical positions and a
+        // whole wave only ever used as many distinct points as it had groups.
+        private int _waveSpawnCounter;
+        private int _waveSpawnPointOffset;
+        private float _waveSpawnAngleOffsetDegrees;
 
         private EnemyPool _enemyPool;
         private ResourcePickupPool _resourcePickupPool;
@@ -348,6 +367,13 @@ namespace Corebound.Gameplay.Waves
             _state = WaveState.Combat;
             _waveStartSpawnDelayTimer = WaveStartSpawnDelaySeconds;
 
+            // Re-rolled once per wave rather than per enemy, so a single wave still reads as one
+            // coherent attack from a consistent direction set - it is the wave-to-wave repetition
+            // that felt static, not the spread within a wave.
+            _waveSpawnCounter = 0;
+            _waveSpawnPointOffset = UnityEngine.Random.Range(0, 1024);
+            _waveSpawnAngleOffsetDegrees = UnityEngine.Random.Range(0f, 360f);
+
             var waveData = _stageData.Waves[_currentWaveIndex];
             var modifierData = waveData != null ? waveData.ModifierData : null;
 
@@ -362,7 +388,7 @@ namespace Corebound.Gameplay.Waves
                         continue;
                     }
 
-                    _spawnGroups.Add(new SpawnGroupRuntime(spawnGroup, modifierData));
+                    _spawnGroups.Add(new SpawnGroupRuntime(spawnGroup, modifierData, _spawnCountVariance));
                 }
             }
 
@@ -437,7 +463,10 @@ namespace Corebound.Gameplay.Waves
                 }
 
                 var enemy = _enemyPool.Get();
-                enemy.transform.position = ResolveSpawnPosition(index, false);
+
+                // A running per-wave counter, NOT the spawn-group index: passing the group index
+                // meant every enemy in a group resolved to the identical position.
+                enemy.transform.position = ResolveSpawnPosition(_waveSpawnCounter++, false);
                 enemy.Initialize(spawnGroup.EnemyData, spawnGroup.EliteModifierData, _playerTarget, _coreTarget, _sharedProjectilePrototype, _projectileParent);
                 _remainingAliveEnemies += 1;
                 spawnGroup.ConsumeSpawn();
@@ -800,7 +829,11 @@ namespace Corebound.Gameplay.Waves
                 // spawn index, so a burst of several enemies spreads across the stage's different
                 // entry points instead of fanning out from one (Dynamic Arena Slice, Docs/Slices/
                 // 15_DYNAMIC_ARENA_SLICE.md).
-                var wrappedIndex = ((spawnIndex % spawnPoints.Length) + spawnPoints.Length) % spawnPoints.Length;
+                // Offsetting the round-robin by a per-wave value (rather than picking a point at
+                // random per enemy) keeps every authored entry point used an even number of times
+                // within a wave - pure per-enemy randomness clumps, which reads as unfair rather
+                // than varied - while still starting each wave on a different point.
+                var wrappedIndex = (((spawnIndex + _waveSpawnPointOffset) % spawnPoints.Length) + spawnPoints.Length) % spawnPoints.Length;
                 var spawnPoint = spawnPoints[wrappedIndex];
                 origin = spawnPoint.Position;
                 fanRadius = spawnPoint.FanRadius;
@@ -815,8 +848,15 @@ namespace Corebound.Gameplay.Waves
                 angleStepDegrees = _stageData != null ? _stageData.SpawnFanAngleStepDegrees : 120f;
             }
 
-            var angle = spawnIndex * angleStepDegrees * Mathf.Deg2Rad;
-            return new Vector3(origin.x + Mathf.Cos(angle) * fanRadius.x, origin.y + Mathf.Sin(angle) * fanRadius.y, 0f);
+            // Jitter within half a fan step either side, plus a per-wave rotation of the whole fan.
+            // The enemy still arrives from this spawn point's arc - it just no longer lands on the
+            // exact same handful of coordinates every single wave of every single run.
+            var jitterDegrees = UnityEngine.Random.Range(-0.5f, 0.5f) * angleStepDegrees * _spawnAngleJitter;
+            var angle = (spawnIndex * angleStepDegrees + _waveSpawnAngleOffsetDegrees + jitterDegrees) * Mathf.Deg2Rad;
+
+            // Pull some spawns slightly inside the fan radius so they do not all sit on one ring.
+            var radiusScale = UnityEngine.Random.Range(1f - 0.25f * _spawnAngleJitter, 1f);
+            return new Vector3(origin.x + Mathf.Cos(angle) * fanRadius.x * radiusScale, origin.y + Mathf.Sin(angle) * fanRadius.y * radiusScale, 0f);
         }
 
         private void SpawnResourcePickup(int amount, Vector2 position)
@@ -1023,12 +1063,29 @@ namespace Corebound.Gameplay.Waves
 
             private readonly WaveModifierData _modifierData;
 
-            public SpawnGroupRuntime(SpawnGroupData spawnGroupData, WaveModifierData modifierData)
+            public SpawnGroupRuntime(SpawnGroupData spawnGroupData, WaveModifierData modifierData, float countVariance)
             {
                 Source = spawnGroupData;
                 _modifierData = modifierData;
-                _remainingCount = spawnGroupData != null ? spawnGroupData.Count : 0;
+                _remainingCount = ResolveStartingCount(spawnGroupData, countVariance);
                 _timer = spawnGroupData != null ? spawnGroupData.InitialDelaySeconds * ResolveInitialDelayMultiplier(modifierData) : 0f;
+            }
+
+            // Varies the authored count symmetrically, so the expected total for a wave is exactly
+            // what the data authored - this changes the shape of an encounter, not its difficulty
+            // budget. A group that authored any enemies at all always spawns at least one, so
+            // variance can never delete a threat type the wave was designed around.
+            private static int ResolveStartingCount(SpawnGroupData spawnGroupData, float countVariance)
+            {
+                var authoredCount = spawnGroupData != null ? spawnGroupData.Count : 0;
+
+                if (authoredCount <= 0 || countVariance <= 0f)
+                {
+                    return Mathf.Max(0, authoredCount);
+                }
+
+                var spread = authoredCount * countVariance;
+                return Mathf.Max(1, Mathf.RoundToInt(authoredCount + UnityEngine.Random.Range(-spread, spread)));
             }
 
             public SpawnGroupData Source { get; }

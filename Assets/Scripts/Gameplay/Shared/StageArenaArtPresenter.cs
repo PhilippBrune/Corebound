@@ -194,6 +194,19 @@ namespace Corebound.Gameplay.Shared
             {
                 if (Application.isPlaying)
                 {
+                    // Destroy() is deferred to the end of the frame, so this object stays alive
+                    // and findable by name for the rest of this frame. BuildArenaVisuals() below
+                    // resolves its parent with EnsureWorldRoot("ArenaVisualsRoot"), which is a
+                    // GameObject.Find() - so it would find this doomed root, build the entire new
+                    // arena underneath it, and then Unity would destroy the lot at end of frame,
+                    // leaving a mid-run stage transition with no arena at all (playtest 2026-09-19:
+                    // "reaching Stage 3 from Stage 2 does not load the tiles", while starting a new
+                    // run directly on Stage 3 worked fine). Renaming and deactivating first makes
+                    // the old root unfindable immediately. Edit Mode never hit this because
+                    // DestroyImmediate() removes the object before the Find happens - which is why
+                    // the Corebound > Preview Stage Arena menu looked correct the whole time.
+                    existingRoot.name = "ArenaVisualsRoot_Discarded";
+                    existingRoot.SetActive(false);
                     Destroy(existingRoot);
                 }
                 else

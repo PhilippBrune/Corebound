@@ -317,13 +317,14 @@ namespace Corebound.Gameplay.Waves
                 return;
             }
 
-            if (TryBindAuthoredHud())
-            {
-                EnsureOverlayWidgets();
-                RegisterWithUIManager();
-                ApplyHudScale();
-            }
-
+            // Must go through the full EnsureInitialized() sequence rather than binding directly:
+            // HUDCanvas.unity's WaveBanner, PausePanel and HUD_Frame_Panel Images are all saved
+            // with no sprite assigned and get theirs at runtime from CreateRuntimeSprites(), which
+            // EnsureInitialized() runs *before* the bind. An earlier version of this method called
+            // TryBindAuthoredHud()/EnsureOverlayWidgets() on their own, which skipped that step and
+            // left every one of those panels rendering as a plain white box (playtest 2026-09-19).
+            EnsureInitialized();
+            ApplyHudScale();
             Refresh();
         }
 
