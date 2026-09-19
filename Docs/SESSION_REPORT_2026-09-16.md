@@ -231,3 +231,35 @@ Then found that `Docs/08_IMPLEMENTATION_BACKLOG.md` itself had drifted from the 
 Last, extended actual German localization coverage (`Docs/08_IMPLEMENTATION_BACKLOG.md`'s UI section had flagged this as thin). `CardData` gained `DisplayName`/`Description` German fields with all 30 cards translated — since both the Card Reward screen and the Shop read `CardData` directly, this covers both surfaces in one pass. `ShopPresentationData`/`ShopService`/`ShopPresenter` got the same treatment. While verifying this, found a real, narrower bug: the four `MainMenuRoutePanelData` assets (Settings/MetaProgression/NewRunConfirm/QuitConfirm) already had `_titleDe`-style fields in code, but those fields were added *after* the assets were last saved, so they deserialize as empty strings and silently fall back to English every time — the German toggle has been doing nothing for those four screens. Authored real German text directly into each asset's YAML to fix it. Still unlocalized and left for later: `WaveStatePresenter`, `RelicRevealPresenter`, `MetaProgressionRouteTargetPresenter`, `SettingsRouteTargetPresenter`, `MainMenuCanvasPresenter`, and `TowerData` (including the runtime-composed tower-upgrade strings in `TowerService`).
 
 Nothing in this pass touched live gameplay behavior — all of it was either Editor tooling, documentation accuracy, or data/string content, verified by compilation and direct GUID/reference tracing rather than by playing the game.
+
+---
+
+## 9. Fourth pass — 2026-09-19, the MainMenu-path root cause
+
+One defect explains most of §7's leftovers, and it only ever reproduces from **MainMenu → New Run** — which is exactly why opening `SampleScene` directly kept hiding it.
+
+`SceneManager.LoadScene(..., Additive)` is **not synchronous**. Unity defers it to the end of the current frame. `AdditiveCanvasSceneLoader` assumed the opposite: it raised `CanvasSceneReady` immediately after *requesting* the load, and nothing ever subscribed to that event anyway, so all three presenters bound in their own `Start()` — which runs in the same frame the load was requested, i.e. strictly before `HUDCanvas`/`ShopCanvas`/`RewardCanvas` objects exist. Every bind from the MainMenu path failed, and each presenter then built its own local placeholder UI.
+
+That is:
+
+- **7.1, "Player %, Core % and currency shown shortly in white, then disappear."** The white placeholder HUD renders for a frame or so and the real `HUDCanvas` then arrives on top of it.
+- **"Shop still not popping up at all."** `ShopPresenter` bound to nothing, so `Refresh()` had no canvas to show.
+- Part of the reward-screen instability.
+
+Fixed by raising `CanvasSceneReady` from `SceneManager.sceneLoaded` (the first moment the objects genuinely exist), subscribing all three presenters to it, and making each one *wait* rather than build its fallback while its canvas is still in flight (`IsScenePending`).
+
+**Stage 2 / Stage 3 arena had no ground.** `StageTheme_Stage2`/`_Stage3` pointed at `stageN_ground_tileset.png.jpg`, which stopped existing when those files were renamed to `.png` — the texture silently resolved to null. Both paths corrected. Worth knowing: those two files are still **JPEG data behind a `.png` name**; the loader sniffs content so it works, but a JPEG carries no alpha.
+
+**StreamingAssets mirrored only Stage 1 — 39 files missing.** `DebugSpriteFactory` tries `StreamingAssets/Art/` first and falls back to `Assets/Art/` *only inside the Editor*, so every Stage 2–5 arena texture, all 12 per-stage enemy reskins, the 4 extra boss sprites, the Mortar/Sentinel towers and 7 VFX sheets would have shipped missing while looking correct in the Editor. The mirror also held a **stale** `card_reward_choice_panel.png`, so the game kept drawing the previous reward-panel art after it was replaced. Synced, and added `Corebound > Validate Art Pipeline` so both mirror drift and broken `StageThemeData` paths are detectable instead of silent.
+
+**Reward screen rebuilt to the supplied reference image.** Measured the panel art directly (connected-component analysis) rather than guessing: title plaque at `(361,50,393,65)`, top bar `(163,135,792,33)`, slot recesses `(175/448/724, 188, ~216, 262)`, bottom bar `(261,484,591,56)`. Slots were `282x414` against recesses that are really `228x294`, the card title sat at the *bottom* of the card and the description above it. Now: card title at the top of each card, description in the card body, currency and tower info at the two ends of the top bar, selected-card explanation in the bottom bar. Card text is best-fit, so no card name or description can overflow or be silently truncated.
+
+**Two input defects.**
+- `E` was bound to **both** `Gameplay/Interact` (build a tower — and hold-to-guard the Core) and `Build/NextSlot` (cycle slot), with both maps enabled simultaneously, so every build attempt also moved the selection. `NextSlot` moved to `Tab`.
+- A single Confirm press could finish a mandatory Intermission gate *and* end the Intermission, because `WaveManager` and `ShopService` both subscribe to `ConfirmPressed` and the gate flag clears mid-event — so whether buying also skipped the rest of the Intermission depended on subscription order. Guarded by frame.
+
+**Debug stage-select was unreachable, not missing.** It was bound to `[` and `]` — on the German QWERTZ keyboard actually in use, those physical keys are `ü` and `+`, and the hint text named keys that are not on the keyboard. Its only feedback was `NotificationPresenter`, which `MainMenu.unity` does not contain, so even the right key produced nothing. Moved to **F9 / F10** (same physical position on every layout) and drawn on screen. Verified live in Play Mode on `MainMenu.unity`: the Game view shows `DEBUG · New Run starts on Stage 1 of 5 · F9 / F10 to change`, console clean.
+
+This also explains **"Tower slots → no change visible"**: Stage 1 uses `TowerService`'s default slots while Stage 2 and 3 define their own (4 and 5 distinct positions), so the data was already differentiated — but Stage 2 was unreachable without a working stage-select.
+
+**Still not fixed: 7.3 (two sounds on the Main Menu after a run).** The one concrete overlap found previously is gone — `MainMenuAudioCuePlayer.OnEnable()` no longer fires its open cue — and `MusicStateController` has no `DontDestroyOnLoad`/singleton, so a surviving duplicate from the gameplay scene is ruled out. I cannot hear audio, and guessing further is not useful: the fastest path is naming the two sounds (e.g. "the calm music and a UI click") or a recording.
