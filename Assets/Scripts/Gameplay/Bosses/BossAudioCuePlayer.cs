@@ -14,6 +14,7 @@ namespace Corebound.Gameplay.Bosses
         private AudioClip _warningClip;
         private AudioClip _spawnClip;
         private AudioClip _phaseChangeClip;
+        private AudioClip _heavyAttackClip;
         private AudioClip _defeatClip;
 
         public BossAudioCueData AudioCueData
@@ -36,6 +37,7 @@ namespace Corebound.Gameplay.Bosses
         {
             BossEvents.OnBossSpawned += OnBossSpawned;
             BossEvents.OnBossPhaseChanged += OnBossPhaseChanged;
+            BossEvents.OnBossHeavyAttack += OnBossHeavyAttack;
             BossEvents.OnBossDefeated += OnBossDefeated;
             WaveEvents.IntermissionStarted += OnIntermissionStarted;
         }
@@ -44,6 +46,7 @@ namespace Corebound.Gameplay.Bosses
         {
             BossEvents.OnBossSpawned -= OnBossSpawned;
             BossEvents.OnBossPhaseChanged -= OnBossPhaseChanged;
+            BossEvents.OnBossHeavyAttack -= OnBossHeavyAttack;
             BossEvents.OnBossDefeated -= OnBossDefeated;
             WaveEvents.IntermissionStarted -= OnIntermissionStarted;
         }
@@ -73,6 +76,11 @@ namespace Corebound.Gameplay.Bosses
         private void OnBossPhaseChanged(BossEventArgs args)
         {
             PlayCue(_phaseChangeClip, _audioCueData != null ? _audioCueData.PhaseChangeVolume : 0f);
+        }
+
+        private void OnBossHeavyAttack(BossEventArgs args)
+        {
+            PlayCue(_heavyAttackClip, _audioCueData != null ? _audioCueData.HeavyAttackVolume : 0f);
         }
 
         private void OnBossDefeated(BossEventArgs args)
@@ -106,6 +114,7 @@ namespace Corebound.Gameplay.Bosses
             _warningClip = _audioCueData.HasRealWarningClip ? _audioCueData.WarningClip : ProceduralToneFactory.BuildToneClip("BossWarningCue", _audioCueData.WarningFrequency, _audioCueData.WarningDurationSeconds);
             _spawnClip = _audioCueData.HasRealSpawnClip ? _audioCueData.SpawnClip : ProceduralToneFactory.BuildToneClip("BossSpawnCue", _audioCueData.SpawnFrequency, _audioCueData.SpawnDurationSeconds);
             _phaseChangeClip = _audioCueData.HasRealPhaseChangeClip ? _audioCueData.PhaseChangeClip : ProceduralToneFactory.BuildToneClip("BossPhaseChangeCue", _audioCueData.PhaseChangeFrequency, _audioCueData.PhaseChangeDurationSeconds);
+            _heavyAttackClip = _audioCueData.HasRealHeavyAttackClip ? _audioCueData.HeavyAttackClip : ProceduralToneFactory.BuildToneClip("BossHeavyAttackCue", _audioCueData.HeavyAttackFrequency, _audioCueData.HeavyAttackDurationSeconds);
             _defeatClip = _audioCueData.HasRealDefeatClip ? _audioCueData.DefeatClip : ProceduralToneFactory.BuildToneClip("BossDefeatCue", _audioCueData.DefeatFrequency, _audioCueData.DefeatDurationSeconds);
         }
 
@@ -127,6 +136,11 @@ namespace Corebound.Gameplay.Bosses
             if (_audioCueData == null || !_audioCueData.HasRealPhaseChangeClip)
             {
                 ProceduralToneFactory.DestroyClip(_phaseChangeClip);
+            }
+
+            if (_audioCueData == null || !_audioCueData.HasRealHeavyAttackClip)
+            {
+                ProceduralToneFactory.DestroyClip(_heavyAttackClip);
             }
 
             if (_audioCueData == null || !_audioCueData.HasRealDefeatClip)

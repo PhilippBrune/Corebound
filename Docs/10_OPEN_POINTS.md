@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 1.3 · Created 2026-09-20 · Last updated 2026-09-20 · Status: Active
+Version: 1.4 · Created 2026-09-20 · Last updated 2026-09-20 · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is the *punch list*. Every entry states what is missing, why it matters, and what "done" looks like, so none of them has to be re-derived next session.
 
@@ -152,7 +152,11 @@ From `00_PROJECT_VISION.md` §20.1, each with a concrete proposal awaiting a yes
 
 ### 11. Smaller items carried forward
 
-- Slice 12: missing boss "Großangriff" audio cue; no automated coverage of boss state transitions.
+- Slice 12: the boss "Grossangriff" audio cue now exists. `BossEvents.OnBossHeavyAttack` is
+  raised at the start of an attack windup, not when the shot lands, so the cue arrives with the
+  telegraph as a warning rather than a report; `BossAudioCuePlayer` plays it at the lowest and
+  longest of the five boss tones so it stays distinct from the phase-change chime. Still open
+  from that slice: no automated coverage of boss state transitions.
 - Remaining canvas splits still built procedurally with hardcoded offsets: MainMenu route panels, Boss HUD, Notification, Relic reveal.
 - `StageEnemyPoolData` is fully authored but read by no code (intentionally deferred to a Stage 2+ weighted-selection feature).
 - ~~`CardData.Tags` is authored on several cards but read by nothing.~~ **Wrong when written:**

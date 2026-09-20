@@ -203,6 +203,8 @@ namespace Corebound.Gameplay.Waves
             {
                 _bossRuntimeController.PhaseChanged -= OnBossPhaseChanged;
                 _bossRuntimeController.PhaseChanged += OnBossPhaseChanged;
+                _bossRuntimeController.HeavyAttackStarted -= OnBossHeavyAttackStarted;
+                _bossRuntimeController.HeavyAttackStarted += OnBossHeavyAttackStarted;
             }
 
             InitializeFromSave();
@@ -714,6 +716,13 @@ namespace Corebound.Gameplay.Waves
             _requiresIntermissionTowerAction = _towerService != null && _towerService.HasAvailableIntermissionAction;
             _intermissionGateResolvedFrame = Time.frameCount;
             StateChanged?.Invoke();
+        }
+
+        // No ApplyPersistenceContext here, unlike the phase change: a windup is not a state
+        // transition worth writing to the save file every couple of seconds.
+        private void OnBossHeavyAttackStarted(int phaseIndex)
+        {
+            BossEvents.RaiseBossHeavyAttack(CreateBossEventArgs());
         }
 
         private void OnBossPhaseChanged(int phaseIndex)

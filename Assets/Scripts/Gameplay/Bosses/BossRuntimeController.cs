@@ -44,6 +44,10 @@ namespace Corebound.Gameplay.Bosses
 
         public event Action<int> PhaseChanged;
 
+        // Relayed by WaveManager, which is the only place that holds the stage/wave context
+        // BossEventArgs needs - same shape as PhaseChanged above.
+        public event Action<int> HeavyAttackStarted;
+
         public bool IsAlive => _hitReceiver != null && _hitReceiver.IsAlive;
 
         public int CurrentPhaseIndex => _currentPhaseIndex;
@@ -266,6 +270,7 @@ namespace Corebound.Gameplay.Bosses
 
             _attackWindupTimer = attackPattern.WindupSeconds;
             ApplyAttackTelegraphColor(0f);
+            HeavyAttackStarted?.Invoke(_currentPhaseIndex);
         }
 
         private void FireLockedBurst(Transform primaryTarget, Transform secondaryTarget, BossAttackPatternData attackPattern)

@@ -24,6 +24,10 @@ MonoBehaviour:
   _phaseChangeFrequency: 440
   _phaseChangeDurationSeconds: 0.2
   _phaseChangeVolume: 0.18
+  _heavyAttackClip: {fileID: 0}
+  _heavyAttackFrequency: 138.59
+  _heavyAttackDurationSeconds: 0.3
+  _heavyAttackVolume: 0.17
   _defeatClip: {fileID: 8300000, guid: 63aef2c15da94fda89096451984935d7, type: 3}
   _defeatFrequency: 587.33
   _defeatDurationSeconds: 0.4

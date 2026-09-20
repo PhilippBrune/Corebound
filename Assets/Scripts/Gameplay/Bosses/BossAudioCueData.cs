@@ -20,6 +20,13 @@ namespace Corebound.Gameplay.Bosses
         [SerializeField] private float _phaseChangeDurationSeconds = 0.2f;
         [SerializeField] private float _phaseChangeVolume = 0.18f;
 
+        // Lowest and longest of the five on purpose: a Grossangriff warning has to be
+        // distinguishable from the phase-change chime while the same fight is still going on.
+        [SerializeField] private AudioClip _heavyAttackClip;
+        [SerializeField] private float _heavyAttackFrequency = 138.59f;
+        [SerializeField] private float _heavyAttackDurationSeconds = 0.3f;
+        [SerializeField] private float _heavyAttackVolume = 0.17f;
+
         [SerializeField] private AudioClip _defeatClip;
         [SerializeField] private float _defeatFrequency = 587.33f;
         [SerializeField] private float _defeatDurationSeconds = 0.4f;
@@ -54,6 +61,16 @@ namespace Corebound.Gameplay.Bosses
         public float PhaseChangeDurationSeconds => _phaseChangeDurationSeconds;
 
         public float PhaseChangeVolume => _phaseChangeVolume;
+
+        public AudioClip HeavyAttackClip => _heavyAttackClip;
+
+        public bool HasRealHeavyAttackClip => _heavyAttackClip != null;
+
+        public float HeavyAttackFrequency => _heavyAttackFrequency;
+
+        public float HeavyAttackDurationSeconds => _heavyAttackDurationSeconds;
+
+        public float HeavyAttackVolume => _heavyAttackVolume;
 
         public AudioClip DefeatClip => _defeatClip;
 
