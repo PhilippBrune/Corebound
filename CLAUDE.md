@@ -20,6 +20,21 @@ COREBOUND — a singleplayer Windows/Steam action roguelite combining direct com
 
 - **Test through `Assets/Scenes/MainMenu.unity` → New Run.** Opening `SampleScene.unity` directly hides a whole class of bug, because the Editor has already loaded the additive canvas scenes before Play starts. Several defects reproduced *only* via MainMenu.
 - **Debug stage-select:** F9 / F10 in the Main Menu cycle which stage a New Run starts on. An on-screen label shows the current setting. Use it to reach Stage 2+ without playing through.
+- **Agents can playtest now.** `Assets/Editor/DebugAutopilot.cs` plays a real run end to end:
+  write a stage index into `Temp/autopilot_request.txt` (or use `Corebound > Autopilot`) and it
+  opens MainMenu, enters Play, starts a run on that stage, kites while firing, and logs stage,
+  wave, live enemy count and positions, arena size and every HUD label every two seconds to
+  `Editor.log` behind `[Autopilot]`. It drives the real `CoreboundInputReader` through an
+  editor-only surface, so it exercises the same code paths a controller does. Two rules: it must
+  set `DebugSetUsingGamepad(true)` (mouse mode reads `Aim` as a screen position, so a world
+  direction aims at a screen corner), and it must bind to the input reader in the *player's* scene
+  (MainMenu and SampleScene each have one).
+- **`Assets/Editor` compiles into `Assembly-CSharp-Editor.dll`**, not `Assembly-CSharp.dll`. When
+  verifying a build by DLL timestamp, check the one that actually contains your file.
+- **The asset watcher ignores same-size rewrites.** A refresh that logs
+  `RefreshV2(NoUpdateAssetOptions)` picked up nothing. Changing the file's *length* (not just its
+  mtime) reliably wakes it; `SetForegroundWindow` alone is not enough, and Windows' foreground lock
+  needs `AttachThreadInput` to beat while the user is active.
 - **Synthetic input does not reach Unity's Input System.** `SendInput`/`keybd_event` drive Editor UI (Play button, menus, Hierarchy) but never `Keyboard.current`, so gameplay input cannot be scripted. `InputSystem.QueueStateEvent` updates device state but does not fire bound `InputAction` callbacks either, and `InputTestFixture` needs its own assembly, which this project's asmdef-less layout cannot provide. See the header of `Assets/Editor/InputSimulatorWindow.cs` before re-attempting. **Anything requiring a keypress needs the user to press it.**
 - Agents cannot hear audio. Do not guess at audio bugs; ask which sounds.
 

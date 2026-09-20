@@ -107,6 +107,17 @@ namespace Corebound.UI.MainMenu
                 "DEBUG  ·  New Run starts on Stage " + _debugStartStageIndex + " of " + DebugMaxStageIndex + "  ·  F9 / F10 to change");
         }
 
+#if UNITY_EDITOR
+        // Editor-only seam for DebugAutopilot, which cannot press F9/F10 because synthetic OS
+        // input does not reach Unity's Input System. Sets exactly the same static the keys set.
+        public static int DebugStartStageIndex => _debugStartStageIndex;
+
+        public static void DebugSelectStartStageIndex(int stageIndex)
+        {
+            SetDebugStartStageIndex(stageIndex);
+        }
+#endif
+
         private static void SetDebugStartStageIndex(int stageIndex)
         {
             _debugStartStageIndex = ((stageIndex - 1 + DebugMaxStageIndex) % DebugMaxStageIndex) + 1;

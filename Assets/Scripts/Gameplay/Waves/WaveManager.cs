@@ -69,6 +69,8 @@ namespace Corebound.Gameplay.Waves
         private int _waveSpawnPointOffset;
         private float _waveSpawnAngleOffsetDegrees;
 
+        private const float SpawnArenaMargin = 1f;
+
         private EnemyPool _enemyPool;
         private ResourcePickupPool _resourcePickupPool;
         private BossRuntimeController _bossRuntimeController;
@@ -84,6 +86,7 @@ namespace Corebound.Gameplay.Waves
         private WaveState _state;
         private int _currentWaveIndex;
         private int _remainingAliveEnemies;
+        private StageArenaArtPresenter _arenaArtPresenter;
         private float _intermissionTimer;
         private float _waveStartSpawnDelayTimer;
         private bool _completeStageAfterReward;
@@ -835,7 +838,9 @@ namespace Corebound.Gameplay.Waves
                 var helperAngleStepDegrees = _stageData != null ? _stageData.SpawnFanAngleStepDegrees : 120f;
                 var helperAngle = spawnIndex * helperAngleStepDegrees * Mathf.Deg2Rad;
                 var helperOrigin = _stageData != null ? _stageData.EnemySpawnOrigin : new Vector2(0f, -4.5f);
-                return new Vector3(helperOrigin.x + Mathf.Cos(helperAngle) * helperFanRadius.x, helperOrigin.y + Mathf.Sin(helperAngle) * helperFanRadius.y, 0f);
+                return ClampToArena(new Vector2(
+                    helperOrigin.x + Mathf.Cos(helperAngle) * helperFanRadius.x,
+                    helperOrigin.y + Mathf.Sin(helperAngle) * helperFanRadius.y));
             }
 
             var spawnPoints = _stageData != null ? _stageData.SpawnPoints : null;
@@ -876,7 +881,43 @@ namespace Corebound.Gameplay.Waves
 
             // Pull some spawns slightly inside the fan radius so they do not all sit on one ring.
             var radiusScale = UnityEngine.Random.Range(1f - 0.25f * _spawnAngleJitter, 1f);
-            return new Vector3(origin.x + Mathf.Cos(angle) * fanRadius.x * radiusScale, origin.y + Mathf.Sin(angle) * fanRadius.y * radiusScale, 0f);
+            var spawnPosition = new Vector2(
+                origin.x + Mathf.Cos(angle) * fanRadius.x * radiusScale,
+                origin.y + Mathf.Sin(angle) * fanRadius.y * radiusScale);
+
+            return ClampToArena(spawnPosition);
+        }
+
+        // Stage 1's spawn origin is (0, -4.5) in a 16x10 arena and its fan radius is (5.5, 3.5), so
+        // the fan reaches y = -8 while the arena floor stops at y = -5. That never mattered while
+        // every enemy in a group resolved to the same angle, but once spawns were spread across the
+        // fan (2026-09-19) and the whole fan was rotated per wave, some enemies landed outside the
+        // boundary colliders. An enemy out there is walled off from the arena, so it can never be
+        // reached or killed, RemainingAliveEnemies never returns to zero, and the wave hangs
+        // forever - exactly the "2 enemies spawned, I killed them and nothing happened" report of
+        // 2026-09-20. Clamping here rather than shrinking each stage's fan radius fixes it for every
+        // stage at once, including ones authored later.
+        private Vector3 ClampToArena(Vector2 position)
+        {
+            if (_arenaArtPresenter == null)
+            {
+                _arenaArtPresenter = FindFirstObjectByType<StageArenaArtPresenter>();
+            }
+
+            if (_arenaArtPresenter == null)
+            {
+                return new Vector3(position.x, position.y, 0f);
+            }
+
+            // The margin keeps a spawn off the wall itself: half an enemy plus a little, so nothing
+            // starts life overlapping a boundary collider and getting pushed through it.
+            var halfExtents = _arenaArtPresenter.ArenaSize * 0.5f - new Vector2(SpawnArenaMargin, SpawnArenaMargin);
+            halfExtents = new Vector2(Mathf.Max(0.5f, halfExtents.x), Mathf.Max(0.5f, halfExtents.y));
+
+            return new Vector3(
+                Mathf.Clamp(position.x, -halfExtents.x, halfExtents.x),
+                Mathf.Clamp(position.y, -halfExtents.y, halfExtents.y),
+                0f);
         }
 
         private void SpawnResourcePickup(int amount, Vector2 position)

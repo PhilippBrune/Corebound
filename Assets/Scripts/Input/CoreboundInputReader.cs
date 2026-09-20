@@ -81,6 +81,72 @@ namespace Corebound.Input
         public event Action NextTowerTypePressed;
 
 #if UNITY_EDITOR
+        // Editor-only injection surface for DebugAutopilot (Assets/Editor/DebugAutopilot.cs).
+        // Synthetic OS input never reaches Unity's Input System, so the only way to drive a real
+        // run from a script is to write the same state the InputAction callbacks below write.
+        // Everything downstream - PlayerController, PlayerCombatController, TowerService,
+        // ShopService, WaveManager - reads this one instance through IInputReader and is already
+        // subscribed to these exact events, so the whole game runs its normal code paths.
+        // Compiled out of player builds; nothing in Assets/Scripts calls any of it.
+        public void DebugSetMove(Vector2 value)
+        {
+            Move = value;
+        }
+
+        public void DebugSetAim(Vector2 value)
+        {
+            Aim = value;
+        }
+
+        public void DebugSetPrimaryFireHeld(bool value)
+        {
+            IsPrimaryFireHeld = value;
+        }
+
+        // PlayerAimResolver treats Aim as a *screen position* in mouse mode and as a stick
+        // direction in gamepad mode. A driven test has no real mouse, so it must announce itself
+        // as a gamepad or every shot is aimed at whatever screen corner the fed vector maps to.
+        // Controller-first is also the project's binding target, so this is the representative path.
+        public void DebugSetUsingGamepad(bool value)
+        {
+            IsUsingGamepad = value;
+        }
+
+        public void DebugSetInteractHeld(bool value)
+        {
+            IsInteractHeld = value;
+        }
+
+        public void DebugRaiseConfirm()
+        {
+            ConfirmPressed?.Invoke();
+        }
+
+        public void DebugRaiseCancel()
+        {
+            CancelPressed?.Invoke();
+        }
+
+        public void DebugRaiseInteract()
+        {
+            InteractPressed?.Invoke();
+        }
+
+        public void DebugRaiseNavigate(Vector2 direction)
+        {
+            NavigatePerformed?.Invoke(direction);
+        }
+
+        public void DebugRaiseNext()
+        {
+            NextPressed?.Invoke();
+        }
+
+        public void DebugRaisePrevious()
+        {
+            PreviousPressed?.Invoke();
+        }
+
         private void OnValidate()
         {
             TryAssignDefaultInputActions();

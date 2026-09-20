@@ -703,3 +703,113 @@ Target: Assets/Art/Characters/Enemies/enemy_bruiser_stage5_topdown.png
 Prompt:
 
 Create a top-down enemy sprite for the Bruiser role, reskinned for the final Core Nexus stage of a sci-fantasy defense roguelite - the most imposing regular-enemy variant in the game, appearing alongside every other role and elite variant at once. Keep the base Bruiser's heavier, slower, broad-mass silhouette, but rebuild it in the stage's high-contrast white-gold-against-near-black palette, with the faintest material echoes of the three earlier stages bleeding subtly into an otherwise unified finale look. Transparent background, no baked shadow, readable from a distance.
+
+## Zone Denier and Relay Warden (2026-09-20)
+
+Two new enemy roles shipped on 2026-09-20 and close the Vision Section 9 target of five distinct
+enemy types. Both names come from [Enemies.md](../Specs/Enemies.md)'s own list of example roles
+("Flaechenkontrolle" and "Support fuer andere Enemies") rather than being invented, so they
+extend the roster along an axis the spec already anticipated instead of adding a new kind of
+thing.
+
+Unlike the Stage 2-5 reskins above, these are **new silhouettes, not palette swaps** - there is no
+base sprite to preserve, because neither role existed when Assets 16-18 were written. Asset 75 and
+Asset 80 define the two base designs; the eight that follow are stage reskins of those two in the
+established per-stage palettes, exactly the relationship Assets 63-74 have to the original three
+roles.
+
+**Why each silhouette is specified the way it is:** both roles are read positionally rather than
+by their attack, so the shape has to carry the behaviour. The Zone Denier has no front because it
+has no facing - it fires in every direction at once, and a player who reads it as "aimed" will
+dodge the wrong way. The Relay Warden must never look armed, because the whole decision it forces
+is "ignore the thing shooting at me and kill the thing that is not".
+
+**Current state (placeholder):** `Enemy_AreaControl.asset` and `Enemy_Support.asset` reference the
+ranged and chaser sheets respectively and are separated only by `EnemyData.SpriteTint` (green and
+violet). That is deliberate and temporary; it lets both roles ship and be balanced before the art
+exists, and it is why they currently read as recolored versions of other enemies.
+
+**Wiring once generated:** `EnemyRuntimeController.ResolveStageSpritePath()` resolves per-stage art
+by enemy id. Add `case "enemy_area_control":` and `case "enemy_support":` blocks following the
+exact pattern the three existing roles use, with the five paths below, and clear the placeholder
+`_spriteTint` on both `EnemyData` assets back to white so the real art is not tinted on top of.
+
+### Asset 75 - Zone Denier (Stage 1, Foundry)
+
+Target: Assets/Art/Characters/Enemies/enemy_zone_denier_topdown.png
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the creature silhouette must be fully transparent (alpha 0), not white. Create a top-down enemy sprite for the Zone Denier role in a sci-fantasy defense roguelite. This enemy never chases anyone: it advances on the defended Core, anchors itself, and fires full 360-degree rings of projectiles on a long, clearly telegraphed windup. The silhouette must communicate that at a glance - a wide, low, planted stance with visible ground anchors or splayed bracing legs, built around a raised central emitter crown ringed with evenly spaced ports that read as firing outward in every direction at once. It must be instantly distinguishable from the three existing roles: not sharp and forward-leaning like the Chaser, not posed around a single directional weapon like the Ranged Pressure, and not a mass of forward armor like the Bruiser. Radial symmetry is the key read - this thing has no front. Leave clear space around the emitter crown so a charge-up glow can be tinted over it at runtime without hiding the silhouette. Palette for this stage: steel-blue structural plating, dark slate and warm amber energy accents, matching the base enemy roster. Transparent background, no baked shadow, no text, readable at small to medium gameplay scale, flat top-down orthographic view consistent with the existing enemy roster.
+
+### Asset 76 - Zone Denier (Stage 2, Reactor Depths)
+
+Target: Assets/Art/Characters/Enemies/enemy_zone_denier_stage2_topdown.png
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the creature silhouette must be fully transparent (alpha 0), not white. Create a top-down enemy sprite for the Zone Denier role in a sci-fantasy defense roguelite. This enemy never chases anyone: it advances on the defended Core, anchors itself, and fires full 360-degree rings of projectiles on a long, clearly telegraphed windup. The silhouette must communicate that at a glance - a wide, low, planted stance with visible ground anchors or splayed bracing legs, built around a raised central emitter crown ringed with evenly spaced ports that read as firing outward in every direction at once. It must be instantly distinguishable from the three existing roles: not sharp and forward-leaning like the Chaser, not posed around a single directional weapon like the Ranged Pressure, and not a mass of forward armor like the Bruiser. Radial symmetry is the key read - this thing has no front. Leave clear space around the emitter crown so a charge-up glow can be tinted over it at runtime without hiding the silhouette. Palette for this stage: cool blue-violet and cyan, with faint pulsing containment-field seams. Transparent background, no baked shadow, no text, readable at small to medium gameplay scale, flat top-down orthographic view consistent with the existing enemy roster.
+
+### Asset 77 - Zone Denier (Stage 3, Salvage Fields)
+
+Target: Assets/Art/Characters/Enemies/enemy_zone_denier_stage3_topdown.png
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the creature silhouette must be fully transparent (alpha 0), not white. Create a top-down enemy sprite for the Zone Denier role in a sci-fantasy defense roguelite. This enemy never chases anyone: it advances on the defended Core, anchors itself, and fires full 360-degree rings of projectiles on a long, clearly telegraphed windup. The silhouette must communicate that at a glance - a wide, low, planted stance with visible ground anchors or splayed bracing legs, built around a raised central emitter crown ringed with evenly spaced ports that read as firing outward in every direction at once. It must be instantly distinguishable from the three existing roles: not sharp and forward-leaning like the Chaser, not posed around a single directional weapon like the Ranged Pressure, and not a mass of forward armor like the Bruiser. Radial symmetry is the key read - this thing has no front. Leave clear space around the emitter crown so a charge-up glow can be tinted over it at runtime without hiding the silhouette. Palette for this stage: rusty orange and verdigris-green, cobbled together from scavenged mech plating and exposed rebar. Transparent background, no baked shadow, no text, readable at small to medium gameplay scale, flat top-down orthographic view consistent with the existing enemy roster.
+
+### Asset 78 - Zone Denier (Stage 4, Cryo Vaults)
+
+Target: Assets/Art/Characters/Enemies/enemy_zone_denier_stage4_topdown.png
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the creature silhouette must be fully transparent (alpha 0), not white. Create a top-down enemy sprite for the Zone Denier role in a sci-fantasy defense roguelite. This enemy never chases anyone: it advances on the defended Core, anchors itself, and fires full 360-degree rings of projectiles on a long, clearly telegraphed windup. The silhouette must communicate that at a glance - a wide, low, planted stance with visible ground anchors or splayed bracing legs, built around a raised central emitter crown ringed with evenly spaced ports that read as firing outward in every direction at once. It must be instantly distinguishable from the three existing roles: not sharp and forward-leaning like the Chaser, not posed around a single directional weapon like the Ranged Pressure, and not a mass of forward armor like the Bruiser. Radial symmetry is the key read - this thing has no front. Leave clear space around the emitter crown so a charge-up glow can be tinted over it at runtime without hiding the silhouette. Palette for this stage: icy white-blue and pale cyan, with frost-rimed plating and faint crystalline edges. Transparent background, no baked shadow, no text, readable at small to medium gameplay scale, flat top-down orthographic view consistent with the existing enemy roster.
+
+### Asset 79 - Zone Denier (Stage 5, Core Nexus, Final)
+
+Target: Assets/Art/Characters/Enemies/enemy_zone_denier_stage5_topdown.png
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the creature silhouette must be fully transparent (alpha 0), not white. Create a top-down enemy sprite for the Zone Denier role in a sci-fantasy defense roguelite. This enemy never chases anyone: it advances on the defended Core, anchors itself, and fires full 360-degree rings of projectiles on a long, clearly telegraphed windup. The silhouette must communicate that at a glance - a wide, low, planted stance with visible ground anchors or splayed bracing legs, built around a raised central emitter crown ringed with evenly spaced ports that read as firing outward in every direction at once. It must be instantly distinguishable from the three existing roles: not sharp and forward-leaning like the Chaser, not posed around a single directional weapon like the Ranged Pressure, and not a mass of forward armor like the Bruiser. Radial symmetry is the key read - this thing has no front. Leave clear space around the emitter crown so a charge-up glow can be tinted over it at runtime without hiding the silhouette. Palette for this stage: high-contrast white-gold against a near-black body, with the faintest material echoes of the three earlier stages bleeding subtly into an otherwise unified finale look. Transparent background, no baked shadow, no text, readable at small to medium gameplay scale, flat top-down orthographic view consistent with the existing enemy roster.
+
+### Asset 80 - Relay Warden (Stage 1, Foundry)
+
+Target: Assets/Art/Characters/Enemies/enemy_relay_warden_topdown.png
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the creature silhouette must be fully transparent (alpha 0), not white. Create a top-down enemy sprite for the Relay Warden role in a sci-fantasy defense roguelite. This enemy barely attacks. It shadows the enemies around it and strengthens them, and it backs away when the player closes, so it has to read as a priority target rather than a threat: lighter and more fragile than every other role, with a tall slender mast or antenna array, visible link nodes or tethering emitters along its upper body, and an obviously unarmed front. Nothing on it should look like a gun. It must be instantly distinguishable from the three existing roles by being the least armored and least aggressive shape in the roster. Leave a clean ring of empty space around its base so a support-aura effect can be drawn beneath it at runtime without fighting the sprite. Palette for this stage: steel-blue structural plating, dark slate and warm amber energy accents, matching the base enemy roster. Transparent background, no baked shadow, no text, readable at small to medium gameplay scale, flat top-down orthographic view consistent with the existing enemy roster.
+
+### Asset 81 - Relay Warden (Stage 2, Reactor Depths)
+
+Target: Assets/Art/Characters/Enemies/enemy_relay_warden_stage2_topdown.png
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the creature silhouette must be fully transparent (alpha 0), not white. Create a top-down enemy sprite for the Relay Warden role in a sci-fantasy defense roguelite. This enemy barely attacks. It shadows the enemies around it and strengthens them, and it backs away when the player closes, so it has to read as a priority target rather than a threat: lighter and more fragile than every other role, with a tall slender mast or antenna array, visible link nodes or tethering emitters along its upper body, and an obviously unarmed front. Nothing on it should look like a gun. It must be instantly distinguishable from the three existing roles by being the least armored and least aggressive shape in the roster. Leave a clean ring of empty space around its base so a support-aura effect can be drawn beneath it at runtime without fighting the sprite. Palette for this stage: cool blue-violet and cyan, with faint pulsing containment-field seams. Transparent background, no baked shadow, no text, readable at small to medium gameplay scale, flat top-down orthographic view consistent with the existing enemy roster.
+
+### Asset 82 - Relay Warden (Stage 3, Salvage Fields)
+
+Target: Assets/Art/Characters/Enemies/enemy_relay_warden_stage3_topdown.png
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the creature silhouette must be fully transparent (alpha 0), not white. Create a top-down enemy sprite for the Relay Warden role in a sci-fantasy defense roguelite. This enemy barely attacks. It shadows the enemies around it and strengthens them, and it backs away when the player closes, so it has to read as a priority target rather than a threat: lighter and more fragile than every other role, with a tall slender mast or antenna array, visible link nodes or tethering emitters along its upper body, and an obviously unarmed front. Nothing on it should look like a gun. It must be instantly distinguishable from the three existing roles by being the least armored and least aggressive shape in the roster. Leave a clean ring of empty space around its base so a support-aura effect can be drawn beneath it at runtime without fighting the sprite. Palette for this stage: rusty orange and verdigris-green, cobbled together from scavenged mech plating and exposed rebar. Transparent background, no baked shadow, no text, readable at small to medium gameplay scale, flat top-down orthographic view consistent with the existing enemy roster.
+
+### Asset 83 - Relay Warden (Stage 4, Cryo Vaults)
+
+Target: Assets/Art/Characters/Enemies/enemy_relay_warden_stage4_topdown.png
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the creature silhouette must be fully transparent (alpha 0), not white. Create a top-down enemy sprite for the Relay Warden role in a sci-fantasy defense roguelite. This enemy barely attacks. It shadows the enemies around it and strengthens them, and it backs away when the player closes, so it has to read as a priority target rather than a threat: lighter and more fragile than every other role, with a tall slender mast or antenna array, visible link nodes or tethering emitters along its upper body, and an obviously unarmed front. Nothing on it should look like a gun. It must be instantly distinguishable from the three existing roles by being the least armored and least aggressive shape in the roster. Leave a clean ring of empty space around its base so a support-aura effect can be drawn beneath it at runtime without fighting the sprite. Palette for this stage: icy white-blue and pale cyan, with frost-rimed plating and faint crystalline edges. Transparent background, no baked shadow, no text, readable at small to medium gameplay scale, flat top-down orthographic view consistent with the existing enemy roster.
+
+### Asset 84 - Relay Warden (Stage 5, Core Nexus, Final)
+
+Target: Assets/Art/Characters/Enemies/enemy_relay_warden_stage5_topdown.png
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the creature silhouette must be fully transparent (alpha 0), not white. Create a top-down enemy sprite for the Relay Warden role in a sci-fantasy defense roguelite. This enemy barely attacks. It shadows the enemies around it and strengthens them, and it backs away when the player closes, so it has to read as a priority target rather than a threat: lighter and more fragile than every other role, with a tall slender mast or antenna array, visible link nodes or tethering emitters along its upper body, and an obviously unarmed front. Nothing on it should look like a gun. It must be instantly distinguishable from the three existing roles by being the least armored and least aggressive shape in the roster. Leave a clean ring of empty space around its base so a support-aura effect can be drawn beneath it at runtime without fighting the sprite. Palette for this stage: high-contrast white-gold against a near-black body, with the faintest material echoes of the three earlier stages bleeding subtly into an otherwise unified finale look. Transparent background, no baked shadow, no text, readable at small to medium gameplay scale, flat top-down orthographic view consistent with the existing enemy roster.

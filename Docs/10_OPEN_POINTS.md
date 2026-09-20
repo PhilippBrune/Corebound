@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 1.4 · Created 2026-09-20 · Last updated 2026-09-20 · Status: Active
+Version: 1.5 · Created 2026-09-20 · Last updated 2026-09-20 · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is the *punch list*. Every entry states what is missing, why it matters, and what "done" looks like, so none of them has to be re-derived next session.
 
@@ -9,6 +9,52 @@ Priority: **P1** blocks playable quality · **P2** needed for the Early Access t
 ---
 
 ## P1 — Blocks playable quality
+
+### 0. Live playtesting now works without a human at the keyboard (2026-09-20)
+
+`Assets/Editor/DebugAutopilot.cs` plays a real run end to end. Synthetic OS input still cannot
+reach Unity's Input System, so the autopilot writes the same state the `InputAction` callbacks
+write, through an editor-only surface on `CoreboundInputReader`. Every downstream system is
+already wired to that one instance, so this is not a simulation: it is the game, driven from the
+same seam a controller drives.
+
+It always starts from `MainMenu.unity`, picks the stage through the F9/F10 debug static, navigates
+the menu by route rather than by index, kites while firing, and logs stage, wave state, live enemy
+count, every enemy's position with an in/outside-arena flag, arena size and all four HUD label
+values every two seconds.
+
+Two things it needs to keep working, both learned the hard way:
+
+- **It must announce itself as a gamepad.** `PlayerAimResolver` treats `Aim` as a screen position
+  in mouse mode and as a stick direction in gamepad mode. Feeding a world direction in mouse mode
+  aims every shot at a screen corner, which looks exactly like "projectiles do no damage".
+- **It must bind to the input reader in the player's scene.** MainMenu and SampleScene each carry
+  their own `CoreboundInputReader` and both are loaded at once, so the first one found is often the
+  menu's. Driving that one leaves the player standing still.
+
+Trigger it by writing a stage index into `Temp/autopilot_request.txt`, or from the
+`Corebound > Autopilot` menu. Note that `Assets/Editor` compiles into
+`Assembly-CSharp-Editor.dll`, not `Assembly-CSharp.dll` - check the right one when verifying a
+build.
+
+### 0b. Wave 1 of Stage 1 could never be completed — FIXED (2026-09-20)
+
+Reported as "could not reach stage 1 wave 2 anymore, 2 enemies spawned, I killed them and nothing
+happened", with Stage 2 working correctly.
+
+Root cause, confirmed live: Stage 1 spawns from a single origin at (0, -4.5) with a fan radius of
+(5.5, 3.5) in a 16x10 arena whose floor stops at y = -5, so the fan reaches y = -8. That never
+mattered while every enemy in a spawn group resolved to the same angle. Spreading spawns across the
+fan and rotating the fan per wave (both added 2026-09-19) started landing enemies outside the
+boundary colliders, where they are walled off from the arena and can never be reached or killed.
+`RemainingAliveEnemies` then never returns to zero and the wave hangs forever. The autopilot caught
+one at `Chaser@(1.3, -5.9) OUTSIDE` while the wave sat at 1/6 indefinitely.
+
+Fixed by clamping every resolved spawn position into the arena bounds with a one-unit margin, in
+`WaveManager.ClampToArena`, applied to both regular and boss-helper spawns. Clamping there rather
+than shrinking each stage's fan radius fixes it for every stage at once, including ones authored
+later. Verified: Stage 1 now runs 1 -> 2 -> 3 -> 4, and Stage 2 runs all six waves.
+
 
 ### 1. Dynamic Arena Slice — DONE (2026-09-20)
 
