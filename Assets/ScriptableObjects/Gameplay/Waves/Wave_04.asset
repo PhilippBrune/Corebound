@@ -17,4 +17,5 @@ MonoBehaviour:
   _spawnGroups:
   - {fileID: 11400000, guid: ed8e35b6887543949894338303783997, type: 2}
   - {fileID: 11400000, guid: 7a4e782316ba4688bc7234223be7c5af, type: 2}
+  - {fileID: 11400000, guid: 42c598d8c7644bfda805706e5b94a39f, type: 2}
   _waveRewardData: {fileID: 11400000, guid: 246d5f4ff4e04986a882fa0d956cb5a7, type: 2}

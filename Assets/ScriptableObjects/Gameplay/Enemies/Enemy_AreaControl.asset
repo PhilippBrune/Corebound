@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a28e884a6cd64c0f9f6329b10d1b6da7, type: 3}
+  m_Name: Enemy_AreaControl
+  m_EditorClassIdentifier:
+  _enemyId: enemy_area_control
+  _displayName: Zone Denier
+  _sprite: {fileID: 21300000, guid: a321ba94493654c4696e5e49e5d144cb, type: 3}
+  _behaviourData: {fileID: 11400000, guid: 1f277c18cccd40b886f05f8cebb9ef72, type: 2}
+  _attackData: {fileID: 11400000, guid: b86139a6acea4ba1880b090baad3d1f1, type: 2}
+  _rewardData: {fileID: 11400000, guid: 3ff9af9d2be04dc5bd54633a5f67aaea, type: 2}
+  _combatTargetData: {fileID: 11400000, guid: f7a9b3e2b5bf4f3a94df4c3f06a45d84, type: 2}
+  _hitReactionData: {fileID: 11400000, guid: 36ed1d2345654632a480b87d8b892e9a, type: 2}
+  _statusDefinitions:
+  - {fileID: 11400000, guid: 4600659f79d547258c7e3da3a7aa32e1, type: 2}
+  - {fileID: 11400000, guid: a06061af6f3942ce8f1140eb13f0e7cf, type: 2}
+  _spriteTint: {r: 0.55, g: 1, b: 0.72, a: 1}
+  _debugColor: {r: 0.4, g: 1, b: 0.62, a: 1}

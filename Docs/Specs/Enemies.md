@@ -56,7 +56,23 @@ Enemy-Instanzen, Treffer-VFX und Projectiles müssen Pooling verwenden.
 
 Enemy-Hit-Sparks, Death-Bursts sowie Burn- und Freeze-Layer folgen der gemeinsamen Zuordnung in der [VFX Specification](./VFX.md).
 
-Der erste Vertical Slice nutzt drei datengetriebene Enemy-Archetypen bereits konkret in Stage-1-Waves: Chaser, Ranged Pressure und Bruiser. Ihre Reward-Gutschrift, Tower-Zielwahl und Wave-Abschlussbedingungen laufen über denselben Combat-, Resource- und Wave-Unterbau.
+Der erste Vertical Slice nutzt drei datengetriebene Enemy-Archetypen bereits konkret in Stage-1-Waves: Chaser, Ranged Pressure und Bruiser.
+
+**Update 2026-09-20:** Zwei weitere Rollen sind implementiert und decken damit die oben genannten
+Beispielrollen "Flaechenkontrolle" und "Support fuer andere Enemies" ab:
+
+- **Zone Denier** (`EnemyRoleType.AreaControl`): ignoriert den Player, rueckt bis zu seiner
+  `ZoneHoldDistance` auf den Core vor, verankert sich dort und feuert Voll-Kreis-Salven mit
+  langem, lesbarem Windup. Nutzt ausschliesslich die vorhandene `ProjectileBurst`-Attack-Pipeline.
+- **Relay Warden** (`EnemyRoleType.Support`): greift praktisch nicht an, bewegt sich zur Gruppe,
+  die er verstaerkt, weicht dem Player aus und multipliziert ueber `EnemySupportAuraRegistry`
+  Bewegungstempo und Schaden der Enemies in seinem Radius.
+
+Beide Rollen wurden an `EnemyRoleType` **angehaengt**, nie eingefuegt - das Enum wird in den
+`EnemyBehaviour_*.asset`-Dateien per Index serialisiert.
+
+Offen: fuer beide Rollen existiert noch keine eigene Grafik; sie verwenden vorhandene Sheets mit
+unterschiedlichem `SpriteTint` als bewusster Platzhalter. Ihre Reward-Gutschrift, Tower-Zielwahl und Wave-Abschlussbedingungen laufen über denselben Combat-, Resource- und Wave-Unterbau.
 
 ## Dependencies
 

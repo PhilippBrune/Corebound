@@ -144,6 +144,10 @@ namespace Corebound.Gameplay.Waves
 
         private void Awake()
         {
+            // Static registry, so a Transform from the previous scene would otherwise survive
+            // a scene load and buff the next run from a destroyed object.
+            EnemySupportAuraRegistry.Clear();
+
             _shopService = GetComponent<ShopService>();
 
             if (_shopService == null)

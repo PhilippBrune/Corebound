@@ -71,6 +71,8 @@ namespace Corebound.Gameplay.Enemies
 
         public bool IsRangedPressureRole => _enemyData != null && _enemyData.BehaviourData != null && _enemyData.BehaviourData.Role == EnemyRoleType.RangedPressure;
 
+        private EnemyRoleType Role => _enemyData != null && _enemyData.BehaviourData != null ? _enemyData.BehaviourData.Role : EnemyRoleType.Chaser;
+
         public void Initialize(
             EnemyData enemyData,
             EnemyEliteModifierData eliteModifierData,
@@ -142,6 +144,7 @@ namespace Corebound.Gameplay.Enemies
                 ? _eliteModifierData.DisplayName + " " + (_enemyData != null ? _enemyData.DisplayName : "Enemy")
                 : (_enemyData != null ? _enemyData.DisplayName : "Enemy");
 
+            RefreshSupportAuraRegistration();
             EnemyEvents.RaiseEnemySpawned(new EnemyLifecycleEventArgs(gameObject, _enemyData, _eliteModifierData));
         }
 
@@ -149,12 +152,38 @@ namespace Corebound.Gameplay.Enemies
         {
             CombatEvents.DamageTaken += OnDamageTaken;
             CombatEvents.CombatantDied += OnCombatantDied;
+            RefreshSupportAuraRegistration();
         }
 
         private void OnDisable()
         {
             CombatEvents.DamageTaken -= OnDamageTaken;
             CombatEvents.CombatantDied -= OnCombatantDied;
+
+            // Enemies are pooled, so OnDisable is the return-to-pool moment. Unregistering here
+            // rather than only on death is what stops a pooled Support enemy from buffing the next
+            // wave from inside the pool.
+            EnemySupportAuraRegistry.Unregister(transform);
+        }
+
+        // A Support enemy only emits while it is alive and enabled; Initialize is what tells it
+        // which behaviour asset it is running this time, since the pool reuses instances across
+        // enemy types.
+        private void RefreshSupportAuraRegistration()
+        {
+            if (_enemyData == null || _enemyData.BehaviourData == null
+                || _enemyData.BehaviourData.Role != EnemyRoleType.Support
+                || _enemyData.BehaviourData.SupportAuraRadius <= 0f)
+            {
+                EnemySupportAuraRegistry.Unregister(transform);
+                return;
+            }
+
+            EnemySupportAuraRegistry.Register(
+                transform,
+                _enemyData.BehaviourData.SupportAuraRadius,
+                _enemyData.BehaviourData.SupportSpeedMultiplier,
+                _enemyData.BehaviourData.SupportDamageMultiplier);
         }
 
         private void FixedUpdate()
@@ -200,6 +229,18 @@ namespace Corebound.Gameplay.Enemies
             if (_hitReceiver != null)
             {
                 moveSpeed *= _hitReceiver.MovementSpeedMultiplier;
+            }
+
+            moveSpeed *= EnemySupportAuraRegistry.ResolveSpeedMultiplier(_rigidbody2D.position, transform);
+
+            if (UpdateSupportBehaviour(direction, moveSpeed))
+            {
+                return;
+            }
+
+            if (UpdateAreaControl(direction, attackData, moveSpeed))
+            {
+                return;
             }
 
             if (UpdateBruiserPressure(direction, moveSpeed))
@@ -306,6 +347,8 @@ namespace Corebound.Gameplay.Enemies
                 damageAmount *= _eliteModifierData.DamageMultiplier;
             }
 
+            damageAmount *= EnemySupportAuraRegistry.ResolveDamageMultiplier(transform.position, transform);
+
             // HitPoint uses the target's position, not this enemy's own - see CombatProjectile's
             // identical fix (2026-09-17 playtest) for the ranged case; contact damage has the same
             // bug (hit-spark/core-flare rendering on the attacker instead of the victim).
@@ -319,6 +362,127 @@ namespace Corebound.Gameplay.Enemies
 
             hitReceiver.ReceiveHit(gameObject, damageContext);
             _contactCooldownTimer = attackData != null ? attackData.ContactIntervalSeconds : 0.6f;
+        }
+
+        // Flaechenkontrolle. Advances on its target until it reaches ZoneHoldDistance, then stops
+        // dead and fires full rings of projectiles on its normal fire interval. It never closes and
+        // never retreats, so the threat it creates is positional: the ground around it becomes
+        // expensive to stand on, and the player has to decide whether to spend time removing it or
+        // route around it. Deliberately built out of the existing ProjectileBurst attack data - the
+        // only new thing is where it chooses to stand.
+        private bool UpdateAreaControl(Vector2 targetDirection, EnemyAttackData attackData, float moveSpeed)
+        {
+            if (Role != EnemyRoleType.AreaControl)
+            {
+                return false;
+            }
+
+            var holdDistance = _enemyData.BehaviourData.ZoneHoldDistance;
+            var distance = targetDirection.magnitude;
+
+            if (distance > holdDistance)
+            {
+                HideTelegraph();
+                var approachDirection = ApplyObstacleAvoidance(targetDirection.normalized);
+                _rigidbody2D.linearVelocity = approachDirection * moveSpeed;
+                FaceMovementDirection(approachDirection);
+                return true;
+            }
+
+            _rigidbody2D.linearVelocity = Vector2.zero;
+
+            if (attackData == null || attackData.AttackMode != EnemyAttackMode.ProjectileBurst || attackData.ProjectileData == null || _projectilePrototype == null)
+            {
+                return true;
+            }
+
+            if (_telegraphTimer > 0f)
+            {
+                _telegraphTimer = Mathf.Max(0f, _telegraphTimer - Time.fixedDeltaTime);
+                var windupProgress = attackData.WindupSeconds > Mathf.Epsilon ? 1f - (_telegraphTimer / attackData.WindupSeconds) : 1f;
+                ShowTelegraph(targetDirection, attackData, windupProgress);
+
+                if (_telegraphTimer <= 0f)
+                {
+                    HideTelegraph();
+                    FireProjectileBurst(targetDirection.sqrMagnitude > 0.0001f ? targetDirection.normalized : Vector2.right, attackData);
+                    _attackCooldownTimer = attackData.FireIntervalSeconds;
+                }
+
+                return true;
+            }
+
+            if (_attackCooldownTimer > 0f)
+            {
+                HideTelegraph();
+                return true;
+            }
+
+            _telegraphTimer = attackData.WindupSeconds;
+
+            if (_telegraphTimer <= Mathf.Epsilon)
+            {
+                FireProjectileBurst(targetDirection.sqrMagnitude > 0.0001f ? targetDirection.normalized : Vector2.right, attackData);
+                _attackCooldownTimer = attackData.FireIntervalSeconds;
+            }
+            else
+            {
+                ShowTelegraph(targetDirection, attackData, 0f);
+            }
+
+            return true;
+        }
+
+        // Support fuer andere Enemies. Never attacks, so it contributes nothing on its own and
+        // everything through what it stands next to: it steers toward the enemy group it is
+        // reinforcing and keeps its distance from the Player, which makes killing it a real
+        // positioning problem rather than a free extra target.
+        private bool UpdateSupportBehaviour(Vector2 targetDirection, float moveSpeed)
+        {
+            if (Role != EnemyRoleType.Support)
+            {
+                return false;
+            }
+
+            HideTelegraph();
+
+            var anchor = ResolveSupportAnchor();
+            var desiredDirection = anchor != null
+                ? (Vector2)anchor.position - _rigidbody2D.position
+                : targetDirection;
+
+            // Backs away when the Player closes inside the aggro range. A Support that walks into
+            // melee is a Support that dies for free, which would make the role pointless.
+            if (_playerTarget != null)
+            {
+                var playerOffset = (Vector2)_playerTarget.position - _rigidbody2D.position;
+                var retreatRange = _enemyData.BehaviourData.PlayerAggroRange;
+
+                if (playerOffset.sqrMagnitude <= retreatRange * retreatRange && playerOffset.sqrMagnitude > 0.0001f)
+                {
+                    desiredDirection = -playerOffset;
+                }
+            }
+
+            if (desiredDirection.sqrMagnitude <= 0.04f)
+            {
+                _rigidbody2D.linearVelocity = Vector2.zero;
+                return true;
+            }
+
+            var moveDirection = ApplyObstacleAvoidance(desiredDirection.normalized);
+            _rigidbody2D.linearVelocity = moveDirection * moveSpeed;
+            FaceMovementDirection(moveDirection);
+            return true;
+        }
+
+        // Prefers another Support if one exists (two of them stacking auras is the intended
+        // escalation), otherwise falls back to the Core so it still advances with the wave instead
+        // of idling at the spawn gate.
+        private Transform ResolveSupportAnchor()
+        {
+            var nearestEmitter = EnemySupportAuraRegistry.FindNearestEmitter(_rigidbody2D.position, transform);
+            return nearestEmitter != null ? nearestEmitter : _coreTarget;
         }
 
         private bool ShouldUseRangedAttack(Vector2 targetDirection, EnemyAttackData attackData)
@@ -502,8 +666,18 @@ namespace Corebound.Gameplay.Enemies
             var projectileCount = attackData.ProjectileCount + (_eliteModifierData != null ? _eliteModifierData.ProjectileBonusCount : 0);
             var spreadAngle = attackData.SpreadAngleDegrees;
             var startAngle = -spreadAngle * 0.5f;
-            var angleStep = projectileCount > 1 ? spreadAngle / (projectileCount - 1) : 0f;
-            var damageAmount = attackData.ContactDamage * (_eliteModifierData != null ? _eliteModifierData.DamageMultiplier : 1f);
+
+            // A 360-degree spread has to divide by the projectile count, not count - 1: dividing by
+            // count - 1 places the first and last projectile on the same bearing, so an AreaControl
+            // ring visibly fires one doubled-up shot and leaves a gap opposite it.
+            var isFullCircle = spreadAngle >= 359f;
+            var angleStep = isFullCircle
+                ? spreadAngle / projectileCount
+                : (projectileCount > 1 ? spreadAngle / (projectileCount - 1) : 0f);
+
+            var damageAmount = attackData.ContactDamage
+                * (_eliteModifierData != null ? _eliteModifierData.DamageMultiplier : 1f)
+                * EnemySupportAuraRegistry.ResolveDamageMultiplier(transform.position, transform);
 
             for (var index = 0; index < projectileCount; index++)
             {
@@ -534,6 +708,13 @@ namespace Corebound.Gameplay.Enemies
                 case EnemyRoleType.RangedPressure:
                 case EnemyRoleType.Bruiser:
                     return ResolvePlayerOrCore(_hasTakenDamage);
+
+                // AreaControl and Support both ignore the Player as a target entirely, including
+                // after taking damage - that indifference is the point of both roles. Support does
+                // still react to the Player by backing away, which UpdateSupportBehaviour handles.
+                case EnemyRoleType.AreaControl:
+                case EnemyRoleType.Support:
+                    return _coreTarget;
                 default:
                     return _coreTarget;
             }
@@ -572,6 +753,7 @@ namespace Corebound.Gameplay.Enemies
                 return;
             }
 
+            EnemySupportAuraRegistry.Unregister(transform);
             EnemyEvents.RaiseEnemyKilled(new EnemyLifecycleEventArgs(gameObject, _enemyData, _eliteModifierData));
             _rigidbody2D.linearVelocity = Vector2.zero;
             HideTelegraph();
@@ -685,13 +867,13 @@ namespace Corebound.Gameplay.Enemies
         private Color ResolveAliveColor()
         {
             var hasSprite = ResolveSprite() != null;
+            var spriteTint = _enemyData != null ? _enemyData.SpriteTint : Color.white;
+            var baseColor = hasSprite ? spriteTint : (_enemyData != null ? _enemyData.DebugColor : Color.red);
 
             if (_eliteModifierData == null)
             {
-                return hasSprite ? Color.white : (_enemyData != null ? _enemyData.DebugColor : Color.red);
+                return baseColor;
             }
-
-            var baseColor = hasSprite ? Color.white : (_enemyData != null ? _enemyData.DebugColor : Color.red);
 
             return new Color(
                 Mathf.Clamp01(baseColor.r * _eliteModifierData.ColorTint.r),

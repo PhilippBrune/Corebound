@@ -15,6 +15,11 @@ namespace Corebound.Gameplay.Enemies
         [SerializeField] private CombatTargetData _combatTargetData;
         [SerializeField] private HitReactionData _hitReactionData;
         [SerializeField] private StatusEffectData[] _statusDefinitions;
+        // Multiplied into the alive colour even when a real sprite is present, which _debugColor
+        // is not - that one only applies to the no-art fallback square. This is how a role that
+        // shares placeholder art with another role still reads as a different enemy on screen.
+        // White is the neutral value, so every existing asset is unaffected.
+        [SerializeField] private Color _spriteTint = Color.white;
         [SerializeField] private Color _debugColor = new Color(1f, 0.4f, 0.4f, 1f);
 
         public string EnemyId => _enemyId;
@@ -34,6 +39,8 @@ namespace Corebound.Gameplay.Enemies
         public HitReactionData HitReactionData => _hitReactionData;
 
         public StatusEffectData[] StatusDefinitions => _statusDefinitions;
+
+        public Color SpriteTint => _spriteTint;
 
         public Color DebugColor => _debugColor;
     }

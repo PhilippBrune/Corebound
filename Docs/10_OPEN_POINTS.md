@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 1.2 · Created 2026-09-20 · Last updated 2026-09-20 · Status: Active
+Version: 1.3 · Created 2026-09-20 · Last updated 2026-09-20 · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is the *punch list*. Every entry states what is missing, why it matters, and what "done" looks like, so none of them has to be re-derived next session.
 
@@ -50,12 +50,31 @@ seen live, for the same input-system reason.
 - Event names drop the spec's `On` prefix to match every other event hub in the project.
 - Muzzle and impact colours are authored but not yet drawn; `WeaponPresentationData` holds them
   ready for the VFX pass. The spec's Visual section is therefore still open.
-### 3. Enemy variety is the one Early Access content target still short
+### 3. Enemy variety — DONE (2026-09-20)
 
-Vision Section 9 asks for **five distinct enemy types**; three roles exist (Chaser, Ranged Pressure, Bruiser). The three Elite variants are modifiers on those same roles, not new types. Either build two more roles or restate the target — but decide, because it is currently a silent miss.
+Vision Section 9 asks for five distinct enemy types. Two new roles close the gap, and both names
+come from Enemies.md's own list of example roles rather than being invented:
 
----
+- **Zone Denier** (`AreaControl`, "Flaechenkontrolle"). Ignores the Player entirely, advances on
+  the Core until it reaches its hold distance, then anchors and fires full 360-degree projectile
+  rings on a long, readable windup. Its threat is positional: the ground around it becomes
+  expensive, and the player chooses between spending time on it and routing around it. Built
+  from the existing `ProjectileBurst` attack data; the only genuinely new thing is where it
+  decides to stand.
+- **Relay Warden** (`Support`, "Support fuer andere Enemies"). Never meaningfully attacks.
+  Steers toward the enemies it is reinforcing, backs away when the Player closes, and multiplies
+  nearby enemies' move speed and damage through `EnemySupportAuraRegistry`. Two of them buff
+  each other, which is the intended escalation. It is the correct thing to shoot first.
 
+Both are appended to `EnemyRoleType`, never inserted, because that enum is serialized by index in
+the `EnemyBehaviour_*.asset` files. They appear in Waves 4, 5 and 6 of Stage 1.
+
+`EnemyData` also gained `SpriteTint`, which applies even when a real sprite is present (unlike
+`DebugColor`, which only covers the no-art fallback).
+
+**Open follow-up:** neither role has bespoke art. They borrow the ranged and chaser sheets and
+are separated only by tint, green for the Zone Denier and violet for the Relay Warden. That is a
+deliberate placeholder, not a finished look. Neither has been seen in play.
 ## P2 — Needed for the Early Access target
 
 ### 4. Shop vs Shop.md — three of four gaps closed (2026-09-20)

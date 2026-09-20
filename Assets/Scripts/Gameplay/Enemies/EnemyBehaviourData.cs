@@ -15,6 +15,16 @@ namespace Corebound.Gameplay.Enemies
         [SerializeField] private float _chargeDurationSeconds = 0.55f;
         [SerializeField] private float _chargeCooldownSeconds = 2.4f;
 
+        // AreaControl: how close to its target it advances before anchoring. Larger than
+        // PreferredCombatDistance on purpose - it is meant to hold a ring of ground, not to
+        // close in the way the ranged role does.
+        [SerializeField] private float _zoneHoldDistance = 4.5f;
+
+        // Support: 0 radius means no aura, so every existing behaviour asset is unaffected.
+        [SerializeField] private float _supportAuraRadius;
+        [SerializeField] private float _supportSpeedMultiplier = 1.25f;
+        [SerializeField] private float _supportDamageMultiplier = 1.3f;
+
         public EnemyRoleType Role => _role;
 
         public float MoveSpeed => _moveSpeed;
@@ -32,5 +42,13 @@ namespace Corebound.Gameplay.Enemies
         public float ChargeDurationSeconds => Mathf.Max(0.05f, _chargeDurationSeconds);
 
         public float ChargeCooldownSeconds => Mathf.Max(0.1f, _chargeCooldownSeconds);
+
+        public float ZoneHoldDistance => Mathf.Max(0.5f, _zoneHoldDistance);
+
+        public float SupportAuraRadius => Mathf.Max(0f, _supportAuraRadius);
+
+        public float SupportSpeedMultiplier => Mathf.Max(0.1f, _supportSpeedMultiplier);
+
+        public float SupportDamageMultiplier => Mathf.Max(0.1f, _supportDamageMultiplier);
     }
 }

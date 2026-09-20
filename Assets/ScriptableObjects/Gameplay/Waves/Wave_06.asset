@@ -17,5 +17,7 @@ MonoBehaviour:
   _spawnGroups:
   - {fileID: 11400000, guid: 0ffbbb6167964fdca067f596e421f19b, type: 2}
   - {fileID: 11400000, guid: 8d6b0924c104465091a03fd744c8dede, type: 2}
+  - {fileID: 11400000, guid: 69173e321de14ee59ef47d8044e29213, type: 2}
+  - {fileID: 11400000, guid: 5cad5f3a1ec0472cb2a42f3bae4e4204, type: 2}
   _modifierData: {fileID: 11400000, guid: 1fd7b2385aa84cb7a90d364d5eb3a4c2, type: 2}
   _waveRewardData: {fileID: 11400000, guid: 246d5f4ff4e04986a882fa0d956cb5a7, type: 2}
