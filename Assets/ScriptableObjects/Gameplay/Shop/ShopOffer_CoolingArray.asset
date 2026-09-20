@@ -20,3 +20,4 @@ MonoBehaviour:
   _descriptionOverride: 
   _minStageIndex: 1
   _maxStageIndex: 99
+  _selectionWeight: 1.0

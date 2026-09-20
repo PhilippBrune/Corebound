@@ -124,6 +124,9 @@ namespace Corebound.Settings
                 case SettingsOptionKey.ControlProfile:
                     candidate.SetControlProfileIndex(AdjustChoice(candidate.ControlProfileIndex, optionDefinition, direction));
                     return;
+                case SettingsOptionKey.Language:
+                    candidate.SetLanguageIndex(AdjustChoice(candidate.LanguageIndex, optionDefinition, direction));
+                    return;
             }
         }
 
@@ -157,6 +160,8 @@ namespace Corebound.Settings
                     return ToPercentLabel(settings.ControllerAimAssistStrength);
                 case SettingsOptionKey.ControlProfile:
                     return ResolveChoiceLabel(optionDefinition, settings.ControlProfileIndex);
+                case SettingsOptionKey.Language:
+                    return ResolveChoiceLabel(optionDefinition, settings.LanguageIndex);
                 default:
                     return string.Empty;
             }
@@ -181,6 +186,11 @@ namespace Corebound.Settings
             {
                 return;
             }
+
+            // Applied on preview as well as on commit, so arrowing through the option changes
+            // the Settings screen's own labels immediately - the clearest possible confirmation
+            // that the setting took effect.
+            Corebound.UI.LocalizationService.IsGerman = settings.LanguageIndex == 1;
 
             QualitySettings.SetQualityLevel(Mathf.Clamp(settings.QualityPresetIndex, 0, QualitySettings.names.Length > 0 ? QualitySettings.names.Length - 1 : 0), true);
             QualitySettings.vSyncCount = settings.VSyncEnabled ? 1 : 0;

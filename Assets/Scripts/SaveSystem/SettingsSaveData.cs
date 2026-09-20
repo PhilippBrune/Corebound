@@ -19,6 +19,7 @@ namespace Corebound.SaveSystem
         [SerializeField] private float _hudScale = 1f;
         [SerializeField] private float _controllerAimAssistStrength = 0.65f;
         [SerializeField] private int _controlProfileIndex;
+        [SerializeField] private int _languageIndex;
 
         public int SaveFormatVersion => _saveFormatVersion;
 
@@ -46,6 +47,10 @@ namespace Corebound.SaveSystem
 
         public int ControlProfileIndex => _controlProfileIndex;
 
+        // 0 = English, 1 = German. Index rather than a bool so a third language needs no
+        // save-format change.
+        public int LanguageIndex => _languageIndex;
+
         public SettingsSaveData Clone()
         {
             return new SettingsSaveData
@@ -62,7 +67,8 @@ namespace Corebound.SaveSystem
                 _effectsIntensity = _effectsIntensity,
                 _hudScale = _hudScale,
                 _controllerAimAssistStrength = _controllerAimAssistStrength,
-                _controlProfileIndex = _controlProfileIndex
+                _controlProfileIndex = _controlProfileIndex,
+                _languageIndex = _languageIndex
             };
         }
 
@@ -119,6 +125,11 @@ namespace Corebound.SaveSystem
         public void SetControllerAimAssistStrength(float value)
         {
             _controllerAimAssistStrength = Mathf.Clamp01(value);
+        }
+
+        public void SetLanguageIndex(int value)
+        {
+            _languageIndex = Mathf.Max(0, value);
         }
 
         public void SetControlProfileIndex(int value)

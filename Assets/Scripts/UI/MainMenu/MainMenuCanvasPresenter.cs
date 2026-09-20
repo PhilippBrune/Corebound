@@ -231,8 +231,8 @@ namespace Corebound.UI.MainMenu
             var introVisible = _mainMenuController.IsIntroVisible;
             _logoImage.enabled = _logoSprite != null && (!introVisible || (_introFlowData != null && _introFlowData.ShowLogoOnIntro));
             _promptText.text = introVisible
-                ? (_introFlowData != null ? _introFlowData.PromptText : "Press Start")
-                : "Choose the next route for your Corebound run.";
+                ? (_introFlowData != null ? _introFlowData.PromptText : LocalizationService.Resolve("Press Start", "Starten druecken"))
+                : LocalizationService.Resolve("Choose the next route for your Corebound run.", "Waehle die naechste Route fuer deinen Corebound-Run.");
 
             for (var index = 0; index < _entryViews.Count; index++)
             {
@@ -352,35 +352,35 @@ namespace Corebound.UI.MainMenu
         {
             if (introVisible)
             {
-                return "Confirm or Start opens the command routes.";
+                return LocalizationService.Resolve("Confirm or Start opens the command routes.", "Bestaetigen oder Start oeffnet die Kommando-Routen.");
             }
 
             if (_mainMenuController.VisibleEntries.Count == 0)
             {
-                return _continueStateData != null ? _continueStateData.EmptyStateLabel : "No Active Run";
+                return _continueStateData != null ? _continueStateData.EmptyStateLabel : LocalizationService.Resolve("No Active Run", "Kein aktiver Run");
             }
 
             var selectedEntry = _mainMenuController.SelectedEntry;
 
             if (selectedEntry == null)
             {
-                return "Select a route.";
+                return LocalizationService.Resolve("Select a route.", "Waehle eine Route.");
             }
 
             switch (selectedEntry.Route)
             {
                 case MainMenuRoute.Continue:
-                    return (_continueStateData != null ? _continueStateData.ContinueLabel : selectedEntry.Label) + " resumes the current run.";
+                    return (_continueStateData != null ? _continueStateData.ContinueLabel : selectedEntry.Label) + LocalizationService.Resolve(" resumes the current run.", " setzt den aktuellen Run fort.");
                 case MainMenuRoute.NewRun:
-                    return "Start a fresh run from the first active route.";
+                    return LocalizationService.Resolve("Start a fresh run from the first active route.", "Startet einen neuen Run ab der ersten aktiven Route.");
                 case MainMenuRoute.Tutorial:
-                    return "Review the guided tutorial stage.";
+                    return LocalizationService.Resolve("Review the guided tutorial stage.", "Zeigt die gefuehrte Tutorial-Stage.");
                 case MainMenuRoute.Settings:
-                    return "Adjust controls, audio and presentation.";
+                    return LocalizationService.Resolve("Adjust controls, audio and presentation.", "Steuerung, Audio und Darstellung anpassen.");
                 case MainMenuRoute.MetaProgression:
-                    return "Inspect permanent upgrades and unlocks.";
+                    return LocalizationService.Resolve("Inspect permanent upgrades and unlocks.", "Dauerhafte Upgrades und Freischaltungen ansehen.");
                 case MainMenuRoute.Quit:
-                    return "Close the current session.";
+                    return LocalizationService.Resolve("Close the current session.", "Beendet die aktuelle Sitzung.");
                 default:
                     return selectedEntry.Label;
             }
@@ -391,19 +391,19 @@ namespace Corebound.UI.MainMenu
             switch (route)
             {
                 case MainMenuRoute.Continue:
-                    return "Continuing the current run.";
+                    return LocalizationService.Resolve("Continuing the current run.", "Setzt den aktuellen Run fort.");
                 case MainMenuRoute.NewRun:
-                    return "Preparing a new run.";
+                    return LocalizationService.Resolve("Preparing a new run.", "Neuer Run wird vorbereitet.");
                 case MainMenuRoute.Tutorial:
-                    return "Opening the tutorial route.";
+                    return LocalizationService.Resolve("Opening the tutorial route.", "Tutorial-Route wird geoeffnet.");
                 case MainMenuRoute.Settings:
-                    return "Opening settings.";
+                    return LocalizationService.Resolve("Opening settings.", "Einstellungen werden geoeffnet.");
                 case MainMenuRoute.MetaProgression:
-                    return "Opening meta progression.";
+                    return LocalizationService.Resolve("Opening meta progression.", "Meta-Progression wird geoeffnet.");
                 case MainMenuRoute.Quit:
-                    return "Closing the current session.";
+                    return LocalizationService.Resolve("Closing the current session.", "Sitzung wird beendet.");
                 default:
-                    return "Route confirmed.";
+                    return LocalizationService.Resolve("Route confirmed.", "Route bestaetigt.");
             }
         }
 

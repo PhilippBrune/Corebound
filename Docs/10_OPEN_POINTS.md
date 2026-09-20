@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 1.1 · Created 2026-09-20 · Last updated 2026-09-20 · Status: Active
+Version: 1.2 · Created 2026-09-20 · Last updated 2026-09-20 · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is the *punch list*. Every entry states what is missing, why it matters, and what "done" looks like, so none of them has to be re-derived next session.
 
@@ -58,24 +58,59 @@ Vision Section 9 asks for **five distinct enemy types**; three roles exist (Chas
 
 ## P2 — Needed for the Early Access target
 
-### 4. Shop does not meet Shop.md
+### 4. Shop vs Shop.md — three of four gaps closed (2026-09-20)
 
-Reviewed against the spec on 2026-09-20. What works: ScriptableObject data model, central `EconomyService`/wallet validation, fixed price categories plus `StagePriceMultiplier`, controller-first navigation, rarity-tinted frames, no reroll, and Tower Upgrade offers are fully wired. All five stages reference a shop. Gaps:
+Reviewed against the spec on 2026-09-20. What already worked: ScriptableObject data model,
+central `EconomyService`/wallet validation, fixed price categories plus `StagePriceMultiplier`,
+controller-first navigation, rarity-tinted frames, no reroll, and fully wired Tower Upgrade
+offers. All five stages reference a shop.
 
-- **No weighting.** `ShopOfferTableData` holds only `Offers[]` and `MaxOfferCount`; offers are taken in array order until the cap. The spec asks for "Pools, **Gewichtungen** und Stage-spezifische Verfügbarkeiten". Per-offer `MinStageIndex`/`MaxStageIndex` covers availability, so weighting is the missing half. `CardService` already does rarity weighting and is the obvious precedent.
-- **Audio is entirely absent.** `ShopEvents` raises all five events (`ShopOpened`, `OfferSelected`, `PurchaseRequested`, `PurchaseSucceeded`, `ShopClosed`) and **nothing anywhere subscribes to them** — they are dead API. There is no `ShopAudioCuePlayer`, although Wave, Boss, MainMenu and Factory all have one. The spec requires distinct open / hover / buy / insufficient-funds sounds.
-- **Buyability is not shown.** The spec requires the UI show "Kosten, **Kaufbarkeit**, Seltenheit". Affordability is only evaluated when Confirm is pressed; an unaffordable offer looks identical to an affordable one.
-- **Visually too close to the Card Reward screen.** The spec wants the shop to "sich vom Combat-Bild und von Card-Reward-Screens **unterscheiden**"; it currently mirrors the reward panel's structure closely.
-- **Deliberate deviation to confirm:** the spec says refunds do not exist in the first scope, but `ShopService.RefundPurchase()` exists. It only rolls back a purchase whose *application* failed after payment — a correctness guard, not a player-facing refund. Recommend keeping it and noting the exception in the spec.
+**Closed since:**
 
+- **Weighting.** `ShopOfferData` gained `SelectionWeight` (1 is neutral, so every existing asset
+  keeps its odds relative to the others). `ShopService.BuildOffers` now collects every available
+  offer and draws without replacement by weight, instead of taking the first three in array
+  order. A weight of 0 makes an offer unreachable without deleting the asset. Four new offers
+  for the weapon-modifier cards are authored with deliberately uneven weights.
+- **Audio.** `ShopAudioCueData` and `ShopAudioCuePlayer` exist and are on `CombatRuntime`.
+  `ShopEvents` now has a subscriber; it was dead API before. Distinct open / hover / buy /
+  insufficient-funds cues, the last of which needed a new `PurchaseDeclined` event, since no
+  existing event fired on a refused purchase. The close cue is skipped when the shop closed
+  because something was bought, so a purchase does not play two one-shots in one frame.
+- **Buyability.** `ShopService.CanAffordOffer` is public and `ShopPresenter` reads it per offer:
+  an unaffordable offer turns its cost text red, dims its frame and mutes its title. Two cues,
+  not one, because colour alone is not a safe carrier.
+
+**Still open:**
+
+- **Visually too close to the Card Reward screen.** A first step is done: the shop's dim wash was
+  byte-identical to the reward screen's cool near-black and is now a warm amber ground, in both
+  `ShopPresenter` and `ShopCanvas.unity`. The deeper similarity is structural, though: three
+  card-shaped slots in a row using the same rarity frame art. Closing that properly needs an art
+  direction call, not code.
+- **Deliberate deviation to confirm:** the spec says refunds do not exist in the first scope, but
+  `ShopService.RefundPurchase()` exists. It only rolls back a purchase whose *application* failed
+  after payment, a correctness guard rather than a player-facing refund. Recommend keeping it and
+  noting the exception in the spec.
 ### 5. Main Menu plays two sounds after a run — unresolved
 
 The one concrete overlap found is fixed (`MainMenuAudioCuePlayer.OnEnable()` no longer fires its open cue), and a surviving duplicate `MusicStateController` is ruled out (no `DontDestroyOnLoad`, no singleton). Still reported. **Blocked on information, not effort:** agents cannot hear audio. Needs either the two sounds named, or a recording. A per-cue `Debug.Log` behind the debug flag would also settle it.
 
-### 6. Localization coverage is partial
+### 6. Localization — DONE (2026-09-20)
 
-Done: `CardData` (all 30), `TowerData`, `TowerLevelData`, Shop, the HUD status line, banners, pause/failed overlays, tower placement line, and the four MainMenu route panels. Still English-only: `CardRewardPresenter`'s own strings, `RelicRevealPresenter`, `MetaProgressionRouteTargetPresenter`, `SettingsRouteTargetPresenter`, `MainMenuCanvasPresenter`. There is also no Settings control to switch language — `LocalizationService.IsGerman` is only settable in code.
+Every presenter that held English-only literals now resolves through `LocalizationService`:
+`CardRewardPresenter` and `CardRewardController`, `RelicRevealPresenter`, and
+`MainMenuCanvasPresenter` (prompt, status line, all six route descriptions and all six route
+confirmations). `MetaProgressionRouteTargetPresenter` and `SettingsRouteTargetPresenter` compose
+their rows from controller data rather than literals, so they follow whatever those rows carry.
 
+The language is now switchable in game. `SettingsOptionKey.Language` was **appended** to the enum
+(never inserted: the enum is serialized by index in `SettingsDefinition_Default.asset`), backed by
+`SettingsSaveData.LanguageIndex`, exposed as an English/Deutsch choice under Accessibility, and
+applied in `SettingsManager.ApplyRuntimeSettings` — which runs on preview as well as on commit, so
+arrowing through the option retranslates the Settings screen itself immediately.
+
+**Still to confirm in play:** the option has not been exercised through the live Settings UI.
 ### 7. `UIThemeData` colours are still unread
 
 `.Font` reaches 11 presenters via `UIFontResolver`, but `PrimaryTextColor`, `SecondaryTextColor`, `AccentColor` and `PanelFrameSprite` are read by nothing; every presenter hardcodes its own colours. Best done together with a shared procedural-UI builder, since `CreateText`/`CreateImage` are duplicated across at least six presenters and have already drifted apart.
@@ -101,6 +136,9 @@ From `00_PROJECT_VISION.md` §20.1, each with a concrete proposal awaiting a yes
 - Slice 12: missing boss "Großangriff" audio cue; no automated coverage of boss state transitions.
 - Remaining canvas splits still built procedurally with hardcoded offsets: MainMenu route panels, Boss HUD, Notification, Relic reveal.
 - `StageEnemyPoolData` is fully authored but read by no code (intentionally deferred to a Stage 2+ weighted-selection feature).
-- `CardData.Tags` is authored on several cards but read by nothing.
+- ~~`CardData.Tags` is authored on several cards but read by nothing.~~ **Wrong when written:**
+  `CardRewardPresenter.ApplyTagIcons()` reads it and draws up to four tag icons per reward
+  slot through `CardTagIconAtlas`. What is true is that nothing *else* reads it: offer
+  selection and card effects still ignore tags.
 - Six multi-slot sprite sheets are imported but unsliced/unused, or bypass their documented VFX data model with custom runtime grid maths.
 - `stage2_ground_tileset.png` and `stage3_ground_tileset.png` are **JPEG data behind a `.png` name**. The runtime loader sniffs content so it works, but JPEG carries no alpha — worth re-exporting as real PNG if either ever needs transparency.

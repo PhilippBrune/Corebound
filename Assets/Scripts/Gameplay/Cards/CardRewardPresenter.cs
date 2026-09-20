@@ -380,7 +380,7 @@ namespace Corebound.Gameplay.Cards
             _titleText.text = _controller.PendingRewardLabel;
             _resourceText.text = _controller.ResourceSummary;
             _towerText.text = _controller.TowerSummary;
-            _descriptionText.text = _controller.SelectedDescription + "  Confirm accepts the selected card.";
+            _descriptionText.text = _controller.SelectedDescription + LocalizationService.Resolve("  Confirm accepts the selected card.", "  Bestaetigen nimmt die gewaehlte Karte an.");
 
             RebuildCards();
 

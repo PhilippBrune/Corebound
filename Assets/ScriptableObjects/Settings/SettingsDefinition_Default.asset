@@ -141,6 +141,19 @@ MonoBehaviour:
       _defaultToggleValue: 0
       _defaultChoiceIndex: 0
       _choiceLabels: []
+    - _key: 12
+      _label: Language
+      _description: Switches all in-game text between English and German.
+      _optionKind: 2
+      _minValue: 0
+      _maxValue: 0
+      _stepValue: 1
+      _defaultFloatValue: 0
+      _defaultToggleValue: 0
+      _defaultChoiceIndex: 0
+      _choiceLabels:
+      - English
+      - Deutsch
   - _categoryType: 3
     _label: Controls
     _options:

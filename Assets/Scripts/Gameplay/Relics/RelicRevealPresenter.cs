@@ -89,7 +89,9 @@ namespace Corebound.Gameplay.Relics
                 return;
             }
 
-            _kindText.text = eventArgs.IsEvolution ? "Relic Evolved" : "Relic Gained";
+            _kindText.text = eventArgs.IsEvolution
+                ? LocalizationService.Resolve("Relic Evolved", "Relikt entwickelt")
+                : LocalizationService.Resolve("Relic Gained", "Relikt erhalten");
             _nameText.text = eventArgs.IsEvolution ? eventArgs.Relic.EvolvedDisplayName : eventArgs.Relic.DisplayName;
             _descriptionText.text = eventArgs.IsEvolution ? eventArgs.Relic.EvolvedDescription : eventArgs.Relic.Description;
             _timer = 0f;

@@ -67,6 +67,8 @@ namespace Corebound.Gameplay.Shop
         private Sprite _towerUpgradeIconSprite;
         private UIManagedPanel _managedPanel;
 
+        private static readonly Color ShopOverlayColor = new Color(0.07f, 0.045f, 0.02f, 0.9f);
+
         private const string ShopCanvasName = "ShopCanvas";
         private const string ShopRootName = "ShopScreen";
         private const string ShopPanelName = "ShopOfferPanel";
@@ -238,7 +240,11 @@ namespace Corebound.Gameplay.Shop
             // recompile) re-runs Awake() - this project's ShopPresenterRoot accumulated six duplicate
             // Overlay+Panel pairs that way over one long editing session before the authored
             // ShopCanvas layout took over.
-            var overlay = CreateImage("Overlay", _presenterRoot, null, new Color(0.02f, 0.04f, 0.06f, 0.88f), Image.Type.Simple);
+            // Shop.md: the shop screen must "sich vom Combat-Bild und von Card-Reward-Screens
+            // unterscheiden". Both screens used the identical cool near-black wash, so the only
+            // difference between them was the panel art. A warm amber ground reads as a
+            // different place at a glance. Kept in sync with ShopCanvas.unity Overlay.
+            var overlay = CreateImage("Overlay", _presenterRoot, null, ShopOverlayColor, Image.Type.Simple);
             StretchToParent(overlay.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
             var panel = CreateImage("Panel", _presenterRoot, _panelSprite, Color.white, _panelSprite != null ? Image.Type.Sliced : Image.Type.Simple);
@@ -371,6 +377,19 @@ namespace Corebound.Gameplay.Shop
                 _slotTitleTexts[index].text = _service.ResolveOfferTitle(offer);
                 _slotCostTexts[index].text = LocalizationService.Resolve("Cost ", "Kosten ") + _service.ResolveOfferCost(offer);
                 _slotDescriptionTexts[index].text = _service.ResolveOfferDescription(offer);
+
+                // Shop.md requires the UI show "Kosten, Kaufbarkeit, Seltenheit". Affordability
+                // was only evaluated on Confirm, so an offer the player could not pay for looked
+                // exactly like one they could. Two cues rather than one, because colour alone is
+                // not a safe carrier: the cost text turns red and the whole slot dims.
+                var canAfford = _service.CanAffordOffer(offer);
+                _slotCostTexts[index].color = canAfford
+                    ? new Color(0.16f, 0.14f, 0.12f, 0.98f)
+                    : new Color(0.62f, 0.12f, 0.1f, 1f);
+                _slotFrameImages[index].color = canAfford ? Color.white : new Color(0.62f, 0.62f, 0.66f, 0.85f);
+                _slotTitleTexts[index].color = canAfford
+                    ? new Color(0.14f, 0.12f, 0.1f, 0.98f)
+                    : new Color(0.42f, 0.4f, 0.38f, 0.85f);
 
                 if (_slotTypeBadgeImages[index] != null)
                 {

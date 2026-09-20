@@ -73,6 +73,9 @@ namespace Corebound.Settings
                 case SettingsOptionKey.ControlProfile:
                     saveData.SetControlProfileIndex(optionDefinition.DefaultChoiceIndex);
                     return;
+                case SettingsOptionKey.Language:
+                    saveData.SetLanguageIndex(optionDefinition.DefaultChoiceIndex);
+                    return;
             }
         }
 

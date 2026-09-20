@@ -28,6 +28,7 @@ namespace Corebound.Gameplay.Shop
         private float NavigateThreshold => _inputAssistData != null ? _inputAssistData.MenuNavigateThreshold : InputAssistData.DefaultMenuNavigateThreshold;
 
         private readonly List<ShopOfferData> _currentOffers = new List<ShopOfferData>();
+        private readonly List<ShopOfferData> _offerCandidates = new List<ShopOfferData>();
 
         private ShopData _activeShopData;
         private int _activeStageIndex = 1;
@@ -184,9 +185,14 @@ namespace Corebound.Gameplay.Shop
             return true;
         }
 
+        // Shop.md: "Pools, Gewichtungen und Stage-spezifische Verfuegbarkeiten". Offers used to
+        // be taken in array order until the cap, so the first three available entries were the
+        // only three a player ever saw. Now every available offer competes by weight, drawn
+        // without replacement - the same approach CardService already uses for rarity.
         private void BuildOffers(ShopData shopData, int stageIndex)
         {
             _currentOffers.Clear();
+            _offerCandidates.Clear();
 
             var offerTable = shopData != null ? shopData.OfferTableData : null;
             var offers = offerTable != null ? offerTable.Offers : null;
@@ -196,17 +202,57 @@ namespace Corebound.Gameplay.Shop
                 return;
             }
 
-            for (var index = 0; index < offers.Length && _currentOffers.Count < offerTable.MaxOfferCount; index++)
+            for (var index = 0; index < offers.Length; index++)
             {
-                var offer = offers[index];
-
-                if (!IsOfferAvailable(offer, stageIndex))
+                if (IsOfferAvailable(offers[index], stageIndex))
                 {
-                    continue;
+                    _offerCandidates.Add(offers[index]);
+                }
+            }
+
+            while (_currentOffers.Count < offerTable.MaxOfferCount && _offerCandidates.Count > 0)
+            {
+                var drawnIndex = DrawWeightedCandidateIndex();
+
+                if (drawnIndex < 0)
+                {
+                    break;
                 }
 
-                _currentOffers.Add(offer);
+                _currentOffers.Add(_offerCandidates[drawnIndex]);
+                _offerCandidates.RemoveAt(drawnIndex);
             }
+        }
+
+        // Returns -1 when every remaining candidate is weighted 0, which is the author saying
+        // "never offer these" - filling the slot anyway would defeat the weight.
+        private int DrawWeightedCandidateIndex()
+        {
+            var totalWeight = 0f;
+
+            for (var index = 0; index < _offerCandidates.Count; index++)
+            {
+                totalWeight += _offerCandidates[index].SelectionWeight;
+            }
+
+            if (totalWeight <= Mathf.Epsilon)
+            {
+                return -1;
+            }
+
+            var roll = UnityEngine.Random.value * totalWeight;
+
+            for (var index = 0; index < _offerCandidates.Count; index++)
+            {
+                roll -= _offerCandidates[index].SelectionWeight;
+
+                if (roll <= 0f)
+                {
+                    return index;
+                }
+            }
+
+            return _offerCandidates.Count - 1;
         }
 
         private bool IsOfferAvailable(ShopOfferData offer, int stageIndex)
@@ -265,12 +311,13 @@ namespace Corebound.Gameplay.Shop
 
             var cost = ResolveOfferCost(offer);
 
+            ShopEvents.RaisePurchaseRequested(CreateEventArgs(_selectedIndex, false));
+
             if (!CanPurchase(offer) || !TryCommitPurchase(cost))
             {
+                ShopEvents.RaisePurchaseDeclined(CreateEventArgs(_selectedIndex, false));
                 return;
             }
-
-            ShopEvents.RaisePurchaseRequested(CreateEventArgs(_selectedIndex, false));
 
             var purchased = false;
 
@@ -323,6 +370,16 @@ namespace Corebound.Gameplay.Shop
             }
 
             CloseShop(false);
+        }
+
+        // Shop.md requires the UI show "Kosten, Kaufbarkeit, Seltenheit". Affordability used to
+        // be evaluated only when Confirm was pressed, so an unaffordable offer looked exactly
+        // like an affordable one. ShopPresenter reads this per offer while drawing.
+        public bool CanAffordOffer(ShopOfferData offer)
+        {
+            return offer != null
+                && _resourceWalletService != null
+                && _resourceWalletService.CurrentAmount >= ResolveOfferCost(offer);
         }
 
         private bool CanPurchase(ShopOfferData offer)

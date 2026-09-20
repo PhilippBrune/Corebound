@@ -5,6 +5,7 @@ using Corebound.Gameplay.Towers;
 using Corebound.Gameplay.Waves;
 using Corebound.Input;
 using Corebound.SaveSystem;
+using Corebound.UI;
 using Corebound.UI.MainMenu;
 using UnityEngine;
 
@@ -42,7 +43,7 @@ namespace Corebound.Gameplay.Cards
 
         public string ResourceSummary => _resourceWalletService != null ? _resourceWalletService.DisplayLabel + ": " + _resourceWalletService.CurrentAmount : string.Empty;
 
-        public string TowerSummary => _towerService != null ? "Active Towers: " + _towerService.BuiltTowerCount : string.Empty;
+        public string TowerSummary => _towerService != null ? LocalizationService.Resolve("Active Towers: ", "Aktive Tuerme: ") + _towerService.BuiltTowerCount : string.Empty;
 
         public string SelectedDescription => _cardService != null && _cardService.CurrentOffer.Count > 0 && _selectedIndex >= 0 && _selectedIndex < _cardService.CurrentOffer.Count
             ? _cardService.CurrentOffer[_selectedIndex].Description
@@ -96,7 +97,7 @@ namespace Corebound.Gameplay.Cards
                 return;
             }
 
-            _pendingRewardLabel = string.IsNullOrWhiteSpace(runSaveData.PendingRewardLabel) ? "Card Reward" : runSaveData.PendingRewardLabel;
+            _pendingRewardLabel = string.IsNullOrWhiteSpace(runSaveData.PendingRewardLabel) ? LocalizationService.Resolve("Card Reward", "Kartenbelohnung") : runSaveData.PendingRewardLabel;
             _isOpen = true;
             _selectedIndex = 0;
             _cardService.BuildRewardOffer();
