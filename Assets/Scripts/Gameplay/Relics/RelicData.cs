@@ -17,6 +17,10 @@ namespace Corebound.Gameplay.Relics
         [SerializeField] private CardEffectData[] _effects;
         [SerializeField] private string _requiredUnlockId = string.Empty;
 
+        // Same hook CardData carries, so a relic reaches Crit/Multishot without a special case -
+        // Weapons.md: "Card- und Tower-Effekte koennen Weapons ohne Sonderfaelle modifizieren."
+        [SerializeField] private Corebound.Gameplay.Weapons.WeaponModifierData[] _weaponModifiers;
+
         // Evolving relics: _effects above is the starting effect set. Once CardService's tracked
         // counter for _evolutionCondition reaches _evolutionThreshold, the relic permanently
         // switches to _evolvedEffects instead (CardService.RebuildModifierSnapshot picks one or
@@ -38,6 +42,8 @@ namespace Corebound.Gameplay.Relics
         public CardEffectData[] Effects => _effects;
 
         public string RequiredUnlockId => _requiredUnlockId;
+
+        public Corebound.Gameplay.Weapons.WeaponModifierData[] WeaponModifiers => _weaponModifiers;
 
         public RelicEvolutionCondition EvolutionCondition => _evolutionCondition;
 

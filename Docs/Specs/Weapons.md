@@ -44,7 +44,18 @@ Weapon-Daten werden in ScriptableObjects definiert.
 - WeaponModifierData: klar definierte Hooks für Fire Rate, Damage, Crit, Multishot oder Status Effect
 - WeaponPresentationData: Audio, Animation, Sprite, Muzzle- oder Impact-Referenzen
 
-**Update 2026-09-16 — Audit-Ergebnis:** `WeaponModifierData` und `WeaponPresentationData` existieren als eigene Asset-Typen noch nicht. Modifikatoren laufen aktuell als einzelne Float-Properties direkt auf `CardService` (`WeaponDamageMultiplier`, `WeaponFireIntervalMultiplier`, `ProjectileSpeedMultiplier`), gelesen von `PlayerCombatController.FireProjectile()` — funktional äquivalent, aber ohne das hier beschriebene eigene Daten-Asset. Bereits als offener Punkt in [Implementation Backlog](../08_IMPLEMENTATION_BACKLOG.md) unter "Weapon-Modifier-Pipeline für spätere Card- und Tower-Hooks" getrackt — bewusst zurückgestellt, kein neuer Fund.
+**Update 2026-09-20 — implementiert.** Alle fuenf Asset-Typen existieren jetzt.
+`WeaponModifierData` (Target, Value, optionale `RequiredWeaponId`) deckt die hier genannten
+Hooks Fire Rate, Damage, Crit, Multishot und Status Effect ab; `WeaponPresentationData` haelt
+Icon, Accent-Farbe, Muzzle-/Impact-Farben und die Fire-/Critical-Audio-Cues. `CardData` und
+`RelicData` tragen beide ein optionales `WeaponModifierData[]`, `CardService` aggregiert sie,
+und `WeaponModifierState` loest sie zusammen mit den drei bisherigen Float-Multiplikatoren zu
+den effektiven Weapon-Werten auf. Die alten `CardEffectTarget`-Multiplikatoren bleiben gueltig
+und werden als Basiswerte eingerechnet, damit bestehende Cards unveraendert funktionieren.
+
+Die urspruengliche Audit-Notiz vom 2026-09-16 lautete: `WeaponModifierData` und
+`WeaponPresentationData` existieren als eigene Asset-Typen noch nicht; Modifikatoren laufen als
+einzelne Float-Properties direkt auf `CardService`.
 
 ## Technical Design
 
@@ -54,7 +65,14 @@ Projectile-Erzeugung nutzt Pooling und liest ausschließlich Daten-Assets und ak
 
 Weapon-Systeme senden Events wie OnWeaponFired, OnProjectileSpawned, OnWeaponModified und OnWeaponStateChanged.
 
-**Update 2026-09-16 — Audit-Ergebnis:** Real existiert nur `PlayerCombatController.WeaponFired` (kein "On"-Präfix), aktuell ausschließlich von `TutorialService` für Schritt-Tracking konsumiert — nicht von Audio/VFX/UI. `OnProjectileSpawned`, `OnWeaponModified`, `OnWeaponStateChanged` existieren nicht. Dies ist die konkreteste Lücke dieser Spec: die UI- und Audio-Abschnitte unten (aktuelle Weapon-Identität, Cooldown-Anzeige, Feuer-/Treffer-Cues pro Weapon) haben mangels dieser Events keinen Daten-Zubringer und sind entsprechend ebenfalls unimplementiert.
+**Update 2026-09-20 — implementiert.** `WeaponEvents` sendet alle vier Signale. Die Namen
+tragen kein `On`-Praefix (`WeaponFired`, `ProjectileSpawned`, `WeaponModified`,
+`WeaponStateChanged`), weil `CombatEvents`, `FactoryEvents`, `WaveEvents` und `ShopEvents` im
+Projekt alle so heissen — inhaltlich entsprechen sie eins zu eins der Liste oben.
+`PlayerCombatController.WeaponFired` bleibt zusaetzlich als Instanz-Event bestehen, weil
+`TutorialService` es bereits konsumiert und ein Tutorial nicht auf fremde Schuesse reagieren
+darf. Konsumenten heute: `WeaponAudioCuePlayer` (Fire- und Critical-Cue pro Weapon) und
+`WeaponHudPresenter` (Identitaet, Bereitschaft, aktive Modifikatoren).
 
 Weapon-Logik bleibt unabhängig von UI und speichert keine Persistenzdaten direkt.
 

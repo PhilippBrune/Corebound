@@ -335,11 +335,29 @@ namespace Corebound.Gameplay.Towers
         // own tower-slot layout when it has authored one, falling back to this component's own
         // serialized _slotPositions (today's Stage 1 layout, hand-placed in the scene) otherwise -
         // a stage with no authored layout builds identically to before this change.
+        // Resolution order, most specific first:
+        //   1. StageArenaLayoutData.BuildableZones - the Dynamic Arena Slice's shape-constrained
+        //      placement: a stage declares regions and how many slots each holds, and the slot
+        //      count is free to differ per stage (a bigger arena can carry more towers).
+        //   2. StageData.TowerSlotPositions - the earlier flat per-stage point list, still honoured
+        //      so stages authored against it keep working.
+        //   3. This component's own serialized array - Stage 1's original layout.
         private Vector2[] ResolveActiveSlotPositions()
         {
-            var stageSlotPositions = _waveManager != null && _waveManager.StageDataAsset != null
-                ? _waveManager.StageDataAsset.TowerSlotPositions
-                : null;
+            var stageData = _waveManager != null ? _waveManager.StageDataAsset : null;
+            var layoutData = stageData != null && stageData.ThemeData != null ? stageData.ThemeData.LayoutData : null;
+
+            if (layoutData != null && layoutData.HasBuildableZones)
+            {
+                var zoneSlotPositions = layoutData.ResolveTowerSlotPositions();
+
+                if (zoneSlotPositions != null && zoneSlotPositions.Length > 0)
+                {
+                    return zoneSlotPositions;
+                }
+            }
+
+            var stageSlotPositions = stageData != null ? stageData.TowerSlotPositions : null;
 
             return stageSlotPositions != null && stageSlotPositions.Length > 0 ? stageSlotPositions : _slotPositions;
         }

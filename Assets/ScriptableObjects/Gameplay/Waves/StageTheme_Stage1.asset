@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _themeId: theme_stage_01_foundry
   _displayName: Foundry Approach
+  _layoutData: {fileID: 11400000, guid: 724a4b1a3caaf8541b8ad8ca862d1ef9, type: 2}
   _groundTexture: {fileID: 0}
   _groundTexturePath: Assets/Art/Environment/Arena/stage1_ground_tileset.png
   _boundaryTexture: {fileID: 0}

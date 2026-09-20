@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f40a52da26a1114791124063ffb2a3b, type: 3}
+  m_Name: ArenaLayout_Stage3
+  m_EditorClassIdentifier: 
+  _layoutId: layout_stage_03
+  _arenaSize: {x: 20, y: 12}
+  _boundaryThickness: 0.9
+  _layoutStrategy: 1
+  _obstacleGridColumns:
+  - -7.4
+  - -4.4
+  - -1.5
+  - 1.5
+  - 4.4
+  - 7.4
+  _obstacleGridRows:
+  - 3.4
+  - 0.8
+  - -1.8
+  _obstacleCellSize: {x: 1.5, y: 1.5}
+  _propPlacements:
+  - _atlasCell:
+      _row: 30
+      _column: 1
+      _rotationDegrees: 0
+    _localPosition: {x: -7.6, y: 4.6}
+    _targetSize: {x: 1.7, y: 0.89}
+    _sortingOrder: -8
+    _blocksMovement: 1
+  - _atlasCell:
+      _row: 30
+      _column: 2
+      _rotationDegrees: 0
+    _localPosition: {x: -4.2, y: 4.8}
+    _targetSize: {x: 1.5, y: 1.21}
+    _sortingOrder: -8
+    _blocksMovement: 1
+  - _atlasCell:
+      _row: 30
+      _column: 3
+      _rotationDegrees: 0
+    _localPosition: {x: 8, y: 3.6}
+    _targetSize: {x: 1.1, y: 1.33}
+    _sortingOrder: -8
+    _blocksMovement: 1
+  - _atlasCell:
+      _row: 30
+      _column: 4
+      _rotationDegrees: 0
+    _localPosition: {x: 5.6, y: 4.8}
+    _targetSize: {x: 1.3, y: 1.17}
+    _sortingOrder: -8
+    _blocksMovement: 1
+  - _atlasCell:
+      _row: 30
+      _column: 5
+      _rotationDegrees: 0
+    _localPosition: {x: 0.4, y: -4.9}
+    _targetSize: {x: 1.7, y: 0.97}
+    _sortingOrder: -8
+    _blocksMovement: 1
+  - _atlasCell:
+      _row: 30
+      _column: 6
+      _rotationDegrees: 0
+    _localPosition: {x: -7.8, y: -4.4}
+    _targetSize: {x: 1.35, y: 1.18}
+    _sortingOrder: -8
+    _blocksMovement: 1
+  _buildableZones:
+  - _center: {x: -4.5, y: -1.8}
+    _size: {x: 5, y: 1}
+    _slotCount: 2
+  - _center: {x: 4.5, y: -1.8}
+    _size: {x: 5, y: 1}
+    _slotCount: 2
+  - _center: {x: 0, y: -4}
+    _size: {x: 1, y: 1}
+    _slotCount: 1

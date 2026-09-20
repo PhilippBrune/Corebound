@@ -1,3 +1,4 @@
+using Corebound.Gameplay.Weapons;
 using Corebound.UI;
 using UnityEngine;
 
@@ -15,6 +16,11 @@ namespace Corebound.Gameplay.Cards
         [SerializeField] private string _requiredUnlockId = string.Empty;
         [SerializeField] private CardTagType[] _tags;
         [SerializeField] private CardEffectData[] _effects;
+
+        // Weapons.md's modifier hooks. CardEffectData covers the three flat multipliers that
+        // predate it; these assets are how a card reaches Crit, Crit damage, Multishot or Status
+        // chance, and how a modifier can be scoped to one weapon id.
+        [SerializeField] private WeaponModifierData[] _weaponModifiers;
         [SerializeField] private bool _stackable;
 
         public string CardId => _cardId;
@@ -33,6 +39,8 @@ namespace Corebound.Gameplay.Cards
         public CardTagType[] Tags => _tags;
 
         public CardEffectData[] Effects => _effects;
+
+        public WeaponModifierData[] WeaponModifiers => _weaponModifiers;
 
         public bool Stackable => _stackable;
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Corebound.Gameplay.Relics;
+using Corebound.Gameplay.Weapons;
 using Corebound.MetaProgression;
 using Corebound.SaveSystem;
 using Corebound.UI;
@@ -21,6 +22,7 @@ namespace Corebound.Gameplay.Cards
         private readonly List<RelicData> _selectedRelics = new List<RelicData>();
         private readonly List<string> _evolvedRelicIds = new List<string>();
         private readonly CardModifierSnapshot _modifierSnapshot = new CardModifierSnapshot();
+        private readonly List<WeaponModifierData> _weaponModifiers = new List<WeaponModifierData>();
         private int _rangedEnemiesKilledCount;
         private int _wavesClearedCount;
 
@@ -47,6 +49,11 @@ namespace Corebound.Gameplay.Cards
         public float PlayerMovementSpeedMultiplier => _modifierSnapshot.PlayerMovementSpeedMultiplier;
 
         public float PurchaseCostMultiplier => _modifierSnapshot.PurchaseCostMultiplier;
+
+        // Every WeaponModifierData the current build grants, cards and relics together.
+        // PlayerCombatController folds these into a WeaponModifierState alongside the three flat
+        // multipliers above; nothing here knows which weapon is equipped.
+        public IReadOnlyList<WeaponModifierData> WeaponModifiers => _weaponModifiers;
 
         private ISaveManager SaveManager => SaveManagerResolver.Resolve(_saveManagerSource);
 
@@ -237,10 +244,12 @@ namespace Corebound.Gameplay.Cards
         private void RebuildModifierSnapshot()
         {
             _modifierSnapshot.Reset();
+            _weaponModifiers.Clear();
 
             for (var index = 0; index < _selectedCards.Count; index++)
             {
                 ApplyEffects(_selectedCards[index].Effects);
+                CollectWeaponModifiers(_selectedCards[index].WeaponModifiers);
             }
 
             for (var index = 0; index < _selectedRelics.Count; index++)
@@ -248,6 +257,25 @@ namespace Corebound.Gameplay.Cards
                 var relic = _selectedRelics[index];
                 var hasEvolved = relic.IsEvolving && _evolvedRelicIds.Contains(relic.RelicId);
                 ApplyEffects(hasEvolved ? relic.EvolvedEffects : relic.Effects);
+                CollectWeaponModifiers(relic.WeaponModifiers);
+            }
+        }
+
+        // Duplicates are kept, not deduplicated: two copies of a stackable +10% crit card must
+        // apply twice, exactly as two copies of the same CardEffectData already do.
+        private void CollectWeaponModifiers(WeaponModifierData[] modifiers)
+        {
+            if (modifiers == null)
+            {
+                return;
+            }
+
+            for (var index = 0; index < modifiers.Length; index++)
+            {
+                if (modifiers[index] != null)
+                {
+                    _weaponModifiers.Add(modifiers[index]);
+                }
             }
         }
 

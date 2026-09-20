@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _themeId: theme_stage_03
   _displayName: Salvage Fields
+  _layoutData: {fileID: 11400000, guid: ea081fa4ea391874fb400b6911408360, type: 2}
   _groundTexture: {fileID: 0}
   _groundTexturePath: Assets/Art/Environment/Arena/stage3_ground_tileset.png
   _boundaryTexture: {fileID: 0}

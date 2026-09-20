@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04b43e4f37ab4f7ba068087eaf824db0, type: 3}
+  m_Name: Card_SplitBarrel
+  m_EditorClassIdentifier:
+  _cardId: card_split_barrel
+  _displayName: Split Barrel
+  _displayNameDe: Geteilter Lauf
+  _description: Fire one additional projectile, spread a little wider.
+  _descriptionDe: Feuert ein zusaetzliches Projektil, dafuer etwas breiter gestreut.
+  _rarity: 2
+  _requiredUnlockId:
+  _tags:
+  - 0
+  - 1
+  _effects: []
+  _weaponModifiers:
+  - {fileID: 11400000, guid: 9444cd23ba2b48f9a2788cf65052d62c, type: 2}
+  _stackable: 1

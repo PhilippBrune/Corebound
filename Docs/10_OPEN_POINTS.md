@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 1.0 · Created 2026-09-20 · Status: Active
+Version: 1.1 · Created 2026-09-20 · Last updated 2026-09-20 · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is the *punch list*. Every entry states what is missing, why it matters, and what "done" looks like, so none of them has to be re-derived next session.
 
@@ -10,29 +10,46 @@ Priority: **P1** blocks playable quality · **P2** needed for the Early Access t
 
 ## P1 — Blocks playable quality
 
-### 1. Dynamic Arena Slice is only one third implemented
+### 1. Dynamic Arena Slice — DONE (2026-09-20)
 
-`Docs/Slices/15_DYNAMIC_ARENA_SLICE.md`. Arena *size* is per-stage data and spawn points and tower slots are authorable per stage — but **arena geometry is still Stage 1's maze algorithm for every stage**. A larger or differently shaped stage renders Stage 1's layout stretched or cropped to fit, which is the "arena is still fixed in size" report.
+`StageArenaLayoutData` exists and is the live layout source for all five stages. Arena size,
+boundary thickness, layout strategy, obstacle grid, prop placements and buildable zones are all
+per-stage data; the last stage-specific branch (`theme_stage_02`) is gone from
+`StageArenaArtPresenter`. Tower slots now rebuild both on a mid-run stage transition and when
+resuming a save past Stage 1. Stage 1 keeps empty prop and zone lists so it falls back to its
+original behaviour bit for bit. Detail in `Docs/Slices/15_DYNAMIC_ARENA_SLICE.md`,
+Implementation Note (2026-09-20).
 
-Still missing from that slice:
+**Still to confirm in play:** Stages 2-5 have never been seen live with their new layouts.
+Synthetic input cannot reach Unity's Input System, so that check needs a human at the keyboard.
 
-- `StageArenaLayoutData` asset type (the slice's own proposed architecture) — currently the data is spread across `StageData` and `StageThemeData` instead.
-- Per-stage arena *shape*: `StageArenaMazeGenerator` is Stage-1-only and is the sole layout source.
-- Per-stage prop placements beyond the hardcoded Stage 1 and Stage 2 sets in `StageArenaArtPresenter`.
-- `BuildableZones` — tower slots are a flat point list, not shape-constrained placement.
+### 2. Weapons.md — DONE (2026-09-20)
 
-**Done looks like:** each stage's arena differs in size *and* shape from data alone, with no stage-specific branch anywhere in `WaveManager`, `TowerService` or `StageArenaArtPresenter` (the slice's own acceptance criterion).
+All five data assets from the spec now exist, the four events are raised, and both the UI and
+Audio sections have a data source:
 
-### 2. Weapons.md is substantially unimplemented
+- `WeaponModifierData` carries a target, a value and an optional `RequiredWeaponId`. Crit chance,
+  crit damage, Multishot and status chance — the four hooks that previously had nowhere to live —
+  are reachable from data. `CardData` and `RelicData` both carry an optional modifier array.
+- `WeaponModifierState` resolves those together with the three pre-existing `CardService` float
+  multipliers, so existing cards are unaffected. Crit is rolled once per trigger pull, not per
+  projectile.
+- `WeaponPresentationData` holds the icon, accent colour, muzzle/impact colours and the fire and
+  critical audio cues, and is wired into all three weapons at clearly separated pitch registers.
+- `WeaponEvents` raises `WeaponFired`, `ProjectileSpawned`, `WeaponModified` and
+  `WeaponStateChanged`. `WeaponAudioCuePlayer` and `WeaponHudPresenter` consume them; both are on
+  `CombatRuntime` in `SampleScene.unity`.
+- Four new cards (`Critical Focus`, `Critical Amplifier`, `Split Barrel`, `Unstable Payload`)
+  reach the player only through the new hook and are registered in `CardPool_Default`.
 
-Three weapon archetypes exist and work, but the spec's supporting layer does not:
+**Still to confirm in play:** the HUD widget, the crit cue and the Multishot fan have not been
+seen live, for the same input-system reason.
 
-- `WeaponModifierData` and `WeaponPresentationData` asset types **do not exist**. Modifiers are loose float properties on `CardService` read directly by `PlayerCombatController.FireProjectile()` — functionally equivalent for today's four multipliers, but there is no data asset, so no per-weapon audio, visual or modifier profile can be authored.
-- Of the spec's events (`OnWeaponFired`, `OnProjectileSpawned`, `OnWeaponModified`, `OnWeaponStateChanged`) only `PlayerCombatController.WeaponFired` exists, and only `TutorialService` consumes it.
-- Consequently the spec's **UI** section (current weapon identity, cooldown/readiness, active modifiers) and **Audio** section (distinct per-weapon fire/hit/crit cues) have no data feeding them and are entirely absent.
+**Deliberate deviations from the spec text:**
 
-**Done looks like:** each weapon sounds and looks distinct in play, and a card can modify a weapon through a declared data hook rather than a hardcoded float.
-
+- Event names drop the spec's `On` prefix to match every other event hub in the project.
+- Muzzle and impact colours are authored but not yet drawn; `WeaponPresentationData` holds them
+  ready for the VFX pass. The spec's Visual section is therefore still open.
 ### 3. Enemy variety is the one Early Access content target still short
 
 Vision Section 9 asks for **five distinct enemy types**; three roles exist (Chaser, Ranged Pressure, Bruiser). The three Elite variants are modifiers on those same roles, not new types. Either build two more roles or restate the target — but decide, because it is currently a silent miss.

@@ -14,6 +14,10 @@ namespace Corebound.Gameplay.Weapons
         [SerializeField] private ProjectileData _projectile;
         [SerializeField] private WeaponAimAssistProfile _aimAssistProfile = WeaponAimAssistProfile.Medium;
 
+        // Optional. When unset the weapon still fires; it just has no distinct fire/crit cue and
+        // no icon, which is exactly how every weapon behaved before WeaponPresentationData existed.
+        [SerializeField] private WeaponPresentationData _presentation;
+
         public string WeaponId => _weaponId;
 
         public string DisplayName => _displayName;
@@ -27,5 +31,7 @@ namespace Corebound.Gameplay.Weapons
         public ProjectileData Projectile => _projectile;
 
         public WeaponAimAssistProfile AimAssistProfile => _aimAssistProfile;
+
+        public WeaponPresentationData Presentation => _presentation;
     }
 }

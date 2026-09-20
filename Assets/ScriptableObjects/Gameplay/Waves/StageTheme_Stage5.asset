@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _themeId: theme_stage_05
   _displayName: Core Nexus
+  _layoutData: {fileID: 11400000, guid: 6fee8c97de1d06741babd85e7c4160f2, type: 2}
   _groundTexture: {fileID: 0}
   _groundTexturePath: Assets/Art/Environment/Arena/stage5_ground_tileset.png
   _boundaryTexture: {fileID: 0}

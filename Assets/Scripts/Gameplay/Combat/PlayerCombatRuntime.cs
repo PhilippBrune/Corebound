@@ -9,6 +9,7 @@ namespace Corebound.Gameplay.Combat
         private readonly Dictionary<StatusEffectType, StatusEffectRuntime> _activeStatuses = new Dictionary<StatusEffectType, StatusEffectRuntime>();
 
         private float _fireCooldown;
+        private float _lastFireIntervalSeconds = 0.2f;
         private float _invulnerabilityTimer;
 
         public PlayerCombatRuntime(float maxHealth)
@@ -101,6 +102,12 @@ namespace Corebound.Gameplay.Combat
             return _healthRuntime.ApplyDamage(amount);
         }
 
+        // Drives the HUD's readiness ring (Weapons.md UI: "relevante Bereitschafts- oder
+        // Cooldown-Zustaende"). 0 when ready, 1 the instant after a shot.
+        public float FireCooldownNormalized => _lastFireIntervalSeconds > Mathf.Epsilon
+            ? Mathf.Clamp01(_fireCooldown / _lastFireIntervalSeconds)
+            : 0f;
+
         public bool CanFire()
         {
             return IsAlive && _fireCooldown <= 0f;
@@ -109,6 +116,7 @@ namespace Corebound.Gameplay.Combat
         public void ConsumeFireCooldown(float fireIntervalSeconds)
         {
             _fireCooldown = Mathf.Max(0.01f, fireIntervalSeconds);
+            _lastFireIntervalSeconds = _fireCooldown;
         }
 
         public void RestoreHealthNormalized(float normalizedHealth)

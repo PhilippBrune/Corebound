@@ -4,6 +4,12 @@ using Corebound.Gameplay.Combat;
 using Corebound.Gameplay.Waves;
 using UnityEngine;
 
+// These were private nested structs here until 2026-09-20. They moved to StageArenaLayoutData.cs
+// so prop layouts can be authored per stage in an asset instead of being compiled into static
+// arrays; aliasing them keeps every existing usage in this file unchanged.
+using AtlasCell = Corebound.Gameplay.Shared.ArenaAtlasCell;
+using PropPlacementData = Corebound.Gameplay.Shared.ArenaPropPlacement;
+
 namespace Corebound.Gameplay.Shared
 {
     // Known debt: this class owns procedural maze-cell generation, atlas-cell lookup/rotation,
@@ -114,30 +120,13 @@ namespace Corebound.Gameplay.Shared
             new PropPlacementData(new AtlasCell(3, 6), new Vector2(0.2f, -4.15f), new Vector2(0.99f, 0.49f), -8, true)
         };
 
-        // Playtest feedback (2026-09-17): "Stage 2 still empty (Blue background)" - CreatePropClusters
-        // used to place Stage1PropPlacements' items on every stage regardless of which prop texture
-        // was actually active. stage2_prop_set.png isn't laid out as the same uniform grid Stage 1's
-        // sheet approximates - it's a loose hand-composed collage (pipe cluster, two energy orbs,
-        // three wire-junction boxes, two tall pylons) - so Stage 1's AtlasCell coordinates landed on
-        // unrelated or empty regions of Stage 2's sheet, leaving the arena's correctly-themed ground
-        // visible but with essentially no readable scattered decoration on it. Measured via
-        // connected-component analysis of the sheet's alpha channel (same method the
-        // PropPixelRects comment below describes for Stage 1), same as the existing Stage 1 sheet.
-        // Positions spread the 9 items around the arena perimeter, clear of the core, all four tower
-        // slots, and both spawn points (Stage_02.asset).
-        private static readonly PropPlacementData[] Stage2PropPlacements =
-        {
-            new PropPlacementData(new AtlasCell(20, 1), new Vector2(-6.4f, 3.3f), new Vector2(1.55f, 1.30f), -8, true),
-            new PropPlacementData(new AtlasCell(20, 2), new Vector2(-4.6f, 4.0f), new Vector2(1.4f, 0.82f), -8, true),
-            new PropPlacementData(new AtlasCell(20, 3), new Vector2(-1.8f, 4.0f), new Vector2(0.95f, 1.2f), -8, true),
-            new PropPlacementData(new AtlasCell(20, 4), new Vector2(2.2f, 4.1f), new Vector2(1.9f, 0.68f), -8, true),
-            new PropPlacementData(new AtlasCell(20, 5), new Vector2(6.7f, -4.0f), new Vector2(1.3f, 0.76f), -8, true),
-            new PropPlacementData(new AtlasCell(20, 6), new Vector2(5.0f, -4.0f), new Vector2(1.3f, 0.79f), -8, true),
-            new PropPlacementData(new AtlasCell(20, 7), new Vector2(-3.0f, -4.1f), new Vector2(0.86f, 1.3f), -8, true),
-            new PropPlacementData(new AtlasCell(20, 8), new Vector2(7.0f, -0.5f), new Vector2(0.73f, 1.5f), -8, true),
-            new PropPlacementData(new AtlasCell(20, 9), new Vector2(7.0f, -2.2f), new Vector2(0.72f, 1.5f), -8, true)
-        };
-
+        // Stage 2's prop layout used to live here as a second static array selected by a
+        // ThemeId == "theme_stage_02" check. It now lives in ArenaLayout_Stage2.asset, along with
+        // every other stage's, because that branch was exactly what the Dynamic Arena Slice's
+        // Acceptance Criteria forbid. Stage1PropPlacements below stays only as the fallback for a
+        // stage that authors no layout at all - it is measured against stage1_prop_set.png, so any
+        // stage on a different prop sheet must author its own placements (Corebound > Validate Art
+        // Pipeline reports a stage whose layout is missing).
         private static readonly AtlasCell[] MazeBlockerCells =
         {
             new AtlasCell(1, 1),
@@ -243,11 +232,24 @@ namespace Corebound.Gameplay.Shared
         private void BuildArenaVisuals()
         {
             var stageThemeData = ResolveStageThemeData();
-            var arenaSize = stageThemeData != null ? stageThemeData.ArenaSize : _arenaSize;
+
+            // Per-stage arena geometry (Dynamic Arena Slice). When a stage authors a layout asset
+            // it decides size, boundary thickness, obstacle-grid shape, prop placement and tower
+            // slots; otherwise every one of those falls back to the values that shipped before,
+            // which is what keeps Stage 1 bit-identical.
+            var layoutData = stageThemeData != null ? stageThemeData.LayoutData : null;
+
+            var arenaSize = layoutData != null
+                ? layoutData.ArenaSize
+                : (stageThemeData != null ? stageThemeData.ArenaSize : _arenaSize);
             ArenaSize = arenaSize;
-            var boundaryThickness = stageThemeData != null ? stageThemeData.BoundaryThickness : _boundaryThickness;
+
+            var boundaryThickness = layoutData != null
+                ? layoutData.BoundaryThickness
+                : (stageThemeData != null ? stageThemeData.BoundaryThickness : _boundaryThickness);
+
             var layoutRandom = new System.Random(Environment.TickCount ^ arenaSize.GetHashCode());
-            var openCells = BuildOpenMazeCells(layoutRandom);
+            var openCells = BuildOpenMazeCells(layoutData, layoutRandom);
             var visualsRoot = EnsureWorldRoot("ArenaVisualsRoot");
             visualsRoot.position = Vector3.zero;
             CreateGroundTiles(
@@ -262,8 +264,8 @@ namespace Corebound.Gameplay.Shared
                 boundaryThickness,
                 stageThemeData != null ? stageThemeData.BoundaryTint : new Color(0.12f, 0.16f, 0.22f, 0.95f));
             EnsureBoundaryColliders(visualsRoot, arenaSize, boundaryThickness);
-            CreatePropClusters(visualsRoot, stageThemeData, arenaSize);
-            CreateMazeBlockers(visualsRoot, propTexture: ResolveTexture(_propTexture, stageThemeData != null ? stageThemeData.PropTexture : null, ref _runtimePropTexture, stageThemeData != null ? stageThemeData.PropTexturePath : null, PropTexturePath), stageThemeData != null ? stageThemeData.PropTint : Color.white, arenaSize, openCells, layoutRandom, stageThemeData != null && stageThemeData.ThemeId == "theme_stage_02");
+            CreatePropClusters(visualsRoot, stageThemeData, layoutData, arenaSize);
+            CreateMazeBlockers(visualsRoot, propTexture: ResolveTexture(_propTexture, stageThemeData != null ? stageThemeData.PropTexture : null, ref _runtimePropTexture, stageThemeData != null ? stageThemeData.PropTexturePath : null, PropTexturePath), stageThemeData != null ? stageThemeData.PropTint : Color.white, arenaSize, openCells, layoutRandom, layoutData);
             CreateSpawnGateVisual(visualsRoot, stageThemeData);
             ApplyCoreVisual(
                 ResolveTexture(_coreTexture, stageThemeData != null ? stageThemeData.CoreTexture : null, ref _runtimeCoreTexture, stageThemeData != null ? stageThemeData.CoreTexturePath : null, CoreTexturePath),
@@ -399,7 +401,7 @@ namespace Corebound.Gameplay.Shared
             CreateSpriteVisual(parent, childName, sprite, localPosition, size, -9, tint, rotationDegrees, false);
         }
 
-        private void CreatePropClusters(Transform parent, StageThemeData stageThemeData, Vector2 arenaSize)
+        private void CreatePropClusters(Transform parent, StageThemeData stageThemeData, StageArenaLayoutData layoutData, Vector2 arenaSize)
         {
             var propTexture = ResolveTexture(
                 _propTexture,
@@ -416,8 +418,12 @@ namespace Corebound.Gameplay.Shared
             var propTint = stageThemeData != null ? stageThemeData.PropTint : Color.white;
             var propsRoot = EnsureChild("PropVisualsRoot", parent);
 
-            var placements = stageThemeData != null && stageThemeData.ThemeId == "theme_stage_02"
-                ? Stage2PropPlacements
+            // Was `stageThemeData.ThemeId == "theme_stage_02" ? Stage2PropPlacements : Stage1...`,
+            // a stage-specific branch the Dynamic Arena Slice explicitly forbids ("Kein neuer
+            // Code-Pfad ... ist stage-spezifisch verzweigt"). Prop layout now comes from the
+            // stage's own layout asset; the Stage 1 static array is only the no-layout fallback.
+            var placements = layoutData != null && layoutData.HasPropPlacements
+                ? layoutData.PropPlacements
                 : Stage1PropPlacements;
 
             for (var index = 0; index < placements.Length; index++)
@@ -443,25 +449,35 @@ namespace Corebound.Gameplay.Shared
             }
         }
 
-        private void CreateMazeBlockers(Transform parent, Texture2D propTexture, Color propTint, Vector2 arenaSize, HashSet<Vector2Int> openCells, System.Random random, bool useStage2PropAtlas)
+        private void CreateMazeBlockers(Transform parent, Texture2D propTexture, Color propTint, Vector2 arenaSize, HashSet<Vector2Int> openCells, System.Random random, StageArenaLayoutData layoutData)
         {
             if (propTexture == null)
             {
                 return;
             }
 
-            // Same fix as CreatePropClusters' `placements` selection above: MazeBlockerCells' rows
-            // 1-3 are measured against stage1_prop_set.png's layout, so picking from that pool while
-            // Stage 2's differently-composed sheet is the active propTexture cropped garbled/empty
-            // regions. Stage2PropPlacements' AtlasCell(20, *) entries are already valid crops of
-            // stage2_prop_set.png (just reused here as a random-pick pool, not fixed placements).
-            var blockerCellPool = useStage2PropAtlas
-                ? System.Array.ConvertAll(Stage2PropPlacements, placement => placement.AtlasCell)
+            // Blocker sprites must be crops of whichever prop sheet this stage actually uses -
+            // Stage 1's MazeBlockerCells coordinates are measured against stage1_prop_set.png and
+            // produce garbled or empty crops on any differently-composed sheet. Reusing the
+            // stage's own authored prop cells as the random pool keeps that correct for every
+            // stage without naming any of them (the previous `useStage2PropAtlas` flag was exactly
+            // the stage-specific branch the slice forbids).
+            var blockerCellPool = layoutData != null && layoutData.HasPropPlacements
+                ? System.Array.ConvertAll(layoutData.PropPlacements, placement => placement.AtlasCell)
                 : MazeBlockerCells;
 
             var mazeRoot = EnsureChild("MazeBlockersRoot", parent);
-            var cellColumns = new[] { -5f, -3f, -1f, 1f, 3f, 5f };
-            var cellRows = new[] { 2f, 0f };
+
+            // Grid geometry is per-stage data now. The fallback numbers are Stage 1's original
+            // hardcoded grid, so a stage without a layout asset builds exactly what it built before.
+            var cellColumns = layoutData != null && layoutData.HasObstacleGrid
+                ? layoutData.ObstacleGridColumns
+                : new[] { -5f, -3f, -1f, 1f, 3f, 5f };
+            var cellRows = layoutData != null && layoutData.HasObstacleGrid
+                ? layoutData.ObstacleGridRows
+                : new[] { 2f, 0f };
+            var cellSize = layoutData != null ? layoutData.ObstacleCellSize : new Vector2(1.3f, 1.3f);
+
             var blockerIndex = 0;
             _walkableInteriorPositions.Clear();
 
@@ -473,16 +489,16 @@ namespace Corebound.Gameplay.Shared
 
                     if (openCells.Contains(new Vector2Int(column, row)))
                     {
-                        _walkableInteriorPositions.Add(ConstrainInsideArena(cellPosition, new Vector2(1.6f, 1.6f), arenaSize));
+                        _walkableInteriorPositions.Add(ConstrainInsideArena(cellPosition, cellSize * 1.23f, arenaSize));
                         continue;
                     }
 
                     var atlasCell = blockerCellPool[random.Next(blockerCellPool.Length)];
                     var sprite = CreatePropSprite(propTexture, atlasCell);
                     var childName = "MazeBlocker_" + blockerIndex;
-                    var localPosition = ConstrainInsideArena(cellPosition, new Vector2(1.3f, 1.3f), arenaSize);
-                    CreateSpriteVisual(mazeRoot, childName, sprite, localPosition, new Vector2(1.3f, 1.3f), -7, propTint, atlasCell.RotationDegrees);
-                    EnsureObstacleCollider(mazeRoot.Find(childName), new Vector2(1.3f, 1.3f));
+                    var localPosition = ConstrainInsideArena(cellPosition, cellSize, arenaSize);
+                    CreateSpriteVisual(mazeRoot, childName, sprite, localPosition, cellSize, -7, propTint, atlasCell.RotationDegrees);
+                    EnsureObstacleCollider(mazeRoot.Find(childName), cellSize);
                     blockerIndex += 1;
                 }
             }
@@ -703,6 +719,36 @@ namespace Corebound.Gameplay.Shared
             { (20, 7), new Rect(283f, 39f, 194f, 294f) },
             { (20, 8), new Rect(817f, 42f, 222f, 458f) },
             { (20, 9), new Rect(1067f, 41f, 220f, 456f) },
+
+            // stage3/4/5_prop_set.png, measured 2026-09-20 by the same alpha connected-component
+            // pass. Each sheet is another hand-composed collage with its own item count (6, 8 and
+            // 7 usable pieces respectively), so like Stage 2 they cannot share Stage 1's grid
+            // coordinates. Rows 30/40/50 keep the keys distinct in this shared dictionary and
+            // carry no meaning beyond that. Without these, Stages 3-5 fell back to Stage 1's
+            // coordinates and cropped unrelated or empty regions of their own sheets.
+            { (30, 1), new Rect(34f, 35f, 547f, 287f) },
+            { (30, 2), new Rect(55f, 352f, 433f, 348f) },
+            { (30, 3), new Rect(447f, 380f, 236f, 286f) },
+            { (30, 4), new Rect(683f, 33f, 233f, 209f) },
+            { (30, 5), new Rect(709f, 359f, 592f, 337f) },
+            { (30, 6), new Rect(961f, 31f, 359f, 314f) },
+
+            { (40, 1), new Rect(44f, 524f, 378f, 184f) },
+            { (40, 2), new Rect(50f, 62f, 390f, 236f) },
+            { (40, 3), new Rect(55f, 339f, 306f, 170f) },
+            { (40, 4), new Rect(463f, 396f, 198f, 312f) },
+            { (40, 5), new Rect(496f, 49f, 172f, 231f) },
+            { (40, 6), new Rect(732f, 506f, 380f, 196f) },
+            { (40, 7), new Rect(761f, 44f, 174f, 216f) },
+            { (40, 8), new Rect(1161f, 379f, 152f, 314f) },
+
+            { (50, 1), new Rect(22f, 45f, 365f, 662f) },
+            { (50, 2), new Rect(419f, 377f, 214f, 324f) },
+            { (50, 3), new Rect(433f, 43f, 189f, 313f) },
+            { (50, 4), new Rect(679f, 394f, 302f, 281f) },
+            { (50, 5), new Rect(680f, 52f, 300f, 281f) },
+            { (50, 6), new Rect(1034f, 400f, 282f, 286f) },
+            { (50, 7), new Rect(1039f, 47f, 267f, 298f) },
         };
 
         private Sprite CreatePropSprite(Texture2D texture, AtlasCell atlasCell)
@@ -903,47 +949,15 @@ namespace Corebound.Gameplay.Shared
             }
         }
 
-        private readonly struct AtlasCell
+        private static HashSet<Vector2Int> BuildOpenMazeCells(StageArenaLayoutData layoutData, System.Random random)
         {
-            public AtlasCell(int row, int column, float rotationDegrees = 0f)
-            {
-                Row = Mathf.Max(1, row);
-                Column = Mathf.Max(1, column);
-                RotationDegrees = rotationDegrees;
-            }
+            // Stage 1's original grid dimensions and Maze strategy are the fallback, so a stage
+            // with no layout asset carves exactly the same cells it always did.
+            var strategy = layoutData != null ? layoutData.LayoutStrategy : ArenaLayoutStrategy.Maze;
+            var columnCount = layoutData != null && layoutData.HasObstacleGrid ? layoutData.ObstacleGridColumns.Length : 6;
+            var rowCount = layoutData != null && layoutData.HasObstacleGrid ? layoutData.ObstacleGridRows.Length : 2;
 
-            public int Row { get; }
-
-            public int Column { get; }
-
-            public float RotationDegrees { get; }
-        }
-
-        private readonly struct PropPlacementData
-        {
-            public PropPlacementData(AtlasCell atlasCell, Vector2 localPosition, Vector2 targetSize, int sortingOrder, bool blocksMovement)
-            {
-                AtlasCell = atlasCell;
-                LocalPosition = localPosition;
-                TargetSize = targetSize;
-                SortingOrder = sortingOrder;
-                BlocksMovement = blocksMovement;
-            }
-
-            public AtlasCell AtlasCell { get; }
-
-            public Vector2 LocalPosition { get; }
-
-            public Vector2 TargetSize { get; }
-
-            public int SortingOrder { get; }
-
-            public bool BlocksMovement { get; }
-        }
-
-        private static HashSet<Vector2Int> BuildOpenMazeCells(System.Random random)
-        {
-            return StageArenaMazeGenerator.BuildOpenCells(random);
+            return StageArenaMazeGenerator.BuildOpenCells(strategy, columnCount, rowCount, random);
         }
 
         private static void EnsureObstacleCollider(Transform targetTransform, Vector2 colliderSize)

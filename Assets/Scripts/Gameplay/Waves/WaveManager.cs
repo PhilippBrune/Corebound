@@ -282,6 +282,13 @@ namespace Corebound.Gameplay.Waves
                 // resolved stage, so this brings the visuals in line with the save immediately
                 // instead of showing Stage 1's arena under a Stage 2+ HUD until the next transition.
                 FindFirstObjectByType<StageArenaArtPresenter>()?.RebuildForNewStage();
+
+                // Tower slots need the same correction on this path. Now that a stage's slot
+                // layout comes from its StageArenaLayoutData BuildableZones, resuming a Stage 3
+                // save would otherwise place Stage 1's slots on Stage 3's arena. Unity runs every
+                // Awake before any OnEnable, so TowerService has already built its initial slots
+                // by the time this runs on the same GameObject.
+                _towerService?.RebuildSlotsForNewStage();
             }
 
             if (_stageData == null || _stageData.Waves == null || _stageData.Waves.Length == 0)

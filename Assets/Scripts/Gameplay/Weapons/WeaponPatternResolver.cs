@@ -6,7 +6,19 @@ namespace Corebound.Gameplay.Weapons
 {
     public sealed class WeaponPatternResolver
     {
+        // A weapon authored as a single shot has no fan for Multishot to widen, so extra shots have
+        // to introduce one - otherwise every added projectile travels the same line and reads as
+        // one thicker bullet rather than more of them.
+        private const float DefaultExtraSpreadDegrees = 9f;
+
         public void ForEachShotDirection(Vector2 forwardDirection, WeaponAttackPatternData attackPattern, Action<Vector2> shotDirectionHandler)
+        {
+            ForEachShotDirection(forwardDirection, attackPattern, 0, shotDirectionHandler);
+        }
+
+        // additionalProjectiles is WeaponModifierState.AdditionalProjectiles - Weapons.md's
+        // "Multishot" hook.
+        public void ForEachShotDirection(Vector2 forwardDirection, WeaponAttackPatternData attackPattern, int additionalProjectiles, Action<Vector2> shotDirectionHandler)
         {
             if (shotDirectionHandler == null)
             {
@@ -14,14 +26,15 @@ namespace Corebound.Gameplay.Weapons
             }
 
             var baseDirection = forwardDirection.sqrMagnitude < Mathf.Epsilon ? Vector2.right : forwardDirection.normalized;
+            var extraProjectiles = Mathf.Max(0, additionalProjectiles);
 
             if (attackPattern == null)
             {
-                shotDirectionHandler(baseDirection);
+                EmitFan(baseDirection, 1 + extraProjectiles, DefaultExtraSpreadDegrees * extraProjectiles, shotDirectionHandler);
                 return;
             }
 
-            var projectileCount = attackPattern.ProjectileCount;
+            var projectileCount = attackPattern.ProjectileCount + extraProjectiles;
 
             if (projectileCount <= 1)
             {
@@ -30,8 +43,25 @@ namespace Corebound.Gameplay.Weapons
             }
 
             var spreadAngle = attackPattern.SpreadAngleDegrees;
+
+            if (spreadAngle <= Mathf.Epsilon)
+            {
+                spreadAngle = DefaultExtraSpreadDegrees * extraProjectiles;
+            }
+
+            EmitFan(baseDirection, projectileCount, spreadAngle, shotDirectionHandler);
+        }
+
+        private static void EmitFan(Vector2 baseDirection, int projectileCount, float spreadAngle, Action<Vector2> shotDirectionHandler)
+        {
+            if (projectileCount <= 1)
+            {
+                shotDirectionHandler(baseDirection);
+                return;
+            }
+
             var startAngle = -spreadAngle * 0.5f;
-            var stepAngle = projectileCount > 1 ? spreadAngle / (projectileCount - 1) : 0f;
+            var stepAngle = spreadAngle / (projectileCount - 1);
 
             for (var index = 0; index < projectileCount; index++)
             {

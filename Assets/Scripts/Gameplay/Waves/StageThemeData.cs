@@ -1,3 +1,4 @@
+using Corebound.Gameplay.Shared;
 using UnityEngine;
 
 namespace Corebound.Gameplay.Waves
@@ -7,6 +8,12 @@ namespace Corebound.Gameplay.Waves
     {
         [SerializeField] private string _themeId = "theme_stage_01";
         [SerializeField] private string _displayName = "Stage Theme";
+
+        // Per-stage arena geometry (Docs/Slices/15_DYNAMIC_ARENA_SLICE.md). Optional: when unset,
+        // StageArenaArtPresenter falls back to this asset's own _arenaSize/_boundaryThickness and
+        // to its built-in Stage 1 obstacle grid and prop layout, which is exactly the behaviour
+        // that shipped before layouts existed.
+        [SerializeField] private StageArenaLayoutData _layoutData;
         [SerializeField] private Texture2D _groundTexture;
         [SerializeField] private string _groundTexturePath = "Assets/Art/Environment/Arena/stage1_ground_tileset.png";
         [SerializeField] private Texture2D _boundaryTexture;
@@ -30,6 +37,8 @@ namespace Corebound.Gameplay.Waves
         public string ThemeId => _themeId;
 
         public string DisplayName => _displayName;
+
+        public StageArenaLayoutData LayoutData => _layoutData;
 
         public Texture2D GroundTexture => _groundTexture;
 

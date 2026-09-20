@@ -19,10 +19,14 @@ namespace Corebound.Gameplay.Combat
 
         private readonly PlayerAimResolver _aimResolver = new PlayerAimResolver();
         private readonly WeaponPatternResolver _weaponPatternResolver = new WeaponPatternResolver();
+        private readonly WeaponModifierState _weaponModifierState = new WeaponModifierState();
 
         private PlayerCombatRuntime _runtime;
         private ProjectilePool _projectilePool;
         private WeaponData _activeWeapon;
+        private WeaponReadinessState _weaponReadinessState = WeaponReadinessState.Unavailable;
+        private int _shotIndexInVolley;
+        private bool _isCurrentVolleyCritical;
 
         public event Action WeaponFired;
 
@@ -36,6 +40,15 @@ namespace Corebound.Gameplay.Combat
 
         public string ActiveWeaponName => _activeWeapon != null ? _activeWeapon.DisplayName : string.Empty;
 
+        public WeaponData ActiveWeapon => _activeWeapon;
+
+        public WeaponModifierState WeaponModifierState => _weaponModifierState;
+
+        public WeaponReadinessState WeaponReadinessState => _weaponReadinessState;
+
+        // 0 when the weapon can fire this instant, 1 immediately after a shot.
+        public float FireCooldownNormalized => _runtime != null ? _runtime.FireCooldownNormalized : 0f;
+
         public float MovementSpeedMultiplier => (_runtime != null ? _runtime.MovementSpeedMultiplier : 1f) * (_cardService != null ? _cardService.PlayerMovementSpeedMultiplier : 1f);
 
         private void Awake()
@@ -44,6 +57,8 @@ namespace Corebound.Gameplay.Combat
             _projectilePool = new ProjectilePool(_projectileParent);
             RestoreRuntimeStateFromSave();
             RefreshActiveWeapon();
+            RefreshWeaponModifierState();
+            RefreshWeaponReadinessState();
         }
 
         private void Update()
@@ -55,6 +70,8 @@ namespace Corebound.Gameplay.Combat
 
             _runtime.Tick(Time.deltaTime);
             UpdateAimFacing();
+            RefreshWeaponModifierState();
+            RefreshWeaponReadinessState();
 
             if (ApplyStatusTick(Time.deltaTime))
             {
@@ -185,21 +202,88 @@ namespace Corebound.Gameplay.Combat
             var attackPattern = _activeWeapon.AttackPattern;
             var spawnDistance = attackPattern != null ? attackPattern.ProjectileSpawnDistance : 0.5f;
 
-            var damageMultiplier = _cardService != null ? _cardService.WeaponDamageMultiplier : 1f;
-            var projectileSpeedMultiplier = _cardService != null ? _cardService.ProjectileSpeedMultiplier : 1f;
+            RefreshWeaponModifierState();
 
-            _weaponPatternResolver.ForEachShotDirection(direction, attackPattern, shotDirection =>
+            // Rolled once per trigger pull, not per projectile: a Spread weapon that crit on two of
+            // five pellets would read as a damage-number lottery rather than as a build paying off.
+            _isCurrentVolleyCritical = _weaponModifierState.RollCritical();
+
+            var damageMultiplier = _weaponModifierState.ResolveDamageMultiplier(_isCurrentVolleyCritical);
+            var projectileSpeedMultiplier = _weaponModifierState.ProjectileSpeedMultiplier;
+            _shotIndexInVolley = 0;
+
+            _weaponPatternResolver.ForEachShotDirection(direction, attackPattern, _weaponModifierState.AdditionalProjectiles, shotDirection =>
             {
                 var spawnPosition = origin + shotDirection * spawnDistance;
                 var damageContext = CreateDamageContext(spawnPosition, shotDirection, damageMultiplier);
                 var projectile = _projectilePool.Get(_projectilePrefab);
                 projectile.Launch(gameObject, _activeWeapon.Projectile, spawnPosition, shotDirection, damageContext, projectileSpeedMultiplier);
+
+                WeaponEvents.RaiseProjectileSpawned(new ProjectileSpawnedEventArgs(
+                    gameObject,
+                    _activeWeapon,
+                    spawnPosition,
+                    shotDirection,
+                    damageContext.Amount,
+                    _shotIndexInVolley,
+                    _isCurrentVolleyCritical));
+
+                _shotIndexInVolley++;
             });
 
             var fireInterval = attackPattern != null ? attackPattern.FireIntervalSeconds : 0.2f;
-            var fireIntervalMultiplier = _cardService != null ? _cardService.WeaponFireIntervalMultiplier : 1f;
-            _runtime.ConsumeFireCooldown(fireInterval * fireIntervalMultiplier);
+            _runtime.ConsumeFireCooldown(fireInterval * _weaponModifierState.FireIntervalMultiplier);
             WeaponFired?.Invoke();
+            WeaponEvents.RaiseWeaponFired(new WeaponFiredEventArgs(
+                gameObject,
+                _activeWeapon,
+                origin,
+                direction,
+                _shotIndexInVolley,
+                _isCurrentVolleyCritical));
+            RefreshWeaponReadinessState();
+        }
+
+        // Rebuilt every frame rather than on CardService.StateChanged: a pull model has no
+        // subscribe-order problem when the Player spawns before CardService finishes loading its
+        // save, and with a handful of modifiers this neither allocates nor measurably costs.
+        private void RefreshWeaponModifierState()
+        {
+            var changed = _weaponModifierState.Rebuild(
+                ActiveWeaponId,
+                _cardService != null ? _cardService.WeaponDamageMultiplier : 1f,
+                _cardService != null ? _cardService.WeaponFireIntervalMultiplier : 1f,
+                _cardService != null ? _cardService.ProjectileSpeedMultiplier : 1f,
+                _cardService != null ? _cardService.WeaponModifiers : null);
+
+            if (changed)
+            {
+                WeaponEvents.RaiseWeaponModified(new WeaponModifiedEventArgs(_activeWeapon, _weaponModifierState));
+            }
+        }
+
+        private void RefreshWeaponReadinessState()
+        {
+            var nextState = ResolveWeaponReadinessState();
+
+            if (nextState == _weaponReadinessState)
+            {
+                return;
+            }
+
+            var previousState = _weaponReadinessState;
+            _weaponReadinessState = nextState;
+            WeaponEvents.RaiseWeaponStateChanged(new WeaponStateChangedEventArgs(_activeWeapon, previousState, nextState));
+        }
+
+        private WeaponReadinessState ResolveWeaponReadinessState()
+        {
+            if (_activeWeapon == null || _runtime == null || !_runtime.IsAlive)
+            {
+                return WeaponReadinessState.Unavailable;
+            }
+
+            return _runtime.CanFire() ? WeaponReadinessState.Ready : WeaponReadinessState.Cooling;
         }
 
         // Relics.md's risk/reward relics (e.g. Reckless Circuit) trade a permanent increase here
@@ -226,7 +310,7 @@ namespace Corebound.Gameplay.Combat
         {
             StatusEffectType? statusEffect = null;
 
-            if (_activeWeapon != null && _activeWeapon.DamageProfile != null && _activeWeapon.DamageProfile.ApplyStatusEffect)
+            if (_activeWeapon != null && _activeWeapon.DamageProfile != null && _activeWeapon.DamageProfile.ApplyStatusEffect && _weaponModifierState.RollStatusEffect())
             {
                 statusEffect = _activeWeapon.DamageProfile.StatusEffectType;
             }

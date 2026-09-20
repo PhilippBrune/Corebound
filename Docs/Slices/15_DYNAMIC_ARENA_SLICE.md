@@ -1,6 +1,6 @@
 # Dynamic Arena Slice
 
-Status: Partially Implemented (2026-09-15 - see Implementation Note below)
+Status: Implemented (2026-09-20) - see Implementation Note (2026-09-20) below. The earlier 2026-09-15 note is kept for history.
 
 Priority: High
 
@@ -43,6 +43,50 @@ Both fall back to today's exact behavior when unauthored, so Stage 1 needed zero
 - Prop placements (`Stage1PropPlacements`) are still Stage-1-only and untouched.
 - Tower slots do not yet rebuild when `WaveManager.AdvanceToNextStage()` transitions to a new stage mid-run - `TowerService.CreateSlotRuntimes()` only runs once from `Awake()`. A player who reaches Stage 2 in the same run session still sees Stage 1's slot layout until this is wired up (needs care around what happens to towers already built on slots that move/disappear - deliberately deferred rather than rushed).
 - No `BuildableZones`/shape-constrained placement - `TowerSlotPositions` is still a flat point list, same shape as before, just per-stage now.
+
+---
+
+## Implementation Note (2026-09-20) - slice completed
+
+The `StageArenaLayoutData` asset type described in Architecture below now exists and is the
+live layout source for every stage. What the 2026-09-15 note listed as not done is done:
+
+- **`StageArenaLayoutData`** (`Assets/Scripts/Gameplay/Shared/StageArenaLayoutData.cs`) holds
+  arena size, boundary thickness, a layout strategy, the obstacle grid (columns, rows, cell
+  size), prop placements and buildable zones. `StageThemeData` gained an optional `LayoutData`
+  reference, and `ArenaLayout_Stage1..5.asset` are wired into the five theme assets.
+- **Arena shape is per-stage.** `StageArenaMazeGenerator.BuildOpenCells` now takes an
+  `ArenaLayoutStrategy` (`Maze`, `OpenField`, `Corridors`, `Perimeter`) plus the grid dimensions
+  from the layout asset, instead of being a Stage-1-only algorithm.
+- **Prop placements come from data.** The two hardcoded prop sets in `StageArenaArtPresenter`
+  are gone, along with both `theme_stage_02` branches - the last stage-specific `if` in that
+  file, which the acceptance criteria explicitly forbid.
+- **`BuildableZones`** exist as shape-constrained placement: a zone declares a centre, a size
+  and how many slots it holds, and `ArenaBuildableZone.ResolveSlotPosition` spreads the slots
+  along the zone's longer axis. `TowerService.ResolveActiveSlotPositions()` now resolves
+  BuildableZones first, then `StageData.TowerSlotPositions`, then its own serialized list.
+- **Tower slots rebuild on every stage change.** `TowerService.RebuildSlotsForNewStage()` is
+  called both from `WaveManager.AdvanceToNextStage()` (mid-run transition) and from
+  `InitializeFromSave()` (resuming a run that is already past Stage 1).
+
+Stage 1 regression safety: `ArenaLayout_Stage1.asset` deliberately carries **empty** prop and
+buildable-zone lists and reproduces Stage 1's original 6x2 obstacle grid, so every Stage 1 code
+path falls back to exactly the values that shipped before the slice. `BuildMaze` also preserves
+the original order of its two `NextDouble()` draws, so the same seed produces the same maze.
+
+Per-stage variation actually authored:
+
+| Stage | Arena size | Strategy | Obstacle grid | Props | Tower slots |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 16 x 10 | Maze | 6 x 2 | fallback | fallback |
+| 2 | 18 x 11 | Corridors | 6 x 3 | 9 | 4 |
+| 3 | 20 x 12 | OpenField | 6 x 3 | 6 | 5 |
+| 4 | 17 x 13 | Perimeter | 5 x 4 | 8 | 4 |
+| 5 | 22 x 12 | Corridors | 7 x 3 | 7 | 6 |
+
+**Not verified in play yet:** synthetic input cannot drive Unity's Input System, so reaching
+Stages 2-5 in a live run still needs a human at the keyboard. Compilation, asset import and the
+Stage 1 fallback path are verified; the per-stage look is not.
 
 ---
 

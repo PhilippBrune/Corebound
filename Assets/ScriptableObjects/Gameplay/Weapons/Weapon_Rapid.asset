@@ -19,3 +19,4 @@ MonoBehaviour:
   _damageProfile: {fileID: 11400000, guid: 69f70f457c6d4411e967afe4bdd66c72, type: 2}
   _projectile: {fileID: 11400000, guid: d15088a6b81b4927b674572c54fdd0c8, type: 2}
   _aimAssistProfile: 1
+  _presentation: {fileID: 11400000, guid: 3a0fd77da33a4d4a8913f7007a26c297, type: 2}
