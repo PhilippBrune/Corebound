@@ -92,6 +92,58 @@ namespace Corebound.Gameplay.Towers
 
         public bool HasAvailableIntermissionAction => ResolveHasAvailableIntermissionAction();
 
+        // Playtest 2026-09-21: "i dont like the current selection how to chose to build a tower.
+        // I miss e.g. information what the towers are able of and what are there pro/cons."
+        //
+        // The old line named the tower and its cost and nothing else, so choosing between four
+        // towers meant either remembering their stats or building one to find out. This builds
+        // the whole comparison the decision needs: what it does per second, how far it reaches,
+        // what it is good against and what it is bad against, plus where the player sits in the
+        // roster so they know there are others to cycle to.
+        //
+        // Deliberately assembled here rather than in the presenter: the presenter should render
+        // text, not decide what a tower is good at.
+        public string DescribeBuildCandidate(TowerData towerData, int rosterIndex, int rosterCount)
+        {
+            if (towerData == null)
+            {
+                return string.Empty;
+            }
+
+            var builder = new System.Text.StringBuilder(160);
+
+            builder.Append(towerData.DisplayName);
+
+            if (rosterCount > 1)
+            {
+                builder.Append("  [").Append(rosterIndex + 1).Append('/').Append(rosterCount).Append(']');
+            }
+
+            builder.Append("  ").Append(Corebound.UI.LocalizationService.Resolve("Cost ", "Kosten "));
+            builder.Append(ResolveTowerCost(towerData.BuildCost));
+
+            builder.Append("  ·  ").Append(Corebound.UI.LocalizationService.Resolve("DPS ", "SPS "));
+            builder.Append(towerData.DamagePerSecond.ToString("0.#"));
+            builder.Append("  ").Append(Corebound.UI.LocalizationService.Resolve("Range ", "Reichweite "));
+            builder.Append(towerData.Range.ToString("0.#"));
+
+            if (!string.IsNullOrWhiteSpace(towerData.Strengths))
+            {
+                builder.Append(nlSeparator).Append(Corebound.UI.LocalizationService.Resolve("+ ", "+ "));
+                builder.Append(towerData.Strengths);
+            }
+
+            if (!string.IsNullOrWhiteSpace(towerData.Weaknesses))
+            {
+                builder.Append(nlSeparator).Append(Corebound.UI.LocalizationService.Resolve("- ", "- "));
+                builder.Append(towerData.Weaknesses);
+            }
+
+            return builder.ToString();
+        }
+
+        private const string nlSeparator = "\n";
+
         public string BuildInteractKeyLabel => ResolveBuildInteractKeyLabel();
 
         private ISaveManager SaveManager => SaveManagerResolver.Resolve(_saveManagerSource);
@@ -855,7 +907,11 @@ namespace Corebound.Gameplay.Towers
             var rangeState = IsPlayerNearSlot(slot.Position)
                 ? LocalizationService.Resolve("Press ", "Drücke ") + ResolveBuildInteractKeyLabel() + LocalizationService.Resolve(" to build", " zum Bauen")
                 : LocalizationService.Resolve("Move closer", "Näher herangehen");
-            var summary = LocalizationService.Resolve("Tower Placement | Slot ", "Turmplatzierung | Slot ") + (_selectedSlotIndex + 1) + ": " + towerData.DisplayName + LocalizationService.Resolve(" | Cost ", " | Kosten ") + ResolveTowerCost(towerData.BuildCost) + " | " + rangeState;
+            // The full comparison, not just a name and a price: DPS, range, and what this tower
+            // is good and bad against, so the choice can be made without building one to find out.
+            var summary = LocalizationService.Resolve("Slot ", "Slot ") + (_selectedSlotIndex + 1) + "  ·  "
+                + DescribeBuildCandidate(towerData, _selectedTowerTypeIndex, _unlockedTowerBuffer.Count)
+                + nlSeparator + rangeState;
 
             // ResolveBuildTowerData() only ever returns the tower at _selectedTowerTypeIndex - without
             // this hint, cycling tower types (bound on the Build map, not the always-visible Interact

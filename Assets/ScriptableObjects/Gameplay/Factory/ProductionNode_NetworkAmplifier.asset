@@ -17,6 +17,7 @@ MonoBehaviour:
   _triggerType: 2
   _baseAmount: 0
   _maxAmountPerTrigger: 0
+  _requiredChainTier: 3
   _amplifierOutputBonus: 0.25
   _amplifierRequiredTowerCount: 3
   _amplifierRequiredTowerId: 

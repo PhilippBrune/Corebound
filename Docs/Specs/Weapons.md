@@ -136,3 +136,34 @@ Festgelegte Entscheidungen:
 - Card- und Tower-Effekte können Weapons ohne Sonderfälle modifizieren.
 - Projectile- und Feedback-Handling bleibt performant und lesbar.
 - Weapon-Unlocks aus Meta Progression besitzen im ersten Slice einen direkten Pfad in die laufende Combat-Auswahl.
+
+---
+
+## Superseded in part by WeaponLoadout.md (2026-09-21)
+
+This spec was written around **one** active weapon, and says so in its Rules: *"Der
+Kernspezifikationsumfang geht von einer aktiven Weapon zur gleichen Zeit aus."* That rule no
+longer holds.
+
+The owner decided on 2026-09-21 that the player carries **up to six weapons at once**, all
+firing automatically, with escalating set bonuses for carrying duplicates. The requirements
+live in [WeaponLoadout.md](WeaponLoadout.md).
+
+**What this document still owns:** what a single weapon *is*. `WeaponData`,
+`WeaponAttackPatternData`, `ProjectileData`, `WeaponModifierData` and `WeaponPresentationData`
+are all unchanged, as is the shared combat pipeline, aim assist, and the modifier hook model.
+
+**What it no longer owns:** how many weapons are equipped, how they are acquired mid-run, and
+what happens when several of the same kind are carried.
+
+**Concrete conflicts to resolve when WeaponLoadout is implemented:**
+
+- Rules: "one active weapon at a time" is superseded. The follow-on sentence about additional
+  slots needing "eine separate Erweiterung" is exactly what WeaponLoadout.md is.
+- Technical Design: `PlayerCombatController._activeWeapon` becomes a loadout rather than a
+  single field.
+- `RunSaveData.EquippedWeaponId` becomes `EquippedWeaponIds`, which is a save format change
+  and needs a migration that promotes the old single id into slot 0.
+- The UI section's single-weapon HUD widget is replaced by a six-slot strip.
+- Audio: the de-duplication rule in WeaponLoadout.md is what keeps this spec's "akustisch
+  unterscheidbar" requirement true once six weapons fire at once.

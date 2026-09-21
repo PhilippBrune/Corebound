@@ -123,3 +123,17 @@ Festgelegte Entscheidungen:
 - Resource-Drops bleiben auch in intensiven Waves lesbar.
 - Andere Systeme können neue Resource-Interaktionen ergänzen, ohne Kernlogik zu duplizieren.
 - Reward- und Intermission-Hooks können Resource-Gewinne im ersten Slice direkt mit SaveSystem synchron halten.
+
+---
+
+## Still one in-run resource (2026-09-21)
+
+Scrap remains the only **in-run** resource. `ResourceWalletService` holds one `int` and that is
+still correct.
+
+The second and third currencies added 2026-09-21 - Skill Points and Alloy - are **permanent**,
+live in `MetaProgressionSaveData`, and never enter the run wallet. Nothing in this spec changes
+because of them, which is the intended outcome: the run economy stays single-currency.
+
+`resource_primary_icon.png` is used both for the world pickup and, since 2026-09-21, beside the
+Scrap count in the HUD.

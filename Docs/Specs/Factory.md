@@ -121,3 +121,33 @@ Festgelegte Entscheidungen:
 - Production Chains sind verständlich darstellbar und balancierbar.
 - Factory-Builds unterstützen aktives Spielen statt passives Warten.
 - Neue Produktionsmodule lassen sich ohne Architekturänderung ergänzen.
+
+---
+
+## Chain depth and visibility (2026-09-21)
+
+The Factory's depth question is answered, and the answer is **chain tiers**.
+
+A `ProductionChainData` declares ordered tiers, each with a condition: towers built, total Scrap
+that chain has produced, and waves cleared. A chain's current tier switches on every node whose
+`RequiredChainTier` is at or below it. Nodes default to tier 0, so every chain authored before
+this keeps producing from the first wave.
+
+> more towers built -> the chain reaches a higher tier -> more of its nodes produce -> more
+> Scrap -> more towers
+
+**Amplifier** nodes, added 2026-09-20, multiply every *other* node in their chain while their
+tower condition holds. Together the two make the vision's loop genuinely amplifying rather than
+merely repeating, with no transport layer, no logistics graph and no second interface - which
+keeps this spec's own "kein separater Automatisierungs-Simulator" rule intact.
+
+**Snowball guards**, since this spec names that risk directly: an amplifier never amplifies
+itself, bonuses from multiple amplifiers add rather than multiply, and every result still passes
+through `MaxAmountPerTrigger`.
+
+**Visibility.** `FactoryService.DescribeActiveProduction()` produces one line - current tier,
+active node count, whether an amplifier is live, and what the next tier needs - which
+`WaveStatePresenter` appends to the Intermission HUD line. It reports the *next* requirement on
+purpose: knowing that two more towers would tier the chain up is the investment decision the
+Factory exists to create. This closes vision Section 5.5's requirement that the player be able
+to recognise a system is working.

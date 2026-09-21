@@ -139,3 +139,17 @@ Finale Rarity-Verteilung: 8 Common / 12 Rare / 7 Epic / 3 Legendary (30 gesamt).
 - Card Rarity und Stack-Regeln sind zentral definiert und konsistent.
 - Das System unterstützt neue Cards und Synergies ohne Architekturänderungen.
 - Pending Reward und Intermission aus RunSaveData führen im ersten Slice in einen echten controller-freundlichen Card-Offer-Flow.
+
+---
+
+## Stacking is universal (2026-09-21)
+
+Owner decision 2026-09-21: **every card stacks.** Taking the same card twice applies its
+effect twice.
+
+`CardData.Stackable` returns true unconditionally. The authored per-card value is preserved as
+`AuthoredStackable` so a future card can be made unique again in one line, but nothing reads it
+today.
+
+This makes the offer pool simpler to reason about and removes the case where a reward screen
+showed a card the player already had and could not take.

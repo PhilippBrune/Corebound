@@ -1213,3 +1213,86 @@ Prompt:
 
 Create a horizontal 2D UI indicator for a production-chain tier in a sci-fantasy defense roguelite: a short row of four linked conduit segments that fill progressively from left to right as the chain advances. Unfilled segments must read as dormant-but-present rather than absent, so the player can see how much chain is still to be earned. Designed to be tinted at runtime for filled and unfilled states from the same art. Match the established Corebound UI language: steel-blue structure, pale metallic edges, restrained amber-gold energy accents, clean industrial framing, strong silhouette. Transparent background, no text, readable at small UI scale.
 
+## Boss Telegraphs, Tower Info and Character Select (2026-09-21)
+
+Three systems shipped on 2026-09-21 that need art to be fully legible.
+
+**The boss telegraphs are the highest-priority set in this file.** Boss attack shapes now differ per
+stage, which is what finally makes the five bosses play differently - but the existing telegraph is
+a single ghost projectile that flies toward the target, and that only describes a Fan. A Ring, a
+Volley and a Lance warned by a Fan telegraph are worse than no warning, because the player reads a
+direction that is not there. Until these exist, three of the five bosses telegraph a lie.
+
+Fan and Spiral are covered by the existing ghost-projectile telegraph and need no new art: Fan is
+what it was designed for, and Spiral is a Fan that rotates.
+
+### Asset 96 - Boss Telegraph - Ring
+
+Target: Assets/Art/Combat/VFX/vfx_boss_telegraph_ring.png
+
+**Status:** NOT CREATED YET.
+
+Needed because:
+
+Each boss now fires a different shape (Fan, Ring, Spiral, Volley, Lance). A shape the player cannot read before it fires is a memorisation test, not a dodge. Ring needs its own warning because it has no direction to read off the boss's facing.
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the artwork must be fully transparent (alpha 0), not white. Create a 2D attack telegraph for a top-down sci-fantasy defense roguelite, warning that a boss is about to fire projectiles outward in every direction at once. An expanding concentric warning ring with a bright leading edge and evenly spaced outward tick marks around its circumference, communicating 'this goes everywhere, find a gap' rather than 'this goes that way'. It is drawn under the boss and must stay readable over a busy arena floor. Match the established Corebound language: steel-blue structure, pale metallic edges, restrained amber-gold energy accents, clean industrial framing, strong silhouette. Transparent background, no text.
+
+### Asset 97 - Boss Telegraph - Lance
+
+Target: Assets/Art/Combat/VFX/vfx_boss_telegraph_lance.png
+
+**Status:** NOT CREATED YET.
+
+Needed because:
+
+Lance fires every projectile along one bearing. Its whole counterplay is 'do not stand in that line', which needs a warning that draws the line.
+
+Prompt:
+
+Create a 2D attack telegraph for a top-down sci-fantasy defense roguelite, warning that a boss is about to fire a concentrated stream along a single bearing. A long narrow tapering beam-path marker, brightest at the origin and fading along its length, with hard parallel edges so the danger line is unambiguous. Designed to be stretched to any length at runtime, so it must tile or stretch cleanly along its long axis. Match the established Corebound language: steel-blue structure, pale metallic edges, restrained amber-gold energy accents, clean industrial framing, strong silhouette. Transparent background, no text.
+
+### Asset 98 - Boss Telegraph - Volley
+
+Target: Assets/Art/Combat/VFX/vfx_boss_telegraph_volley.png
+
+**Status:** NOT CREATED YET.
+
+Needed because:
+
+Volley fires parallel shots abreast, a wall rather than a cone. The player dodges around an end, which only works if the wall's extent is visible before it fires.
+
+Prompt:
+
+Create a 2D attack telegraph for a top-down sci-fantasy defense roguelite, warning that a boss is about to fire a wall of parallel projectiles. A broad rectangular warning band made of several distinct parallel lanes, so the player can see both how wide the wall is and where its ends are. Designed to be stretched horizontally at runtime. Match the established Corebound language: steel-blue structure, pale metallic edges, restrained amber-gold energy accents, clean industrial framing, strong silhouette. Transparent background, no text.
+
+### Asset 99 - Tower Info Card Frame
+
+Target: Assets/Art/UI/HUD/tower_info_card_frame.png
+
+**Status:** NOT CREATED YET.
+
+Needed because:
+
+Choosing between four towers previously meant remembering their stats. The build selection now shows cost, damage per second, range, and what each tower is strong and weak against. That needs a frame that holds a heading, a stat row and two short lines without crowding.
+
+Prompt:
+
+Create a compact 2D UI info card frame for a top-down sci-fantasy defense roguelite, used to describe a buildable tower during a planning phase. It must hold a title row, a short row of numeric stats, and two short body lines, with clear internal separation between those three zones so the eye lands on the stats first. Support 9-slice scaling, keep the inner surface bright enough for dark text, and keep the whole thing small enough to sit near the bottom of the screen without covering the arena. Match the established Corebound language: steel-blue structure, pale metallic edges, restrained amber-gold energy accents, clean industrial framing, strong silhouette. Transparent background, no text.
+
+### Asset 100 - Character Select Portrait Frame
+
+Target: Assets/Art/UI/SkillTree/character_portrait_frame.png
+
+**Status:** NOT CREATED YET.
+
+Needed because:
+
+Each playable character now has its own skill tree and is levelled separately, so the skill tree route needs a character selector. One frame, reused per character, with room for a level number.
+
+Prompt:
+
+1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the artwork must be fully transparent (alpha 0), not white. Create a 2D portrait frame for a character selector in a sci-fantasy defense roguelite. A rounded-square frame with a heavy lower band where a character name and level number can be drawn over it at runtime, and a clean inner window for the portrait. It must read as selected or unselected purely through tinting, since one piece of art serves both states. Match the established Corebound language: steel-blue structure, pale metallic edges, restrained amber-gold energy accents, clean industrial framing, strong silhouette. Transparent background, no text.
+

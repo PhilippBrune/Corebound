@@ -121,3 +121,43 @@ Festgelegte Entscheidungen:
 - UI, Audio und Visuals kommunizieren Boss-Zustände eindeutig.
 - Bosses prüfen unterschiedliche Builds, ohne dominante Hard-Counter zu erzeugen.
 - Der erste Stage-1-Boss integriert Spawn-, Phase-, Reward- und Warn-Hooks ohne separate Boss-Sonderregeln.
+
+---
+
+## Attack shape variety (2026-09-21)
+
+Vision Section 20.1 recorded boss variety as open. The audit on 2026-09-21 found the real
+state was worse than uneven: only **two** `BossAttackPatternData` assets existed and all five
+bosses shared them, so every boss fired the same aimed fan and differed only in numbers.
+
+`BossAttackShape` is the fix, and it is one data field rather than a subsystem. It changes how
+the existing projectile burst is *arranged*, reusing the same pool, damage context and
+telegraph:
+
+| Shape | Behaviour | How the player dodges it |
+| --- | --- | --- |
+| Fan | spread across the aim cone | step sideways out of the cone |
+| Ring | full 360 degrees, ignores aim | find a gap, or be far away |
+| Spiral | rotating offset per volley, sweeps the arena | move with the sweep |
+| Volley | parallel shots abreast, a wall | go around an end |
+| Lance | every shot on one bearing, staggered | never stand in line |
+
+Assigned so that learning one boss does not teach the next:
+
+| Stage | Boss | Phase 1 | Phase 2 |
+| --- | --- | --- | --- |
+| 1 | Foundry | Fan | Fan |
+| 2 | Reactor Sentinel | Ring | Ring |
+| 3 | Salvage Overseer | Volley | Volley |
+| 4 | Cryo Warden | Spiral | Spiral |
+| 5 | Core Nexus | Ring | Lance |
+
+Stage 2's Ring matches its own design note about an expanding hazard zone. Stage 1 is unchanged,
+so the first boss a player meets still behaves exactly as it did.
+
+A full ring divides the spread by the projectile count rather than count minus one; dividing by
+count minus one puts the first and last shot on the same bearing, leaving a doubled shot and a
+visible gap opposite it.
+
+**Still open:** helper-spawn variety. Only Stage 3 is designed around summoning adds, and the
+per-stage phase assets currently carry no helper groups.

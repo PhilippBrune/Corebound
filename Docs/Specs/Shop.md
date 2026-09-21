@@ -105,3 +105,22 @@ Festgelegte Entscheidungen:
 - Keine neue Kernmechanik wie Inventarmanagement oder Reroll-Spiralen wird eingeführt.
 - Shop-Käufe lassen sich eventbasiert und datengetrieben integrieren.
 - Der Stage-1-Loop bleibt ohne komplexe Shop-Sonderregeln verständlich.
+
+---
+
+## Multiple purchases per visit (2026-09-21)
+
+Playtest 2026-09-21: *"currently i can only buy one item in the shop, make it unlimited as
+long as the player has the money".*
+
+The shop no longer closes on the first purchase. A bought offer is removed from the list and
+the shop stays open; it closes on its own when every offer has been bought, or when the player
+cancels. Removing the offer rather than leaving it in place stops one card being bought twice
+in a single visit.
+
+This changes the shop's role: it was a single forced choice, and is now a spending opportunity
+bounded only by the wallet. The balance consequence is that a hoarding strategy now has
+somewhere to spend, which the price-multiplier fields are the lever for if it proves too strong.
+
+Also fixed 2026-09-21: the shop was opening and closing within a single frame and was
+therefore never visible at all. See the decision log in `Docs/10_OPEN_POINTS.md`.

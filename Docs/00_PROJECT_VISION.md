@@ -866,8 +866,9 @@ Three things, all of them consequences of decisions rather than decisions themse
    is not the problem, differentiation is.
 2. **Run duration.** Section 10 targets 60-70 minutes. A full five-stage run has never been timed
    end to end, and nothing measures it. Treat the figure as an estimate until it is.
-3. **Whether the skill tree is shared across future playable characters.** Irrelevant until a
-   second character exists; recorded so it is not rediscovered later.
+3. **Helper-spawn variety across the five bosses.** Attack shapes now differ per boss, but only
+   Stage 3 is designed around summoning adds and the per-stage phase assets carry no helper
+   groups yet.
 
 ## 20.2 Decision log
 
@@ -900,6 +901,12 @@ and single-currency wins over the "resource conversion" phrasing that contradict
   or strengthen the Core's defense" an actual choice rather than a promise.
 - **Every card stacks.**
 - **The player carries up to six weapons**, with set bonuses for duplicates.
+- **Each playable character gets its own skill tree.** Characters are levelled separately, so a
+  second character starts at zero rather than inheriting the first's progress. The tree is where
+  a character's identity lives, which is what makes a second character worth playing rather than
+  a reskin.
+- **Boss attack shapes differ per stage.** Fan, Ring, Spiral, Volley and Lance, one data field
+  on the existing attack pattern, so learning one boss does not teach the next.
 - **The Factory gained chain tiers**, so a production chain grows during a run instead of being
   a fixed set of producers.
 

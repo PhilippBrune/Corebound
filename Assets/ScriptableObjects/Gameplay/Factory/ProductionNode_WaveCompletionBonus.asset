@@ -17,5 +17,6 @@ MonoBehaviour:
   _triggerType: 2
   _baseAmount: 12
   _maxAmountPerTrigger: 20
+  _requiredChainTier: 2
   _pulseIntervalSeconds: 8
   _requiredTowerId:

@@ -116,3 +116,26 @@ Freischaltkurven müssen so gestaltet sein, dass regelmäßig neue Möglichkeite
 - Neue Unlock-Pfade lassen sich ohne Architekturänderung ergänzen.
 - Meta Progression ist im Main Menu als persistentes Currency- und Unlock-Ziel erreichbar.
 - Weapon-, Tower-, Card- und Start-Loadout-Unlocks können im ersten Slice bereits auf konkrete Datenobjekte verweisen.
+
+---
+
+## Split into two currencies (2026-09-21)
+
+Meta progression is now two systems with two currencies, decided 2026-09-21:
+
+| Currency | Spent on | Spec |
+| --- | --- | --- |
+| **Skill Points** | a branching skill tree, plus an endless Ascension track | [SkillTree.md](SkillTree.md) |
+| **Alloy** | unlocks, and permanent per-weapon and per-tower stat upgrades | [Upgrades.md](Upgrades.md) |
+
+**Alloy is this spec's existing meta currency, renamed and extended.** It is not a fourth pool.
+`MetaProgressionService`'s existing run-completion grant and its `IsUnlockSatisfied` gating are
+kept exactly as they are; stat upgrades are added as a second sink beside unlocks.
+
+The rule this spec already states - that unlocks widen the option pool rather than raising base
+stats - stays binding for **unlocks**. Stat upgrades in `Upgrades.md` are the one deliberate
+exception, and they carry hard per-stat ceilings so that permanent progress can never outweigh
+an in-run build.
+
+**Per character.** Each playable character has its own skill tree and is levelled separately.
+A second character starts its tree at zero rather than inheriting the first character's.

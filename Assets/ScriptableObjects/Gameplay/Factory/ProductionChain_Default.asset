@@ -20,4 +20,17 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8b2a809afd5d44d6bfc9a8b82647bf55, type: 2}
   - {fileID: 11400000, guid: 910cf85617494c4dabd2323b261d8baf, type: 2}
   - {fileID: 11400000, guid: 2d964528004d490bbb7d96787838d545, type: 2}
+  _tiers:
+  - _displayName: Salvage Line
+    _requiredTowersBuilt: 1
+    _requiredLifetimeProduced: 0
+    _requiredWavesCleared: 0
+  - _displayName: Refinery
+    _requiredTowersBuilt: 2
+    _requiredLifetimeProduced: 40
+    _requiredWavesCleared: 0
+  - _displayName: Foundry Network
+    _requiredTowersBuilt: 3
+    _requiredLifetimeProduced: 120
+    _requiredWavesCleared: 3
   _modifierData: {fileID: 11400000, guid: 4766b1ee91b04ffaab00a1ed784855e3, type: 2}

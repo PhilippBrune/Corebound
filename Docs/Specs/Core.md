@@ -125,3 +125,22 @@ Festgelegte Entscheidungen:
 - Core-Schaden ist in Combat, UI und Audio sauber integriert.
 - Enemies und Bosses können den Core über dieselbe Combat-Architektur bedrohen.
 - Der Core stärkt Positioning und Defensiventscheidungen, ohne neue Kernmechaniken einzuführen.
+
+---
+
+## Repair (2026-09-21)
+
+Settled 2026-09-21: the Core is **stationary and cannot be upgraded**, but it **can be
+repaired**.
+
+During an Intermission the player walks to the Core and presses Interact - the same input
+that builds a tower when standing on a slot - to spend Scrap and restore a fraction of the
+Core's maximum health. Each repair within the same run costs more than the last.
+
+Repair is deliberately not an upgrade. It restores what was lost and never raises a ceiling,
+so it competes with towers and weapons for Scrap without becoming a power-creep sink. A
+player who has taken no Core damage has nothing to buy here, which is the correct incentive.
+
+`CoreRepairService` owns this. Proximity is the discovery mechanism: reusing one input by
+position keeps the control scheme from growing a key per verb, and gives the Core a physical
+place the player has to go to.

@@ -144,3 +144,21 @@ Bewusst ohne eigenes importiertes Sprite (kein Editor-Zugriff für neue Texturim
 - Neue Towers und Upgrades lassen sich ohne Architekturänderung ergänzen.
 - Card- und Meta-Hooks können im ersten Slice bereits auf ein konkretes Tower-Zielsystem wirken.
 - Sobald mehr als ein Tower-Typ freigeschaltet ist, kann der Player den zu bauenden Typ per Controller wählen, ohne dass Bauen mit nur einem freigeschalteten Typ zusätzliche Eingaben braucht.
+
+---
+
+## Selection, upgrade cost and permanent upgrades (2026-09-21)
+
+Three changes from the 2026-09-21 playtest and owner decisions:
+
+**Slot selection follows the player.** The highlighted build slot is the one nearest the
+player, so position is the control rather than a cycle through an index. Previous/Next still
+override it manually, and that override lasts only for the intermission it was made in.
+
+**Upgrade costs roughly doubled.** They were 9 to 22 Scrap against roughly 110 earned by wave 6,
+so upgrading was not a decision. Costs now scale off each tower's own build cost: about 1.2x for
+the first upgrade and 2.2x for the second.
+
+**Permanent per-tower stat upgrades** are a separate, between-runs system funded by Alloy. See
+[Upgrades.md](Upgrades.md). In-run upgrade levels and permanent upgrades compose in the order
+base -> permanent upgrades -> in-run level -> card modifiers.

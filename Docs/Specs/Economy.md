@@ -109,3 +109,28 @@ Seltene High-Impact-Angebote dürfen stark sein, wenn sie spürbare Investitions
 - Käufe reagieren atomar und eventbasiert auf Resource-Verfügbarkeit.
 - Preisänderungen durch Modifier bleiben konsistent und nachvollziehbar.
 - Balancing kann ohne Codeänderungen über Daten angepasst werden.
+
+---
+
+## Three currencies (2026-09-21)
+
+This spec owns **Scrap**, the in-run currency, and that scope is unchanged. Two permanent
+currencies now sit alongside it and are deliberately outside this document:
+
+| Currency | Scope | Spec |
+| --- | --- | --- |
+| Scrap | one run | this document |
+| Skill Points | permanent | [SkillTree.md](SkillTree.md) |
+| Alloy | permanent | [Upgrades.md](Upgrades.md) |
+
+**The separation rule:** neither permanent currency may buy anything a run itself can buy, and
+Scrap never crosses between runs. If two currencies can buy the same thing, the in-run economy
+stops mattering.
+
+New Scrap sinks added 2026-09-21:
+
+- **Core repair.** During an Intermission the player may stand near the Core and spend Scrap to
+  restore a fraction of its health. Each repair within a run costs more than the last, so it
+  competes with towers and weapons rather than replacing the need to defend the Core.
+- **Weapon purchases**, once [WeaponLoadout.md](WeaponLoadout.md) is implemented, including a
+  50% sell-back which is the only Scrap income outside combat.

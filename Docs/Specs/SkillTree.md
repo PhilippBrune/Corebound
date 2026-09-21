@@ -58,6 +58,21 @@ SP must not purchase Scrap, towers, cards, or anything obtainable during a run. 
 
 ---
 
+## One tree per character
+
+Each playable character owns a **separate** skill tree, with its own branches, its own key nodes
+and its own playstyle identity. Characters are levelled independently: Skill Points are earned
+globally by playing, but spent per character, and a newly unlocked character begins with an
+entirely unpurchased tree.
+
+This is what makes a second character worth playing rather than a reskin: the tree is where a
+character's identity lives, so two characters with the same weapons still play differently.
+
+`SkillTreeDefinitionData` is therefore per character, and `MetaProgressionSaveData` keys its
+purchased-node list by character id as well as node id.
+
+---
+
 ## Structure
 
 The tree is built from **Key Nodes** and **Sub Nodes**, in the Diablo 4 arrangement the owner asked for.
@@ -252,7 +267,11 @@ A dedicated Skill Tree route from the main menu, alongside Meta Progression.
 
 ## Open Questions
 
-- Should the tree be shared across all future playable characters, or one tree per character? Recommend shared until a second character actually exists.
+- ~~Should the tree be shared across all future playable characters?~~ **Answered 2026-09-21: one tree per character.** Each character has its own tree with its own key nodes
+  and its own playstyle, and is levelled separately. A second character starts at zero rather
+  than inheriting the first character's progress. This makes the tree a characterisation tool
+  rather than a shared account-wide power meter, and it means a new character is a new
+  progression arc rather than an instantly-maxed one.
 - Should failing a run on Stage 1 pay 0 SP or 1? Currently specified as 1 per stage *cleared*, so a Stage 1 failure pays 0. Worth revisiting if early-run failure feels punishing in playtest.
 - Does Ascension need a visible prestige marker (a rank badge in the main menu)? Recommend yes, but after the tree itself ships.
 

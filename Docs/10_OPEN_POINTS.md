@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 1.7 · Created 2026-09-20 · Last updated 2026-09-21 · Status: Active
+Version: 1.8 · Created 2026-09-20 · Last updated 2026-09-21 · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is the *punch list*. Every entry states what is missing, why it matters, and what "done" looks like, so none of them has to be re-derived next session.
 
@@ -9,6 +9,41 @@ Priority: **P1** blocks playable quality · **P2** needed for the Early Access t
 ---
 
 ## P1 — Blocks playable quality
+
+### 0. Art gaps that now affect correctness, not just polish (2026-09-21)
+
+**Boss telegraphs are the urgent one.** Boss attack shapes now differ per stage, which is what makes
+the five bosses play differently. But the existing telegraph is a single ghost projectile flying
+toward the target, which only describes a **Fan**. Ring, Volley and Lance are all warned by a
+telegraph that shows a direction they do not have, so three of the five bosses currently telegraph a
+lie. That is worse than no warning. Assets 96-98 cover it.
+
+**Eleven assets remain uncreated**, including all ten Zone Denier and Relay Warden sprites, so both
+new enemy roles still borrow other sheets separated only by tint. Full status per asset is marked
+in `Docs/AI/GRAPHICS_ASSET_PROMPTS.md`.
+
+**Three assets have file problems:** two carry a doubled `.png.png` extension and load only because
+the code keeps an explicit fallback path for the wrong name, and one exists solely in the
+StreamingAssets mirror with no source copy under `Assets/Art`.
+
+### 0b. Four UI items need a design decision (2026-09-21)
+
+Written up with concrete proposals in
+[`Docs/Specs/DIY/UI_PROPOSALS_2026-09-21.md`](Specs/DIY/UI_PROPOSALS_2026-09-21.md). None implemented.
+
+- **Shop screen should match the Reward screen.** This directly contradicts `Shop.md`, which asks
+  the shop to *differ*. The playtest wins; the spec note is the thing that should change.
+- **`stage1_spawn_gate.png` lies to the player.** It is drawn, at one fixed authored position, while
+  enemies spawn from a rotated and jittered fan somewhere else entirely. Proposal: one gate per
+  authored spawn point, lit just before the wave that uses it.
+- **Card tag icons have nothing to draw.** The sheet is correctly sliced and `CardRewardPresenter`
+  already draws up to four per slot - but most `CardData` assets have an empty `_tags` array. The
+  earlier note that tags were "read by nothing" was half wrong: they are read, there is just nothing
+  in them.
+- **Tower build browser.** The information half shipped 2026-09-21 (cost, DPS, range, strengths and
+  weaknesses on the selection line); the remaining gap is comparing all four at once instead of
+  cycling blind.
+
 
 ### 0. Three new systems are specified but not built (2026-09-21)
 
