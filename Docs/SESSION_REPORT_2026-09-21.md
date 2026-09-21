@@ -65,3 +65,52 @@ Written into `00_PROJECT_VISION.md` §20.3.
 - **Amplifier visibility.** It pays out invisibly. Section 5.5 requires the player be able to *recognise* that a system is working, so the Intermission HUD line still needs the active chain surfaced.
 - **Bespoke art for Zone Denier and Relay Warden.** Prompts exist as Assets 75-84; the roles still borrow other sheets separated only by tint.
 - **Core upgrade track and meta-progression curve.** Both remain proposals in §20.1.
+
+---
+
+# Second pass — 2026-09-21 (later)
+
+## Asset audit
+
+Every `Target:` path in the prompts file is now checked against disk and carries a `**Status:**` line.
+
+| Result | Count |
+| --- | --- |
+| Present | 76 |
+| Not created yet | 11 |
+| Misnamed (doubled `.png.png`) | 2 |
+| Only in the StreamingAssets mirror | 1 |
+
+**All 15 enemy sprites had been deleted from the working tree** with nothing put in their place. They were still in git and still in the mirror, so nothing was lost, and they are restored. The deletion was invisible in play because the runtime reads the mirror first — which is exactly why it went unnoticed.
+
+## Playtest fixes, all verified in a live run
+
+- **Shop allows unlimited purchases.** Offers went 3 → 2 after a buy and the shop stayed open. It closes when empty or on Cancel.
+- **Killing a boss clears the field.** Adds are killed rather than despawned, so each still pays Scrap and its kill statistic.
+- **Tower slot selection follows the player.** Nearest slot is selected; Prev/Next still override for that intermission only.
+- **HUD is visible when starting on a later stage.** Measured `ONSCREEN` on Stage 5 with live values. The cause was a stale procedural fallback HUD left in the same screen corner after the authored HUD bound — the player saw the dead panel while every diagnostic read the live one, which is why it kept reading as "sporadic".
+- **Stage 5's edges are visible.** The camera frames the arena height instead of using one fixed zoom, capped so a large arena cannot shrink the player to a speck.
+- **Tower upgrades cost roughly double**, scaled off each tower's build cost.
+- **`wave_banner.png` backs the Wave label** and **`resource_primary_icon.png` sits beside the Scrap count**, both as additive siblings that copy the authored rect.
+
+## Boss variety
+
+The diagnosis was worse than "uneven": only two attack patterns existed and all five bosses shared them. `BossAttackShape` adds Fan, Ring, Spiral, Volley and Lance as one data field on the existing pattern. Stage 1 keeps Fan; Stage 2 Ring, Stage 3 Volley, Stage 4 Spiral, Stage 5 Ring into Lance.
+
+**This creates an urgent art dependency.** The existing telegraph is a ghost projectile flying at the target, which only describes a Fan. Three of the five bosses now telegraph a direction they do not have, which is worse than no warning. Assets 96-98 cover it.
+
+## Factory made visible
+
+`FactoryService.DescribeActiveProduction()` reports tier, active node count, whether an amplifier is live, and what the next tier needs. `WaveStatePresenter` appends it to the Intermission line. The default chain now has three authored tiers with its five nodes gated across them, so the feature is live rather than dormant.
+
+## God mode
+
+F8. A damage veto rather than a health top-up, so no damage event or Core warning fires during a timed run. It announces itself on screen the whole time.
+
+## Not implemented, written up instead
+
+`Docs/Specs/DIY/UI_PROPOSALS_2026-09-21.md` carries concrete proposals for four items. One of them contradicts `Shop.md` outright, and the note says so: the spec asks the shop to differ from the reward screen, the playtest asks for the opposite, and the playtest wins.
+
+The `stage1_spawn_gate.png` finding is worth repeating here: it **is** drawn, at one fixed position, while enemies spawn from a rotated and jittered fan somewhere else. The art currently lies about where enemies come from.
+
+The card tag sheet **is** correctly sliced and **is** drawn on reward cards. The gap is that most `CardData` assets have an empty `_tags` array, so there is nothing to draw.
