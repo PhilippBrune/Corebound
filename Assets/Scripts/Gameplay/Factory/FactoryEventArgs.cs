@@ -54,4 +54,26 @@ namespace Corebound.Gameplay.Factory
 
         public ProductionTriggerType TriggerType { get; }
     }
+
+    public readonly struct ChainTierChangedEventArgs
+    {
+        public ChainTierChangedEventArgs(string chainId, string tierName, int previousTier, int currentTier, int activeNodeCount)
+        {
+            ChainId = chainId;
+            TierName = tierName;
+            PreviousTier = previousTier;
+            CurrentTier = currentTier;
+            ActiveNodeCount = activeNodeCount;
+        }
+
+        public string ChainId { get; }
+
+        public string TierName { get; }
+
+        public int PreviousTier { get; }
+
+        public int CurrentTier { get; }
+
+        public int ActiveNodeCount { get; }
+    }
 }

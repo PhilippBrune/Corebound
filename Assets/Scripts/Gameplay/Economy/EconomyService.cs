@@ -53,6 +53,20 @@ namespace Corebound.Gameplay.Economy
             return finalCost;
         }
 
+        // Genuinely non-mutating, unlike ResolveCost, which raises PriceModified as a side effect
+        // and so must not be called from a per-frame UI check.
+        public int PeekCost(int baseCost)
+        {
+            var multiplier = _cardService != null ? _cardService.PurchaseCostMultiplier : 1f;
+            return Mathf.Max(0, Mathf.RoundToInt(baseCost * multiplier));
+        }
+
+        // Lets UI show a price as unaffordable without attempting the purchase to find out.
+        public bool CanAfford(int baseCost)
+        {
+            return _resourceWalletService != null && _resourceWalletService.CurrentAmount >= PeekCost(baseCost);
+        }
+
         public bool TryPurchase(int cost)
         {
             PurchaseRequested?.Invoke(cost);

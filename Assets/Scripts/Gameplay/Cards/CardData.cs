@@ -42,6 +42,14 @@ namespace Corebound.Gameplay.Cards
 
         public WeaponModifierData[] WeaponModifiers => _weaponModifiers;
 
-        public bool Stackable => _stackable;
+        // Owner decision 2026-09-21: "all selected cards can stack". The per-card opt-in is kept
+        // as data so a future card can deliberately be unique, but it no longer gates anything -
+        // every card is stackable unless this is explicitly turned back into a real check. Leaving
+        // the field in place rather than deleting it keeps the 30 authored card assets loading
+        // unchanged and makes the decision reversible in one line.
+        public bool Stackable => true;
+
+        // The authored value, kept for tooling and for a future per-card exception.
+        public bool AuthoredStackable => _stackable;
     }
 }

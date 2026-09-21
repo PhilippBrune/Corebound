@@ -102,6 +102,26 @@ namespace Corebound.Gameplay.Combat
             _guardDamageMultiplier = Mathf.Clamp01(multiplier);
         }
 
+        // Restores a fraction of maximum health. Returns false when nothing could be restored -
+        // a full Core, or a destroyed one - so a caller that charged for it can roll the payment
+        // back rather than taking money for no effect.
+        public bool TryRepairFraction(float fraction)
+        {
+            if (_healthRuntime == null || fraction <= 0f || !_healthRuntime.IsAlive)
+            {
+                return false;
+            }
+
+            var restored = _healthRuntime.Heal(_healthRuntime.MaxHealth * fraction);
+
+            if (restored <= 0f)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public void RestoreHealthNormalized(float normalizedHealth)
         {
             EnsureComponents();

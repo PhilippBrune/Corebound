@@ -339,6 +339,7 @@ GameObject:
   - component: {fileID: 100002030}
   - component: {fileID: 100002031}
   - component: {fileID: 100002032}
+  - component: {fileID: 100002033}
   m_Layer: 0
   m_Name: CombatRuntime
   m_TagString: Untagged
@@ -1283,6 +1284,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _audioCueData: {fileID: 11400000, guid: 27654116b82f406da9704614b50a547a, type: 2}
   _audioManager: {fileID: 100002005}
+--- !u!114 &100002033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100002000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7011c3b84735d4a47ac18ea102d2cdf6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _waveManager: {fileID: 0}
+  _economyService: {fileID: 0}
+  _coreHitReceiver: {fileID: 0}
+  _inputReaderSource: {fileID: 100001002}
+  _playerTransform: {fileID: 0}
+  _interactRadius: 2.4
+  _repairFraction: 0.25
+  _baseRepairCost: 14
+  _repeatCostMultiplier: 1.5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

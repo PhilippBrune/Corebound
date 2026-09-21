@@ -26,6 +26,21 @@ namespace Corebound.Gameplay.Combat
             CurrentHealth = Mathf.Clamp01(normalizedHealth) * MaxHealth;
         }
 
+        // Returns the health actually restored, which is not the amount asked for once the bar is
+        // near full. CoreRepairService needs that distinction to refuse a purchase that would do
+        // nothing.
+        public float Heal(float amount)
+        {
+            if (amount <= 0f || !IsAlive)
+            {
+                return 0f;
+            }
+
+            var previous = CurrentHealth;
+            CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + amount);
+            return CurrentHealth - previous;
+        }
+
         public float ApplyDamage(float amount)
         {
             if (!IsAlive)

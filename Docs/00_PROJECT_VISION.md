@@ -1,10 +1,10 @@
 ---
 
 document: PROJECT_VISION
-version: 2.0
-status: Draft
+version: 3.0
+status: Settled
 priority: Critical
-last_updated: 2026-09-19
+last_updated: 2026-09-21
 ------------------------
 
 # PROJECT VISION
@@ -27,7 +27,7 @@ Action Roguelite × Deckbuilder × Tower Defense × Factory
 
 **Engine:** Unity
 
-**Perspective:** 2D or 2.5D, viewed primarily from above
+**Perspective:** Fully top-down 2D. Depth is suggested through painted volume, lighting and layered sprite sorting, never through a tilted camera.
 
 **Input:** Controller First, with full Mouse and Keyboard support
 
@@ -326,7 +326,9 @@ The player should need to consider:
 * Synergies.
 * The current enemy composition.
 
-The initial playable version should contain approximately three meaningful tower types.
+The game ships four meaningful tower types: Ballista (single-target precision), Support (utility pulse), Mortar (area damage) and Sentinel (rapid anti-personnel).
+
+The number of towers that can be **active at once** is bounded by the current stage's buildable slot count, which is per-stage data. Towers are placed on those fixed slots, never freely positioned.
 
 ---
 
@@ -338,9 +340,20 @@ The player should be able to create focused production chains, such as:
 
 * Resource generation.
 * Resource amplification.
-* Resource conversion.
 * Tower-supported production.
 * Production-based card synergies.
+
+Resource *conversion* is deliberately absent: Scrap is the only in-run currency, so there is nothing to convert it into.
+
+### How the Factory deepens during a run
+
+Production chains are not static. A chain climbs **tiers** as the player's own investment grows, and each tier switches on more of that chain's nodes:
+
+> more towers built → the chain reaches a higher tier → more of its nodes produce → more Scrap → more towers
+
+Tier conditions are data: towers built, total Scrap that chain has produced, and waves cleared. **Amplifier** nodes multiply every other node in their chain while their condition holds, which is what makes the loop amplifying rather than merely repeating.
+
+This is the whole of the Factory's depth. There is no transport, no logistics graph, no second factory interface, and no machine placement. The player invests in towers they already wanted, and the economy compounds as a consequence.
 
 The Factory should answer a strategic question:
 
@@ -352,9 +365,21 @@ The system should not require the player to manage dozens of independent machine
 
 ---
 
+# 7.4 The Core
+
+The Core is stationary. It cannot be moved, and it cannot be upgraded.
+
+It can be **repaired**: during an Intermission, the player may walk to the Core and spend Scrap to restore a fraction of its health. Each repair within a run costs more than the last, so repairing competes with towers and weapons for the same Scrap and can never become a way to ignore defending it.
+
+That is the whole of the Core's economy. Repair restores what was lost; it never raises a ceiling.
+
+---
+
 # 8. Combat and Player Character
 
-The player controls a combat-capable character in a 2D or 2.5D arena.
+The player controls a combat-capable character in a bounded top-down 2D arena, with free movement inside it. The arena is a single combat space per stage: not room-based, not exploration-based.
+
+Aiming is free and continuous, using the mouse position on keyboard and mouse or the right stick on a controller. There is no target lock and no tab-targeting.
 
 The character should support:
 
@@ -366,7 +391,11 @@ The character should support:
 * Interaction with resources and towers.
 * Build-based combat modifications.
 
-The initial playable version should contain two or three distinct weapons.
+### Weapon loadout
+
+The player carries **up to six weapons at once**, all firing automatically at the player's single aim direction. Slots start at one and are earned through the skill tree and meta progression.
+
+Carrying several weapons of the same kind grants escalating **set bonuses**, so specialising into one archetype and diversifying across six are both real strategies with different shapes. Full requirements in [WeaponLoadout.md](Specs/WeaponLoadout.md).
 
 Possible weapon design directions include:
 
@@ -395,13 +424,14 @@ The first playable Early Access foundation should aim to contain:
 
 ## Weapons
 
-* Two to three distinct weapons.
+* Three distinct weapon archetypes: rapid, spread and beam.
+* Up to six carried at once, with set bonuses for duplicates.
 * Clear differences in playstyle.
 * Card-based modification support.
 
 ## Towers
 
-* Approximately three tower types.
+* Four tower types.
 * Distinct defensive or production roles.
 * Construction and upgrade functionality.
 * Interaction with cards and resources.
@@ -422,7 +452,7 @@ The first playable Early Access foundation should aim to contain:
 
 ## Boss
 
-* One complete boss encounter.
+* Five boss encounters, one per stage.
 * Distinct attack patterns.
 * Clear telegraphs.
 * A meaningful challenge for different builds.
@@ -475,7 +505,25 @@ During a run, the player may gain:
 * Build-defining effects.
 * Special rewards.
 
+## Currencies
+
+The game runs on three currencies, each with one job:
+
+| Currency | Scope | Earned by | Spent on |
+| --- | --- | --- | --- |
+| **Scrap** | one run | enemies, waves, the Factory | towers, shop offers, weapons, Core repair |
+| **Skill Points** | permanent | run outcomes | the skill tree |
+| **Alloy** | permanent | bosses, run completion | unlocks, and weapon/tower stat upgrades |
+
+Skill Points shape the character; Alloy improves the equipment. Scrap never crosses between runs, and neither permanent currency can buy anything a run itself can buy.
+
 ## Meta Progression
+
+Between runs, the player spends Skill Points on a branching **skill tree** of key nodes and their sub-nodes, and Alloy on **unlocks** and **permanent stat upgrades** to individual weapons and towers.
+
+The skill tree is finite. Once it is complete, further Skill Points go into an endless **Ascension** track of small numeric bonuses, so a player at 100 hours still has somewhere for progress to go without the game becoming a categorically different one.
+
+Full requirements: [SkillTree.md](Specs/SkillTree.md) and [Upgrades.md](Specs/Upgrades.md).
 
 Between runs, the player may unlock:
 
@@ -576,9 +624,11 @@ The goal is to combine the most appealing experiences from these references into
 
 # 13. Visual and Presentation Direction
 
-The game should be designed primarily for 2D or 2.5D presentation.
+The game is fully top-down 2D. All art is authored flat and orthographic.
 
-The exact visual style is not yet finalized, but it should support the following goals.
+The visual direction is **stylized techno-fantasy**: a crystalline energy Core, industrial machinery, mechanical towers and hostile constructs, in a dark sci-fi-industrial palette that shifts per stage.
+
+Depth is suggested through painted volume, lighting response, shadow language and layered sprite sorting. It is never produced by tilting the camera. A move to true 2.5D would invalidate the existing art set and is out of scope.
 
 ## Desired Characteristics
 
@@ -592,13 +642,9 @@ The exact visual style is not yet finalized, but it should support the following
 * Attractive screenshots and gameplay videos for Steam.
 * A style that can be produced and expanded efficiently with AI assistance.
 
-## Possible Art Direction
+## Art Direction
 
-A promising direction to investigate is:
-
-**Stylized techno-fantasy.**
-
-The world could combine:
+**Stylized techno-fantasy.** The world combines:
 
 * An ancient or mysterious energy Core.
 * Industrial machinery.
@@ -608,15 +654,7 @@ The world could combine:
 * A visually striking arena.
 * Strong contrast between the player's systems and enemy forces.
 
-Alternative directions worth prototyping:
-
-1. **Arcane Industrial:** Magic crystals, machinery, runes, and mechanical defenses.
-2. **Dark Sci-Fi:** A failing energy Core, advanced technology, and hostile entities.
-3. **Stylized Mechanical Fantasy:** Strong geometric shapes, expressive effects, and colorful construction systems.
-
-The visual direction must be selected based on readability, production feasibility, and the game's identity.
-
-It should not be finalized before visual prototypes and gameplay tests have been evaluated.
+Every asset prompt and its current status lives in [GRAPHICS_ASSET_PROMPTS.md](AI/GRAPHICS_ASSET_PROMPTS.md).
 
 ---
 
@@ -794,139 +832,78 @@ The following principles guide future design decisions:
 
 ---
 
-# 20. Open Design Questions
+# 20. Settled Decisions
 
-The following decisions must be resolved in dedicated specifications or design reviews:
+Every question this section used to hold open has been answered, and each answer now lives in
+the body of this document rather than in a list at the back. What remains here is the record:
+what was decided, and where the detail lives.
 
-* Is the game fully top-down 2D, 2.5D, or another camera arrangement?
-  → **Implemented (2026-09-17):** fully top-down 2D. `StageArenaArtPresenter` builds a top-down tiled arena; all character/enemy/boss art is top-down.
-* Is movement free in an arena, room-based, or exploration-based?
-  → **Implemented:** free movement within a single bounded arena per stage (not room-based, not exploration-based). Explicitly settled in `Docs/Slices/15_DYNAMIC_ARENA_SLICE.md`'s Scope Out.
-* How exactly does the player aim?
-  → **Implemented:** `PlayerAimResolver` + `CoreboundInputReader.Aim`, bound to mouse position (Keyboard&Mouse) or the right stick (Gamepad) — free continuous aim, not target-lock/tab-targeting.
-* Is the Core stationary or can it be upgraded or moved?
-  → **Implemented:** stationary, at a fixed `CoreAnchor` GameObject (`CoreController`/`CoreData`). No movement API exists. Whether it can be *upgraded* (stat-wise, not repositioned) is not yet exercised by any current card/economy effect and remains genuinely open.
-* How are buildable tower locations determined?
-  → **Implemented:** a fixed, hand-authored list of slot points per stage (`StageData.TowerSlotPositions`, falling back to `TowerService`'s own serialized default) — not freely placed by the player. See `Docs/Slices/15_DYNAMIC_ARENA_SLICE.md`.
-* How are resources collected?
-  → **Implemented:** enemies drop pickups (`ResourcePickupRuntime`) that the player walks over; no separate transport/logistics step.
-* Which resource types are needed?
-  → **Implemented:** a single resource currency ("Scrap", `ResourceWalletService._currentAmount` is a plain `int`) — no multiple resource types exist in code.
-* How does the Factory generate and transport resources?
-  → Partially answered: resource-producing towers exist and feed the same single wallet directly (no physical transport/logistics layer, consistent with Section 7.3's "not a separate automation simulator"). The deeper production-chain design (Section 6.1/7.3's "improved systems generate greater value" loop) is still open.
-* Are cards selected from random offers, purchased, drafted, or acquired through rewards?
-  → **Implemented:** both — post-wave reward offers (`CardRewardController`/`CardRewardPresenter`, pick 1 of 3) and direct purchase (`ShopService`/`ShopPresenter`).
-* How does the player's deck work?
-  → **Implemented:** there is no deck/hand/draw mechanic. `CardService._selectedCards` is a flat, ever-growing list of permanently-active effects (Brotato/Hades-style item pool), not a played-one-at-a-time card game.
-* Are cards permanent for a run, stackable, consumable, or replaceable?
-  → **Implemented:** permanent for the run and additive (same list as above); not consumable, not replaceable once taken. Stacking behavior is per-card via `CardEffectTarget`, not a universal rule.
-* How many towers can be active?
-  → **Implemented:** bounded by the active stage's slot count (4 for Stage 1 and Stage 2 currently) — see `TowerService.ResolveActiveSlotPositions()`.
-* How many weapons can the player use simultaneously?
-  → **Implemented:** exactly one. `PlayerCombatController._activeWeapon` is a single field, resolved once at run start from run save / meta-progression unlock / default, with no in-run switching action in `InputSystem_Actions.inputactions`.
-* How are stages and waves structured?
-  → **Implemented:** `StageProgression_VerticalSlice.asset` orders 5 stages; each stage runs a fixed wave count (`WaveManager.TotalWaveCount`) ending in a boss encounter before advancing.
-* How does the boss system work?
-  → **Implemented:** one boss per stage, spawned after that stage's final wave (`WaveManager.StartBossEncounter`), with stage-specific sprite/music resolved by `BossRuntimeController`/`MusicStateController`. Attack-pattern variety across the 5 bosses is uneven — see `Docs/Slices/14_WAVE_BOSS_BALANCE_SLICE.md`.
-* What is the precise meta progression?
-  → Partially answered: `MetaProgressionService` grants a meta-currency on run completion and gates unlocks (towers, weapons) via `IsUnlockSatisfied`. The full unlock tree/progression curve is not yet documented and remains open.
-* What is the final visual art direction?
-  → **Implemented (de facto):** the "techno-fantasy" / dark sci-fi-industrial direction from Section 13's suggested options — crystalline energy Core, mechanical towers, industrial tilesets — is consistently what's actually in the art (cards, enemies, bosses, stage themes). Not formally ratified as final, but no longer genuinely undecided.
-* What content is essential for the first Early Access release?
-  → Answered by Section 9 itself; not a separate implementation question.
+| Question | Decision | Detail |
+| --- | --- | --- |
+| Camera | Fully top-down 2D. Not 2.5D. | Section 1, Section 13 |
+| Movement | Free, inside one bounded arena per stage | Section 8, [15_DYNAMIC_ARENA_SLICE](Slices/15_DYNAMIC_ARENA_SLICE.md) |
+| Aiming | Free continuous aim: mouse position or right stick | Section 8 |
+| The Core | Stationary, not upgradable, repairable with Scrap | Section 7.4 |
+| Tower placement | Fixed per-stage buildable slots, not free placement | Section 7.2, [15_DYNAMIC_ARENA_SLICE](Slices/15_DYNAMIC_ARENA_SLICE.md) |
+| Active tower count | Bounded by the stage's slot count | Section 7.2 |
+| Resource collection | Enemies drop pickups the player walks over | Section 6.1 |
+| Currencies | Three: Scrap, Skill Points, Alloy | Section 10 |
+| Factory depth | Chain tiers plus Amplifier nodes; no logistics layer | Section 7.3 |
+| Card acquisition | Post-wave reward offers and shop purchase | Section 7.1 |
+| Deck model | No deck, hand or draw. A growing pool of permanent effects | Section 7.1 |
+| Card stacking | Every card stacks | Section 7.1 |
+| Weapons carried | Up to six at once, with set bonuses for duplicates | Section 8, [WeaponLoadout](Specs/WeaponLoadout.md) |
+| Stage and wave structure | Five stages, fixed wave count each, boss at the end | Section 6.3 |
+| Boss system | One boss per stage; variety is the open work, not count | [14_WAVE_BOSS_BALANCE_SLICE](Slices/14_WAVE_BOSS_BALANCE_SLICE.md) |
+| Meta progression | Skill tree on Skill Points; unlocks and stat upgrades on Alloy | Section 10, [SkillTree](Specs/SkillTree.md), [Upgrades](Specs/Upgrades.md) |
+| Art direction | Stylized techno-fantasy, flat top-down | Section 13 |
 
-These annotations describe what the current implementation actually does, established by reading the relevant code and data assets directly (2026-09-17) — they are a snapshot of de facto behavior, not a substitute for the formal specification/design-review resolution this section still calls for. Questions without a `→` marker remain genuinely open.
+## 20.1 What is genuinely still open
 
----
+Three things, all of them consequences of decisions rather than decisions themselves:
 
-## 20.1 Proposed resolutions for the still-open questions (2026-09-19)
+1. **Boss attack-pattern variety.** Five bosses exist; how differently they play is uneven. Count
+   is not the problem, differentiation is.
+2. **Run duration.** Section 10 targets 60-70 minutes. A full five-stage run has never been timed
+   end to end, and nothing measures it. Treat the figure as an estimate until it is.
+3. **Whether the skill tree is shared across future playable characters.** Irrelevant until a
+   second character exists; recorded so it is not rediscovered later.
 
-The annotations above record what the code does. These are **proposals, not decisions** — each needs an explicit yes/no before anything is built. They are deliberately small, because every one of them has to earn its place under Section 19's design boundaries.
+## 20.2 Decision log
 
-**Can the Core be upgraded?**
+**2026-09-17.** The implementation was read directly and each question annotated with what the
+code actually did. That pass is what turned most of this section from open questions into
+documentation of settled behaviour.
 
-Section 5.3 already lists *"Invest in offense or strengthen the Core's defense?"* as one of the run's meaningful decisions, but there is currently no way to spend anything on the Core — so that decision does not exist in the game yet. Proposal: the Core stays permanently stationary (no movement, as built), and gains a **three-tier Scrap-funded upgrade track** purchasable during Intermission through the existing `EconomyService` + tower-slot interaction. Each tier grants max-HP, and the player picks one side effect per run: slow between-wave repair, a short damage-reflect pulse when hit, or a wider resource pickup radius. Three tiers only, so it can never become the dominant sink. This closes the gap between Section 5.3's promise and the actual choice set, and needs no new UI surface beyond one more selectable target in a flow the player already uses.
+**2026-09-20.** The Factory Amplifier proposal was accepted and built. An amplifier is an
+ordinary production node whose bonus multiplies every *other* node in its chain while its tower
+condition holds - not a new node type, not a new trigger. It never amplifies itself, multiple
+amplifiers add rather than multiply, and the result still passes the per-trigger ceiling.
 
-**How deep should the Factory production chain go?**
+The build was also confirmed to have overtaken this document in three places, and the document
+was corrected rather than the game: four towers rather than three, five bosses rather than one,
+and single-currency wins over the "resource conversion" phrasing that contradicted it.
 
-The vision's own example loop (Section 5.4) is a *closed, amplifying* circuit: towers make resources → resources buy cards → cards improve towers → towers make more. What exists implements the first two steps; the amplifying step is where it stops. Proposal: add exactly **one new node kind — an Amplifier** — that multiplies another node's output while a condition holds (e.g. *"+25% to all tower-pulse output while three or more towers are built"*). That is one data field on the existing `ProductionNodeData`, no new trigger type, no logistics layer, and no second currency — and it is the smallest change that makes "improved systems generate greater value" actually true. Pair it with surfacing the active chain in the Intermission HUD line, since Section 5.5 requires the player be able to *recognize* that a system is working, and a transient toast does not satisfy that.
+**2026-09-21.** The remaining questions were answered by the project owner:
 
-**What is the meta-progression curve?**
-
-Proposal: fix the tree at **three short tracks of three tiers each** — Weapons, Towers, Start Loadouts — with costs on a 1× / 2× / 4× curve, and one hard rule: *unlocks only ever widen the option pool, never raise base stats.* That rule is what keeps Section 10's "should not completely replace player skill" true by construction rather than by careful balancing. Nine unlocks is enough to give the first Early Access release a visible progression spine without committing to a tree that later content has to keep feeding.
-
----
-
-## 20.3 Decisions taken (2026-09-20)
-
-The §20.1 proposals were put to the project owner and answered. This section records what was
-decided so §20.1 can stop reading as an open question list.
-
-**Factory Amplifier node — YES, accepted and built.**
-
-`ProductionNodeData` gained `AmplifierOutputBonus`, `AmplifierRequiredTowerCount` and
-`AmplifierRequiredTowerId`. An amplifier is not a new node type or a new trigger: it is an
-ordinary node whose bonus multiplies every *other* node in its chain while its tower condition
-holds. `ProductionNode_NetworkAmplifier.asset` ships the proposal's exact example, +25% to the
-whole chain once three towers are built, and is registered in `ProductionChain_Default`.
-
-Three constraints keep it from snowballing, which is the risk Factory.md names directly: an
-amplifier never amplifies itself, so two cannot feed each other; bonuses from multiple
-amplifiers add rather than multiply; and the result still passes through `ClampAmount`, so
-`MaxAmountPerTrigger` remains a hard ceiling per trigger regardless of how many are active.
-
-Still open from that proposal: surfacing the active chain in the Intermission HUD line. Section
-5.5 requires the player be able to *recognise* that a system is working, and a transient toast
-does not satisfy that. The amplifier currently pays out invisibly.
-
-**Core upgrade track and meta-progression curve — still unanswered.** Both remain proposals.
-
-**Is a move to 2.5D possible with the current assets? — No, not with these assets.**
-
-Asked 2026-09-20. The honest answer is that the art was commissioned flat on purpose and a 2.5D
-presentation would invalidate most of it:
-
-- Every environment prompt in `Docs/AI/GRAPHICS_ASSET_PROMPTS.md` specifies *flat top-down
-  (orthographic, camera looking straight down)*, and Asset 46 exists **only** because one
-  boundary corner came back in 3/4 perspective and clashed so badly with the flat set that it
-  had to be regenerated. That is direct evidence that mixing perspectives in this art set reads
-  as broken rather than as depth.
-- Characters, enemies and bosses are all single flat sprites with no side or angled views. A 2.5D
-  camera needs at minimum a consistent horizon-relative angle for every sprite; a top-down enemy
-  seen from a tilted camera reads as lying on the floor.
-- Ground is a seamless top-down tileset. Tilting the camera turns a floor tile into a floor *and*
-  wall surface, which needs separate art for each.
-
-What *is* reachable with the current assets, and matches what the global style rules already ask
-for ("optional 2.5D look only through painted volume, lighting response, shadow language and
-layered sprite depth"), is **fake depth on a flat camera**: URP 2D lights with normal-mapped
-sprites, drop shadows, a parallaxed background layer, and consistent sorting by Y. That buys most
-of the perceived depth for none of the re-art cost.
-
-A true 2.5D move should be treated as a separate project decision with a full art re-commission
-behind it, not as an incremental change.
+- **2.5D is off the table.** The art was commissioned flat on purpose. Every environment prompt
+  specifies flat top-down orthographic, and Asset 46 exists only because one boundary corner came
+  back in 3/4 perspective and clashed badly enough to need regenerating - direct evidence that
+  mixing perspectives in this art set reads as broken rather than deep. Characters have no angled
+  views, and a top-down ground tileset becomes floor and wall at once under a tilt. Fake depth on
+  a flat camera (URP 2D lights with normal maps, drop shadows, parallax, Y-sorting) buys most of
+  the look for none of the re-art cost.
+- **A second and third currency were added.** Skill Points fund a branching skill tree with an
+  endless Ascension track past its completion; Alloy funds unlocks and permanent per-weapon and
+  per-tower stat upgrades.
+- **The Core became repairable** with Scrap, which finally makes Section 5.3's "invest in offense
+  or strengthen the Core's defense" an actual choice rather than a promise.
+- **Every card stacks.**
+- **The player carries up to six weapons**, with set bonuses for duplicates.
+- **The Factory gained chain tiers**, so a production chain grows during a run instead of being
+  a fixed set of producers.
 
 ---
-
-## 20.2 Where this document and the build disagree (2026-09-19)
-
-Cross-checking Section 20 against the code surfaced places where the *vision text itself* is now out of date or internally inconsistent. These need a decision about which side to change — the doc or the game.
-
-* ~~**Enemy count is the real content gap.**~~ **Closed 2026-09-20 by building two more.** Zone Denier (area control) and Relay Warden (support) bring the roster to the five distinct types Section 9 targets. Both role names come from Enemies.md's own list of examples rather than being invented. Neither has bespoke art yet.
-* **Tower count already exceeds the stated target.** Sections 7.2 and 9 both say *approximately three tower types*; four exist and are catalogued (Support, Ballista, Mortar, Sentinel). Harmless, but the doc should say four so it stops reading as an open gap.
-* **"Resource conversion" contradicts the single-currency decision.** Section 7.3 lists *Resource conversion* as a Factory capability, but Section 20 records a single currency, and `ResourceWalletService` holds one `int`. With one currency there is nothing to convert. Either drop the phrase from 7.3, or accept a second resource — and a second resource is a much larger change than it looks, touching the wallet, HUD, every cost field and the Shop.
-* **The boss target is exceeded, not missed.** Section 9 asks for *one complete boss encounter*; five exist, one per stage. The open question there is variety, not count — attack-pattern differentiation across the five is uneven.
-* **Run duration is unvalidated.** Section 10 targets 60–70 minutes. Five stages × six waves plus a boss each has never been timed end to end, and nothing in the build enforces or measures it. Worth treating as an explicit open question rather than a settled figure.
-
-**Owner decision 2026-09-20:** the remaining §20.2 disagreements are accepted as they stand -
-the current implementation is the intended one, and it is this document that should be corrected
-rather than the game. Concretely: four towers is the real target, not three; the single-currency
-decision wins over Section 7.3's "resource conversion" phrasing, which should be dropped; five
-bosses is a feature and the open work there is attack-pattern variety, not count; and the 60-70
-minute run length stays an unvalidated estimate until a full run is actually timed.
-
----
-
 # 21. Definition of Vision Success
 
 The vision is successfully represented in the game when a player can:

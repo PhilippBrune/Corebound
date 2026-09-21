@@ -38,6 +38,13 @@ namespace Corebound.EditorTools
         // file a human needs in order to drive this was the one file they could not find.
         public const string RequestFilePath = "AutopilotRequest.txt";
 
+        // Bumped whenever the default needs to be re-asserted on machines where EditorPrefs
+        // already holds a stale value. EditorPrefs persist per user per Unity version, so a single
+        // "enable" written months ago would otherwise keep the autopilot on forever and make it
+        // look like it defaults to on - which is exactly what happened.
+        private const int SettingsVersion = 2;
+        private const string SettingsVersionKey = "Corebound.DebugAutopilot.SettingsVersion";
+
         private static double _nextRequestPoll;
 
         public static bool Enabled
@@ -60,9 +67,68 @@ namespace Corebound.EditorTools
 
         static DebugAutopilot()
         {
+            ResetToDefaultsIfStale();
+            EnsureRequestFileExists();
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             EditorApplication.update += PollRequestFile;
         }
+
+        private static void ResetToDefaultsIfStale()
+        {
+            if (EditorPrefs.GetInt(SettingsVersionKey, 0) == SettingsVersion)
+            {
+                return;
+            }
+
+            EditorPrefs.SetInt(SettingsVersionKey, SettingsVersion);
+            EditorPrefs.SetBool(EnabledKey, false);
+            Debug.Log(LogPrefix + " reset to its default: disabled. Enable it under Corebound > Autopilot, "
+                + "or write 'enable' into " + RequestFilePath + ".");
+        }
+
+        // The file has to *exist* to be discoverable - a trigger you have to know about in order to
+        // create is not a trigger, it is a secret. Previous versions deleted it on read, so it was
+        // only ever on disk for the second between writing and consuming it, and the one person who
+        // needed to find it never could. It is now created on load, left in place, and reset to
+        // "command: none" after each command so it is always there to edit.
+        private static void EnsureRequestFileExists()
+        {
+            if (System.IO.File.Exists(RequestFilePath))
+            {
+                return;
+            }
+
+            WriteIdleRequestFile();
+        }
+
+        private static void WriteIdleRequestFile()
+        {
+            try
+            {
+                System.IO.File.WriteAllText(RequestFilePath, IdleRequestFileContents);
+            }
+            catch (System.IO.IOException exception)
+            {
+                Debug.LogWarning(LogPrefix + " could not write " + RequestFilePath + ": " + exception.Message);
+            }
+        }
+
+        private const string IdleRequestFileContents =
+            "# Corebound Autopilot control file.\n"
+            + "#\n"
+            + "# Edit the command line below and save. The Editor picks it up within a second while\n"
+            + "# it is NOT in Play Mode, runs the command, then resets this line to 'none'.\n"
+            + "#\n"
+            + "# Commands:\n"
+            + "#   enable     turn the autopilot on (it is off by default)\n"
+            + "#   disable    turn it off again\n"
+            + "#   1..5       enable if needed, then play a run starting on that stage\n"
+            + "#   none       do nothing\n"
+            + "#\n"
+            + "# The same controls live under Corebound > Autopilot in the menu bar.\n"
+            + "# Progress is logged to the Console behind [Autopilot].\n"
+            + "\n"
+            + "command: none\n";
 
         [MenuItem("Corebound/Autopilot/Enabled", priority = 200)]
         private static void ToggleEnabled()
@@ -142,11 +208,18 @@ namespace Corebound.EditorTools
 
             if (!System.IO.File.Exists(RequestFilePath))
             {
+                WriteIdleRequestFile();
                 return;
             }
 
-            var contents = System.IO.File.ReadAllText(RequestFilePath).Trim();
-            System.IO.File.Delete(RequestFilePath);
+            var contents = ReadCommand();
+
+            if (string.IsNullOrEmpty(contents) || contents.Equals("none", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            WriteIdleRequestFile();
 
             // "disable" / "enable" set the same toggle the menu item sets. The toggle exists so
             // the autopilot never fires unexpectedly, not to stop automation using it, so writing
@@ -171,15 +244,63 @@ namespace Corebound.EditorTools
                 }
             }
 
-            if (!Enabled)
+            if (!int.TryParse(contents, out var requestedStage))
             {
-                Debug.LogWarning(LogPrefix + " ignored " + RequestFilePath + " because the autopilot is disabled." + " Write 'enable' into that file, or tick Corebound > Autopilot > Enabled.");
+                Debug.LogWarning(LogPrefix + " did not understand '" + contents + "' in " + RequestFilePath
+                    + ". Use enable, disable, a stage number 1-5, or none.");
                 return;
             }
 
-            var requestedStage = int.TryParse(contents, out var parsedStage) ? parsedStage : 1;
+            // Writing a stage number is itself an explicit request to run, so it implies enable -
+            // which is what the help text in the file promises. Requiring two edits to start one
+            // run would make the control file more annoying than the menu it exists to bypass.
+            if (!Enabled)
+            {
+                Enabled = true;
+                Debug.Log(LogPrefix + " enabled by a stage request in " + RequestFilePath);
+            }
+
             Debug.Log(LogPrefix + " request file picked up, stage " + requestedStage);
             StartAutopilot(requestedStage);
+        }
+
+        // Accepts either a bare command on its own line (so "1" in an otherwise empty file still
+        // works) or the "command: x" form the generated file uses. Lines starting with # are help
+        // text, not input.
+        private static string ReadCommand()
+        {
+            string[] lines;
+
+            try
+            {
+                lines = System.IO.File.ReadAllLines(RequestFilePath);
+            }
+            catch (System.IO.IOException)
+            {
+                // A save in progress; try again on the next poll rather than reporting an error.
+                return null;
+            }
+
+            for (var index = 0; index < lines.Length; index++)
+            {
+                var line = lines[index].Trim();
+
+                if (line.Length == 0 || line.StartsWith("#"))
+                {
+                    continue;
+                }
+
+                var colonIndex = line.IndexOf(':');
+
+                if (colonIndex >= 0 && line.Substring(0, colonIndex).Trim().Equals("command", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return line.Substring(colonIndex + 1).Trim();
+                }
+
+                return line;
+            }
+
+            return null;
         }
 
         private static void OnPlayModeStateChanged(PlayModeStateChange change)

@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 1.6 · Created 2026-09-20 · Last updated 2026-09-21 · Status: Active
+Version: 1.7 · Created 2026-09-20 · Last updated 2026-09-21 · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is the *punch list*. Every entry states what is missing, why it matters, and what "done" looks like, so none of them has to be re-derived next session.
 
@@ -9,6 +9,36 @@ Priority: **P1** blocks playable quality · **P2** needed for the Early Access t
 ---
 
 ## P1 — Blocks playable quality
+
+### 0. Three new systems are specified but not built (2026-09-21)
+
+The owner answered every remaining vision question on 2026-09-21. Three of those answers are whole
+systems, written as gapless requirements and **not yet implemented**:
+
+- [`Docs/Specs/SkillTree.md`](Specs/SkillTree.md) - second currency (Skill Points), a Diablo-4-style
+  tree of key nodes and sub nodes, and an endless Ascension track past completion.
+- [`Docs/Specs/WeaponLoadout.md`](Specs/WeaponLoadout.md) - up to six carried weapons firing at once,
+  with set bonuses for duplicates. This **replaces** the single-weapon model in `Weapons.md` and
+  changes `RunSaveData`, so it needs a save-format migration.
+- [`Docs/Specs/Upgrades.md`](Specs/Upgrades.md) - third currency (Alloy) funding both unlocks and
+  permanent per-weapon and per-tower stat upgrades.
+
+**Read the Open Questions in each before starting.** Two are load-bearing: `Upgrades.md`'s Magazine
+and Reload Speed stats assume an ammo and reload mechanic that does not exist anywhere in the
+codebase today, and `WeaponLoadout.md` needs a projectile budget that has never been tuned.
+
+### 0z. Shipped with those decisions (2026-09-21)
+
+- **Every card stacks.** `CardData.Stackable` now returns true unconditionally; the authored value
+  is kept as `AuthoredStackable` so the decision is reversible in one line.
+- **The Core is repairable.** `CoreRepairService` lets the player spend Scrap during an Intermission
+  by standing near the Core and pressing Interact. Each repair within a run costs more than the
+  last. Not seen in play yet - the proximity prompt has no icon (Asset 94) and no HUD line.
+- **Factory chain tiers.** A chain climbs tiers as towers are built, Scrap is produced and waves are
+  cleared, and each tier switches on more of its nodes. Nodes default to tier 0, so every existing
+  chain asset is unaffected. `FactoryEvents.ChainTierChanged` exists but **nothing subscribes to it
+  yet**, so the tier is still invisible to the player - the same gap the Amplifier has.
+
 
 ### 0a. Shop never appeared, and the build intermission was skipped — FIXED (2026-09-21)
 

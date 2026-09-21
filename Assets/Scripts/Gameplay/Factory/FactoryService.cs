@@ -27,6 +27,9 @@ namespace Corebound.Gameplay.Factory
         [SerializeField] private ResourceWalletService _resourceWalletService;
         [SerializeField] private TowerService _towerService;
 
+        private readonly Dictionary<string, int> _lifetimeProducedByChain = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> _lastReportedTierByChain = new Dictionary<string, int>();
+        private int _wavesCleared;
         private readonly List<PulseState> _pulseStates = new List<PulseState>();
 
         private void Awake()
@@ -63,6 +66,19 @@ namespace Corebound.Gameplay.Factory
             }
         }
 
+        private void EvaluateAllChainTiers()
+        {
+            if (_chains == null)
+            {
+                return;
+            }
+
+            for (var index = 0; index < _chains.Length; index++)
+            {
+                EvaluateChainTier(_chains[index]);
+            }
+        }
+
         private void RebuildPulseStates()
         {
             _pulseStates.Clear();
@@ -88,6 +104,9 @@ namespace Corebound.Gameplay.Factory
 
         private void OnWaveCompleted(WaveProgressEventArgs eventArgs)
         {
+            _wavesCleared++;
+            EvaluateAllChainTiers();
+
             ForEachNodeOfType(ProductionTriggerType.WaveCompleted, (chain, node) =>
             {
                 HandleTrigger(chain, node, node.ClampAmount(node.BaseAmount), "zero_amount");
@@ -115,6 +134,14 @@ namespace Corebound.Gameplay.Factory
         {
             FactoryEvents.RaiseProductionTriggered(new ProductionTriggeredEventArgs(chain.ChainId, node.NodeId, node.TriggerType));
 
+            // A node above the chain's current tier is dormant, not broken - reporting it as
+            // blocked with a named reason is what lets the player see there is more chain to earn.
+            if (node.RequiredChainTier > ResolveChainTier(chain))
+            {
+                FactoryEvents.RaiseProductionBlocked(new ProductionBlockedEventArgs(chain.ChainId, node.NodeId, "chain_tier_too_low"));
+                return;
+            }
+
             rawAmount = ApplyAmplifiers(chain, node, rawAmount);
 
             if (rawAmount <= 0)
@@ -130,6 +157,7 @@ namespace Corebound.Gameplay.Factory
             }
 
             var gained = _resourceWalletService.AddReward(rawAmount);
+            RecordProduction(chain, gained);
             FactoryEvents.RaiseResourceGenerated(new ResourceGeneratedEventArgs(chain.ChainId, node.NodeId, node.DisplayName, gained, node.TriggerType));
         }
 
@@ -188,6 +216,90 @@ namespace Corebound.Gameplay.Factory
                 : _towerService.CountBuiltTowersById(amplifier.AmplifierRequiredTowerId);
 
             return builtCount >= amplifier.AmplifierRequiredTowerCount;
+        }
+
+        // Chain tiers are the Factory's depth answer (00_PROJECT_VISION.md section 20.4): a chain
+        // climbs as the player's own investment grows, and each tier switches on more of its nodes.
+        // Towers -> tier -> more nodes produce -> more resources -> more towers, which is the
+        // vision's closed amplifying loop with no logistics layer anywhere in it.
+        private int ResolveChainTier(ProductionChainData chain)
+        {
+            if (chain == null)
+            {
+                return 0;
+            }
+
+            var towersBuilt = _towerService != null ? _towerService.BuiltTowerCount : 0;
+            var lifetimeProduced = _lifetimeProducedByChain.TryGetValue(chain.ChainId, out var produced) ? produced : 0;
+            return chain.ResolveTier(towersBuilt, lifetimeProduced, _wavesCleared);
+        }
+
+        private void RecordProduction(ProductionChainData chain, int gained)
+        {
+            if (chain == null || gained <= 0)
+            {
+                return;
+            }
+
+            _lifetimeProducedByChain.TryGetValue(chain.ChainId, out var previous);
+            _lifetimeProducedByChain[chain.ChainId] = previous + gained;
+            EvaluateChainTier(chain);
+        }
+
+        // Announced only on a change, and only upward, so a tower being sold does not spam a
+        // demotion the player did not ask about.
+        private void EvaluateChainTier(ProductionChainData chain)
+        {
+            if (chain == null)
+            {
+                return;
+            }
+
+            var tier = ResolveChainTier(chain);
+            _lastReportedTierByChain.TryGetValue(chain.ChainId, out var previous);
+
+            if (tier == previous)
+            {
+                return;
+            }
+
+            _lastReportedTierByChain[chain.ChainId] = tier;
+
+            if (tier < previous)
+            {
+                return;
+            }
+
+            var tierName = chain.Tiers != null && tier > 0 && tier <= chain.Tiers.Length
+                ? chain.Tiers[tier - 1].DisplayName
+                : "Tier " + tier;
+
+            FactoryEvents.RaiseChainTierChanged(new ChainTierChangedEventArgs(
+                chain.ChainId,
+                tierName,
+                previous,
+                tier,
+                CountActiveNodes(chain, tier)));
+        }
+
+        private static int CountActiveNodes(ProductionChainData chain, int tier)
+        {
+            if (chain == null || chain.Nodes == null)
+            {
+                return 0;
+            }
+
+            var count = 0;
+
+            for (var index = 0; index < chain.Nodes.Length; index++)
+            {
+                if (chain.Nodes[index] != null && chain.Nodes[index].RequiredChainTier <= tier)
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
 
         private void ForEachNodeOfType(ProductionTriggerType triggerType, System.Action<ProductionChainData, ProductionNodeData> handler)

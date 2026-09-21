@@ -24,6 +24,10 @@ namespace Corebound.Gameplay.Factory
 
         // 0 disables amplification, so every existing node asset is unaffected. 0.25 means
         // "+25% to every other node in this chain" while the condition below holds.
+        // 0 means "always active", so every node authored before tiers existed keeps producing
+        // from the first wave. A node at tier 2 stays silent until its chain reaches tier 2.
+        [SerializeField] private int _requiredChainTier;
+
         [Header("Amplifier (0 output bonus means this node does not amplify)")]
         [SerializeField] [Range(0f, 2f)] private float _amplifierOutputBonus;
         [SerializeField] private int _amplifierRequiredTowerCount = 3;
@@ -51,6 +55,8 @@ namespace Corebound.Gameplay.Factory
         public float PulseIntervalSeconds => Mathf.Max(0.5f, _pulseIntervalSeconds);
 
         public string RequiredTowerId => _requiredTowerId;
+
+        public int RequiredChainTier => Mathf.Max(0, _requiredChainTier);
 
         public bool IsAmplifier => _amplifierOutputBonus > Mathf.Epsilon;
 
