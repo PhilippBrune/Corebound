@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 1.5 · Created 2026-09-20 · Last updated 2026-09-20 · Status: Active
+Version: 1.6 · Created 2026-09-20 · Last updated 2026-09-21 · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is the *punch list*. Every entry states what is missing, why it matters, and what "done" looks like, so none of them has to be re-derived next session.
 
@@ -9,6 +9,45 @@ Priority: **P1** blocks playable quality · **P2** needed for the Early Access t
 ---
 
 ## P1 — Blocks playable quality
+
+### 0a. Shop never appeared, and the build intermission was skipped — FIXED (2026-09-21)
+
+Reported three playtests running. Both were the same defect, and both are fixed.
+
+Confirming the card reward closes the reward screen, which synchronously raises `StateChanged` ->
+`WaveManager.OnRewardStateChanged` -> `StartIntermission` -> `ShopService.TryOpenForIntermission`,
+all inside the `ConfirmPressed` invocation list. `ShopService` and `WaveManager` are both also
+subscribed to `ConfirmPressed`, so the single press that opened the shop resolved it, and ended the
+intermission, in the same frame. `shopOffers=3` next to `shopOpen=False` in one log line was the
+tell: offers were being built correctly the whole time.
+
+Fixed with a one-frame guard in each: `ShopService` ignores Confirm and Cancel in its opening
+frame, and `WaveManager` tracks `_intermissionStartedFrame` beside the existing
+`_intermissionGateResolvedFrame`, which only covered a gate being cleared and never the
+intermission being started.
+
+Verified in play. Before: `sawShop=False` across a six-wave run, loop Combat -> Reward -> Combat.
+After: `SHOP OPENED at wave 2 with 3 offers, canvas=VISIBLE a=1`, loop Combat -> Reward ->
+Intermission -> Combat on every rotation.
+
+The build gate is also no longer suppressed on shop waves, and the shop opens after waves 2 and 4
+rather than only wave 3.
+
+### 0b. Arena outer edge — REBUILT (2026-09-21)
+
+Third report on the same area. Three compounding faults: segments stretched into boxes whose aspect
+depended on arena size (so each stage distorted differently once the Dynamic Arena Slice gave them
+different sizes), one quad per repeat so every seam showed, and corner patches at 1.35x the wall
+height so all four corners bulged. Now one tiled `SpriteRenderer` per edge, repeating the art at its
+native aspect at any size, with the horizontal bands extended over the corners so the mismatched
+corner crop is gone entirely.
+
+### 0c. Boss and phase-helper spawns — RANDOMISED (2026-09-21)
+
+The boss scatters on an arc around its authored point and is pushed at least five units from the
+player. Phase helpers get a per-phase ring rotation plus angle and radius jitter instead of a fixed
+90/30-degree lattice.
+
 
 ### 0. Live playtesting now works without a human at the keyboard (2026-09-20)
 
@@ -186,11 +225,31 @@ arrowing through the option retranslates the Settings screen itself immediately.
 
 ### 8. Factory chain has no amplification step
 
-One chain exists (`ProductionChain_Default`) covering all three permitted triggers and both tower-pulse producers. The vision's loop is a *closed, amplifying* circuit, and the amplifying half is missing. See the Amplifier-node proposal in `00_PROJECT_VISION.md` §20.1. Also still open: real balance iteration (needs playtest) and any persistent on-screen indication that a chain is producing.
+**Amplifier accepted and built 2026-09-21.** `ProductionNodeData` gained `AmplifierOutputBonus`,
+`AmplifierRequiredTowerCount` and `AmplifierRequiredTowerId`; an amplifier is an ordinary node whose
+bonus multiplies every *other* node in its chain while its tower condition holds, not a new node type
+or trigger. `ProductionNode_NetworkAmplifier.asset` ships the proposal's +25%-at-three-towers example.
+It never amplifies itself, multiple amplifiers add rather than multiply, and the result still passes
+`ClampAmount`.
+
+**Still open:** the amplifier pays out invisibly. Section 5.5 requires the player be able to
+*recognise* that a system is working, so the Intermission HUD line still needs the active chain
+surfaced. Also still open: real balance iteration (needs playtest) and any persistent on-screen indication that a chain is producing.
 
 ### 9. God-object refactors
 
-`WaveManager` (~15 responsibilities), `WaveStatePresenter` (four), `StageArenaArtPresenter`. Deliberately deferred — these need Editor access to verify and carry real regression risk. The read-only label resolution was already extracted to `WaveEncounterLabelResolver` as the safe part.
+**Owner asked for these to be fixed (2026-09-20). First cut done 2026-09-21.**
+
+`WaveSpawnPlacement` is extracted from `WaveManager`: all spawn geometry, no wave state,
+independently constructible. Deliberately first, because it is where the wave-hang bug hid.
+`WaveManager` is ~1100 lines from ~1230.
+
+Remaining: `WaveStatePresenter` (1358 lines, four responsibilities) and `StageArenaArtPresenter`
+(1001). `WaveManager` still carries most of its responsibilities.
+
+**The original reason for deferring no longer applies.** These were held back because they needed
+Editor access to verify and carried regression risk; the autopilot now verifies a full run end to
+end, including every UI state transition. This is a scheduling question now, not a risk one.
 
 ### 10. Unresolved vision questions
 

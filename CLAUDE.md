@@ -20,15 +20,23 @@ COREBOUND — a singleplayer Windows/Steam action roguelite combining direct com
 
 - **Test through `Assets/Scenes/MainMenu.unity` → New Run.** Opening `SampleScene.unity` directly hides a whole class of bug, because the Editor has already loaded the additive canvas scenes before Play starts. Several defects reproduced *only* via MainMenu.
 - **Debug stage-select:** F9 / F10 in the Main Menu cycle which stage a New Run starts on. An on-screen label shows the current setting. Use it to reach Stage 2+ without playing through.
-- **Agents can playtest now.** `Assets/Editor/DebugAutopilot.cs` plays a real run end to end:
-  write a stage index into `Temp/autopilot_request.txt` (or use `Corebound > Autopilot`) and it
-  opens MainMenu, enters Play, starts a run on that stage, kites while firing, and logs stage,
-  wave, live enemy count and positions, arena size and every HUD label every two seconds to
-  `Editor.log` behind `[Autopilot]`. It drives the real `CoreboundInputReader` through an
-  editor-only surface, so it exercises the same code paths a controller does. Two rules: it must
-  set `DebugSetUsingGamepad(true)` (mouse mode reads `Aim` as a screen position, so a world
-  direction aims at a screen corner), and it must bind to the input reader in the *player's* scene
-  (MainMenu and SampleScene each have one).
+- **Agents can playtest now.** `Assets/Editor/DebugAutopilot.cs` plays a real run end to end. It is
+  **off by default**: tick `Corebound > Autopilot > Enabled`, or write `enable` into
+  `AutopilotRequest.txt` in the project root. Writing a stage number into that file starts a run on
+  that stage within a second; `disable` turns it back off. Progress goes to `Editor.log` behind
+  `[Autopilot]`, including a `->` line for every wave-state transition, a stall report when nothing
+  changes for 12s, and per-sample HUD, shop, arena and enemy-position state.
+- **Three rules the autopilot had to learn the hard way.** It must call `DebugSetUsingGamepad(true)`,
+  because `PlayerAimResolver` reads `Aim` as a *screen position* in mouse mode, so a world direction
+  aims every shot at a screen corner and looks exactly like "projectiles do no damage". It must bind
+  to the `CoreboundInputReader` in the *player's* scene, since MainMenu and SampleScene each carry
+  one. And periodic sampling is not enough to prove a UI state never happened: Reward and
+  Intermission are routinely shorter than the sample interval, so transitions must be logged.
+- **Watch for single-frame event consumption.** `ConfirmPressed` has multiple subscribers, and a
+  handler that *opens* something synchronously can have that same press consumed by the thing it just
+  opened. This has now caused three separate bugs (intermission gate, shop never showing, build
+  intermission skipped). Anything opened from inside an input-event handler needs a
+  `Time.frameCount` guard.
 - **`Assets/Editor` compiles into `Assembly-CSharp-Editor.dll`**, not `Assembly-CSharp.dll`. When
   verifying a build by DLL timestamp, check the one that actually contains your file.
 - **The asset watcher ignores same-size rewrites.** A refresh that logs
