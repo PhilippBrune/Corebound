@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _label: Focused Rounds
   _labelDe: Fokussierte Geschosse
-  _upgradeCost: 9
+  _upgradeCost: 19
   _rangeMultiplier: 1.1
   _fireIntervalMultiplier: 0.9
   _damageMultiplier: 1.15

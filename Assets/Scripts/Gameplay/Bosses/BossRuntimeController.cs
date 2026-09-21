@@ -21,6 +21,7 @@ namespace Corebound.Gameplay.Bosses
         private const float HelperMaxRadius = 2.6f;
 
         private float _phaseSpawnAngleOffsetDegrees;
+        private float _spiralOffsetDegrees;
 
         // Mirrors WaveManager.WaveStartSpawnDelaySeconds - gives the player the same beat to
         // reposition/prepare before the boss engages that a normal wave's spawn delay gives
@@ -340,15 +341,56 @@ namespace Corebound.Gameplay.Bosses
             }
 
             projectileCount = Mathf.Max(1, projectileCount);
-            var startAngle = -spreadAngleDegrees * 0.5f;
-            var angleStep = projectileCount > 1 ? spreadAngleDegrees / (projectileCount - 1) : 0f;
+
+            // A full ring divides by count, not count - 1: dividing by count - 1 puts the first
+            // and last shot on the same bearing, leaving a doubled shot and a gap opposite it.
+            // Same correction the AreaControl enemy needed.
+            var shape = attackPattern.AttackShape;
+            var isRing = shape == BossAttackShape.Ring;
+            var effectiveSpread = isRing ? 360f : spreadAngleDegrees;
+            var startAngle = isRing ? 0f : -effectiveSpread * 0.5f;
+            var angleStep = isRing
+                ? effectiveSpread / projectileCount
+                : (projectileCount > 1 ? effectiveSpread / (projectileCount - 1) : 0f);
+
+            if (shape == BossAttackShape.Spiral)
+            {
+                // Accumulated across volleys, so consecutive bursts sweep rather than repeat.
+                _spiralOffsetDegrees += attackPattern.SpiralStepDegrees;
+                startAngle += _spiralOffsetDegrees;
+            }
+
+            // Lance puts every shot on one bearing; the spread collapses to zero and the shots
+            // are separated in space along the firing line instead.
+            if (shape == BossAttackShape.Lance)
+            {
+                startAngle = 0f;
+                angleStep = 0f;
+            }
+
+            var perpendicular = new Vector2(-direction.y, direction.x);
 
             for (var index = 0; index < projectileCount; index++)
             {
                 var shotDirection = CombatMath.Rotate(direction, startAngle + angleStep * index);
                 var projectile = _projectilePool.Get(_projectilePrototype);
                 var damageContext = new DamageContext(DamageSourceType.Enemy, DamageKind.Direct, attackPattern.DamageAmount, transform.position, shotDirection, null);
-                projectile.Launch(gameObject, attackPattern.ProjectileData, transform.position, shotDirection, damageContext);
+                // Volley fans out in space rather than in angle: parallel shots abreast, which
+                // reads as a wall to dodge around instead of a cone to step out of. Lance
+                // staggers along the firing line so the shots arrive as a stream.
+                var spawnPosition = (Vector2)transform.position;
+
+                if (shape == BossAttackShape.Volley)
+                {
+                    var offset = (index - (projectileCount - 1) * 0.5f) * attackPattern.VolleySpacing;
+                    spawnPosition += perpendicular * offset;
+                }
+                else if (shape == BossAttackShape.Lance)
+                {
+                    spawnPosition += direction * (index * attackPattern.VolleySpacing);
+                }
+
+                projectile.Launch(gameObject, attackPattern.ProjectileData, spawnPosition, shotDirection, damageContext);
             }
         }
 

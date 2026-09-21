@@ -1003,12 +1003,55 @@ namespace Corebound.EditorTools
                 return;
             }
 
+            // "The text is right" and "the player can see it" are different claims. The shop bug
+            // was a CanvasGroup at alpha 0 while every value underneath was correct, so the HUD
+            // probe now reports what actually reaches the screen: canvas sort order, group alpha,
+            // and whether the label's rect is inside the screen at all.
+            var canvas = hudRoot.GetComponentInParent<Canvas>();
+            builder.Append(" hudCanvas[order=").Append(canvas != null ? canvas.rootCanvas.sortingOrder : -999);
+            builder.Append(" enabled=").Append(canvas != null && canvas.rootCanvas.enabled);
+
+            var group = hudRoot.GetComponentInParent<CanvasGroup>();
+            builder.Append(" alpha=").Append(group != null ? group.alpha.ToString("0.##") : "none");
+            builder.Append(" scale=").Append(hudRoot.lossyScale.x.ToString("0.##"));
+            builder.Append(']');
+
+            AppendScreenRect(builder, hudRoot);
+
             builder.Append(" hud[");
             AppendHudLabel(builder, hudRoot, "PlayerHealth");
             AppendHudLabel(builder, hudRoot, "CoreHealth");
             AppendHudLabel(builder, hudRoot, "Currency");
             AppendHudLabel(builder, hudRoot, "Wave");
             builder.Append(']');
+        }
+
+        // A rect that sits outside the screen explains an invisible HUD better than any amount of
+        // guessing at canvas settings.
+        private static void AppendScreenRect(StringBuilder builder, Transform hudRoot)
+        {
+            var rect = hudRoot as RectTransform;
+
+            if (rect == null)
+            {
+                builder.Append(" hudRect=NOT_RECT");
+                return;
+            }
+
+            var corners = new Vector3[4];
+            rect.GetWorldCorners(corners);
+            var canvas = rect.GetComponentInParent<Canvas>();
+            var camera = canvas != null && canvas.rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay
+                ? null
+                : Camera.main;
+
+            var min = RectTransformUtility.WorldToScreenPoint(camera, corners[0]);
+            var max = RectTransformUtility.WorldToScreenPoint(camera, corners[2]);
+            var onScreen = max.x > 0f && max.y > 0f && min.x < Screen.width && min.y < Screen.height;
+
+            builder.Append(" hudRect=").Append(min.ToString("0")).Append("..").Append(max.ToString("0"));
+            builder.Append(onScreen ? " ONSCREEN" : " OFFSCREEN");
+            builder.Append(" screen=").Append(Screen.width).Append('x').Append(Screen.height);
         }
 
         private static void AppendHudLabel(StringBuilder builder, Transform hudRoot, string childName)

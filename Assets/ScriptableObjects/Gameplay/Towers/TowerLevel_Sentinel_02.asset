@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _label: Overcharged Rounds
   _labelDe: Überladene Geschosse
-  _upgradeCost: 15
+  _upgradeCost: 35
   _rangeMultiplier: 1.12
   _fireIntervalMultiplier: 0.82
   _damageMultiplier: 1.2

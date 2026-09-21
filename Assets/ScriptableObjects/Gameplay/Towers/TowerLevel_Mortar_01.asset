@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _label: Heavy Shell
   _labelDe: Schwere Granate
-  _upgradeCost: 14
+  _upgradeCost: 24
   _rangeMultiplier: 1.05
   _fireIntervalMultiplier: 0.94
   _damageMultiplier: 1.22

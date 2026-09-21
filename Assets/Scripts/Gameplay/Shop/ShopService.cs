@@ -356,7 +356,24 @@ namespace Corebound.Gameplay.Shop
             }
 
             ShopEvents.RaisePurchaseSucceeded(CreateEventArgs(_selectedIndex, true));
-            CloseShop(true);
+
+            // Playtest 2026-09-21: "currently i can only buy one item in the shop, make it
+            // unlimited as long as the player has the money". Closing on the first purchase
+            // made every shop visit a single forced choice; the player could not spend a good
+            // Scrap balance even when three offers were all affordable.
+            //
+            // The bought offer is removed rather than left in place, so a card cannot be bought
+            // twice from one visit, and the shop closes on its own once nothing is left.
+            _currentOffers.RemoveAt(_selectedIndex);
+
+            if (_currentOffers.Count == 0)
+            {
+                CloseShop(true);
+                return;
+            }
+
+            _selectedIndex = Mathf.Clamp(_selectedIndex, 0, _currentOffers.Count - 1);
+            StateChanged?.Invoke();
         }
 
         private bool TryCommitPurchase(int cost)

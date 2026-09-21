@@ -54,6 +54,8 @@ namespace Corebound.Gameplay.Towers
         private readonly List<TowerData> _unlockedTowerBuffer = new List<TowerData>();
         private Sprite _slotMarkerSprite;
         private int _selectedSlotIndex;
+        private Transform _playerTransform;
+        private bool _manualSlotSelectionThisIntermission;
         private int _selectedTowerTypeIndex;
         private ShopService _shopService;
         private WaveManager _waveManager;
@@ -152,6 +154,14 @@ namespace Corebound.Gameplay.Towers
         // though "Stand at a glowing Tower Slot" was telling them to look for one.
         private void OnWaveStateChanged()
         {
+            // A manual Prev/Next override lasts only for the intermission it was made in.
+            // Carrying it across waves would silently disable proximity selection for the rest
+            // of the run after a single button press.
+            if (_waveManager != null && _waveManager.State != WaveState.Intermission)
+            {
+                _manualSlotSelectionThisIntermission = false;
+            }
+
             UpdateSlotVisuals();
         }
 
@@ -379,6 +389,79 @@ namespace Corebound.Gameplay.Towers
             return Mathf.Min(SlotMarkerTargetWorldSize.x / bounds.x, SlotMarkerTargetWorldSize.y / bounds.y);
         }
 
+        // Playtest 2026-09-21: "make the selection based on the distance to the slot. The
+        // closest slot should be selected." Cycling by index meant the highlighted slot had no
+        // relationship to where the player was standing, so building meant pressing Next until
+        // the right one happened to light up. Selecting by proximity makes the player's own
+        // position the control, which is both faster and controller-friendly.
+        //
+        // Prev/Next are kept as a manual override for two slots at a similar distance; the
+        // automatic pick simply stops applying once the player has cycled by hand this
+        // intermission.
+        private void UpdateNearestSlotSelection()
+        {
+            if (_manualSlotSelectionThisIntermission || _runtimeSlots.Count == 0)
+            {
+                return;
+            }
+
+            var player = ResolvePlayerTransform();
+
+            if (player == null)
+            {
+                return;
+            }
+
+            var origin = (Vector2)player.position;
+            var nearestIndex = -1;
+            var nearestDistanceSquared = float.MaxValue;
+
+            for (var index = 0; index < _runtimeSlots.Count; index++)
+            {
+                var slot = _runtimeSlots[index];
+
+                if (slot.Transform == null)
+                {
+                    continue;
+                }
+
+                var distanceSquared = ((Vector2)slot.Transform.position - origin).sqrMagnitude;
+
+                if (distanceSquared >= nearestDistanceSquared)
+                {
+                    continue;
+                }
+
+                nearestDistanceSquared = distanceSquared;
+                nearestIndex = index;
+            }
+
+            if (nearestIndex < 0 || nearestIndex == _selectedSlotIndex)
+            {
+                return;
+            }
+
+            _selectedSlotIndex = nearestIndex;
+            UpdateSlotVisuals();
+            TowersChanged?.Invoke();
+        }
+
+        private Transform ResolvePlayerTransform()
+        {
+            if (_playerTransform == null)
+            {
+                var playerCombat = FindFirstObjectByType<Corebound.Gameplay.Combat.PlayerCombatController>();
+                _playerTransform = playerCombat != null ? playerCombat.transform : null;
+            }
+
+            return _playerTransform;
+        }
+
+        private void Update()
+        {
+            UpdateNearestSlotSelection();
+        }
+
         private void OnPreviousPressed()
         {
             if (!CanHandleBuildInput())
@@ -386,6 +469,7 @@ namespace Corebound.Gameplay.Towers
                 return;
             }
 
+            _manualSlotSelectionThisIntermission = true;
             MoveSelection(-1);
         }
 
@@ -396,6 +480,7 @@ namespace Corebound.Gameplay.Towers
                 return;
             }
 
+            _manualSlotSelectionThisIntermission = true;
             MoveSelection(1);
         }
 

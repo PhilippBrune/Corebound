@@ -533,6 +533,12 @@ namespace Corebound.Gameplay.Waves
         {
             _state = WaveState.Reward;
             _completeStageAfterReward = true;
+
+            // Playtest 2026-09-21: "if a boss dies, all remaining enemies die with him".
+            // Leaving the boss's summoned adds alive after the fight is decided turns a victory
+            // into a cleanup chore, and the reward screen opens over a field that is still
+            // shooting at the player.
+            DespawnRemainingEnemies();
             _resourcePickupPool?.ForceCollectAll();
 
             if (_runPersistenceController != null)
@@ -838,6 +844,31 @@ namespace Corebound.Gameplay.Waves
             }
 
             StateChanged?.Invoke();
+        }
+
+        // Kills rather than merely despawns, so every enemy still pays its reward and its kill
+        // statistic - a player who cleared the wave down to two adds should not lose that Scrap
+        // because the boss happened to die first.
+        private void DespawnRemainingEnemies()
+        {
+            var enemies = FindObjectsByType<EnemyRuntimeController>(FindObjectsSortMode.None);
+
+            for (var index = 0; index < enemies.Length; index++)
+            {
+                var enemy = enemies[index];
+
+                if (enemy == null || !enemy.isActiveAndEnabled || !enemy.IsAlive)
+                {
+                    continue;
+                }
+
+                SpawnResourcePickup(enemy.ResourceRewardAmount, enemy.transform.position);
+                RecordEnemyKillStatistic();
+                enemy.gameObject.SetActive(false);
+            }
+
+            _remainingAliveEnemies = 0;
+            _spawnGroups.Clear();
         }
 
         private bool HasPendingSpawns()

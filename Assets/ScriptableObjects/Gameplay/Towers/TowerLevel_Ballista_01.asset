@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _label: Precision Upgrade
   _labelDe: Präzisions-Upgrade
-  _upgradeCost: 10
+  _upgradeCost: 17
   _rangeMultiplier: 1.12
   _fireIntervalMultiplier: 0.92
   _damageMultiplier: 1.18

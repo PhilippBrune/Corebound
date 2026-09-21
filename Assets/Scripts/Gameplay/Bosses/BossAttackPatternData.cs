@@ -13,6 +13,16 @@ namespace Corebound.Gameplay.Bosses
         [SerializeField] private float _damageAmount = 2f;
         [SerializeField] private int _projectileCount = 3;
         [SerializeField] private float _spreadAngleDegrees = 24f;
+        // Fan is the shape every existing pattern used, so leaving this at its default keeps
+        // both authored assets behaving exactly as before.
+        [SerializeField] private BossAttackShape _attackShape = BossAttackShape.Fan;
+
+        // Degrees the whole pattern rotates between consecutive volleys. Only Spiral reads it.
+        [SerializeField] private float _spiralStepDegrees = 23f;
+
+        // World-space gap between parallel shots. Only Volley reads it.
+        [SerializeField] private float _volleySpacing = 0.85f;
+
         [SerializeField] private bool _trackPlayer = true;
         [SerializeField] private ProjectileData _projectileData;
 
@@ -29,6 +39,12 @@ namespace Corebound.Gameplay.Bosses
         public int ProjectileCount => Mathf.Max(1, _projectileCount);
 
         public float SpreadAngleDegrees => _spreadAngleDegrees;
+
+        public BossAttackShape AttackShape => _attackShape;
+
+        public float SpiralStepDegrees => _spiralStepDegrees;
+
+        public float VolleySpacing => Mathf.Max(0.1f, _volleySpacing);
 
         public bool TrackPlayer => _trackPlayer;
 

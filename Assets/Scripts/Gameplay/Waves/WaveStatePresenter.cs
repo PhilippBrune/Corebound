@@ -88,6 +88,8 @@ namespace Corebound.Gameplay.Waves
         private Font _font;
         private Sprite _statusPanelSprite;
         private Sprite _waveBannerSprite;
+        private bool _builtProceduralFallback;
+        private Corebound.Gameplay.Factory.FactoryService _factoryService;
         private Sprite _modalPanelSprite;
         private float _bannerTimer;
         private Texture2D _runtimeLoadedModalTexture;
@@ -105,6 +107,10 @@ namespace Corebound.Gameplay.Waves
         private const string PlayerHealthName = "PlayerHealth";
         private const string CoreHealthName = "CoreHealth";
         private const string WaveName = "Wave";
+        private const string WaveBannerBackingName = "WaveLabelBanner";
+        private const string CurrencyIconName = "CurrencyIcon";
+        private const string CurrencyIconPath = "Assets/Art/Resources/resource_primary_icon.png";
+        private const float CurrencyIconSize = 22f;
         private const string TowerInfoName = "TowerInfo";
         private const string StateInfoName = "StateInfo";
 
@@ -388,9 +394,13 @@ namespace Corebound.Gameplay.Waves
         {
             if (TryBindAuthoredHud())
             {
+                DiscardProceduralFallbackHud();
                 EnsureOverlayWidgets();
+                EnsureHudDecorations();
                 return;
             }
+
+            _builtProceduralFallback = true;
 
             _canvas = gameObject.GetComponent<Canvas>();
 
@@ -574,6 +584,8 @@ namespace Corebound.Gameplay.Waves
                         : _waveManager.RequiresIntermissionTowerAction
                         ? LocalizationService.Resolve("Intermission | Optionally place or upgrade a tower. Confirm to continue.", "Zwischenphase | Optional einen Turm bauen oder verbessern. Bestätigen zum Fortfahren.")
                         : LocalizationService.Resolve("Intermission | ", "Zwischenphase | ") + _waveManager.IntermissionSecondsRemaining.ToString("0.0") + LocalizationService.Resolve("s or Confirm to continue.", "s oder Bestätigen zum Fortfahren.");
+
+                    _stateText.text += ResolveFactoryStatusSuffix();
                     return;
                 case WaveState.Failed:
                     _stateText.text = LocalizationService.Resolve("Run Failed | ", "Run gescheitert | ") + _waveManager.FailureCauseLabel + ".";
@@ -879,6 +891,164 @@ namespace Corebound.Gameplay.Waves
             var nearestHudCanvas = _authoredHudRoot.GetComponentInParent<Canvas>();
             _canvas = nearestHudCanvas != null ? nearestHudCanvas.rootCanvas : null;
             return _statusPanelRect != null && _waveText != null && _stateText != null;
+        }
+
+        // Playtest 2026-09-21: "HUD information are still not consistent there. I started at stage 5
+        // and they are not visible."
+        //
+        // The procedural fallback HUD is built on this component's own GameObject when HUDCanvas has
+        // not arrived yet. Once the authored HUD does arrive, TryBindAuthoredHud repoints every text
+        // field at the authored labels - but the fallback's own StatusPanel and its now-orphaned
+        // child texts were left in the scene, in the same screen corner, frozen at whatever they last
+        // displayed. The player sees that stale panel; every diagnostic that reads the authored
+        // labels sees correct values. Both are true at once, which is why this read as "sporadic".
+        //
+        // Starting on a later stage through the debug stage-select makes it far more likely, because
+        // the extra save-resolution work delays HUDCanvas past the frame this presenter first runs.
+        private void DiscardProceduralFallbackHud()
+        {
+            if (!_builtProceduralFallback)
+            {
+                return;
+            }
+
+            _builtProceduralFallback = false;
+
+            var fallbackPanel = transform.Find("StatusPanel");
+
+            if (fallbackPanel != null)
+            {
+                // Renamed and deactivated before Destroy: Destroy is deferred to end of frame and
+                // the object stays findable by name until then, which has already caused a rebuild
+                // to parent new content under a doomed object once in this project.
+                fallbackPanel.name = "StatusPanel_Discarded";
+                fallbackPanel.gameObject.SetActive(false);
+                Destroy(fallbackPanel.gameObject);
+            }
+
+            // The fallback also added a Canvas to this GameObject. Leaving it enabled keeps an empty
+            // screen-space canvas alive on CombatRuntime for the rest of the run.
+            var localCanvas = gameObject.GetComponent<Canvas>();
+
+            if (localCanvas != null && _canvas != localCanvas)
+            {
+                localCanvas.enabled = false;
+            }
+        }
+
+        // Two art requests from the 2026-09-21 playtest, both additive so they respect the rule
+        // that scene-authored canvas layout is never reasserted by code:
+        //
+        //   "wave_banner.png is not in use for the WAVE text. I want wave_banner.png"
+        //   "resource_primary_icon.png - use it for the resource"
+        //
+        // Both are inserted as siblings of the label they decorate, copying that label's rect rather
+        // than positioning themselves, and pushed behind it in the hierarchy so the text stays on
+        // top. If the authored layout moves, they move with it.
+        // The Factory's whole payout was invisible. An Amplifier that quietly multiplies the
+        // chain, and a chain that quietly climbs tiers, are both exactly the kind of system vision
+        // Section 5.5 says the player must be able to *recognise* is working - and neither had any
+        // presence on screen at all. A transient toast does not satisfy that either, because it is
+        // gone by the time the player looks.
+        //
+        // Appended to the Intermission line rather than given its own widget: the Intermission is
+        // the only moment the player is not under pressure and is already reading this text, and a
+        // new HUD element would cost readability during combat for information that is only
+        // actionable between waves.
+        private string ResolveFactoryStatusSuffix()
+        {
+            if (_factoryService == null)
+            {
+                _factoryService = FindFirstObjectByType<Corebound.Gameplay.Factory.FactoryService>();
+            }
+
+            if (_factoryService == null)
+            {
+                return string.Empty;
+            }
+
+            var summary = _factoryService.DescribeActiveProduction();
+
+            return string.IsNullOrEmpty(summary) ? string.Empty : "  |  " + summary;
+        }
+
+        private void EnsureHudDecorations()
+        {
+            EnsureWaveBannerBacking();
+            EnsureCurrencyIcon();
+        }
+
+        private void EnsureWaveBannerBacking()
+        {
+            if (_waveText == null || _waveBannerSprite == null)
+            {
+                return;
+            }
+
+            var parent = _waveText.rectTransform.parent as RectTransform;
+
+            if (parent == null || parent.Find(WaveBannerBackingName) != null)
+            {
+                return;
+            }
+
+            var backing = CreateImage(WaveBannerBackingName, parent, _waveBannerSprite, new Color(1f, 1f, 1f, 0.92f), ResolvePanelType(_waveBannerSprite));
+            var source = _waveText.rectTransform;
+            var rect = backing.rectTransform;
+
+            rect.anchorMin = source.anchorMin;
+            rect.anchorMax = source.anchorMax;
+            rect.pivot = source.pivot;
+            rect.anchoredPosition = source.anchoredPosition;
+
+            // A little wider and taller than the text it sits behind, so the banner frames the label
+            // instead of being clipped to it.
+            rect.sizeDelta = source.sizeDelta + new Vector2(18f, 6f);
+            rect.offsetMin = source.offsetMin - new Vector2(9f, 3f);
+            rect.offsetMax = source.offsetMax + new Vector2(9f, 3f);
+
+            backing.raycastTarget = false;
+
+            // Behind the text, and behind it specifically rather than at index 0, so it does not
+            // slide under an unrelated sibling that is meant to be further back.
+            rect.SetSiblingIndex(source.GetSiblingIndex());
+        }
+
+        private void EnsureCurrencyIcon()
+        {
+            if (_currencyText == null)
+            {
+                return;
+            }
+
+            var parent = _currencyText.rectTransform.parent as RectTransform;
+
+            if (parent == null || parent.Find(CurrencyIconName) != null)
+            {
+                return;
+            }
+
+            var sprite = DebugSpriteFactory.LoadProjectSprite(CurrencyIconPath);
+
+            if (sprite == null)
+            {
+                return;
+            }
+
+            var icon = CreateImage(CurrencyIconName, parent, sprite, Color.white, Image.Type.Simple);
+            var source = _currencyText.rectTransform;
+            var rect = icon.rectTransform;
+
+            rect.anchorMin = source.anchorMin;
+            rect.anchorMax = source.anchorMin;
+            rect.pivot = new Vector2(1f, 0.5f);
+
+            // Sits immediately left of the currency label, vertically centred on it.
+            rect.anchoredPosition = source.anchoredPosition + new Vector2(-4f, 0f);
+            rect.sizeDelta = new Vector2(CurrencyIconSize, CurrencyIconSize);
+
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
         }
 
         private void EnsureOverlayWidgets()

@@ -129,6 +129,11 @@ namespace Corebound.Gameplay.Combat
                 return;
             }
 
+            if (DebugGodMode.ShouldIgnoreDamage(damageContext.SourceType))
+            {
+                return;
+            }
+
             damageContext = ApplyIncomingDamageMultiplier(damageContext);
 
             if (!_runtime.TryReceiveHit(damageContext, _combatData.CombatBalance != null ? _combatData.CombatBalance.PlayerInvulnerabilitySeconds : 0.35f, out var remainingHealth))

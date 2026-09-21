@@ -11,6 +11,10 @@ namespace Corebound.Gameplay.Combat
         // arena art). Centralized here so those lookups can't silently drift apart.
         public const string CoreAnchorObjectName = "CoreAnchor";
 
+        // This receiver is shared by the Core and by every enemy, so god mode has to tell them
+        // apart: vetoing damage for all of them would make enemies unkillable too.
+        private bool IsCoreReceiver => gameObject.name == CoreAnchorObjectName;
+
         [SerializeField] private CombatTargetData _targetData;
         [SerializeField] private HitReactionData _hitReactionData;
         [SerializeField] private StatusEffectData[] _statusDefinitions;
@@ -160,6 +164,15 @@ namespace Corebound.Gameplay.Combat
             }
 
             if (_rejectPlayerAndTowerDamage && (damageContext.SourceType == DamageSourceType.Player || damageContext.SourceType == DamageSourceType.Tower))
+            {
+                return;
+            }
+
+            // God mode vetoes incoming damage at the source rather than healing it back, so no
+            // damage event, hit reaction or Core-critical warning fires during a timed run. This
+            // receiver is used by the Core and by enemies alike; the check only covers non-Player
+            // sources, so the player's own shots still kill things.
+            if (IsCoreReceiver && DebugGodMode.ShouldIgnoreDamage(damageContext.SourceType))
             {
                 return;
             }

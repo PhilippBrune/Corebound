@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _label: Overclock Upgrade
   _labelDe: Übertaktungs-Upgrade
-  _upgradeCost: 16
+  _upgradeCost: 31
   _rangeMultiplier: 1.15
   _fireIntervalMultiplier: 0.84
   _damageMultiplier: 1.24

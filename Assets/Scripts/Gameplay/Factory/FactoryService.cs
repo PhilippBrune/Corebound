@@ -222,6 +222,109 @@ namespace Corebound.Gameplay.Factory
         // climbs as the player's own investment grows, and each tier switches on more of its nodes.
         // Towers -> tier -> more nodes produce -> more resources -> more towers, which is the
         // vision's closed amplifying loop with no logistics layer anywhere in it.
+        // One short line for the Intermission HUD, naming what the Factory is currently doing.
+        // Deliberately reports the *next* tier's requirement too: knowing a chain is at tier 1
+        // is much less useful than knowing two more towers would take it to tier 2, which is the
+        // investment decision the Factory exists to create.
+        public string DescribeActiveProduction()
+        {
+            if (_chains == null || _chains.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            var builder = new System.Text.StringBuilder(64);
+
+            for (var index = 0; index < _chains.Length; index++)
+            {
+                var chain = _chains[index];
+
+                if (chain == null)
+                {
+                    continue;
+                }
+
+                var tier = ResolveChainTier(chain);
+                var activeNodes = CountActiveNodes(chain, tier);
+                var totalNodes = chain.Nodes != null ? chain.Nodes.Length : 0;
+
+                if (builder.Length > 0)
+                {
+                    builder.Append("  ");
+                }
+
+                builder.Append(Corebound.UI.LocalizationService.Resolve("Factory T", "Fabrik S"));
+                builder.Append(tier).Append(' ').Append(activeNodes).Append('/').Append(totalNodes);
+
+                if (HasActiveAmplifier(chain, tier))
+                {
+                    builder.Append(Corebound.UI.LocalizationService.Resolve(" amplified", " verstaerkt"));
+                }
+
+                var nextRequirement = DescribeNextTierRequirement(chain, tier);
+
+                if (!string.IsNullOrEmpty(nextRequirement))
+                {
+                    builder.Append(" (").Append(nextRequirement).Append(')');
+                }
+            }
+
+            return builder.ToString();
+        }
+
+        private bool HasActiveAmplifier(ProductionChainData chain, int tier)
+        {
+            if (chain == null || chain.Nodes == null)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < chain.Nodes.Length; index++)
+            {
+                var node = chain.Nodes[index];
+
+                if (node != null && node.IsAmplifier && node.RequiredChainTier <= tier && IsAmplifierActive(node))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private string DescribeNextTierRequirement(ProductionChainData chain, int tier)
+        {
+            if (chain == null || chain.Tiers == null || tier >= chain.Tiers.Length)
+            {
+                return string.Empty;
+            }
+
+            var next = chain.Tiers[tier];
+            var towersBuilt = _towerService != null ? _towerService.BuiltTowerCount : 0;
+
+            if (next.RequiredTowersBuilt > towersBuilt)
+            {
+                return Corebound.UI.LocalizationService.Resolve("+", "+")
+                    + (next.RequiredTowersBuilt - towersBuilt)
+                    + Corebound.UI.LocalizationService.Resolve(" towers", " Tuerme");
+            }
+
+            _lifetimeProducedByChain.TryGetValue(chain.ChainId, out var produced);
+
+            if (next.RequiredLifetimeProduced > produced)
+            {
+                return "+" + (next.RequiredLifetimeProduced - produced)
+                    + Corebound.UI.LocalizationService.Resolve(" produced", " produziert");
+            }
+
+            if (next.RequiredWavesCleared > _wavesCleared)
+            {
+                return "+" + (next.RequiredWavesCleared - _wavesCleared)
+                    + Corebound.UI.LocalizationService.Resolve(" waves", " Wellen");
+            }
+
+            return string.Empty;
+        }
         private int ResolveChainTier(ProductionChainData chain)
         {
             if (chain == null)

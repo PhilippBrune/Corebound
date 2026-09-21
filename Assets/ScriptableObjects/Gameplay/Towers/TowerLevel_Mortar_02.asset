@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _label: Siege Payload
   _labelDe: Belagerungsladung
-  _upgradeCost: 22
+  _upgradeCost: 44
   _rangeMultiplier: 1.1
   _fireIntervalMultiplier: 0.88
   _damageMultiplier: 1.45

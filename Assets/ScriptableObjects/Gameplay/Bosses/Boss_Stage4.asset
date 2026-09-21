@@ -22,7 +22,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 4600659f79d547258c7e3da3a7aa32e1, type: 2}
   - {fileID: 11400000, guid: a06061af6f3942ce8f1140eb13f0e7cf, type: 2}
   _phases:
-  - {fileID: 11400000, guid: 07fb7d1dffb94828bf8a2e4b40e8a5f0, type: 2}
-  - {fileID: 11400000, guid: d7d5da097f5f49d797e88f43b414dc2c, type: 2}
+  - {fileID: 11400000, guid: d7f416d99af941f8bd5ad4f2be628a1f, type: 2}
+  - {fileID: 11400000, guid: 383d0dcc46864064a9dc828a7f911527, type: 2}
   _bossRewardData: {fileID: 11400000, guid: 3d94646231644c178827dbf10d572e20, type: 2}
   _debugColor: {r: 0.4, g: 0.75, b: 0.95, a: 1}
