@@ -3,10 +3,16 @@ using UnityEngine;
 namespace Corebound.Gameplay.Factory
 {
     // A single producer within a ProductionChainData (Factory.md's "einzelner Erzeuger,
-    // Verbraucher oder Verstärker"). The first vertical slice only ships producers - consumers
-    // and amplifiers are a natural extension of this same class (a node with a negative
-    // BaseAmount, or one that reads another node's recent output) but neither is needed yet, so
-    // neither is built.
+    // Verbraucher oder Verstärker").
+    //
+    // Amplifiers were added 2026-09-20 after the vision's §20.1 proposal was accepted. They are
+    // deliberately not a new node type or a new trigger: an amplifier is an ordinary node with
+    // AmplifierOutputBonus set, which multiplies every *other* node in its chain while its
+    // condition holds. That keeps the vision's "closed, amplifying circuit" true - towers make
+    // resources, resources buy cards, cards improve towers, and now more towers make more - while
+    // adding one data field rather than a logistics layer or a second currency.
+    //
+    // Consumers are still not built; a node with a negative BaseAmount remains the natural way in.
     [CreateAssetMenu(menuName = "Corebound/Gameplay/Factory/Production Node Data", fileName = "ProductionNodeData")]
     public sealed class ProductionNodeData : ScriptableObject
     {
@@ -15,6 +21,16 @@ namespace Corebound.Gameplay.Factory
         [SerializeField] private ProductionTriggerType _triggerType = ProductionTriggerType.EnemyKilled;
         [SerializeField] private int _baseAmount = 1;
         [SerializeField] private int _maxAmountPerTrigger;
+
+        // 0 disables amplification, so every existing node asset is unaffected. 0.25 means
+        // "+25% to every other node in this chain" while the condition below holds.
+        [Header("Amplifier (0 output bonus means this node does not amplify)")]
+        [SerializeField] [Range(0f, 2f)] private float _amplifierOutputBonus;
+        [SerializeField] private int _amplifierRequiredTowerCount = 3;
+
+        // Empty counts every built tower; a tower id counts only that kind. Lets one amplifier
+        // read "three towers of any kind" and another read "two Mortars" with no code change.
+        [SerializeField] private string _amplifierRequiredTowerId = string.Empty;
 
         [Header("Tower Pulse (only used when TriggerType == TowerPulse)")]
         [SerializeField] private float _pulseIntervalSeconds = 8f;
@@ -35,6 +51,14 @@ namespace Corebound.Gameplay.Factory
         public float PulseIntervalSeconds => Mathf.Max(0.5f, _pulseIntervalSeconds);
 
         public string RequiredTowerId => _requiredTowerId;
+
+        public bool IsAmplifier => _amplifierOutputBonus > Mathf.Epsilon;
+
+        public float AmplifierOutputBonus => Mathf.Max(0f, _amplifierOutputBonus);
+
+        public int AmplifierRequiredTowerCount => Mathf.Max(1, _amplifierRequiredTowerCount);
+
+        public string AmplifierRequiredTowerId => _amplifierRequiredTowerId;
 
         public int ClampAmount(int amount)
         {

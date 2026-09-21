@@ -857,15 +857,73 @@ Proposal: fix the tree at **three short tracks of three tiers each** — Weapons
 
 ---
 
+## 20.3 Decisions taken (2026-09-20)
+
+The §20.1 proposals were put to the project owner and answered. This section records what was
+decided so §20.1 can stop reading as an open question list.
+
+**Factory Amplifier node — YES, accepted and built.**
+
+`ProductionNodeData` gained `AmplifierOutputBonus`, `AmplifierRequiredTowerCount` and
+`AmplifierRequiredTowerId`. An amplifier is not a new node type or a new trigger: it is an
+ordinary node whose bonus multiplies every *other* node in its chain while its tower condition
+holds. `ProductionNode_NetworkAmplifier.asset` ships the proposal's exact example, +25% to the
+whole chain once three towers are built, and is registered in `ProductionChain_Default`.
+
+Three constraints keep it from snowballing, which is the risk Factory.md names directly: an
+amplifier never amplifies itself, so two cannot feed each other; bonuses from multiple
+amplifiers add rather than multiply; and the result still passes through `ClampAmount`, so
+`MaxAmountPerTrigger` remains a hard ceiling per trigger regardless of how many are active.
+
+Still open from that proposal: surfacing the active chain in the Intermission HUD line. Section
+5.5 requires the player be able to *recognise* that a system is working, and a transient toast
+does not satisfy that. The amplifier currently pays out invisibly.
+
+**Core upgrade track and meta-progression curve — still unanswered.** Both remain proposals.
+
+**Is a move to 2.5D possible with the current assets? — No, not with these assets.**
+
+Asked 2026-09-20. The honest answer is that the art was commissioned flat on purpose and a 2.5D
+presentation would invalidate most of it:
+
+- Every environment prompt in `Docs/AI/GRAPHICS_ASSET_PROMPTS.md` specifies *flat top-down
+  (orthographic, camera looking straight down)*, and Asset 46 exists **only** because one
+  boundary corner came back in 3/4 perspective and clashed so badly with the flat set that it
+  had to be regenerated. That is direct evidence that mixing perspectives in this art set reads
+  as broken rather than as depth.
+- Characters, enemies and bosses are all single flat sprites with no side or angled views. A 2.5D
+  camera needs at minimum a consistent horizon-relative angle for every sprite; a top-down enemy
+  seen from a tilted camera reads as lying on the floor.
+- Ground is a seamless top-down tileset. Tilting the camera turns a floor tile into a floor *and*
+  wall surface, which needs separate art for each.
+
+What *is* reachable with the current assets, and matches what the global style rules already ask
+for ("optional 2.5D look only through painted volume, lighting response, shadow language and
+layered sprite depth"), is **fake depth on a flat camera**: URP 2D lights with normal-mapped
+sprites, drop shadows, a parallaxed background layer, and consistent sorting by Y. That buys most
+of the perceived depth for none of the re-art cost.
+
+A true 2.5D move should be treated as a separate project decision with a full art re-commission
+behind it, not as an incremental change.
+
+---
+
 ## 20.2 Where this document and the build disagree (2026-09-19)
 
 Cross-checking Section 20 against the code surfaced places where the *vision text itself* is now out of date or internally inconsistent. These need a decision about which side to change — the doc or the game.
 
-* **Enemy count is the real content gap.** Section 9 targets *five distinct enemy types*; three roles exist (Chaser, Ranged Pressure, Bruiser). The three Elite variants are stat/behaviour modifiers layered on those same roles, not distinct types. This is the only Section 9 target that is still materially short, and it is worth deciding explicitly whether to build two more or to restate the target as three roles plus elite variants.
+* ~~**Enemy count is the real content gap.**~~ **Closed 2026-09-20 by building two more.** Zone Denier (area control) and Relay Warden (support) bring the roster to the five distinct types Section 9 targets. Both role names come from Enemies.md's own list of examples rather than being invented. Neither has bespoke art yet.
 * **Tower count already exceeds the stated target.** Sections 7.2 and 9 both say *approximately three tower types*; four exist and are catalogued (Support, Ballista, Mortar, Sentinel). Harmless, but the doc should say four so it stops reading as an open gap.
 * **"Resource conversion" contradicts the single-currency decision.** Section 7.3 lists *Resource conversion* as a Factory capability, but Section 20 records a single currency, and `ResourceWalletService` holds one `int`. With one currency there is nothing to convert. Either drop the phrase from 7.3, or accept a second resource — and a second resource is a much larger change than it looks, touching the wallet, HUD, every cost field and the Shop.
 * **The boss target is exceeded, not missed.** Section 9 asks for *one complete boss encounter*; five exist, one per stage. The open question there is variety, not count — attack-pattern differentiation across the five is uneven.
 * **Run duration is unvalidated.** Section 10 targets 60–70 minutes. Five stages × six waves plus a boss each has never been timed end to end, and nothing in the build enforces or measures it. Worth treating as an explicit open question rather than a settled figure.
+
+**Owner decision 2026-09-20:** the remaining §20.2 disagreements are accepted as they stand -
+the current implementation is the intended one, and it is this document that should be corrected
+rather than the game. Concretely: four towers is the real target, not three; the single-currency
+decision wins over Section 7.3's "resource conversion" phrasing, which should be dropped; five
+bosses is a feature and the open work there is attack-pattern variety, not count; and the 60-70
+minute run length stays an unvalidated estimate until a full run is actually timed.
 
 ---
 

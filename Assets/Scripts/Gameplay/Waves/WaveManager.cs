@@ -62,14 +62,13 @@ namespace Corebound.Gameplay.Waves
         private readonly List<SpawnGroupRuntime> _spawnGroups = new List<SpawnGroupRuntime>();
 
         // Re-rolled per wave. The spawn counter is what actually fixes the "all enemies of a group
-        // appear on the exact same tile" problem: ResolveSpawnPosition() used to be handed the
+        // appear on the exact same tile" problem: spawn placement used to be handed the
         // spawn *group* index, so a group of six enemies produced six identical positions and a
         // whole wave only ever used as many distinct points as it had groups.
-        private int _waveSpawnCounter;
-        private int _waveSpawnPointOffset;
-        private float _waveSpawnAngleOffsetDegrees;
+        // Where things are placed now lives in WaveSpawnPlacement. Extracted 2026-09-20: it is
+        // pure geometry with no wave state, and it is where the worst bug of the week hid.
+        private readonly WaveSpawnPlacement _spawnPlacement = new WaveSpawnPlacement();
 
-        private const float SpawnArenaMargin = 1f;
 
         private EnemyPool _enemyPool;
         private ResourcePickupPool _resourcePickupPool;
@@ -87,6 +86,9 @@ namespace Corebound.Gameplay.Waves
         private int _currentWaveIndex;
         private int _remainingAliveEnemies;
         private StageArenaArtPresenter _arenaArtPresenter;
+
+        private StageArenaArtPresenter ArenaArtPresenter =>
+            _arenaArtPresenter != null ? _arenaArtPresenter : (_arenaArtPresenter = FindFirstObjectByType<StageArenaArtPresenter>());
         private float _intermissionTimer;
         private float _waveStartSpawnDelayTimer;
         private bool _completeStageAfterReward;
@@ -105,6 +107,7 @@ namespace Corebound.Gameplay.Waves
         // remainder of that frame regardless of subscription order, which is not otherwise
         // guaranteed. Same pattern as WaveStatePresenter's _pauseOverlayClosedFrame.
         private int _intermissionGateResolvedFrame = -1;
+        private int _intermissionStartedFrame = -1;
         private bool _wasCoreDestroyedOnFailure;
 
         public event Action StateChanged;
@@ -386,9 +389,7 @@ namespace Corebound.Gameplay.Waves
             // Re-rolled once per wave rather than per enemy, so a single wave still reads as one
             // coherent attack from a consistent direction set - it is the wave-to-wave repetition
             // that felt static, not the spread within a wave.
-            _waveSpawnCounter = 0;
-            _waveSpawnPointOffset = UnityEngine.Random.Range(0, 1024);
-            _waveSpawnAngleOffsetDegrees = UnityEngine.Random.Range(0f, 360f);
+            _spawnPlacement.BeginWave();
 
             var waveData = _stageData.Waves[_currentWaveIndex];
             var modifierData = waveData != null ? waveData.ModifierData : null;
@@ -437,7 +438,7 @@ namespace Corebound.Gameplay.Waves
             }
 
             _bossRuntimeController.PhaseChanged -= OnBossPhaseChanged;
-            _bossRuntimeController.transform.position = _stageData.BossSpawnPosition;
+            _bossRuntimeController.transform.position = _spawnPlacement.ResolveBossSpawnPosition(_stageData, ArenaArtPresenter, _playerTarget);
             _bossRuntimeController.Initialize(_stageData.BossData, _playerTarget, _coreTarget, _sharedProjectilePrototype, _projectileParent, _enemyPool, restoredPhaseIndex);
             _bossRuntimeController.PhaseChanged += OnBossPhaseChanged;
             ApplyPersistenceContext();
@@ -482,7 +483,8 @@ namespace Corebound.Gameplay.Waves
 
                 // A running per-wave counter, NOT the spawn-group index: passing the group index
                 // meant every enemy in a group resolved to the identical position.
-                enemy.transform.position = ResolveSpawnPosition(_waveSpawnCounter++, false);
+                enemy.transform.position = _spawnPlacement.ResolveEnemySpawnPosition(
+                    _stageData, ArenaArtPresenter, _spawnPlacement.NextSpawnIndex(), _spawnAngleJitter);
                 enemy.Initialize(spawnGroup.EnemyData, spawnGroup.EliteModifierData, _playerTarget, _coreTarget, _sharedProjectilePrototype, _projectileParent);
                 _remainingAliveEnemies += 1;
                 spawnGroup.ConsumeSpawn();
@@ -554,9 +556,17 @@ namespace Corebound.Gameplay.Waves
         private void StartIntermission()
         {
             _state = WaveState.Intermission;
+            _intermissionStartedFrame = Time.frameCount;
             _intermissionTimer = _stageData != null ? _stageData.IntermissionDurationSeconds : 20f;
             _requiresIntermissionShopAction = _shopService != null && _shopService.TryOpenForIntermission(_stageData, CurrentWaveNumber);
-            _requiresIntermissionTowerAction = !_requiresIntermissionShopAction && _towerService != null && _towerService.HasAvailableIntermissionAction;
+
+            // Playtest 2026-09-20: "intermission phase to build towers should be in each rotation
+            // between enemy spawn after reward screen". The build gate used to be suppressed on
+            // any wave the shop opened on, so the one rotation that offered the most to spend
+            // resources on was also the only one that skipped building. The two are independent
+            // now: the shop resolves first, then the build gate holds the intermission open, so
+            // every rotation ends with a chance to place a tower.
+            _requiresIntermissionTowerAction = _towerService != null && _towerService.HasAvailableIntermissionAction;
             MovePlayerToPostRewardPosition();
             WaveEvents.RaiseIntermissionStarted(CreateEventArgs(CurrentWaveNumber + 1, WaveEncounterLabelResolver.ResolveNextEncounterLabel(_stageData, _currentWaveIndex, TotalWaveCount), WaveEncounterLabelResolver.ResolveNextEncounterIsElite(_stageData, _currentWaveIndex, TotalWaveCount)));
             StateChanged?.Invoke();
@@ -666,9 +676,25 @@ namespace Corebound.Gameplay.Waves
             // _requiresIntermissionTowerAction) used to block Confirm entirely until the player
             // placed or upgraded something. Building a tower is now purely optional during
             // Intermission; only the Shop's own mandatory buy/skip gate still blocks Confirm.
+            // Playtest 2026-09-20: "intermission phase to build towers should be in each rotation
+            // between enemy spawn after reward screen." It already was, on paper - the state machine
+            // really did enter Intermission every rotation. It just left again in the same frame, so
+            // no human ever saw it.
+            //
+            // Confirming the card reward closes the reward screen, which synchronously raises
+            // StateChanged -> OnRewardStateChanged -> StartIntermission. All of that runs inside the
+            // ConfirmPressed invocation list, so by the time this handler is reached the state is
+            // already Intermission and the very same press ended it. The existing
+            // _intermissionGateResolvedFrame guard did not help: it covers a gate being cleared, not
+            // the intermission being started.
+            //
+            // _intermissionStartedFrame closes that hole, mirroring the identical fix in
+            // ShopService.OnConfirmPressed - the shop was being opened and consumed by a single
+            // press for exactly the same reason.
             if (_state == WaveState.Intermission
                 && !_requiresIntermissionShopAction
                 && _intermissionGateResolvedFrame != Time.frameCount
+                && _intermissionStartedFrame != Time.frameCount
                 && (_cardRewardController == null || !_cardRewardController.IsOpen))
             {
                 AdvanceEncounter();
@@ -825,99 +851,6 @@ namespace Corebound.Gameplay.Waves
             }
 
             return false;
-        }
-
-        private Vector3 ResolveSpawnPosition(int spawnIndex, bool isBossHelper)
-        {
-            // Boss helper adds are summoned from a single point near the boss encounter itself, not
-            // from the arena's entry points - that stays a single origin regardless of how many
-            // regular-wave spawn points the stage defines.
-            if (isBossHelper)
-            {
-                var helperFanRadius = _stageData != null ? _stageData.BossHelperSpawnFanRadius : new Vector2(2.2f, 1.6f);
-                var helperAngleStepDegrees = _stageData != null ? _stageData.SpawnFanAngleStepDegrees : 120f;
-                var helperAngle = spawnIndex * helperAngleStepDegrees * Mathf.Deg2Rad;
-                var helperOrigin = _stageData != null ? _stageData.EnemySpawnOrigin : new Vector2(0f, -4.5f);
-                return ClampToArena(new Vector2(
-                    helperOrigin.x + Mathf.Cos(helperAngle) * helperFanRadius.x,
-                    helperOrigin.y + Mathf.Sin(helperAngle) * helperFanRadius.y));
-            }
-
-            var spawnPoints = _stageData != null ? _stageData.SpawnPoints : null;
-            Vector2 origin;
-            Vector2 fanRadius;
-            float angleStepDegrees;
-
-            if (spawnPoints != null && spawnPoints.Length > 0)
-            {
-                // A stage with multiple authored spawn points round-robins enemies across them by
-                // spawn index, so a burst of several enemies spreads across the stage's different
-                // entry points instead of fanning out from one (Dynamic Arena Slice, Docs/Slices/
-                // 15_DYNAMIC_ARENA_SLICE.md).
-                // Offsetting the round-robin by a per-wave value (rather than picking a point at
-                // random per enemy) keeps every authored entry point used an even number of times
-                // within a wave - pure per-enemy randomness clumps, which reads as unfair rather
-                // than varied - while still starting each wave on a different point.
-                var wrappedIndex = (((spawnIndex + _waveSpawnPointOffset) % spawnPoints.Length) + spawnPoints.Length) % spawnPoints.Length;
-                var spawnPoint = spawnPoints[wrappedIndex];
-                origin = spawnPoint.Position;
-                fanRadius = spawnPoint.FanRadius;
-                angleStepDegrees = spawnPoint.FanAngleStepDegrees;
-            }
-            else
-            {
-                // No SpawnPoints authored for this stage - unchanged pre-Dynamic-Arena-Slice
-                // behavior, a single origin fanned by spawn index.
-                origin = _stageData != null ? _stageData.EnemySpawnOrigin : new Vector2(0f, -4.5f);
-                fanRadius = _stageData != null ? _stageData.SpawnFanRadius : new Vector2(5.5f, 3.5f);
-                angleStepDegrees = _stageData != null ? _stageData.SpawnFanAngleStepDegrees : 120f;
-            }
-
-            // Jitter within half a fan step either side, plus a per-wave rotation of the whole fan.
-            // The enemy still arrives from this spawn point's arc - it just no longer lands on the
-            // exact same handful of coordinates every single wave of every single run.
-            var jitterDegrees = UnityEngine.Random.Range(-0.5f, 0.5f) * angleStepDegrees * _spawnAngleJitter;
-            var angle = (spawnIndex * angleStepDegrees + _waveSpawnAngleOffsetDegrees + jitterDegrees) * Mathf.Deg2Rad;
-
-            // Pull some spawns slightly inside the fan radius so they do not all sit on one ring.
-            var radiusScale = UnityEngine.Random.Range(1f - 0.25f * _spawnAngleJitter, 1f);
-            var spawnPosition = new Vector2(
-                origin.x + Mathf.Cos(angle) * fanRadius.x * radiusScale,
-                origin.y + Mathf.Sin(angle) * fanRadius.y * radiusScale);
-
-            return ClampToArena(spawnPosition);
-        }
-
-        // Stage 1's spawn origin is (0, -4.5) in a 16x10 arena and its fan radius is (5.5, 3.5), so
-        // the fan reaches y = -8 while the arena floor stops at y = -5. That never mattered while
-        // every enemy in a group resolved to the same angle, but once spawns were spread across the
-        // fan (2026-09-19) and the whole fan was rotated per wave, some enemies landed outside the
-        // boundary colliders. An enemy out there is walled off from the arena, so it can never be
-        // reached or killed, RemainingAliveEnemies never returns to zero, and the wave hangs
-        // forever - exactly the "2 enemies spawned, I killed them and nothing happened" report of
-        // 2026-09-20. Clamping here rather than shrinking each stage's fan radius fixes it for every
-        // stage at once, including ones authored later.
-        private Vector3 ClampToArena(Vector2 position)
-        {
-            if (_arenaArtPresenter == null)
-            {
-                _arenaArtPresenter = FindFirstObjectByType<StageArenaArtPresenter>();
-            }
-
-            if (_arenaArtPresenter == null)
-            {
-                return new Vector3(position.x, position.y, 0f);
-            }
-
-            // The margin keeps a spawn off the wall itself: half an enemy plus a little, so nothing
-            // starts life overlapping a boundary collider and getting pushed through it.
-            var halfExtents = _arenaArtPresenter.ArenaSize * 0.5f - new Vector2(SpawnArenaMargin, SpawnArenaMargin);
-            halfExtents = new Vector2(Mathf.Max(0.5f, halfExtents.x), Mathf.Max(0.5f, halfExtents.y));
-
-            return new Vector3(
-                Mathf.Clamp(position.x, -halfExtents.x, halfExtents.x),
-                Mathf.Clamp(position.y, -halfExtents.y, halfExtents.y),
-                0f);
         }
 
         private void SpawnResourcePickup(int amount, Vector2 position)

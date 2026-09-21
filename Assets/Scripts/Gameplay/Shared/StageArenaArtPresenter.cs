@@ -33,7 +33,6 @@ namespace Corebound.Gameplay.Shared
         private const string PropTexturePath = "Assets/Art/Environment/Arena/stage1_prop_set.png";
         private const string CoreTexturePath = "Assets/Art/Environment/Arena/core_main_sprite.png";
         private const string SpawnGateTexturePath = "Assets/Art/Environment/Arena/stage1_spawn_gate.png";
-        private const float BoundaryWallWorldWidth = 2.6f;
 
         // stage1_boundary_set.png is a hand-composed sheet, not a uniform grid (its 18 pieces
         // have varying widths/heights), so its pieces are addressed by their exact pixel rect
@@ -41,7 +40,7 @@ namespace Corebound.Gameplay.Shared
         // division used for the ground/prop atlases. Wall segment (index 2, the widest plain
         // barricade run) tiles along each edge and is also reused, rotated, as the corner patch -
         // the sheet's own dedicated corner piece is drawn at a 3/4 perspective that doesn't match
-        // this flat wall segment or the flat top-down ground tileset (see CreateBoundaryCornerVisual).
+        // this flat wall segment or the flat top-down ground tileset (see CreateTiledBoundaryBand).
         private static readonly Rect BoundaryWallPixelRect = new Rect(401f, 464f, 320f, 109f);
 
         private static readonly AtlasCell TopLeftCornerCell = new AtlasCell(1, 1);
@@ -342,63 +341,85 @@ namespace Corebound.Gameplay.Shared
 
             var boundaryRoot = EnsureChild("BoundaryVisualsRoot", parent);
             var wallHeight = boundaryThickness * 0.9f;
-            var innerLength = new Vector2(Mathf.Max(0f, arenaSize.x - wallHeight * 2f), Mathf.Max(0f, arenaSize.y - wallHeight * 2f));
 
-            // The wall art (BoundaryWallPixelRect) is drawn at an angle with a visible front face
-            // and a hazard-stripe top edge - it has a baked-in "up" direction, unlike a flat
-            // top-down tile. Reusing the same rotation on opposite edges (as this used to) pointed
-            // the Top wall's front face correctly into the arena but left Bottom/Left/Right showing
-            // that same face turned the wrong way, reading as walls leaning/facing backward - hence
-            // "looking weird". Each edge now gets its own 90-degree-stepped rotation so the front
-            // face always points inward, matching how the four corner pieces already do this below.
-            TileBoundaryWall(boundaryRoot, boundaryTexture, boundaryTint, innerLength.x, wallHeight, true, new Vector2(0f, arenaSize.y * 0.5f), "BoundaryTop", 0f);
-            TileBoundaryWall(boundaryRoot, boundaryTexture, boundaryTint, innerLength.x, wallHeight, true, new Vector2(0f, -arenaSize.y * 0.5f), "BoundaryBottom", 180f);
-            TileBoundaryWall(boundaryRoot, boundaryTexture, boundaryTint, innerLength.y, wallHeight, false, new Vector2(-arenaSize.x * 0.5f, 0f), "BoundaryLeft", 90f);
-            TileBoundaryWall(boundaryRoot, boundaryTexture, boundaryTint, innerLength.y, wallHeight, false, new Vector2(arenaSize.x * 0.5f, 0f), "BoundaryRight", 270f);
+            // Rebuilt 2026-09-20 after the third "outer edge still looks incorrect" report.
+            //
+            // The old construction had three separate faults that compounded into the ragged,
+            // gear-toothed edge in the playtest screenshot:
+            //
+            // 1. Every segment was drawn with preserveAspect:false into a box of (edgeLength /
+            //    tileCount) x wallHeight. The source crop is 320x109 (aspect 2.94) and the box was
+            //    typically aspect 3.6, so each repeat was squashed by a different amount depending
+            //    on the arena's size - and the Dynamic Arena Slice made arena sizes differ per
+            //    stage, so each stage got its own distinct distortion.
+            // 2. Each repeat was its own quad butted against the next, so every seam showed.
+            // 3. The corner patches were drawn at 1.35x the wall height, so all four corners bulged
+            //    proudly out of the band they were supposed to finish.
+            //
+            // The replacement is one tiled SpriteRenderer per edge. Unity's Tiled draw mode repeats
+            // the sprite at its native size along the band instead of stretching it to fit, so the
+            // art keeps its own aspect at any arena size and there are no per-quad seams. The
+            // horizontal bands are extended by one wall height at each end so they cap the vertical
+            // ones, which removes the corner pieces entirely rather than trying to make a mismatched
+            // corner crop sit flush.
+            var horizontalLength = arenaSize.x + wallHeight * 2f;
 
-            var cornerSize = new Vector2(wallHeight * 1.35f, wallHeight * 1.35f);
-            CreateBoundaryCornerVisual(boundaryRoot, boundaryTexture, boundaryTint, cornerSize, new Vector2(-arenaSize.x * 0.5f, arenaSize.y * 0.5f), 0f, "BoundaryCornerTopLeft");
-            CreateBoundaryCornerVisual(boundaryRoot, boundaryTexture, boundaryTint, cornerSize, new Vector2(arenaSize.x * 0.5f, arenaSize.y * 0.5f), -90f, "BoundaryCornerTopRight");
-            CreateBoundaryCornerVisual(boundaryRoot, boundaryTexture, boundaryTint, cornerSize, new Vector2(-arenaSize.x * 0.5f, -arenaSize.y * 0.5f), 90f, "BoundaryCornerBottomLeft");
-            CreateBoundaryCornerVisual(boundaryRoot, boundaryTexture, boundaryTint, cornerSize, new Vector2(arenaSize.x * 0.5f, -arenaSize.y * 0.5f), 180f, "BoundaryCornerBottomRight");
+            CreateTiledBoundaryBand(boundaryRoot, boundaryTexture, boundaryTint, "BoundaryTop", new Vector2(0f, arenaSize.y * 0.5f), horizontalLength, wallHeight, 0f);
+            CreateTiledBoundaryBand(boundaryRoot, boundaryTexture, boundaryTint, "BoundaryBottom", new Vector2(0f, -arenaSize.y * 0.5f), horizontalLength, wallHeight, 180f);
+            CreateTiledBoundaryBand(boundaryRoot, boundaryTexture, boundaryTint, "BoundaryLeft", new Vector2(-arenaSize.x * 0.5f, 0f), arenaSize.y, wallHeight, 90f);
+            CreateTiledBoundaryBand(boundaryRoot, boundaryTexture, boundaryTint, "BoundaryRight", new Vector2(arenaSize.x * 0.5f, 0f), arenaSize.y, wallHeight, 270f);
         }
 
-        // BoundaryCornerPixelRect used to crop the sheet's angled "inside corner" piece (drawn from
-        // a 3/4 perspective, two faces meeting at a V), while TileBoundaryWall's straight segments
-        // are a flat, nearly-orthographic panel design (confirmed by cropping both rects directly -
-        // the corner piece visibly leans/has depth the straight wall doesn't). Mixing a perspective
-        // piece into an otherwise flat top-down boundary is what actually read as "weird", not just
-        // the per-edge rotation fixed above. Until the sheet gets a matching flat corner tile, reuse
-        // the straight wall crop as a small square corner patch instead - same flat style, so the
-        // corner blends into the adjoining walls rather than popping out at an angle.
-
-        private void TileBoundaryWall(Transform parent, Texture2D boundaryTexture, Color tint, float lengthAlongEdge, float wallHeight, bool horizontal, Vector2 edgeCenter, string namePrefix, float rotation)
+        // One renderer per edge, tiled along its local X. The sprite is built at a pixels-per-unit
+        // chosen so the crop's 109px height maps exactly to wallHeight, which is what keeps the
+        // repeat unit at the art's own aspect instead of whatever the arena's dimensions imply.
+        //
+        // Tiled draw mode requires SpriteMeshType.FullRect; a Tight-meshed sprite silently falls
+        // back to stretching, which is the bug this replaces. Scale stays at 1 because in Tiled
+        // mode the renderer's size property does the work and any transform scale would multiply
+        // the repeats back out of shape.
+        private void CreateTiledBoundaryBand(
+            Transform parent,
+            Texture2D boundaryTexture,
+            Color tint,
+            string childName,
+            Vector2 localPosition,
+            float lengthAlongEdge,
+            float wallHeight,
+            float rotationDegrees)
         {
-            if (lengthAlongEdge <= Mathf.Epsilon)
+            if (boundaryTexture == null || lengthAlongEdge <= Mathf.Epsilon || wallHeight <= Mathf.Epsilon)
             {
                 return;
             }
 
-            var tileCount = Mathf.Max(1, Mathf.RoundToInt(lengthAlongEdge / BoundaryWallWorldWidth));
-            var tileLength = lengthAlongEdge / tileCount;
-            var tileSize = horizontal ? new Vector2(tileLength, wallHeight) : new Vector2(wallHeight, tileLength);
+            var pixelsPerUnit = BoundaryWallPixelRect.height / wallHeight;
+            var sprite = TrackSprite(Sprite.Create(
+                boundaryTexture,
+                BoundaryWallPixelRect,
+                new Vector2(0.5f, 0.5f),
+                pixelsPerUnit,
+                0u,
+                SpriteMeshType.FullRect));
 
-            for (var index = 0; index < tileCount; index++)
+            var child = EnsureChild(childName, parent);
+            child.localPosition = localPosition;
+            child.localRotation = Quaternion.Euler(0f, 0f, rotationDegrees);
+            child.localScale = Vector3.one;
+
+            var spriteRenderer = child.GetComponent<SpriteRenderer>();
+
+            if (spriteRenderer == null)
             {
-                var offsetAlongEdge = -lengthAlongEdge * 0.5f + tileLength * (index + 0.5f);
-                var localPosition = horizontal
-                    ? new Vector2(edgeCenter.x + offsetAlongEdge, edgeCenter.y)
-                    : new Vector2(edgeCenter.x, edgeCenter.y + offsetAlongEdge);
-
-                var sprite = CreateExplicitRectSprite(boundaryTexture, BoundaryWallPixelRect);
-                CreateSpriteVisual(parent, namePrefix + "_" + index, sprite, localPosition, tileSize, -9, tint, rotation, false);
+                spriteRenderer = child.gameObject.AddComponent<SpriteRenderer>();
             }
-        }
 
-        private void CreateBoundaryCornerVisual(Transform parent, Texture2D boundaryTexture, Color tint, Vector2 size, Vector2 localPosition, float rotationDegrees, string childName)
-        {
-            var sprite = CreateExplicitRectSprite(boundaryTexture, BoundaryWallPixelRect);
-            CreateSpriteVisual(parent, childName, sprite, localPosition, size, -9, tint, rotationDegrees, false);
+            spriteRenderer.sprite = sprite;
+            spriteRenderer.drawMode = SpriteDrawMode.Tiled;
+            spriteRenderer.tileMode = SpriteTileMode.Continuous;
+            spriteRenderer.size = new Vector2(lengthAlongEdge, wallHeight);
+            spriteRenderer.sortingOrder = -9;
+            spriteRenderer.color = tint;
         }
 
         private void CreatePropClusters(Transform parent, StageThemeData stageThemeData, StageArenaLayoutData layoutData, Vector2 arenaSize)

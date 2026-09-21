@@ -29,6 +29,7 @@ namespace Corebound.Gameplay.Shop
 
         private readonly List<ShopOfferData> _currentOffers = new List<ShopOfferData>();
         private readonly List<ShopOfferData> _offerCandidates = new List<ShopOfferData>();
+        private int _openedFrame = -1;
 
         private ShopData _activeShopData;
         private int _activeStageIndex = 1;
@@ -166,6 +167,7 @@ namespace Corebound.Gameplay.Shop
             _activeShopData = shopData;
             _selectedIndex = Mathf.Clamp(_selectedIndex, 0, _currentOffers.Count - 1);
             IsOpen = true;
+            _openedFrame = Time.frameCount;
 
             if (SaveManager != null)
             {
@@ -302,6 +304,22 @@ namespace Corebound.Gameplay.Shop
                 return;
             }
 
+            // The shop opens *during* a Confirm press, not between two of them: confirming the card
+            // reward closes the reward screen, which synchronously raises StateChanged ->
+            // WaveManager.OnRewardStateChanged -> StartIntermission -> TryOpenForIntermission. All
+            // of that happens inside the ConfirmPressed invocation list, and this handler is also
+            // subscribed to ConfirmPressed - so the very press that opened the shop arrived here a
+            // moment later and resolved it immediately. The shop was opening and closing within a
+            // single frame, every time, which is why three playtests in a row reported "shop still
+            // not shown" while the offers were being built correctly.
+            //
+            // Same shape as WaveManager._intermissionGateResolvedFrame, which exists for the same
+            // reason on the same event.
+            if (Time.frameCount == _openedFrame)
+            {
+                return;
+            }
+
             var offer = _currentOffers[_selectedIndex];
 
             if (offer == null)
@@ -364,7 +382,9 @@ namespace Corebound.Gameplay.Shop
 
         private void OnCancelPressed()
         {
-            if (!IsOpen)
+            // Same single-frame guard as OnConfirmPressed: whichever press opened the shop must
+            // not also dismiss it.
+            if (!IsOpen || Time.frameCount == _openedFrame)
             {
                 return;
             }

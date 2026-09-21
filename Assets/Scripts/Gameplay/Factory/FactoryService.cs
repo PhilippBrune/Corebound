@@ -115,6 +115,8 @@ namespace Corebound.Gameplay.Factory
         {
             FactoryEvents.RaiseProductionTriggered(new ProductionTriggeredEventArgs(chain.ChainId, node.NodeId, node.TriggerType));
 
+            rawAmount = ApplyAmplifiers(chain, node, rawAmount);
+
             if (rawAmount <= 0)
             {
                 FactoryEvents.RaiseProductionBlocked(new ProductionBlockedEventArgs(chain.ChainId, node.NodeId, blockedReasonIfZero));
@@ -129,6 +131,63 @@ namespace Corebound.Gameplay.Factory
 
             var gained = _resourceWalletService.AddReward(rawAmount);
             FactoryEvents.RaiseResourceGenerated(new ResourceGeneratedEventArgs(chain.ChainId, node.NodeId, node.DisplayName, gained, node.TriggerType));
+        }
+
+        // The amplifying half of the vision's closed loop (00_PROJECT_VISION.md §20.1, accepted
+        // 2026-09-20). An amplifier multiplies every *other* producing node in its own chain while
+        // its tower condition holds, so the reward for building more towers is not just more
+        // pulses but a better rate on everything the chain makes.
+        //
+        // Three deliberate constraints keep it from snowballing, which is the risk Factory.md calls
+        // out by name:
+        //   - an amplifier never amplifies itself, so two amplifiers cannot feed each other,
+        //   - bonuses from multiple amplifiers add rather than multiply,
+        //   - the result still passes through node.ClampAmount, so MaxAmountPerTrigger remains a
+        //     hard ceiling on any single trigger no matter how many amplifiers are active.
+        private int ApplyAmplifiers(ProductionChainData chain, ProductionNodeData node, int rawAmount)
+        {
+            if (rawAmount <= 0 || chain == null || chain.Nodes == null || node.IsAmplifier)
+            {
+                return rawAmount;
+            }
+
+            var totalBonus = 0f;
+
+            for (var index = 0; index < chain.Nodes.Length; index++)
+            {
+                var candidate = chain.Nodes[index];
+
+                if (candidate == null || candidate == node || !candidate.IsAmplifier || !IsAmplifierActive(candidate))
+                {
+                    continue;
+                }
+
+                totalBonus += candidate.AmplifierOutputBonus;
+            }
+
+            if (totalBonus <= Mathf.Epsilon)
+            {
+                return rawAmount;
+            }
+
+            // Rounded up so a small bonus on a 1-resource trigger is still visible. A +25% that
+            // silently rounds to nothing would read as the amplifier not working at all.
+            var amplified = Mathf.CeilToInt(rawAmount * (1f + totalBonus));
+            return node.ClampAmount(amplified);
+        }
+
+        private bool IsAmplifierActive(ProductionNodeData amplifier)
+        {
+            if (_towerService == null)
+            {
+                return false;
+            }
+
+            var builtCount = string.IsNullOrWhiteSpace(amplifier.AmplifierRequiredTowerId)
+                ? _towerService.BuiltTowerCount
+                : _towerService.CountBuiltTowersById(amplifier.AmplifierRequiredTowerId);
+
+            return builtCount >= amplifier.AmplifierRequiredTowerCount;
         }
 
         private void ForEachNodeOfType(ProductionTriggerType triggerType, System.Action<ProductionChainData, ProductionNodeData> handler)

@@ -16,6 +16,12 @@ namespace Corebound.Gameplay.Bosses
         private const string BossStage5SpritePath = "Assets/Art/Characters/Bosses/boss_stage5_topdown.png";
         private static readonly Color BossAttackWarningColor = new Color(1f, 0.3f, 0.28f, 1f);
 
+        private const float HelperAngleJitterDegrees = 14f;
+        private const float HelperMinRadius = 1.4f;
+        private const float HelperMaxRadius = 2.6f;
+
+        private float _phaseSpawnAngleOffsetDegrees;
+
         // Mirrors WaveManager.WaveStartSpawnDelaySeconds - gives the player the same beat to
         // reposition/prepare before the boss engages that a normal wave's spawn delay gives
         // before its first enemy appears. Applied unconditionally in Initialize() (fresh start
@@ -200,6 +206,8 @@ namespace Corebound.Gameplay.Bosses
 
         private void SpawnPhaseHelpers()
         {
+            _phaseSpawnAngleOffsetDegrees = UnityEngine.Random.Range(0f, 360f);
+
             if (_enemyPool == null)
             {
                 return;
@@ -472,10 +480,22 @@ namespace Corebound.Gameplay.Bosses
             }
         }
 
-        private static Vector2 ResolveHelperOffset(int groupIndex, int spawnIndex)
+        // Phase helpers used to land on a fixed lattice around the boss - group 0 always at
+        // 0 degrees, each extra helper exactly 30 degrees further round, always 1.6 units out -
+        // so every phase change produced the same picture and the same safe gap. Same treatment
+        // as the regular wave spawn fan: keep the deterministic arc as the skeleton so helpers
+        // still arrive spread out rather than clumped, and jitter the angle and radius so the
+        // arrangement is never twice the same.
+        //
+        // _phaseSpawnAngleOffsetDegrees is rolled once per phase, not per helper, so a single
+        // phase's helpers stay evenly spaced relative to each other while the whole ring sits
+        // somewhere new.
+        private Vector2 ResolveHelperOffset(int groupIndex, int spawnIndex)
         {
-            var angle = (groupIndex * 90f + spawnIndex * 30f) * Mathf.Deg2Rad;
-            return new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 1.6f;
+            var jitterDegrees = UnityEngine.Random.Range(-HelperAngleJitterDegrees, HelperAngleJitterDegrees);
+            var angle = (groupIndex * 90f + spawnIndex * 30f + _phaseSpawnAngleOffsetDegrees + jitterDegrees) * Mathf.Deg2Rad;
+            var radius = UnityEngine.Random.Range(HelperMinRadius, HelperMaxRadius);
+            return new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
         }
 
     }
