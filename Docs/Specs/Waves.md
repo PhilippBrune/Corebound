@@ -27,7 +27,7 @@ Das Wave-System steuert Tempo und Schwierigkeit, ohne selbst Combat- oder Reward
 ## Rules
 
 - Wave-Ablauf folgt stets derselben Grundstruktur: Start, aktiver Kampf, Abschluss, Belohnung, nächste Entscheidung.
-- Spawn-Positionen müssen fair und lesbar sein.
+- Spawn-Positionen müssen fair und lesbar sein. Konkret (2026-09-22): ein Spawn hält mindestens **3.5 Einheiten Abstand zum Player** und liegt nie innerhalb der Core-Reparaturreichweite. Ist ein Spawnpunkt zu nah, wird er vom Player weg geschoben; ist auch das blockiert, wird er an der Arena-Mitte gespiegelt (`WaveSpawnPlacement`).
 - Schwierigkeitssteigerung erfolgt über Enemy-Komposition, Spawn-Rhythmus und Raumdruck.
 - Elite-Waves und Boss-Vorbereitungen sind Datenvarianten des bestehenden Wave-Rahmens.
 - Eine Wave darf den Player fordern, aber nicht ohne lesbare Ursache überrollen.
@@ -43,10 +43,9 @@ Wave-Daten werden in ScriptableObjects definiert.
 - SpawnGroupData: Enemy-Typen, Mengen, Staffelung und Prioritäten
 - WaveModifierData: optionale Daten-Overrides für Tempo, Dichte oder Encounter-Regeln
 - WaveRewardData: definierte Reward-Momente nach Wave-Abschluss
-- StageEnemyPoolData: bewusst zurückgestelltes Datenfeld für eine spätere gewichtete
-  Zufallsauswahl von Enemy-Typen pro Stage (statt fest kuratierter SpawnGroupData-Listen).
-  Aktuell von keinem Code gelesen; geplant für Stage 2+, sobald Zufallsvarianz innerhalb
-  einer Wave gewünscht ist.
+- StageEnemyPoolData: gewichtete Zufallsauswahl von Enemy-Typen pro Stage. Noch von keinem Code
+  gelesen. **Seit 2026-09-22 nicht mehr der geplante Eskalationsweg:** jede Stage besitzt eigene
+  `WaveData`-Assets (siehe unten), die Zusammensetzung und Tempo pro Stage festlegen.
 
 ## Technical Design
 
@@ -127,3 +126,22 @@ Festgelegte Entscheidungen:
 - Schwierigkeit eskaliert über Encounter-Design und nicht primär über reine Stat-Erhöhung.
 - Controller-Navigation zwischen Combat und Reward-Momenten bleibt konsistent.
 - Der erste Slice führt Reward und Intermission über einen echten wiederholbaren Wave-Loop statt über einen einzelnen Testgegner aus.
+
+---
+
+## Eigene Wellen pro Stage (2026-09-22)
+
+Bis 2026-09-22 verwiesen Stage 1, 2 und 3 auf dieselben sechs `WaveData`-Assets: der einzige
+Unterschied zwischen den Stages waren Arena-Optik und Boss. Das widerspricht der Regel dieses
+Dokuments, dass Schwierigkeit über Enemy-Komposition und Raumdruck entsteht.
+
+Jede Stage besitzt jetzt ihren eigenen Satz von sechs `WaveData`-Assets (`Wave_S<Stage>_<Nr>`).
+Spawn-Gruppen werden weiterhin geteilt, die Wellenlisten nicht. Die Eskalation über die fünf Stages:
+
+| Stage | Schwerpunkt | Tempo |
+| --- | --- | --- |
+| 1 Foundry Perimeter | Grundrollen, ausgeglichen | lehrend, längste Pausen zwischen den Gruppen |
+| 2 Reactor Depths | Ranged Pressure, mehr Zone Denier | dichter, frühere Elite-Welle |
+| 3 Salvage Fields | Bruiser-lastig, mehrere Elites gleichzeitig | breite Anlaufwege, größere Gruppen |
+| 4 Cryo Vaults | Mischung mit Frost-Elites, Support-Relais | Wechsel aus engen und offenen Phasen |
+| 5 Core Nexus | alle Rollen gleichzeitig | höchste Dichte, kürzeste Pausen |

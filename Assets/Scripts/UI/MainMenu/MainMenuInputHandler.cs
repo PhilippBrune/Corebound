@@ -65,12 +65,24 @@ namespace Corebound.UI.MainMenu
                 return;
             }
 
-            if (Mathf.Abs(navigationInput.y) < NavigateThreshold || Mathf.Abs(navigationInput.y) < Mathf.Abs(navigationInput.x))
+            // B4: Left/Right walks the secondary row, Up/Down the primary column and the step
+            // between the two tiers.
+            if (Mathf.Abs(navigationInput.x) >= NavigateThreshold && Mathf.Abs(navigationInput.x) > Mathf.Abs(navigationInput.y))
+            {
+                if (_mainMenuController.MoveSelectionHorizontal(navigationInput.x > 0f ? 1 : -1))
+                {
+                    NavigateSubmitted?.Invoke();
+                }
+
+                return;
+            }
+
+            if (Mathf.Abs(navigationInput.y) < NavigateThreshold)
             {
                 return;
             }
 
-            if (_mainMenuController.MoveSelection(navigationInput.y > 0f ? -1 : 1))
+            if (_mainMenuController.MoveSelectionVertical(navigationInput.y > 0f ? -1 : 1))
             {
                 NavigateSubmitted?.Invoke();
             }

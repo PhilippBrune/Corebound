@@ -795,16 +795,14 @@ namespace Corebound.Gameplay.Combat
                 return null;
             }
 
-            for (var index = unlocks.Length - 1; index >= 0; index--)
+            // B11: the player's own choice wins. Licences only widen the pool; before 2026-09-22
+            // the most recently bought licence silently became the starting weapon.
+            var catalog = _combatData.WeaponCatalog;
+            var preferred = catalog != null ? catalog.FindById(metaSaveData.PreferredStartWeaponId) : null;
+
+            if (preferred != null && StartWeaponOptions.IsAvailable(preferred, metaSaveData, _combatData.MetaProgressionDefinitionData))
             {
-                var unlockDefinition = unlocks[index];
-
-                if (!metaSaveData.HasPurchased(unlockDefinition.UnlockId) || unlockDefinition.WeaponReward == null)
-                {
-                    continue;
-                }
-
-                return unlockDefinition.WeaponReward;
+                return preferred;
             }
 
             return null;

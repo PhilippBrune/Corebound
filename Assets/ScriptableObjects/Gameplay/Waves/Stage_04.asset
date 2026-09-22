@@ -19,18 +19,18 @@ MonoBehaviour:
   _stageRewardData: {fileID: 11400000, guid: 3467bfc60aed467e823aa70f0ee8dcb0, type: 2}
   _stageEnemyPoolData: {fileID: 11400000, guid: adc94635888a44f1995e8d375daacb17, type: 2}
   _progressionData: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}
-  _shopData: {fileID: 11400000, guid: 0ce1469f9a4449c79f5c7a0eb0b4d2f8, type: 2}
+  _shopData: {fileID: 11400000, guid: 1c5fa4ca748a4da4990da4079da0680d, type: 2}
   _intermissionDurationSeconds: 20
   _enemySpawnOrigin: {x: 0, y: -4.5}
   _playerStartPosition: {x: 0, y: -1}
   _postRewardPlayerPosition: {x: 0, y: -2.4}
   _waves:
-  - {fileID: 11400000, guid: 348ca9e43e4f469ca73135df875478c8, type: 2}
-  - {fileID: 11400000, guid: 4799d4e3b7a94a50b6257bf2f4b49761, type: 2}
-  - {fileID: 11400000, guid: b363391b58d14cc5be2ffbac0f53b4e8, type: 2}
-  - {fileID: 11400000, guid: 26bfa68dcb7e4518ad2b9574067dbf72, type: 2}
-  - {fileID: 11400000, guid: 2802f0f0f7f2476888dfcc6633c0e8cb, type: 2}
-  - {fileID: 11400000, guid: af41d1dc791b4565b46c8a40986ce1be, type: 2}
+  - {fileID: 11400000, guid: 96e1e8c17dab4bd7aaaf533711b99702, type: 2}
+  - {fileID: 11400000, guid: f9cb9d5654b14c91a7d924c3f5648e56, type: 2}
+  - {fileID: 11400000, guid: 9fb9cc15bf5540eb9bd4960d6adb8b06, type: 2}
+  - {fileID: 11400000, guid: 2b8e2a06be6a4034a425df5cc456fb2b, type: 2}
+  - {fileID: 11400000, guid: 99c842ec01e64b3eb47286865149d2c5, type: 2}
+  - {fileID: 11400000, guid: f39b34d864594aedae9af5569629df35, type: 2}
   _bossData: {fileID: 11400000, guid: 79efd988b32f4ed28972d66ad4ecf7a7, type: 2}
   _spawnPoints:
   - _position: {x: -5.5, y: -3.5}

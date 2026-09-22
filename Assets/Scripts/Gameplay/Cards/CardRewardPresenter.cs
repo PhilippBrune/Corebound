@@ -431,7 +431,11 @@ namespace Corebound.Gameplay.Cards
             _resourceText.text = _controller.ResourceSummary;
             _towerText.text = _controller.TowerSummary;
             // The card body already carries the prose; the footer carries the numbers.
-            _descriptionText.text = _controller.SelectedDescription + LocalizationService.Resolve("   (Confirm or click to take)", "   (Bestätigen oder Klick zum Nehmen)");
+            _descriptionText.text = _controller.SelectedDescription
+                + LocalizationService.Resolve("   (Confirm or click to take", "   (Bestätigen oder Klick zum Nehmen")
+                + (_controller.RemainingRerolls > 0
+                    ? LocalizationService.Resolve("; Q / LB rerolls, ", "; Q / LB würfelt neu, ") + _controller.RemainingRerolls + LocalizationService.Resolve(" left)", " übrig)")
+                    : ")");
 
             RebuildCards();
 

@@ -98,9 +98,13 @@ Seltene High-Impact-Angebote dürfen stark sein, wenn sie spürbare Investitions
 
 ## Open Questions
 
-- Soll der Shop feste Preis-Kategorien oder dynamische Angebote pro Stage verwenden?
-- Wird ein Reroll-System Teil des Initialumfangs?
-- Gibt es eine kontrollierte Refund-Regel für bestimmte Upgrades oder Tower-Entscheidungen?
+Keine offenen Fragen. Die drei früheren Fragen sind beantwortet (2026-09-22):
+
+- *Feste Preis-Kategorien oder dynamische Angebote?* Feste Kategorien pro Angebotsart plus
+  `ShopData._stagePriceMultiplier` — siehe [Shop.md](Shop.md).
+- *Reroll im Initialumfang?* Nein — siehe [Shop.md](Shop.md). Ein Reroll-Key-Node der Command-Branch
+  existiert getrennt davon, siehe [SkillTree.md](SkillTree.md).
+- *Refund-Regel?* Ja, eine — die Tabelle "Refunds und Verkauf" unten ist die einzige Quelle.
 
 ## Acceptance Criteria
 
@@ -134,3 +138,54 @@ New Scrap sinks added 2026-09-21:
   competes with towers and weapons rather than replacing the need to defend the Core.
 - **Weapon purchases**, once [WeaponLoadout.md](WeaponLoadout.md) is implemented, including a
   50% sell-back which is the only Scrap income outside combat.
+
+---
+
+## Refunds und Verkauf (2026-09-22)
+
+Die einzige Quelle für Rückerstattungen. Shop.md, Towers.md und WeaponLoadout.md verweisen hierher
+und wiederholen die Regeln nicht mehr.
+
+| Gekauft | Rückgabe möglich? | Satz | Wann |
+| --- | --- | --- | --- |
+| Card (Reward oder Shop) | nein | — | — |
+| Weapon (Shop oder Reward) | ja, Verkauf aus dem Loadout-Panel | 50 % des Kaufpreises plus aller Tier-Upgrades, abgerundet | Intermission; die letzte Waffe kann nicht verkauft werden |
+| Weapon, die nicht mehr passt (pending) | ja, Ablehnen | 100 % bei Shop-Kauf, 0 % bei Reward | im Moment des Angebots |
+| Tower (Bau oder Upgrade) | nein | — | — |
+| Core-Reparatur | nein | — | — |
+| Meta-Käufe (Unlocks, Stat-Upgrades) | nein | — | — |
+| Skill-Tree-Punkte | ja, voller Respec | 100 % der ausgegebenen SP | Hauptmenü; erster Respec je Tree-Version gratis, danach 30 Legierung |
+
+`ShopService.RefundPurchase()` ist kein Spieler-Refund, sondern ein Korrektheits-Guard: Er rollt eine
+Zahlung zurück, deren *Anwendung* danach fehlgeschlagen ist.
+
+**Scrap-Einnahmen außerhalb des Kampfes** (die frühere Behauptung, der Waffenverkauf sei die einzige):
+Waffenverkauf, Factory-Produktion (Salvage Trickle, Tower-Pulse, Wave-Abschluss-Bonus) und die
+Skill-Tree-Knoten Dividend, Deep Reserves, War Chest und Seed Capital.
+
+## Währungen und ihre Quellen (2026-09-22)
+
+Die einzige Quelle für Verdienstraten. [SkillTree.md](SkillTree.md) und [Upgrades.md](Upgrades.md)
+verweisen hierher.
+
+| Währung | Reichweite | Verdient durch | Ausgegeben für |
+| --- | --- | --- | --- |
+| Scrap | ein Run | Enemy-Kills, Wave-Abschluss, Factory-Produktion, Waffenverkauf, Skill-Tree-Startboni | Towers, Tower-Upgrades, Shop-Angebote, Waffen, Waffen-Tier-Upgrades, Core-Reparatur |
+| Skill Points | dauerhaft | **nur Boss-Siege**: Stage 1-5 = 1 / 1 / 2 / 2 / 3, plus 2 beim ersten Sieg über eine Boss-Id | Skill-Tree-Knoten, danach Ascension-Ränge |
+| Alloy | dauerhaft | **nur Boss- und Elite-Kills**: Boss Stage 1-5 = 6 / 8 / 10 / 12 / 14, plus 10 beim ersten Sieg; Elite = 1 | Unlocks, permanente Stat-Upgrades, bezahlter Respec (30) |
+
+Weder das Abschließen noch das Scheitern eines Runs zahlt an sich etwas. Die Werte stehen in
+`MetaProgressionDefinitionData`, nicht im Code.
+
+## Trennungsregel, präzisiert (2026-09-22)
+
+Die frühere Formulierung ("keine dauerhafte Währung darf etwas kaufen, was ein Run selbst kaufen
+kann") war mehrdeutig: Alloy-Magazin-Upgrades und die In-Run-Waffentiers berühren dieselbe Zahl.
+
+Die geltende Regel lautet:
+
+- Eine dauerhafte Währung kauft **niemals eine Run-Ressource**: kein Scrap, keine Card, keine Waffe,
+  keinen Tower, keine Reparatur. Diese entstehen ausschließlich im Run.
+- Eine dauerhafte Währung darf **Grundwerte und Rabatte** verändern — innerhalb der harten
+  Obergrenzen in [Upgrades.md](Upgrades.md), und niemals so weit, dass sie die Build-Entscheidungen
+  eines einzelnen Runs überwiegt.

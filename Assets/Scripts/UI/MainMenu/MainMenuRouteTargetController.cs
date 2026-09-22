@@ -45,7 +45,127 @@ namespace Corebound.UI.MainMenu
 
         public bool TryHandleNavigation(Vector2 navigationInput)
         {
-            return _activeTarget != null && _activeTarget.IsOpen && _activeTarget.TryHandleNavigation(navigationInput);
+            if (_activeTarget != null && _activeTarget.IsOpen)
+            {
+                return _activeTarget.TryHandleNavigation(navigationInput);
+            }
+
+            // The profile panel is the one panel with a selection in it (SaveSystem.md, "Drei
+            // Profile"). Everything else the route panel shows is static text.
+            if (_activePanelData == null || Mathf.Abs(navigationInput.y) < 0.5f)
+            {
+                return false;
+            }
+
+            var step = navigationInput.y > 0f ? -1 : 1;
+
+            if (_pendingPanelRoute == MainMenuRoute.Profile)
+            {
+                var nextProfile = Mathf.Clamp(_profileRowIndex + step, 0, ProfileSelection.ProfileCount - 1);
+
+                if (nextProfile == _profileRowIndex)
+                {
+                    return false;
+                }
+
+                _profileRowIndex = nextProfile;
+                RouteTargetChanged?.Invoke();
+                return true;
+            }
+
+            if (_pendingPanelRoute == MainMenuRoute.NewRun && _startWeaponOptions.Count > 0)
+            {
+                var nextWeapon = Mathf.Clamp(_startWeaponRowIndex + step, 0, _startWeaponOptions.Count - 1);
+
+                if (nextWeapon == _startWeaponRowIndex)
+                {
+                    return false;
+                }
+
+                _startWeaponRowIndex = nextWeapon;
+                RouteTargetChanged?.Invoke();
+                return true;
+            }
+
+            return false;
+        }
+
+        private int _profileRowIndex;
+
+        // B11: the starting-weapon list, plus the overwrite warning when there is a run to lose.
+        private string[] BuildStartWeaponLines()
+        {
+            if (_startWeaponOptions.Count == 0)
+            {
+                RefreshStartWeaponOptions();
+            }
+
+            var warning = HasContinueRun() ? 1 : 0;
+            var lines = new string[_startWeaponOptions.Count + warning];
+
+            for (var index = 0; index < _startWeaponOptions.Count; index++)
+            {
+                var weapon = _startWeaponOptions[index];
+                var marker = index == _startWeaponRowIndex ? "> " : "   ";
+                lines[index] = marker + (weapon != null ? weapon.DisplayName : "?")
+                    + (weapon != null && !string.IsNullOrWhiteSpace(weapon.Summary) ? "  -  " + weapon.Summary : string.Empty);
+            }
+
+            if (warning > 0)
+            {
+                lines[lines.Length - 1] = LocalizationService.Resolve(
+                    "Starting a new run overwrites the run you can continue.",
+                    "Ein neuer Run überschreibt den fortsetzbaren Run.");
+            }
+
+            return lines;
+        }
+
+        // The rows the route panel draws while the profile panel is open; null for every other
+        // panel, which keeps showing its authored text.
+        public string[] ActivePanelDetailLinesOverride
+        {
+            get
+            {
+                if (_activePanelData == null)
+                {
+                    return null;
+                }
+
+                if (_pendingPanelRoute == MainMenuRoute.NewRun)
+                {
+                    return BuildStartWeaponLines();
+                }
+
+                if (_pendingPanelRoute != MainMenuRoute.Profile)
+                {
+                    return null;
+                }
+
+                var lines = new string[ProfileSelection.ProfileCount];
+
+                for (var index = 0; index < lines.Length; index++)
+                {
+                    var summary = ProfileSelection.Summarize(index + 1);
+                    var marker = index == _profileRowIndex ? "> " : "   ";
+                    var active = index + 1 == ProfileSelection.ActiveIndex
+                        ? LocalizationService.Resolve("  (active)", "  (aktiv)")
+                        : string.Empty;
+
+                    var detail = !summary.IsUsed
+                        ? LocalizationService.Resolve("empty", "leer")
+                        : LocalizationService.Resolve("Ascension ", "Aufstieg ") + summary.AscensionRank
+                            + "  ·  " + summary.Alloy + LocalizationService.Resolve(" Alloy", " Legierung")
+                            + "  ·  " + summary.SkillPoints + " SP"
+                            + (summary.HasRun
+                                ? LocalizationService.Resolve("  ·  run in stage ", "  ·  Run in Stage ") + summary.RunStageIndex
+                                : string.Empty);
+
+                    lines[index] = marker + LocalizationService.Resolve("Profile ", "Profil ") + (index + 1) + active + "  -  " + detail;
+                }
+
+                return lines;
+            }
         }
 
         // Debug-only: F9/F10 cycle the stage a fresh "New Run" starts on. Deliberately raw
@@ -162,6 +282,19 @@ namespace Corebound.UI.MainMenu
             }
 
             var route = _pendingPanelRoute.Value;
+
+            if (route == MainMenuRoute.Profile)
+            {
+                ProfileSelection.SetActive(_profileRowIndex + 1);
+                CloseActivePanel();
+                return true;
+            }
+
+            if (route == MainMenuRoute.NewRun)
+            {
+                SavePreferredStartWeapon();
+            }
+
             CloseActivePanel();
             ExecuteImmediateRoute(route);
             return true;
@@ -194,6 +327,10 @@ namespace Corebound.UI.MainMenu
                 case MainMenuRoute.MetaProgression:
                     OpenTarget(MetaProgressionTarget);
                     return;
+                case MainMenuRoute.Profile:
+                    _profileRowIndex = ProfileSelection.ActiveIndex - 1;
+                    OpenPanel(_executionData != null ? _executionData.ProfilePanelData : null, MainMenuRoute.Profile);
+                    return;
                 case MainMenuRoute.Quit:
                     BeginQuitRoute();
                     return;
@@ -202,6 +339,16 @@ namespace Corebound.UI.MainMenu
 
         private void BeginNewRunRoute(MainMenuRoute route)
         {
+            // B11: the New Run panel is where the starting weapon is picked, so it opens whether or
+            // not there is a run to overwrite. The Tutorial keeps its old straight-to-scene path -
+            // a guided first run should not start with a loadout decision.
+            if (route == MainMenuRoute.NewRun)
+            {
+                _startWeaponRowIndex = ResolvePreferredStartWeaponRow();
+                OpenPanel(_executionData != null ? _executionData.NewRunConfirmationPanelData : null, route);
+                return;
+            }
+
             if (HasContinueRun())
             {
                 OpenPanel(_executionData != null ? _executionData.NewRunConfirmationPanelData : null, route);
@@ -209,6 +356,62 @@ namespace Corebound.UI.MainMenu
             }
 
             ExecuteImmediateRoute(route);
+        }
+
+        private readonly System.Collections.Generic.List<Corebound.Gameplay.Weapons.WeaponData> _startWeaponOptions =
+            new System.Collections.Generic.List<Corebound.Gameplay.Weapons.WeaponData>();
+
+        private int _startWeaponRowIndex;
+
+        private void RefreshStartWeaponOptions()
+        {
+            var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+            var catalog = definition != null ? definition.UpgradeWeapons : null;
+            var saveData = SaveManager != null && definition != null
+                ? SaveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData())
+                : null;
+            StartWeaponOptions.Collect(catalog, saveData, definition, _startWeaponOptions);
+        }
+
+        private int ResolvePreferredStartWeaponRow()
+        {
+            RefreshStartWeaponOptions();
+            var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+            var saveData = SaveManager != null && definition != null
+                ? SaveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData())
+                : null;
+            var preferred = saveData != null ? saveData.PreferredStartWeaponId : string.Empty;
+
+            for (var index = 0; index < _startWeaponOptions.Count; index++)
+            {
+                if (_startWeaponOptions[index] != null && _startWeaponOptions[index].WeaponId == preferred)
+                {
+                    return index;
+                }
+            }
+
+            return 0;
+        }
+
+        private void SavePreferredStartWeapon()
+        {
+            var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+
+            if (SaveManager == null || definition == null || _startWeaponRowIndex < 0 || _startWeaponRowIndex >= _startWeaponOptions.Count)
+            {
+                return;
+            }
+
+            var saveData = SaveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
+
+            if (saveData == null)
+            {
+                return;
+            }
+
+            var weapon = _startWeaponOptions[_startWeaponRowIndex];
+            saveData.SetPreferredStartWeaponId(weapon != null ? weapon.WeaponId : string.Empty);
+            SaveManager.SaveMetaProgressionSaveData(saveData);
         }
 
         private void BeginQuitRoute()

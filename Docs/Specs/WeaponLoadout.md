@@ -164,8 +164,9 @@ A weapon in a slot may be sold during Intermission for **50% of its purchase pri
 | `_rarity` | `CardRarity` | reuses the existing rarity enum for shop pricing and offer weighting |
 | `_basePurchaseCost` | int | |
 
-### `WeaponLoadoutData` (new, run-scoped runtime state, not an asset)
-Holds the six slots and computes the archetype counts.
+### Loadout runtime state (not an asset)
+`WeaponLoadoutRuntime` holds the six slots and computes the archetype counts. It is a plain runtime
+class; there is no `WeaponLoadoutData` asset and none is planned.
 
 ### Save data
 `RunSaveData.EquippedWeaponId` (single string) is **replaced** by `EquippedWeaponIds` (a six-entry list, empty strings for empty slots). This is a save format change and needs a version bump plus a migration that promotes the old single id into slot 0.

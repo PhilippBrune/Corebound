@@ -125,3 +125,32 @@ Festgelegte Entscheidungen:
 - Die erste MainMenu-UI verwendet importierte Art-Assets für Hintergrund, Logo, Button-Frames und Fokusmarker statt reiner Debug-Textdarstellung.
 - Controller-Glyph-Hinweise und UI-Cues werden über dieselbe Skin- und Presenter-Struktur verdrahtet.
 - Continue, Settings und Meta Progression besitzen im ersten Slice echte Route-Ziele innerhalb des bestehenden MainMenu-Routings.
+
+---
+
+## Layout (2026-09-22)
+
+Das Hauptmenü war eine einzelne vertikale Liste. Mit sichtbarem "Continue" passte sie im Vollbild
+nicht mehr auf den Bildschirm. Owner-Entscheidung 2026-09-22: **zweistufiges Layout**.
+
+```
+            C O R E B O U N D
+         ┌─────────────────────┐
+         │      CONTINUE       │   primäre Aktion, groß
+         └─────────────────────┘
+         ┌─────────────────────┐
+         │       NEW RUN       │
+         └─────────────────────┘
+
+  [Progression]  [Tutorial]  [Settings]  [Quit]      sekundäre Reihe
+```
+
+- **Primäre Stufe:** die ein bis zwei Aktionen, die einen Run starten oder fortsetzen. Groß, mittig,
+  volle Breite.
+- **Sekundäre Stufe:** alle globalen Routen als eine Reihe gleich breiter Schaltflächen am unteren
+  Rand.
+- **Navigation:** Hoch/Runter wechselt zwischen den Stufen und innerhalb der primären Einträge,
+  Links/Rechts innerhalb der sekundären Reihe. Der Fokus merkt sich je Stufe seine letzte Position.
+- Die sekundäre Reihe bricht auf zwei Zeilen um, wenn die Breite pro Eintrag unter 150 px fiele.
+- Das Profil (siehe [SaveSystem.md](SaveSystem.md), "Drei Profile") steht als Kopfzeile über der
+  primären Stufe und wird über eine eigene Route gewechselt.

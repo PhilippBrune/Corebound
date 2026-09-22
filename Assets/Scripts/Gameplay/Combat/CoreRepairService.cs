@@ -17,7 +17,7 @@ namespace Corebound.Gameplay.Combat
     // Deliberately a repair and not an upgrade: repairing competes with towers and weapons for the
     // same Scrap without raising any ceiling, so it can never become a power creep sink. A player
     // who has taken no Core damage has nothing to buy here, which is the correct incentive.
-    public sealed class CoreRepairService : MonoBehaviour
+    public sealed class CoreRepairService : MonoBehaviour, IInteractHandler
     {
         [SerializeField] private WaveManager _waveManager;
         [SerializeField] private EconomyService _economyService;
@@ -102,6 +102,7 @@ namespace Corebound.Gameplay.Combat
             if (InputReader != null)
             {
                 InputReader.InteractPressed += OnInteractPressed;
+                InteractRouter.Register(this);
             }
         }
 
@@ -110,10 +111,21 @@ namespace Corebound.Gameplay.Combat
             if (InputReader != null)
             {
                 InputReader.InteractPressed -= OnInteractPressed;
+                InteractRouter.Unregister(this);
             }
         }
 
         private void OnInteractPressed()
+        {
+            InteractRouter.Dispatch();
+        }
+
+        // IInteractHandler (spec review A1): below a tower slot, above the Core guard.
+        public InteractPriority InteractPriority => InteractPriority.CoreRepair;
+
+        public bool CanHandleInteract => CanRepair;
+
+        public void HandleInteract()
         {
             TryRepair();
         }

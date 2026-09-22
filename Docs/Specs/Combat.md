@@ -46,7 +46,6 @@ Combat-Daten werden datengetrieben über ScriptableObjects definiert.
 - DamageProfileData: Schadenstyp, Basisschaden, kritische Multiplikatoren, Durchschlag oder Flächeneigenschaften
 - StatusEffectData: Dauer, Stapelregel, Tickrate, VFX- und Audio-Referenzen
 - HitReactionData: Trefferfeedback, Knockback-Grenzen und Telemetrie-Flags
-- CombatEncounterData: optionale Stage- oder Wave-spezifische Override-Daten ohne Regelbruch
 
 Runtime-Zustand bleibt in isolierten Komponenten oder Services und nicht in ScriptableObjects.
 
@@ -141,3 +140,31 @@ Festgelegte Entscheidungen:
 - Combat bleibt bei vielen Projectiles und Enemies lesbar und controller-freundlich.
 - UI, Audio und VFX reagieren eventbasiert auf Combat-Ereignisse.
 - Neue Combat-Inhalte können überwiegend datengetrieben ergänzt werden.
+
+---
+
+## Modifier-Pipeline (2026-09-22)
+
+Die einzige Quelle für die Reihenfolge, in der Modifikatoren komponiert werden. SkillTree.md,
+Upgrades.md, Towers.md und WeaponLoadout.md verweisen hierher und definieren keine eigene Reihenfolge
+mehr (vorher standen dort fünf einander widersprechende Varianten).
+
+**Weapons**, pro ausgerüsteter Kopie:
+
+`Basiswert (WeaponData) → In-Run-Tier → permanente Alloy-Upgrades → Skill Tree → Innate Effects + Set Bonuses → Cards und Relics`
+
+**Towers**, pro gebautem Tower:
+
+`Basiswert (TowerData) → permanente Alloy-Upgrades → In-Run-Upgrade-Level → Skill Tree → Cards und Relics`
+
+Regeln, die diese Reihenfolge überhaupt erst bedeutsam machen:
+
+- Multiplikative Ziele (Damage, Fire Interval, Projectile Speed, Crit Damage, Spread, Reload) werden
+  multipliziert; ihre Reihenfolge ist mathematisch egal und nur zur Lesbarkeit festgeschrieben.
+- Additive Ziele (Additional Projectiles, Additional Pierce, Magazine, Crit Chance, Status Chance)
+  werden addiert. Hier entscheidet die Reihenfolge nur, welche Obergrenze zuerst greift.
+- Obergrenzen aus [Upgrades.md](Upgrades.md) gelten **nur** für permanente Upgrades. Cards, Relics
+  und Set Bonuses dürfen darüber hinausgehen; das ist die beabsichtigte Beziehung zwischen
+  dauerhaftem Fortschritt und einem einzelnen Run.
+- Regeländernde Ziele (Full Ring, Explode on Impact/Expire, Slow on Hit, Critical Every Nth) sind
+  Schalter: einmal gesetzt, bleiben sie gesetzt, unabhängig von der Quelle.

@@ -86,7 +86,13 @@ namespace Corebound.Input
 
         public bool IsInteractHeld { get; private set; }
 
-        public bool IsUsingGamepad { get; private set; }
+        // A12: Settings can force the device. 0 = auto (the thresholds below decide), 1 = always
+        // controller, 2 = always mouse and keyboard.
+        public static int ForcedInputDeviceIndex { get; set; }
+
+        public bool IsUsingGamepad => ForcedInputDeviceIndex == 1 || (ForcedInputDeviceIndex != 2 && _isUsingGamepad);
+
+        private bool _isUsingGamepad;
 
         public event Action<Vector2> NavigatePerformed;
 
@@ -139,7 +145,7 @@ namespace Corebound.Input
         // Controller-first is also the project's binding target, so this is the representative path.
         public void DebugSetUsingGamepad(bool value)
         {
-            IsUsingGamepad = value;
+            _isUsingGamepad = value;
         }
 
         public void DebugSetInteractHeld(bool value)
@@ -420,7 +426,7 @@ namespace Corebound.Input
 
                 if (value.sqrMagnitude >= StickTakeoverMagnitude * StickTakeoverMagnitude)
                 {
-                    IsUsingGamepad = true;
+                    _isUsingGamepad = true;
                 }
 
                 return;
@@ -432,7 +438,7 @@ namespace Corebound.Input
 
             if (moved)
             {
-                IsUsingGamepad = false;
+                _isUsingGamepad = false;
             }
         }
 
@@ -540,7 +546,7 @@ namespace Corebound.Input
 
         private void UpdateInputDevice(InputAction.CallbackContext context)
         {
-            IsUsingGamepad = context.control?.device is Gamepad;
+            _isUsingGamepad = context.control?.device is Gamepad;
         }
 
         public string GetBindingDisplayString(string mapName, string actionName, string bindingGroup = "Keyboard&Mouse")

@@ -39,10 +39,10 @@ Das Resource-System ist der zentrale Übersetzer von Kampfleistung in Build-Fort
 Resource-Daten werden über ScriptableObjects verwaltet.
 
 - ResourceData: Identität, Icon, Farbe, Kategorien und Anzeigeregeln
-- ResourceDropTableData: Drop-Wahrscheinlichkeiten, Mengen und Skalierung
-- ResourceGenerationData: feste oder bedingte Erzeugerregeln für Towers, Cards oder Rewards
-- ResourceSpendRuleData: erlaubte Senken, Preise und Restriktionen
-- ResourcePickupData: Sammelverhalten, Dauer und Präsentation in der Arena
+
+Drop-Mengen stehen auf `EnemyData` und `WaveRewardData`, Erzeugerregeln in den Factory-Knoten
+(siehe [Factory.md](Factory.md)), Preise bei den Angeboten selbst, und das Sammelverhalten in
+`ResourcePickupController`. Eigene Assets dafür gibt es nicht.
 
 ## Technical Design
 

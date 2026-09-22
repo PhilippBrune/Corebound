@@ -20,6 +20,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8b2a809afd5d44d6bfc9a8b82647bf55, type: 2}
   - {fileID: 11400000, guid: 910cf85617494c4dabd2323b261d8baf, type: 2}
   - {fileID: 11400000, guid: 2d964528004d490bbb7d96787838d545, type: 2}
+  - {fileID: 11400000, guid: 235a1f538a6146d1ba5275c879ccbe0e, type: 2}
+  - {fileID: 11400000, guid: 0210de1e4d114cb08578a97a506e41b6, type: 2}
   _tiers:
   - _displayName: Salvage Line
     _requiredTowersBuilt: 1

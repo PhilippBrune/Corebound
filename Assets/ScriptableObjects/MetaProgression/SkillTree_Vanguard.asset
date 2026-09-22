@@ -613,17 +613,17 @@ MonoBehaviour:
           _value: -0.08
       _iconSpritePath: 
     - _nodeId: industry_scrap_surge
-      _displayName: 'Scrap Surge'
-      _displayNameDe: 'Schrottflut'
-      _description: '+15% Scrap from all sources.'
-      _descriptionDe: '+15 % Schrott aus allen Quellen.'
+      _displayName: 'Magnetise'
+      _displayNameDe: 'Magnetisieren'
+      _description: 'Scrap flies to you from anywhere in the arena - no more walking the field for pickups.'
+      _descriptionDe: 'Schrott fliegt dir aus der ganzen Arena zu - kein Ablaufen des Feldes mehr für Aufsammelbares.'
       _cost: 3
       _prerequisiteNodeId: industry_dividend
       _branchSpendRequirement: 10
       _effects:
-      - _target: 10
+      - _target: 29
         _operation: 0
-        _value: 0.15
+        _value: 40
       _subNodes:
       - _nodeId: industry_smelters
         _displayName: 'Smelters'
@@ -853,17 +853,17 @@ MonoBehaviour:
           _value: 0.03
       _iconSpritePath: 
     - _nodeId: command_war_chest
-      _displayName: 'War Chest'
-      _displayNameDe: 'Kriegskasse'
-      _description: 'Start every run with +40 Scrap.'
-      _descriptionDe: 'Starte jeden Run mit +40 Schrott.'
+      _displayName: 'Wider Draft'
+      _displayNameDe: 'Breitere Auswahl'
+      _description: 'Reward screens can be redrawn once with Q / LB if none of the three cards fits your build.'
+      _descriptionDe: 'Belohnungsbildschirme lassen sich mit Q / LB einmal neu auswürfeln, wenn keine der drei Karten passt.'
       _cost: 3
       _prerequisiteNodeId: command_veterans_cache
       _branchSpendRequirement: 10
       _effects:
-      - _target: 11
+      - _target: 30
         _operation: 0
-        _value: 40
+        _value: 1
       _subNodes:
       - _nodeId: command_tactics
         _displayName: 'Tactics'

@@ -99,7 +99,15 @@ Die Zahl der Optionen im ersten Milestone sollte fokussiert bleiben und nur echt
 
 - Welche Accessibility-Optionen sind für den ersten Milestone verpflichtend?
 - Wie fein granular sollen Grafikoptionen im Vergleich zu Presets werden?
-- Soll Zielhilfe als globale Setting, pro Weapon oder pro Input-Gerät einstellbar sein?
+
+Beantwortet 2026-09-22:
+
+- *Zielhilfe global, pro Weapon oder pro Gerät?* Global für Controller, gewichtet pro Weapon über das
+  Low/Medium/High-Profil in `WeaponData`; Maus und Tastatur bekommen keine Zielhilfe (siehe
+  [Combat.md](Combat.md)). Dazu die Option **Eingabegerät: Automatisch / Controller / Maus**, damit die
+  Geräteerkennung übersteuerbar ist (siehe [Input.md](Input.md)).
+- *Wo sind Settings erreichbar?* Hauptmenü und Pause-Overlay (vierter Tab, mindestens Lautstärken und
+  Eingabegerät). Auflösung und Vollbild bleiben dem Hauptmenü vorbehalten.
 
 ## Acceptance Criteria
 

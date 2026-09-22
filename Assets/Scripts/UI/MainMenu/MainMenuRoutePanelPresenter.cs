@@ -153,7 +153,7 @@ namespace Corebound.UI.MainMenu
             _subtitleText.text = panelData.Subtitle;
             _summaryText.text = panelData.Summary;
             _footerText.text = panelData.FooterHint;
-            RebuildDetailLines(panelData.DetailLines);
+            RebuildDetailLines(RouteTargetController.ActivePanelDetailLinesOverride ?? panelData.DetailLines);
             UIManager.NotifyPanelChanged(_managedPanel);
         }
 

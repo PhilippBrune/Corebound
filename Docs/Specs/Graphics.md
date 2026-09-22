@@ -120,7 +120,7 @@ Benötigte Kern-Asset-Familien:
 - Enemy-Rollen und Bosses
 - Arena-Boden, Ränder, Props und VFX
 
-Die Stage-1-spezifische Aufteilung des Ground-Atlases und des Prop-Atlases ist ergänzend in [VFX_stage1_ground_tileset.md](./VFX_stage1_ground_tileset.md) und [vfx_stage1_prop_set.md](./vfx_stage1_prop_set.md) dokumentiert.
+Die Stage-1-spezifische Aufteilung des Ground-Atlases und des Prop-Atlases ist ergänzend in [VFX_stage1_ground_tileset.md](./VFX_stage1_ground_tileset.md) und [VFX_stage1_prop_set.md](./VFX_stage1_prop_set.md) dokumentiert.
 
 ## Balancing
 
@@ -147,3 +147,26 @@ Festgelegte Entscheidungen:
 - Das Spiel bleibt im Kern ein 2D- oder 2.5D-Top-Down-Spiel und weicht nicht in ein 3D-Kameraspiel ab.
 - UI, Combat und Reward-Lesbarkeit bleiben auch bei hoher Effektdichte verständlich.
 - Die Asset-Produktion ist modular genug, um neue Cards, Towers, Weapons, Enemies und Bosses ohne Stilbruch zu erweitern.
+
+---
+
+## Abnahmekriterien für geliefertes Artwork (2026-09-22)
+
+Mehrfach kamen Assets mit einem *eingebackenen* Schachbrettmuster an - also gemalter statt echter
+Transparenz (`skill_node_key_frame`, `weapon_slot_frame`, `vfx_boss_telegraph_lance`,
+`character_portrait_frame`), einmal auch ein Diagramm statt des bestellten Rahmens
+(`skill_node_sub_frame`). Im Editor fällt das erst auf, wenn jemand hinsieht.
+
+Ein geliefertes Asset gilt als abgenommen, wenn:
+
+1. Es liegt unter dem im Prompt genannten Pfad und ist nach `Assets/StreamingAssets/Art/...`
+   gespiegelt (`Corebound > Validate Art Pipeline`).
+2. Es ist ein PNG mit echtem Alphakanal. Ein Rahmen oder Icon hat **transparente Ecken**; ein Rahmen
+   hat zusätzlich eine **transparente Mitte**.
+3. Es enthält **kein** graues Schachbrettmuster als Pixel.
+4. Es enthält keinen eingebrannten Text (Graphics.md, Rules: Text bleibt UI-Text).
+5. Sein Inhalt entspricht dem Prompt - ein Rahmen ist ein Rahmen, kein Diagramm und keine Szene.
+
+Punkte 2 und 3 prüft der Validator automatisch: Er misst die Alpha-Deckung von Ecken und Mitte
+gegen den im Prompt deklarierten Asset-Typ (`frame`, `icon`, `sheet`) und erkennt das
+Zwei-Ton-Karomuster. Punkte 4 und 5 bleiben eine menschliche Sichtprüfung.

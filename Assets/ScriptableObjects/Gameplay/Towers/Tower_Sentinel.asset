@@ -18,6 +18,13 @@ MonoBehaviour:
   _description: Fast-firing piercing rounds that punch through multiple enemies at once - low damage per hit, built for crowd control rather than single-target burst.
   _descriptionDe: Schnellfeuernde durchschlagende Geschosse, die mehrere Gegner gleichzeitig durchbohren - niedriger Schaden pro Treffer, ausgelegt auf Crowd Control statt Einzelziel-Burst.
   _sprite: {fileID: 0}
+  _spritePath: Assets/Art/Towers/tower_sentinel_topdown.png
+  _spriteRect:
+    serializedVersion: 2
+    x: 304
+    y: 138
+    width: 302
+    height: 659
   _buildCost: 16
   _range: 6.5
   _fireIntervalSeconds: 0.6

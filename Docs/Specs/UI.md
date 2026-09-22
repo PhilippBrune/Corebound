@@ -33,7 +33,7 @@ Der Player muss jederzeit erkennen können, was wichtig, was optional und was ge
 - Wichtige Gameplay-Informationen haben Vorrang vor dekorativen Elementen.
 - Modale Fenster dürfen den Spielfluss nur dann blockieren, wenn eine klare Entscheidung nötig ist.
 - Neue Features müssen vorhandene UI-Rahmen erweitern, nicht parallele Sonderlösungen bauen.
-- UI-Hierarchien werden in der Unity-Szene von Hand angelegt und im Inspector editierbar gehalten — Presenter-Klassen binden an diese vorhandenen Objekte (`[SerializeField]`-Referenzen), statt ihre Hierarchie zur Laufzeit selbst zu konstruieren. Ein Presenter darf einen rein prozeduralen Fallback besitzen, der eine fehlende Szenen-Hierarchie beim ersten Öffnen im Editor automatisch nachbaut (Self-Healing-Scaffolding), aber dieser Fallback ist ein einmaliges Editor-Werkzeug, kein dauerhafter Laufzeitpfad — sobald die Hierarchie in der Szene existiert, ist sie die alleinige Quelle der Wahrheit für Layout, Farben und Abstände.
+- **Szene gegen Prozedur (präzisiert 2026-09-22).** Feste Rahmen, Panel-Positionen und Hintergründe gehören in die Szene; ein Presenter darf sie nur finden und fehlende Sprites nachrüsten, niemals Anker oder Größen neu setzen. Das gilt bindend für `HUDCanvas`, `RewardCanvas` und `ShopCanvas`. **Prozedural erzeugt werden dürfen** Inhalte, deren Anzahl erst zur Laufzeit feststeht oder die einem Weltobjekt folgen: Listenzeilen und Grids (Loadout-Panel, Pause-Tabs, Progression-Zeilen, Tower-Roster), Tooltips und Karten am Objekt (Upgrade-Karte), Weltraum-Prompts (Core-Reparatur) und Schadenszahlen. Ein Presenter, der eine Szenen-Hierarchie vorfindet, benutzt sie; ein prozeduraler Fallback bleibt erlaubt, damit eine fehlende Hierarchie im Editor nicht in einen Absturz läuft.
 
 ## Data Model
 
@@ -110,7 +110,7 @@ Komplexere Systeme wie Factory oder Meta Progression benötigen progressive Offe
 
 Festgelegte Entscheidungen:
 
-- Sieben Layer-Ebenen sind für den ersten Vertical Slice ausreichend und bereits umgesetzt: `main_menu`, `gameplay_hud`, `boss_hud`, `reward_screen`, `settings_panel`, `meta_progression_panel`, `main_menu_route_panel`.
+- Layer-Ebenen (Stand 2026-09-22): `main_menu`, `main_menu_route_panel`, `gameplay_hud`, `boss_hud`, `reward_screen`, `shop_panel`, `weapon_loadout_panel`, `tower_build_browser`, `pause_overlay`, `settings_panel`, `meta_progression_panel`.
 - Dauerhaft sichtbare HUD-Elemente (Core-/Player-Health, Wave-Status, Resource-Anzeige) bleiben von kontextuellen Overlays (Reward, Shop, Settings, Meta Progression) architektonisch getrennt statt in einem gemeinsamen Panel zu leben.
 
 ## Acceptance Criteria
@@ -120,3 +120,28 @@ Festgelegte Entscheidungen:
 - HUD, Menüs und Overlays sind modular aufgebaut.
 - Informationshierarchie und Lesbarkeit bleiben auch in intensiven Combat-Situationen erhalten.
 - Neue Systeme können Panels erweitern, ohne bestehende UI-Grundstrukturen zu brechen.
+
+---
+
+## Auflösung und Seitenverhältnis (2026-09-22)
+
+Drei Bugs entstanden daraus, dass dieses Dokument keine Auflösungsregeln hatte: HUD-Werte
+verschwanden im Vollbild, die Hauptmenü-Einträge passten mit sichtbarem "Continue" nicht mehr in den
+Bildschirm, und um die Arena lag ein blauer Rahmen.
+
+- **Referenzauflösung 1920x1080**, `CanvasScaler` im Modus *Scale With Screen Size*, Match 0.5. Jeder
+  Canvas benutzt dieselben Werte.
+- Unterstützt werden 16:9, 16:10 und 21:9 zwischen 1280x720 und 3840x2160. Nichts darf davon abhängen,
+  dass exakt 16:9 vorliegt.
+- **Best-Fit-Text**: Ein Text mit `resizeTextForBestFit` braucht eine Rect-Höhe von mindestens
+  1.3 x seiner Mindestgröße und `verticalOverflow = Truncate`. Mit `Overflow` schrumpft Legacy Text
+  nicht, sondern zeichnet über seine Nachbarn; mit zu kleiner Rect zeichnet er gar nichts.
+  Mindestgrößen liegen nicht unter 10.
+- **Listen, die wachsen können** (Hauptmenü, Progression, Loadout) definieren eine Mindesthöhe pro
+  Eintrag und ein Verhalten, wenn die Summe nicht passt. Sie dürfen nie stillschweigend überlaufen.
+- **Die Kamera füllt die Arena immer aus** (Cover, nicht Fit): sie skaliert auf das Maximum aus
+  Höhen- und Breitenbedarf und wird an den Arenagrenzen plus Wandzuschlag geklemmt. Außerhalb der
+  Wände liegen abgedunkelte Backdrop-Kacheln, damit in keinem Seitenverhältnis die leere
+  Hintergrundfarbe zu sehen ist.
+- Autopilot-Screenshots entstehen in der aktuellen Editor-Auflösung; eine Prüfung im echten Vollbild
+  bleibt ein manueller Schritt.

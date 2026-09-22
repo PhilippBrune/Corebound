@@ -20,7 +20,10 @@ namespace Corebound.Gameplay.Resources
 
         public string DisplayLabel => _resourceData != null ? _resourceData.DisplayName : "Resource";
 
-        public float AutoPickupRange => _resourceData != null ? _resourceData.AutoPickupRange : 1.8f;
+        // Skill Tree "Magnetise" (Industry key node): adds to the auto-pickup range, far enough
+        // that Scrap comes to the player instead of the player walking the arena for it.
+        public float AutoPickupRange => (_resourceData != null ? _resourceData.AutoPickupRange : 1.8f)
+            + Corebound.MetaProgression.RunProgressionSnapshot.Current.Skills[Corebound.MetaProgression.SkillEffectTarget.PickupMagnetRange];
 
         public float PickupMoveSpeed => _resourceData != null ? _resourceData.PickupMoveSpeed : 4.5f;
 

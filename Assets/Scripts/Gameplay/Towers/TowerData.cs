@@ -13,6 +13,15 @@ namespace Corebound.Gameplay.Towers
         [SerializeField] [TextArea(2, 3)] private string _description = string.Empty;
         [SerializeField] [TextArea(2, 3)] private string _descriptionDe = string.Empty;
         [SerializeField] private Sprite _sprite;
+
+        // The art, by project path, with an optional pixel rect when the source texture has
+        // transparent padding around the turret. Serialized references to sprites inside a
+        // Multiple-mode texture go stale whenever the Sprite Editor re-slices it (that is how
+        // Tower_Mortar's reference broke), so every tower loads its art by path. The paths used to
+        // be a switch on the tower id inside TowerRuntimeController; they live here since
+        // 2026-09-22 so that a renamed file is visible to Corebound > Validate Art Pipeline.
+        [SerializeField] private string _spritePath = string.Empty;
+        [SerializeField] private Rect _spriteRect = new Rect(0f, 0f, 0f, 0f);
         [SerializeField] private int _buildCost = 12;
         [SerializeField] private float _range = 6f;
         [SerializeField] private float _fireIntervalSeconds = 0.85f;
@@ -38,6 +47,10 @@ namespace Corebound.Gameplay.Towers
         public string Description => LocalizationService.Resolve(_description, _descriptionDe);
 
         public Sprite Sprite => _sprite;
+
+        public string SpritePath => _spritePath;
+
+        public Rect SpriteRect => _spriteRect;
 
         public int BuildCost => _buildCost;
 

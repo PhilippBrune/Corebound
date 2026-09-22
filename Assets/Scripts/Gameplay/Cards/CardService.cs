@@ -89,6 +89,7 @@ namespace Corebound.Gameplay.Cards
         public void BuildRewardOffer()
         {
             _currentOffer.Clear();
+            _rerollsUsedThisOffer = _rerollInProgress ? _rerollsUsedThisOffer : 0;
 
             if (_cardPoolData == null || _cardPoolData.Cards == null || _cardOfferData == null)
             {
@@ -181,6 +182,30 @@ namespace Corebound.Gameplay.Cards
             }
 
             return candidates[candidates.Count - 1];
+        }
+
+        // Skill Tree "Wider Draft" (Command key node): the reward offer may be redrawn, as often
+        // as the tree grants. Counted per offer, so it cannot be spent twice on one screen.
+        private int _rerollsUsedThisOffer;
+        private bool _rerollInProgress;
+
+        public int RemainingRerolls => Mathf.Max(0,
+            Mathf.RoundToInt(Corebound.MetaProgression.RunProgressionSnapshot.Current.Skills[Corebound.MetaProgression.SkillEffectTarget.RewardRerolls])
+            - _rerollsUsedThisOffer);
+
+        public bool TryRerollOffer()
+        {
+            if (RemainingRerolls <= 0 || _currentOffer.Count == 0)
+            {
+                return false;
+            }
+
+            _rerollsUsedThisOffer++;
+            _rerollInProgress = true;
+            BuildRewardOffer();
+            _rerollInProgress = false;
+            StateChanged?.Invoke();
+            return true;
         }
 
         public bool TryApplyCard(CardData card)

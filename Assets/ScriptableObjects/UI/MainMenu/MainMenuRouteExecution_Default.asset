@@ -19,3 +19,4 @@ MonoBehaviour:
   _quitConfirmationPanelData: {fileID: 11400000, guid: 5d2e1c4a9b9340c48e8b6ab79a5712dd, type: 2}
   _settingsPanelData: {fileID: 11400000, guid: 44c2d95a5b8141378ef6b8ab3679f76f, type: 2}
   _metaProgressionPanelData: {fileID: 11400000, guid: c2bde1c39c4f4a34ae8e4a1b64a47605, type: 2}
+  _profilePanelData: {fileID: 11400000, guid: c0853631997446e79a50b7ac4615ac2f, type: 2}

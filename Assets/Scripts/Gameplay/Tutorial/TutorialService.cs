@@ -88,6 +88,13 @@ namespace Corebound.Gameplay.Tutorial
         // player dismisses whichever overlay got there first, the next tick opens this one.
         private void Update()
         {
+            // B7: opening the loadout panel completes its step; watched here rather than in the
+            // panel, so tutorial logic stays out of gameplay code.
+            if (_isActive && Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.IsOpen)
+            {
+                MarkStepComplete(TutorialStepType.WeaponLoadout);
+            }
+
             if (!_isActive || _isBeatShowing)
             {
                 return;
@@ -181,6 +188,11 @@ namespace Corebound.Gameplay.Tutorial
             }
 
             WaveEvents.WaveCompleted += OnWaveCompleted;
+
+            if (_coreRepairService != null)
+            {
+                _coreRepairService.StateChanged += OnCoreRepairChanged;
+            }
         }
 
         private void OnDisable()
@@ -211,6 +223,21 @@ namespace Corebound.Gameplay.Tutorial
             }
 
             WaveEvents.WaveCompleted -= OnWaveCompleted;
+
+            if (_coreRepairService != null)
+            {
+                _coreRepairService.StateChanged -= OnCoreRepairChanged;
+            }
+        }
+
+        // B7: the loadout panel is the only place a player meets Set Bonuses, tiers and selling,
+        // and nothing taught it. Watching the presenter's own static open flag keeps this out of
+        // the panel's code, per Tutorial.md's rule that the tutorial only observes.
+        [SerializeField] private Corebound.Gameplay.Combat.CoreRepairService _coreRepairService;
+
+        private void OnCoreRepairChanged()
+        {
+            MarkStepComplete(TutorialStepType.CoreRepair);
         }
 
         private void OnPlayerMoved()

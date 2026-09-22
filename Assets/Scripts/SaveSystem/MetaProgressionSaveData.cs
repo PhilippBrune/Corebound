@@ -37,6 +37,7 @@ namespace Corebound.SaveSystem
         // Holds the tree version whose free respec has been used (0 = none yet).
         [SerializeField] private int _freeRespecUsedTreeVersion;
         [SerializeField] private int _ascensionRank;
+        [SerializeField] private string _preferredStartWeaponId = string.Empty;
         [SerializeField] private List<string> _ascensionChoices = new List<string>();
         [SerializeField] private List<string> _pendingAscensionOffer = new List<string>();
 
@@ -82,6 +83,16 @@ namespace Corebound.SaveSystem
         }
 
         public int AscensionRank => _ascensionRank;
+
+        // B11 (spec review 2026-09-22): which weapon a new run starts with, chosen in the New Run
+        // panel. Empty means the default (Rapid). A weapon *licence* no longer decides this - it
+        // only adds the weapon to reward and shop offers.
+        public string PreferredStartWeaponId => _preferredStartWeaponId;
+
+        public void SetPreferredStartWeaponId(string weaponId)
+        {
+            _preferredStartWeaponId = string.IsNullOrWhiteSpace(weaponId) ? string.Empty : weaponId;
+        }
 
         public IReadOnlyList<string> AscensionChoices => _ascensionChoices;
 

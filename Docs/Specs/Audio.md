@@ -120,3 +120,18 @@ Festgelegte Entscheidungen:
 - Settings können relevante Audio-Kategorien sauber steuern.
 - Neue Systeme können AudioEvents ohne Sonderarchitektur ergänzen.
 - Audio unterstützt Combat, Menüs und Rewards konsistent.
+
+---
+
+## Genau eine Musikquelle (2026-09-22)
+
+Zu jedem Zeitpunkt spielt **genau eine** Musikquelle. Zwei gleichzeitige Loops waren bis 2026-09-22
+ein realer Bug: der Save-Manager zog beim Szenenwechsel den AudioManager und den MusicStateController
+des Hauptmenüs mit (siehe [SaveSystem.md](SaveSystem.md), "Lebensdauer von Services").
+
+- Musikzustände (Calm, Combat, Boss) blenden ineinander über; ein Zustandswechsel startet nie eine
+  zweite dauerhafte Quelle.
+- Kein Audio-Objekt wird über einen Szenenwechsel hinweg am Leben gehalten.
+- `AudioPlaybackProbe` (`[AudioProbe]`, nur Editor und Development Build) protokolliert alle zwei
+  Sekunden jede spielende Quelle mit Clip, GameObject, Szene, Loop-Flag und Lautstärke. Er ist das
+  Prüfmittel für diese Regel, weil Agenten nichts hören können.

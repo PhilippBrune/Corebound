@@ -55,7 +55,15 @@ namespace Corebound.Gameplay.Combat
                 NotificationPresenter.Show("Hold Interact near the Core to raise a Guard shield");
             }
 
-            var wantsGuard = _inputReader.IsInteractHeld && isInRange;
+            if (!_inputReader.IsInteractHeld)
+            {
+                Corebound.Input.InteractRouter.ReleaseHold();
+            }
+
+            // Spec review A1: the guard is the lowest-priority Interact verb. A press that built a
+            // tower or bought a Core repair must not also raise the shield, so a hold whose press
+            // was already spent stays inert until the button is released.
+            var wantsGuard = _inputReader.IsInteractHeld && isInRange && !Corebound.Input.InteractRouter.HoldConsumed;
 
             if (wantsGuard == _isGuarding)
             {

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3a6c524aac44297a46a9e5b3bf5afe5, type: 3}
+  m_Name: TutorialStep_CoreRepair
+  m_EditorClassIdentifier:
+  _stepType: 7
+  _promptText: Walk to the Core during an Intermission and press Interact to repair it.
+  _isBlocking: 0
+  _beatTitle: Repair the Core
+  _beatBody: The Core does not heal by itself. Between waves you can spend Scrap at the
+    Core to restore part of its health - every repair in a run costs more than the last,
+    so defending it is still cheaper than fixing it.

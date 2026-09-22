@@ -127,6 +127,9 @@ namespace Corebound.Settings
                 case SettingsOptionKey.Language:
                     candidate.SetLanguageIndex(AdjustChoice(candidate.LanguageIndex, optionDefinition, direction));
                     return;
+                case SettingsOptionKey.InputDevice:
+                    candidate.SetInputDeviceIndex(AdjustChoice(candidate.InputDeviceIndex, optionDefinition, direction));
+                    return;
             }
         }
 
@@ -158,6 +161,8 @@ namespace Corebound.Settings
                     return string.Format("{0:0.00}x", settings.HudScale);
                 case SettingsOptionKey.ControllerAimAssistStrength:
                     return ToPercentLabel(settings.ControllerAimAssistStrength);
+                case SettingsOptionKey.InputDevice:
+                    return ResolveChoiceLabel(optionDefinition, settings.InputDeviceIndex);
                 case SettingsOptionKey.ControlProfile:
                     return ResolveChoiceLabel(optionDefinition, settings.ControlProfileIndex);
                 case SettingsOptionKey.Language:
@@ -191,6 +196,9 @@ namespace Corebound.Settings
             // the Settings screen's own labels immediately - the clearest possible confirmation
             // that the setting took effect.
             Corebound.UI.LocalizationService.IsGerman = settings.LanguageIndex == 1;
+
+            // A12: forcing the device is a setting, not a guess from the last input.
+            Corebound.Input.CoreboundInputReader.ForcedInputDeviceIndex = settings.InputDeviceIndex;
 
             QualitySettings.SetQualityLevel(Mathf.Clamp(settings.QualityPresetIndex, 0, QualitySettings.names.Length > 0 ? QualitySettings.names.Length - 1 : 0), true);
             QualitySettings.vSyncCount = settings.VSyncEnabled ? 1 : 0;

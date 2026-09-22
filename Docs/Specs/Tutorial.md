@@ -113,3 +113,18 @@ Festgelegte Entscheidungen:
 - Tutorial verwendet dieselben Kernsysteme wie der reguläre Run.
 - Fortschritt und optionale Wiederholung sind sauber speicherbar.
 - Zusätzliche Tutorial-Schritte lassen sich über Daten ergänzen.
+
+---
+
+## Zusätzliche Schritte (2026-09-22)
+
+Das Tutorial stammt aus der Zeit vor Loadout, Nachladen und Core-Reparatur. Owner-Entscheidung
+2026-09-22: der geführte Erstlauf bekommt **zwei weitere Schritte**, keine neuen Systeme.
+
+| Schritt | Bedingung erfüllt, wenn | Ausgelöst |
+| --- | --- | --- |
+| Loadout öffnen | der Spieler das Loadout-Panel öffnet (Select / I) | erste Intermission |
+| Core reparieren | eine Reparatur wurde gekauft **oder** der Core ist unbeschädigt und der Spieler bestätigt den Hinweis | erste Intermission mit beschädigtem Core |
+
+Beide benutzen dieselbe `TutorialStepData`-Struktur wie die bestehenden sechs Schritte und beobachten
+vorhandene Events; Tutorial-Code greift weiterhin nicht in Combat, Player oder Tower ein.

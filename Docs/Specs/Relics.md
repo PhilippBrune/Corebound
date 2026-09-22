@@ -32,7 +32,7 @@ Damit die Abgrenzung zu normalen Cards konkret bleibt (Vision's Card-Beispiele s
 
 - **Overclocked Core** — jeder Tower-Treffer hat eine kleine Chance, sofort erneut zu feuern (starke, seltene Synergy mit jedem Damage-Tower-Build).
 - **Scavenger's Contract** — jeder besiegte Elite-Gegner droppt garantiert eine zusätzliche Card-Wahl statt nur Resources (verbindet Combat-Risiko direkt mit Build-Wachstum).
-- **Twin Chamber** — die aktuelle Waffe feuert einen zusätzlichen, leicht abgeschwächten Parallelschuss (verändert einen ganzen Weapon-Build strukturell, nicht nur numerisch).
+- **Twin Chamber** — jede ausgerüstete Waffe feuert einen zusätzlichen, leicht abgeschwächten Parallelschuss (verändert einen ganzen Weapon-Build strukturell, nicht nur numerisch).
 - **Foundry Bond** — jede gebaute Tower-Instanz erhöht den Ressourcenertrag aller Factory-Produktionsknoten dauerhaft (direkte Relic-zu-Factory-Synergy, siehe Factory Philosophy in der Vision).
 
 ## Rules
@@ -43,7 +43,7 @@ Damit die Abgrenzung zu normalen Cards konkret bleibt (Vision's Card-Beispiele s
 - Relics dürfen buildprägend sein, aber keine dominante Einheitsstrategie erzwingen.
 - Relics sind nicht Teil eines aktiven Equipment-Managements im ersten Scope.
 - Relics und Cards dürfen sich über gemeinsame Modifier-Schnittstellen ergänzen.
-- Der erste Vertical Slice behandelt Relics als spätere Erweiterung und nicht als verpflichtenden Kern des Stage-1-Loops.
+- Relics sind seit 2026-09-09 implementiert und Teil des laufenden Spiels; der Satz "spätere Erweiterung" galt bis dahin.
 
 ## Data Model
 
@@ -160,3 +160,30 @@ Festgelegte Entscheidungen:
 - Relics erzeugen hohe Build-Identity ohne eigene Bedienmechanik.
 - Der erste Vertical Slice bleibt auch ohne aktive Relic-Integration vollständig spielbar.
 - Neue Relics lassen sich datengetrieben ergänzen.
+
+---
+
+## Erwerb und Evolution (2026-09-22)
+
+Wie ein Relic in einen Run kommt - vorher nirgends vollständig aufgeschrieben:
+
+| Quelle | Menge | Auswahl |
+| --- | --- | --- |
+| Boss-Sieg | 1 pro Boss | zufällig aus den noch nicht besessenen |
+| Skill Tree, Command: Veteran's Cache | 1 beim Run-Start | zufällig |
+| Skill Tree, Command: Relic Hunter | ein zweites beim Run-Start | zufällig |
+
+Ein Angebot mit Auswahl zwischen mehreren Relics gibt es weiterhin nicht; das Relic wird vergeben und
+per Toast angekündigt (bewusste Scope-Entscheidung, siehe Update 2026-09-09).
+
+**Evolutionsschwellen, neu kalibriert.** Die alten Werte (6 Ranged-Kills, 8 Wellen) waren für einen
+Run über zwei Stages gerechnet. Ein voller Run hat fünf Stages mit 30 Wellen und rund 20 Ranged-
+Gegnern pro Stage, also:
+
+| Relic | Bedingung | alt | neu |
+| --- | --- | --- | --- |
+| Marksman's Trial | besiegte Ranged-Gegner | 6 | 20 |
+| Adaptive Plating | abgeschlossene Wellen | 8 | 18 |
+
+Damit fällt die Evolution in Stage 3-4 statt in Stage 1-2: spät genug, um ein Ziel zu sein, früh
+genug, um im selben Run noch etwas zu bewirken.

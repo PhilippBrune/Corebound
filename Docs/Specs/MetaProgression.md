@@ -38,11 +38,13 @@ Der Zugriff auf Meta Progression erfolgt außerhalb aktiver Combat-Situationen �
 
 Meta-Daten werden über ScriptableObjects und getrennte Save-Domains verwaltet.
 
-- MetaCurrencyData: persistente Currency-Typen und Anzeigeinformationen
-- UnlockData: freischaltbarer Inhalt, Kosten, Voraussetzungen und Zielsystem
-- UnlockTrackData: thematische Progressionspfade oder Gruppen von Unlocks
+- MetaProgressionDefinitionData: Währungsbezeichnung, Verdienstraten und die Liste der Unlocks (`UnlockDefinition`, inline)
 - StartLoadoutData: freischaltbare Startoptionen für neue Runs
-- ProgressRewardData: Regeln für Meta-Belohnungen aus Run-Abschlüssen oder Erfolgen
+- UpgradeCatalogData: die permanenten Stat-Tracks (siehe [Upgrades.md](Upgrades.md))
+- SkillTreeDefinitionData: Skill Tree und Ascension-Pool pro Charakter (siehe [SkillTree.md](SkillTree.md))
+
+Eigene Assets für Währungstypen, einzelne Unlocks oder Unlock-Tracks gibt es nicht; sie wären für
+den aktuellen Umfang reine Indirektion.
 
 ## Technical Design
 
@@ -103,9 +105,16 @@ Freischaltkurven müssen so gestaltet sein, dass regelmäßig neue Möglichkeite
 
 ## Open Questions
 
-- Welche Arten permanenter Boni sind zulässig, ohne Build Diversity zu beschädigen?
-- Soll Meta Progression eher linear, verzweigt oder hybrid aufgebaut sein?
-- Welche Inhalte sind zum Start bereits freigeschaltet und welche dienen als frühe Ziele?
+Keine offenen Fragen. Beantwortet 2026-09-22:
+
+- *Welche permanenten Boni sind zulässig?* Unlocks verbreitern nur den Pool; Stat-Upgrades dürfen
+  Grundwerte anheben, aber nur innerhalb der Obergrenzen in [Upgrades.md](Upgrades.md) (ein voll
+  ausgebauter Wert ist rund 1.6x eines frischen - weniger, als Cards in einem einzigen Run schaffen).
+- *Linear, verzweigt oder hybrid?* Hybrid: ein verzweigter Skill Tree pro Charakter plus eine
+  endlose, rein numerische Ascension-Spur, siehe [SkillTree.md](SkillTree.md).
+- *Was ist zu Beginn freigeschaltet?* Rapid Weapon, Ballista, Mortar und Sentinel Tower sowie der
+  Basis-Card-Pool. Frühe Ziele sind die Spread-Lizenz (20), der Support Tower (20) und die
+  Status-Cards (40).
 
 ## Acceptance Criteria
 
@@ -139,3 +148,19 @@ an in-run build.
 
 **Per character.** Each playable character has its own skill tree and is levelled separately.
 A second character starts its tree at zero rather than inheriting the first character's.
+
+---
+
+## Startwaffe (2026-09-22)
+
+Eine Weapon-Lizenz und die Startwaffe waren dieselbe Sache: `PlayerCombatController` nahm die
+*zuletzt gekaufte* Weapon-Unlock als Startwaffe des nächsten Runs. Das widerspricht der Regel dieses
+Dokuments, dass ein Unlock nur den Pool verbreitert, und der Spieler konnte nicht wählen.
+
+Getrennt seit 2026-09-22:
+
+- Eine **Lizenz** fügt die Waffe den Reward- und Shop-Angeboten hinzu. Mehr nicht.
+- Die **Startwaffe** wird im New-Run-Panel gewählt, aus allen freigeschalteten Waffen. Die Auswahl
+  wird pro Profil gespeichert (`MetaProgressionSaveData.PreferredStartWeaponId`) und ist beim
+  nächsten Run vorausgewählt.
+- Ohne getroffene Wahl startet der Run mit der Rapid Weapon.

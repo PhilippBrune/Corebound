@@ -104,9 +104,12 @@ Persistenzhäufigkeit muss Sicherheit bieten, darf aber Performance oder Dateigr
 
 ## Open Questions
 
-- Wird nur ein fortsetzbarer Run unterstützt oder perspektivisch mehrere Slots?
-- Soll es Cloud-Save-Unterstützung geben?
-- Welche minimale Granularität braucht RunSaveData für sauberes Fortsetzen ohne Inkonsistenzen?
+- Soll es Cloud-Save-Unterstützung geben? (Auf Steam überwiegend Konfiguration, kein Code.)
+
+Beantwortet 2026-09-22: **drei Profile**, jedes mit eigenem, vollständig getrenntem Speicherstand
+(siehe "Drei Profile" unten). Innerhalb eines Profils gibt es weiterhin genau einen fortsetzbaren
+Run. Die Granularität von `RunSaveData` (Stage, Wave, Wallet, Cards, Relics, Towers, Loadout,
+Pending-Zustände) hat sich über mehrere Slices als ausreichend erwiesen.
 
 ## Acceptance Criteria
 
@@ -117,3 +120,41 @@ Persistenzhäufigkeit muss Sicherheit bieten, darf aber Performance oder Dateigr
 - Das System verhindert manuelles Quick-Save-Scumming im aktiven Combat.
 - MainMenu und Meta- oder Settings-Routen können ihren Status aus echten Save-Domains statt aus Szenen-Stubs ableiten.
 - Continue kann im ersten Slice einen tatsächlich geschriebenen Combat-Checkpoint statt nur Bootstrap-Daten laden.
+
+---
+
+## Drei Profile (2026-09-22)
+
+Owner-Entscheidung: Das Spiel hat **drei Profile**. Jedes besitzt einen vollständig eigenen
+Speicherstand - Meta-Fortschritt, Settings, Statistiken und den fortsetzbaren Run.
+
+| Regel | Wert |
+| --- | --- |
+| Anzahl Profile | 3, fest |
+| Ordner | `%USERPROFILE%/AppData/LocalLow/DefaultCompany/Corebound/Profile_01 .. _03` |
+| Inhalt pro Profil | `run.json`, `settings.json`, `meta.json`, `statistics.json` |
+| Aktives Profil | im Hauptmenü gewählt, gespeichert in `profile.json` neben den Profilordnern |
+| Wechsel | nur im Hauptmenü, nie während eines Runs |
+| Löschen | pro Profil, mit Bestätigung; legt das Profil leer neu an |
+
+Ein Profil, das noch nie benutzt wurde, zeigt "Empty"; sonst Ascension-Rang, freigeschaltete Stages
+und die gespielte Zeit, damit die drei unterscheidbar sind.
+
+`LocalProfileSaveManager` hält den Profilnamen nicht mehr als feste `Profile_01`-Konstante, sondern
+liest ihn beim Start aus `ProfileSelection` und baut die Pfade darüber auf. Settings sind bewusst
+Teil des Profils und nicht global: zwei Personen an einem PC erwarten getrennte Lautstärken und
+Tastenbelegungen.
+
+## Lebensdauer von Services (2026-09-22)
+
+Ein Bug, der einen halben Tag gekostet hat (zwei Musikspuren nach dem Tod), kam daher, dass dieses
+Dokument nichts über Objektlebensdauer sagte:
+
+- **Genau ein Service überlebt einen Szenenwechsel: der Save-Manager.** Er liegt dafür auf einem
+  eigenen, sonst leeren GameObject, niemals auf einem geteilten.
+- Jede Szene besitzt ihre eigenen Instanzen von AudioManager, SettingsManager, MusicStateController,
+  InputRebindManager und MetaProgressionService. Sie werden nie persistiert.
+- Eine zweite Instanz des Save-Managers zerstört sich nicht, sondern **leitet weiter** an die erste.
+  So teilen alle Szenen einen Cache statt getrennter Kopien.
+- `DontDestroyOnLoad(gameObject)` auf einem GameObject, das noch andere Komponenten trägt, ist
+  verboten - es schleppt jede davon mit.

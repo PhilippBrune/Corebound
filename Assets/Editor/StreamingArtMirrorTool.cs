@@ -34,8 +34,9 @@ namespace Corebound.EditorTools
         {
             var mirrorReport = SyncMirror(applyChanges: false);
             var pathReport = ValidateStageThemePaths();
+            var contentReport = ValidateArtContent();
 
-            var message = mirrorReport + "\n\n" + pathReport;
+            var message = mirrorReport + "\n\n" + pathReport + "\n\n" + contentReport;
             Debug.Log("[ArtPipeline] Validation report:\n" + message);
 
             if (EditorUtility.DisplayDialog("Corebound - Art Pipeline", message, "Sync Mirror Now", "Close"))
@@ -43,6 +44,123 @@ namespace Corebound.EditorTools
                 Debug.Log("[ArtPipeline] " + SyncMirror(applyChanges: true));
                 AssetDatabase.Refresh();
             }
+        }
+
+        // Graphics.md, "Abnahmekriterien für geliefertes Artwork" (2026-09-22). Four assets so far
+        // arrived with a checkerboard painted *into* the pixels instead of real transparency, and
+        // one was a diagram rather than the frame that was ordered. A path check cannot see any of
+        // that, so this looks at the pixels: fully opaque corners on something that should be cut
+        // out, and the two-tone checker pattern itself.
+        //
+        // Naming convention decides what is expected, which keeps the check data-free: a file whose
+        // name ends in _frame, _icon, _badge, _pips or _indicator must have transparent corners, and
+        // a *_frame must also have a transparent centre.
+        private static string ValidateArtContent()
+        {
+            var suspects = new List<string>();
+            var checkedCount = 0;
+
+            foreach (var sourcePath in EnumerateMirroredSourceFiles())
+            {
+                var name = Path.GetFileNameWithoutExtension(sourcePath).ToLowerInvariant();
+                var isFrame = name.EndsWith("_frame");
+                var isCutout = isFrame || name.EndsWith("_icon") || name.EndsWith("_badge")
+                    || name.EndsWith("_pips") || name.EndsWith("_indicator");
+
+                if (!isCutout)
+                {
+                    continue;
+                }
+
+                var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(sourcePath);
+
+                if (texture == null || !texture.isReadable)
+                {
+                    // Not readable means no import setting for it; say so rather than pass silently.
+                    suspects.Add(sourcePath + " - cannot be read (enable Read/Write to check it)");
+                    continue;
+                }
+
+                checkedCount++;
+                var width = texture.width;
+                var height = texture.height;
+                var cornerAlpha = Mathf.Max(
+                    Mathf.Max(texture.GetPixel(1, 1).a, texture.GetPixel(width - 2, 1).a),
+                    Mathf.Max(texture.GetPixel(1, height - 2).a, texture.GetPixel(width - 2, height - 2).a));
+
+                if (cornerAlpha > 0.9f)
+                {
+                    suspects.Add(sourcePath + " - opaque corners: expected a cut-out shape");
+                }
+
+                if (isFrame && texture.GetPixel(width / 2, height / 2).a > 0.9f)
+                {
+                    suspects.Add(sourcePath + " - opaque centre: a frame must be see-through");
+                }
+
+                if (LooksLikeCheckerboard(texture))
+                {
+                    suspects.Add(sourcePath + " - checkerboard baked into the pixels (fake transparency)");
+                }
+            }
+
+            if (suspects.Count == 0)
+            {
+                return "Art content: " + checkedCount + " cut-out assets checked, none suspicious.";
+            }
+
+            return "Art content: " + suspects.Count + " suspicious asset(s) of " + checkedCount + " checked:\n - "
+                + string.Join("\n - ", suspects);
+        }
+
+        // The classic grey-on-grey transparency checker: two near-grey tones alternating in blocks.
+        // Sampled on a coarse grid, so it costs nothing even on a large sheet.
+        private static bool LooksLikeCheckerboard(Texture2D texture)
+        {
+            const int Samples = 24;
+            var toneA = 0;
+            var toneB = 0;
+            var other = 0;
+
+            for (var y = 0; y < Samples; y++)
+            {
+                for (var x = 0; x < Samples; x++)
+                {
+                    var pixel = texture.GetPixel(
+                        Mathf.Clamp(x * texture.width / Samples, 0, texture.width - 1),
+                        Mathf.Clamp(y * texture.height / Samples, 0, texture.height - 1));
+
+                    if (pixel.a < 0.9f)
+                    {
+                        other++;
+                        continue;
+                    }
+
+                    var isGrey = Mathf.Abs(pixel.r - pixel.g) < 0.05f && Mathf.Abs(pixel.g - pixel.b) < 0.05f;
+
+                    if (!isGrey)
+                    {
+                        other++;
+                    }
+                    else if (pixel.r > 0.92f)
+                    {
+                        toneA++;
+                    }
+                    else if (pixel.r > 0.68f && pixel.r < 0.88f)
+                    {
+                        toneB++;
+                    }
+                    else
+                    {
+                        other++;
+                    }
+                }
+            }
+
+            var total = Samples * Samples;
+
+            // Both tones present in quantity, and almost nothing else: that is a checker, not art.
+            return toneA > total / 6 && toneB > total / 6 && other < total / 3;
         }
 
         [MenuItem("Corebound/Sync StreamingAssets Art Mirror")]

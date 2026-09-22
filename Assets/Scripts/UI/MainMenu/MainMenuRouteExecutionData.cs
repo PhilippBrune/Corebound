@@ -12,6 +12,7 @@ namespace Corebound.UI.MainMenu
         [SerializeField] private MainMenuRoutePanelData _quitConfirmationPanelData;
         [SerializeField] private MainMenuRoutePanelData _settingsPanelData;
         [SerializeField] private MainMenuRoutePanelData _metaProgressionPanelData;
+        [SerializeField] private MainMenuRoutePanelData _profilePanelData;
 
         public string ContinueSceneName => _continueSceneName;
 
@@ -26,5 +27,7 @@ namespace Corebound.UI.MainMenu
         public MainMenuRoutePanelData SettingsPanelData => _settingsPanelData;
 
         public MainMenuRoutePanelData MetaProgressionPanelData => _metaProgressionPanelData;
+
+        public MainMenuRoutePanelData ProfilePanelData => _profilePanelData;
     }
 }

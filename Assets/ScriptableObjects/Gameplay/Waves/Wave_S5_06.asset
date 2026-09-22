@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bf2c8460bdd495cbe4414f3d60618a0, type: 3}
+  m_Name: Wave_S5_06
+  m_EditorClassIdentifier:
+  _waveId: wave_s5_06
+  _displayLabel: Wave 6 Elite
+  _spawnGroups:
+  - {fileID: 11400000, guid: f265a561e0c24aaf82a56e192553a12f, type: 2}
+  - {fileID: 11400000, guid: 6bee9215309f43d3bba98253bebe45e5, type: 2}
+  - {fileID: 11400000, guid: 125d6bfc6a94462191824098580c56f2, type: 2}
+  - {fileID: 11400000, guid: d3f30327d95f4da280e4782319ba381e, type: 2}
+  - {fileID: 11400000, guid: 964053ffcb0b4b8ba131003601ff9032, type: 2}
+  - {fileID: 11400000, guid: a89d987b92b840a59011c47e11739e37, type: 2}
+  _modifierData: {fileID: 11400000, guid: 9e3a79d0c8b24e61b0f4bdb2c91a0e65, type: 2}
+  _waveRewardData: {fileID: 11400000, guid: 246d5f4ff4e04986a882fa0d956cb5a7, type: 2}

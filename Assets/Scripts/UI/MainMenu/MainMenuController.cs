@@ -56,6 +56,87 @@ namespace Corebound.UI.MainMenu
             return changed;
         }
 
+        // B4 (spec review 2026-09-22): the menu is two tiers. Continue and New Run are the primary
+        // actions, everything else is a global route in a row along the bottom. The entry order in
+        // MainMenuFlowData decides which is which: primary routes first.
+        public int PrimaryEntryCount
+        {
+            get
+            {
+                var count = 0;
+
+                for (var index = 0; index < VisibleEntries.Count; index++)
+                {
+                    var route = VisibleEntries[index] != null ? VisibleEntries[index].Route : MainMenuRoute.Quit;
+
+                    if (route != MainMenuRoute.Continue && route != MainMenuRoute.NewRun)
+                    {
+                        break;
+                    }
+
+                    count++;
+                }
+
+                return count;
+            }
+        }
+
+        public bool IsSecondaryEntry(int index)
+        {
+            return index >= PrimaryEntryCount;
+        }
+
+        // Up/Down moves inside the primary column and steps between the tiers; the row itself is
+        // navigated with Left/Right. Each tier remembers where the focus was.
+        public bool MoveSelectionVertical(int direction)
+        {
+            var primary = PrimaryEntryCount;
+            var total = VisibleEntries.Count;
+
+            if (total == 0 || primary == 0 || primary >= total)
+            {
+                return MoveSelection(direction);
+            }
+
+            var index = SelectedIndex;
+
+            if (index < primary)
+            {
+                _lastPrimaryIndex = index;
+                var next = index + direction;
+
+                if (next >= 0 && next < primary)
+                {
+                    return SelectIndex(next);
+                }
+
+                return SelectIndex(Mathf.Clamp(_lastSecondaryIndex, primary, total - 1));
+            }
+
+            _lastSecondaryIndex = index;
+            return SelectIndex(Mathf.Clamp(_lastPrimaryIndex, 0, primary - 1));
+        }
+
+        public bool MoveSelectionHorizontal(int direction)
+        {
+            var primary = PrimaryEntryCount;
+            var total = VisibleEntries.Count;
+
+            if (total == 0 || SelectedIndex < primary || primary >= total)
+            {
+                return false;
+            }
+
+            var count = total - primary;
+            var offset = SelectedIndex - primary + direction;
+            offset = (offset % count + count) % count;
+            _lastSecondaryIndex = primary + offset;
+            return SelectIndex(_lastSecondaryIndex);
+        }
+
+        private int _lastPrimaryIndex;
+        private int _lastSecondaryIndex = int.MaxValue;
+
         public bool MoveSelection(int direction)
         {
             var changed = _model.TryMoveSelection(direction);

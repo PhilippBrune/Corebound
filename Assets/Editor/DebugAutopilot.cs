@@ -521,11 +521,18 @@ namespace Corebound.EditorTools
             }
 
             Debug.Log(DebugAutopilot.LogPrefix + " started, target stage " + _targetStageIndex);
+            HookRunSummary();
+        }
+
+        private void OnDestroy()
+        {
+            UnhookRunSummary();
         }
 
         private void Update()
         {
             _elapsed += Time.deltaTime;
+            TickRunSummary();
             _stepTimer += Time.deltaTime;
             _confirmTimer += Time.deltaTime;
 
@@ -1387,6 +1394,109 @@ namespace Corebound.EditorTools
             Debug.Log(DebugAutopilot.LogPrefix + " loadout test applied: " + DescribeLoadout());
         }
 
+        // B10 (spec review 2026-09-22): WeaponLoadout.md, Waves.md and SkillTree.md all state
+        // balancing targets that nothing measured - run length, where the damage comes from, and
+        // whether the projectile budget is ever reached. One summary per run makes them checkable.
+        private readonly System.Collections.Generic.Dictionary<int, float> _stageSeconds = new System.Collections.Generic.Dictionary<int, float>();
+        private int _summaryStageIndex = -1;
+        private float _summaryStageStarted;
+        private float _damageByPlayer;
+        private float _damageByTower;
+        private float _damageToPlayerAndCore;
+        private int _peakLiveProjectiles;
+        private int _enemiesKilled;
+
+        private void HookRunSummary()
+        {
+            Corebound.Gameplay.Combat.CombatEvents.DamageTaken += OnSummaryDamage;
+            Corebound.Gameplay.Combat.CombatEvents.CombatantDied += OnSummaryDeath;
+        }
+
+        private void UnhookRunSummary()
+        {
+            Corebound.Gameplay.Combat.CombatEvents.DamageTaken -= OnSummaryDamage;
+            Corebound.Gameplay.Combat.CombatEvents.CombatantDied -= OnSummaryDeath;
+        }
+
+        private void OnSummaryDamage(Corebound.Gameplay.Combat.DamageEventArgs args)
+        {
+            switch (args.DamageContext.SourceType)
+            {
+                case Corebound.Gameplay.Combat.DamageSourceType.Player:
+                    _damageByPlayer += args.DamageContext.Amount;
+                    return;
+                case Corebound.Gameplay.Combat.DamageSourceType.Tower:
+                    _damageByTower += args.DamageContext.Amount;
+                    return;
+                default:
+                    _damageToPlayerAndCore += args.DamageContext.Amount;
+                    return;
+            }
+        }
+
+        private void OnSummaryDeath(Corebound.Gameplay.Combat.DeathEventArgs args)
+        {
+            _enemiesKilled++;
+        }
+
+        private void TickRunSummary()
+        {
+            _peakLiveProjectiles = Mathf.Max(_peakLiveProjectiles, Corebound.Gameplay.Combat.CombatProjectile.ActivePlayerProjectileCount);
+
+            if (_waveManager == null)
+            {
+                return;
+            }
+
+            var stage = _waveManager.StageIndex;
+
+            if (stage == _summaryStageIndex)
+            {
+                return;
+            }
+
+            if (_summaryStageIndex > 0)
+            {
+                _stageSeconds[_summaryStageIndex] = _elapsed - _summaryStageStarted;
+            }
+
+            _summaryStageIndex = stage;
+            _summaryStageStarted = _elapsed;
+        }
+
+        private void LogRunSummary()
+        {
+            if (_summaryStageIndex > 0)
+            {
+                _stageSeconds[_summaryStageIndex] = _elapsed - _summaryStageStarted;
+            }
+
+            var builder = new System.Text.StringBuilder(256);
+            builder.Append(DebugAutopilot.LogPrefix).Append(" SUMMARY ");
+            builder.Append("total=").Append(_elapsed.ToString("0.0")).Append("s");
+
+            foreach (var pair in _stageSeconds)
+            {
+                builder.Append("  stage").Append(pair.Key).Append('=').Append(pair.Value.ToString("0.0")).Append('s');
+            }
+
+            var totalDamage = Mathf.Max(0.01f, _damageByPlayer + _damageByTower);
+            builder.Append("  damage[weapons=").Append(_damageByPlayer.ToString("0"))
+                .Append(" (").Append((100f * _damageByPlayer / totalDamage).ToString("0")).Append("%)")
+                .Append(" towers=").Append(_damageByTower.ToString("0"))
+                .Append(" (").Append((100f * _damageByTower / totalDamage).ToString("0")).Append("%)")
+                .Append(" taken=").Append(_damageToPlayerAndCore.ToString("0")).Append(']');
+            builder.Append("  kills=").Append(_enemiesKilled);
+            builder.Append("  peakProjectiles=").Append(_peakLiveProjectiles);
+
+            if (_playerCombat != null)
+            {
+                builder.Append('/').Append(_playerCombat.ProjectileBudget);
+            }
+
+            Debug.Log(builder.ToString());
+        }
+
         private string DescribeLoadout()
         {
             if (_playerCombat == null)
@@ -1788,6 +1898,7 @@ namespace Corebound.EditorTools
         {
             _step = Step.Done;
             Debug.Log(DebugAutopilot.LogPrefix + " finished after " + _elapsed.ToString("0.0") + "s. sawShop=" + _sawShopOpen);
+            LogRunSummary();
             SessionState.SetBool(DebugAutopilot.ActiveSessionKey, false);
             EditorApplication.isPlaying = false;
         }

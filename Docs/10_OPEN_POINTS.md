@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 2.0 · Created 2026-09-20 · Last updated 2026-09-22 (second pass) · Status: Active
+Version: 2.1 · Created 2026-09-20 · Last updated 2026-09-22 (third pass) · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is the *punch list*. Every entry states what is missing, why it matters, and what "done" looks like, so none of them has to be re-derived next session.
 
@@ -44,9 +44,20 @@ with a full loadout stays pending through the whole first wave of the next stage
 starts without an Intermission. Weapon cards are no longer offered while one is pending (they
 could not be taken). Should a new stage open with a short Intermission when a weapon is pending?
 
-**Spec review:** [`SPEC_REVIEW_2026-09-22.md`](SPEC_REVIEW_2026-09-22.md) lists 33 gaps and
-contradictions across `Docs/Specs`, each with resolution options. Items A1, A2, A4, A5, B2 and B3
-decide behaviour and are the first to settle.
+**Spec review: decided and implemented (third pass, 2026-09-22).** All 39 findings were decided by
+the owner and implemented the same day; [`SPEC_REVIEW_2026-09-22.md`](SPEC_REVIEW_2026-09-22.md) is
+now the decision record. What came out of it and still needs play:
+
+- **New stage 2-5 wave sets** (77 new spawn groups) are generated, not playtested. One autopilot run
+  lost Stage 2 in 17 seconds; density is the first thing to check.
+- **Three profiles** with separate save states, a Profile route in the main menu, and the two-tier
+  main menu layout - all compile and render, none is exercised by an autopilot path yet.
+- **New Run now asks for the starting weapon** (a licence no longer sets it silently).
+- **Pause has a Settings tab** (volumes, aim assist, input device); the input device can be forced to
+  Controller or Mouse, which is the escape hatch for the Xbox aiming problem if it persists.
+- **Magnetise** and **Wider Draft** replaced the two numeric key nodes; both need a profile that has
+  bought them before they can be seen working.
+- **One shop per stage, after wave 3**, with rising prices (1.0 to 1.45).
 
 ### 0a. Art still missing or defective (2026-09-22)
 

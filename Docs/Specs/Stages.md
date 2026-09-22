@@ -109,7 +109,7 @@ Stage-Übergänge und Abschlüsse brauchen klar erkennbare, nicht überlange Sig
 
 Jede Stage sollte eine thematische visuelle Identität besitzen, die Arena, Props, Farbklima und Reward-Momente beeinflusst.
 
-Die aktuelle Stage-1-Implementation nutzt dazu den modular beschriebenen Ground-Atlas aus [VFX_stage1_ground_tileset.md](./VFX_stage1_ground_tileset.md) sowie den Prop-Atlas aus [vfx_stage1_prop_set.md](./vfx_stage1_prop_set.md).
+Die aktuelle Stage-1-Implementation nutzt dazu den modular beschriebenen Ground-Atlas aus [VFX_stage1_ground_tileset.md](./VFX_stage1_ground_tileset.md) sowie den Prop-Atlas aus [VFX_stage1_prop_set.md](./VFX_stage1_prop_set.md).
 
 Stage-Reward- und Übergangsmomente greifen auf die dokumentierte Effektfamilie aus der [VFX Specification](./VFX.md) zurück.
 

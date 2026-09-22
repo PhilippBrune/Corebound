@@ -161,3 +161,28 @@ visible gap opposite it.
 
 **Still open:** helper-spawn variety. Only Stage 3 is designed around summoning adds, and the
 per-stage phase assets currently carry no helper groups.
+
+---
+
+## Reward-Bundle (2026-09-22)
+
+Was ein Boss-Sieg auszahlt, stand bisher verteilt in fünf Specs. Dies ist die einzige Liste; die
+anderen Dokumente behalten ihre Zahlen und verweisen hierher.
+
+| Teil | Wert | Quelle der Zahlen |
+| --- | --- | --- |
+| Skill Points | Stage 1-5: 1 / 1 / 2 / 2 / 3 | [Economy.md](Economy.md), Währungstabelle |
+| Skill Points, erster Sieg über diese Boss-Id | +2 | dito |
+| Alloy | Stage 1-5: 6 / 8 / 10 / 12 / 14 | dito |
+| Alloy, erster Sieg über diese Boss-Id | +10 | dito |
+| Card-Reward | ein reguläres Drei-Karten-Angebot | [Cards.md](Cards.md) |
+| Weapon | **garantiert eine Weapon-Card im Angebot** | [WeaponLoadout.md](WeaponLoadout.md) |
+| Relic | ein zufälliges, noch nicht besessenes Relic | [Relics.md](Relics.md) |
+| Stage-Abschluss | `StageRewardData.CompletionResourceBonus` in Scrap | [Stages.md](Stages.md) |
+
+Ausgezahlt wird im Moment des Boss-Todes direkt in den Save (`MetaRewardLedger`), damit ein Run, der
+den Boss besiegt und danach scheitert, seine Punkte behält.
+
+**Hinweis (2026-09-22):** Kommt die garantierte Weapon-Card bei vollem Loadout an, wartet sie als
+*pending*. Die nächste Stage beginnt ohne Intermission, die Waffe kann also erst nach deren erster
+Welle platziert werden. Solange eine Waffe wartet, werden keine weiteren Weapon-Cards angeboten.

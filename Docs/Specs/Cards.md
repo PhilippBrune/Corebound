@@ -29,8 +29,8 @@ Das Card-System ist der wichtigste Treiber für Build-Identität und kurzfristig
 - Cards werden niemals aktiv aus der Hand gespielt.
 - Cards erzeugen keine eigene Kampf- oder Aktionsressource.
 - Jede Card verändert mindestens ein bestehendes System wie Weapon, Tower, Resource, Combat oder Economy.
-- Legendary Card ist selten, buildprägend und darf nur in klar begrenzten Angebotsfenstern erscheinen.
-- Doppelte Cards sind nur erlaubt, wenn ihre Stack-Regel explizit in den Daten definiert ist.
+- Legendary Card ist selten und buildprägend; ihre Seltenheit entsteht über Angebotsgewichte, nicht über gesperrte Angebotsfenster.
+- **Jede Card stapelt** (Owner-Entscheidung 2026-09-21): zweimal dieselbe Card wendet ihren Effekt zweimal an. `CardData.AuthoredStackable` bleibt erhalten, falls eine künftige Card einmalig sein soll, wird aber von nichts gelesen.
 - Card-Text und Effekte müssen auf Controller genauso verständlich sein wie auf Mouse & Keyboard.
 - Neue Cards dürfen neue Synergies schaffen, aber keine neue Grundmechanik ohne separate Spezifikation einführen.
 
@@ -42,7 +42,7 @@ Card-Daten liegen vollständig in ScriptableObjects.
 - CardEffectData: ein einzelner Modifikator auf ein Zielsystem mit Wert, Operator und Bedingungen
 - CardPoolData: verfügbare Karten pro Progressionsstand, Stage oder Angebotskontext
 - CardOfferData: Anzahl der Optionen, Gewichtungen, Sperrregeln und Garantien
-- CardTagData: kontrollierte Schlagwörter für Synergy, Archetypen und Filterung
+Tags sind das Enum `CardTagType` auf `CardData`, kein eigenes Asset.
 
 Runtime-Registrierung aktiver Cards bleibt von den Asset-Daten getrennt.
 

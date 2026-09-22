@@ -14,7 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _presentationId: weapon_presentation_cryo
   _iconSprite: {fileID: 0}
-  _iconSpritePath: 
+  _iconSpritePath: Assets/Art/UI/HUD/weapon_icon_sheet.png
+  _iconAtlasColumns: 3
+  _iconAtlasRows: 3
+  _iconColumn: 1
+  _iconRow: 1
   _accentColor: {r: 0.55, g: 0.9, b: 1, a: 1}
   _muzzleColor: {r: 0.75, g: 0.95, b: 1, a: 0.9}
   _muzzleRadius: 0.26

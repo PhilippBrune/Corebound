@@ -1296,3 +1296,93 @@ Prompt:
 
 1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the artwork must be fully transparent (alpha 0), not white. Create a 2D portrait frame for a character selector in a sci-fantasy defense roguelite. A rounded-square frame with a heavy lower band where a character name and level number can be drawn over it at runtime, and a clean inner window for the portrait. It must read as selected or unselected purely through tinting, since one piece of art serves both states. Match the established Corebound language: steel-blue structure, pale metallic edges, restrained amber-gold energy accents, clean industrial framing, strong silhouette. Transparent background, no text.
 
+
+---
+
+## Weapon set 2026-09-22 (Assets 101-105)
+
+Six new weapons shipped on 2026-09-22 (see [Weapons.md](../Specs/Weapons.md), "Weapon set
+2026-09-22"). All six reuse tinted cells of the old three-row projectile sheet and have no icon at
+all - the HUD tile falls back to a one- or two-letter label. These five assets close that gap.
+
+Every prompt must produce a **PNG with real transparency**: transparent corners, no painted
+checkerboard, no page background, no text baked into the image (Graphics.md, "Abnahmekriterien
+für geliefertes Artwork").
+
+### Asset 101 - Weapon Projectile Sheet, Second Wave
+
+Target: Assets/Art/Combat/Projectiles/projectile_sheet_weapons_02.png
+
+**Status:** NOT CREATED YET.
+
+Needed because:
+
+Scorcher, Cryo Lance, Railgun, Nova Pulse, Scatter Launcher and Twin SMG currently fire the old
+Rapid, Spread and Beam projectiles with a colour tint, so two weapons on screen can look identical.
+Each row is one weapon, read as a 6-row by 4-column grid, all cells the same size, projectiles
+pointing right.
+
+Prompt:
+
+Create a 2D top-down projectile sprite sheet on a 6-row by 4-column grid, every cell exactly the same size, each projectile pointing to the right, for a sci-fantasy defense roguelite. Row 1: a short flame jet tongue, orange-red, soft and turbulent, four frames of flicker. Row 2: a slim ice lance, pale cyan with a crystalline core, four frames of a faint sparkle. Row 3: a heavy railgun slug, white-hot with a compressed energy body and a hard leading edge, four frames of an intensifying trail. Row 4: a small violet energy shard with a faceted body, four frames of rotation. Row 5: a stubby launcher shell with a metal casing and an amber warhead, four frames of a tumbling spin. Row 6: a tiny brass submachine-gun round, four frames of a subtle muzzle-hot shimmer. Every projectile must be readable at roughly 24 pixels and must read as clearly different from the other five rows by silhouette alone, not only by colour. Match the established Corebound language: steel-blue structure, pale metallic edges, restrained amber-gold energy accents, industrial sci-fantasy. Transparent background, no text, no grid lines, no labels.
+
+### Asset 102 - Weapon Icon Sheet
+
+Target: Assets/Art/UI/HUD/weapon_icon_sheet.png
+
+**Status:** NOT CREATED YET.
+
+Needed because:
+
+`WeaponPresentationData._iconSpritePath` exists and is empty for every weapon, so the HUD slot tiles
+and the loadout panel show a letter instead of an icon. Nine weapons need nine icons in one sheet,
+read as a 3-row by 3-column grid.
+
+Prompt:
+
+Create a 2D icon sheet on a 3-row by 3-column grid, every cell exactly the same size, for the weapon slots of a sci-fantasy defense roguelite HUD. The nine icons, in reading order: a compact rapid-fire autocannon; a wide-mouthed spread cannon; a focused beam emitter with a lens; a short flamethrower nozzle with a pilot flame; a slim cryo lance with a frosted tip; a long-barrelled railgun with coil rings; a circular pulse emitter radiating short spokes; a stubby grenade launcher with a drum; twin small submachine guns crossed. Each icon must be a strong silhouette readable at roughly 32 pixels, front-facing or three-quarter, with no background plate and no frame around it. Match the established Corebound language: steel-blue structure, pale metallic edges, restrained amber-gold energy accents, industrial sci-fantasy. Transparent background, no text, no grid lines.
+
+### Asset 103 - Flame and Frost Impact Sheet
+
+Target: Assets/Art/Combat/VFX/vfx_impact_flame_frost.png
+
+**Status:** NOT CREATED YET.
+
+Needed because:
+
+Scorcher applies Burn on every hit and Cryo Lance applies Freeze, but both reuse the generic hit
+spark, so a burning enemy and a frozen one look the same at the moment of impact.
+
+Prompt:
+
+Create a 2D effect sprite sheet on a 2-row by 4-column grid, every cell exactly the same size, for a top-down sci-fantasy roguelite. Row 1 is a flame impact over four frames: a small orange-red bloom that spreads into curling tongues and fades to smoke-free embers. Row 2 is a frost impact over four frames: a pale cyan burst that forms short angular ice shards and fades to a faint crystalline haze. Both rows must read at roughly 48 pixels, must be clearly distinguishable from each other by shape as well as colour, and must never be brighter than a boss telegraph. Match the established Corebound language: restrained, readable, industrial sci-fantasy. Transparent background, no text, no grid lines.
+
+### Asset 104 - Splash Burst
+
+Target: Assets/Art/Combat/VFX/vfx_impact_splash_burst.png
+
+**Status:** NOT CREATED YET.
+
+Needed because:
+
+The Scatter Launcher's shells burst for splash damage in a 1.1 unit radius (`ExplodeOnImpact`), and
+nothing on screen shows that radius, so the player cannot learn its reach.
+
+Prompt:
+
+Create a 2D top-down explosion sprite sheet on a single row of five frames, every cell exactly the same size, for a sci-fantasy defense roguelite. The burst starts as a compact amber flash, expands into a ring of debris and pressure, and fades into a thin dissipating shockwave ring. The outer edge of frame three must clearly mark the damage radius, since the player learns the weapon's reach from it. Keep the centre readable rather than a white blowout, so enemies inside the blast stay visible. Match the established Corebound language: steel-blue structure, pale metallic edges, amber-gold energy, industrial sci-fantasy. Transparent background, no text, no grid lines.
+
+### Asset 105 - Nova Ring Telegraph
+
+Target: Assets/Art/Combat/VFX/vfx_nova_ring_pulse.png
+
+**Status:** NOT CREATED YET.
+
+Needed because:
+
+Nova Pulse fires a full ring of shards in every direction. Without a pulse at the player's position
+the volley reads as random shards rather than as one deliberate ring.
+
+Prompt:
+
+Create a 2D top-down energy pulse sprite for a sci-fantasy defense roguelite: a thin violet ring with a soft inner glow and a slightly brighter leading edge, drawn as a single centred circle that can be scaled up over its short lifetime. The ring must stay readable over a busy arena floor without hiding what is under it, so keep the fill nearly transparent and the edge crisp. Match the established Corebound language: restrained, readable, industrial sci-fantasy. Transparent background, no text.

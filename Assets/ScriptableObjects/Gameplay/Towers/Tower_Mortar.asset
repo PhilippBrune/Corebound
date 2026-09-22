@@ -18,6 +18,13 @@ MonoBehaviour:
   _description: Heavy single-target support tower that hits far harder per shot than the Ballista, at a much slower fire rate.
   _descriptionDe: Schwerer Einzelziel-Unterstützungsturm, der pro Schuss deutlich härter trifft als die Ballista, dafür mit viel niedrigerer Feuerrate.
   _sprite: {fileID: 21300000, guid: 2d7fda95098c4e745abfea4c0f27ae69, type: 3}
+  _spritePath: Assets/Art/Towers/tower_mortar_topdown.png
+  _spriteRect:
+    serializedVersion: 2
+    x: 166
+    y: 150
+    width: 578
+    height: 624
   _buildCost: 20
   _range: 6
   _fireIntervalSeconds: 2

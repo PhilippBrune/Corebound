@@ -40,7 +40,7 @@ Der Player soll jederzeit verstehen, welche Aktion aktuell auf welchem Eingabeka
 
 Input nutzt Asset-basierte Konfiguration.
 
-- InputSystem_Actions.inputactions: zentrale Definition aller Actions, Bindings und Action Maps — die Build-Action-Map hat bereits `PreviousSlot`/`NextSlot` für Tower-Slot-Cycling; eine neue `CycleBuildTowerType`-Action ist für Tower-Typ-Cycling vorgesehen (siehe Towers.md „Tower-Typ-Auswahl"), sobald mehr als ein Tower-Typ gleichzeitig freigeschaltet sein kann
+- InputSystem_Actions.inputactions: zentrale Definition aller Actions, Bindings und Action Maps. Die Build-Map hat `PreviousSlot`/`NextSlot` (Tower-Slot) und `PreviousTowerType`/`NextTowerType` (Tower-Typ). Die Bindungstabelle unten ist die lesbare Fassung dieses Assets
 - InputContextData: erlaubte Kontexte und deren Prioritäten für Gameplay, UI und Menüs
 - ControllerGlyphData: Zuordnung von Eingaben zu Icons oder Textdarstellung
 - RebindProfileData: gespeicherte oder auswählbare Binding-Varianten
@@ -118,3 +118,47 @@ Festgelegte Entscheidungen:
 - Rebinds und Eingabehints sind architektonisch vorgesehen.
 - Input unterstützt controller-freundliche Tower- und Menüinteraktion ohne Mauszwang.
 - Menüs können geräteabhängige Glyph- oder Text-Hinweise aus ControllerGlyphData ohne direkte Hardwareabfrage rendern.
+
+---
+
+## Bindungen (2026-09-22)
+
+Die lesbare Fassung von `InputSystem_Actions.inputactions`. Bei Abweichung gilt das Asset; diese
+Tabelle ist dann falsch und gehört korrigiert.
+
+| Map | Action | Gamepad | Tastatur / Maus |
+| --- | --- | --- | --- |
+| Gameplay | Move | linker Stick | WASD |
+| Gameplay | Aim | rechter Stick | Mausposition |
+| Gameplay | PrimaryFire | RT | linke Maustaste |
+| Gameplay | Interact | A | E |
+| Build | PreviousSlot / NextSlot | LB / RB | Q / E |
+| Build | PreviousTowerType / NextTowerType | LT / RT | Z / X |
+| UI | Navigate | D-Pad, linker Stick | Pfeiltasten |
+| UI | Confirm | A | Enter |
+| UI | Cancel | B | Escape |
+| UI | Previous / Next (Tabs) | LB / RB | Q / Tab |
+| System | Pause | Start | Escape |
+| System | Loadout | Select / Back | I |
+
+**Regel Tastaturlayout:** Keine Bindung auf eine layoutabhängige Taste. `Keyboard.leftBracketKey`
+und Nachbarn adressieren eine *physische* US-Position, die auf der hier verwendeten QWERTZ-Tastatur
+woanders liegt. Buchstaben, Ziffern und Funktionstasten sind sicher.
+
+**Debug-Tasten** (nur im Editor): F9 / F10 wechseln im Hauptmenü die Start-Stage.
+
+## Aktives Eingabegerät (2026-09-22)
+
+Wer zuletzt wirklich etwas getan hat, bestimmt das aktive Gerät - vorher gewann immer die Maus, weil
+`Aim` als Value-Action die Kontrolle mit der größten Magnitude nahm und eine Mausposition in Pixeln
+jeden Stickwert überbietet. Ein Xbox-Controller konnte dadurch nicht zielen.
+
+- `Aim` ist eine **PassThrough**-Action; Stick- und Zeigerwert werden getrennt geführt.
+- Der Stick übernimmt ab einer Auslenkung von **0.25**.
+- Die Maus übernimmt erst nach einer Bewegung von **4 Pixeln**, damit eine ruhende Maus den
+  Controller nicht verdrängt.
+- Im Gamepad-Modus ist `Aim` eine Weltrichtung, im Maus-Modus eine Bildschirmposition. Jeder
+  Konsument muss `IsUsingGamepad` beachten.
+- **Settings-Option "Eingabegerät": Automatisch / Controller / Maus** (Owner-Entscheidung
+  2026-09-22). "Automatisch" benutzt die Regeln oben; die beiden anderen Werte frieren das Gerät
+  fest, was bei einem angeschlossenen, driftenden Controller hilft.

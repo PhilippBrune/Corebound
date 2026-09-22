@@ -39,9 +39,10 @@ Der Player bleibt der primäre Auslöser für Tempo, Risiko und Positioning inne
 Player-Daten werden über ScriptableObjects konfiguriert.
 
 - PlayerData: Basiswerte für Movement, Health, Interaktionsreichweite und Startzustand
-- PlayerStatProgressionData: additive und multiplikative Stat-Gruppen für Run-Boni
-- PlayerFeedbackData: Trefferfeedback, Blinkzustände, Audio- und VFX-Referenzen
-- PlayerInteractionData: Reichweiten, Cooldowns und Regeln für Sammeln, Bauen und Bestätigen
+
+Run-Boni laufen über `CardModifierSnapshot` und `RunProgressionSnapshot`, Trefferfeedback über
+`HitReactionData` und `CombatVfxSpawner`, Interaktionsreichweiten über die jeweiligen Services
+(`TowerService`, `CoreRepairService`). Eigene Assets dafür gibt es nicht und sind nicht geplant.
 
 Temporäre Laufzeitwerte wie aktuelle Lebenspunkte, aktive Boni und Zustände werden getrennt von den Asset-Daten gehalten.
 
@@ -105,7 +106,7 @@ Keine offenen Fragen für den ersten Vertical Slice.
 Festgelegte Entscheidungen:
 
 - Der Player nutzt eine kleine automatische Resource-Sammelreichweite; verbliebene Pickups werden nach Wave-Ende automatisch eingezogen.
-- Die Interaktionspriorität lautet: blockierende UI vor Tower-Interaktion vor Reward- oder Shop-Interaktion vor nicht automatisch eingesammelten Pickups.
+- Die Interaktionspriorität lautet (Stand 2026-09-22): **blockierende UI → Tower Slot → Core-Reparatur → Core-Guard → Reward- oder Shop-Interaktion → nicht automatisch eingesammelte Pickups**. Ein Interact-Druck gehört immer genau einem Empfänger; er wird zentral in `InteractRouter` aufgelöst, nicht von jedem System einzeln abonniert. Vorher konnte ein Druck am Core gleichzeitig reparieren, einen Guard starten und einen Tower bauen.
 - Wenn Player oder Core auf null fallen, endet der aktuelle Run sofort; ein Revive-State ist nicht Teil des ersten Scopes.
 
 ## Acceptance Criteria

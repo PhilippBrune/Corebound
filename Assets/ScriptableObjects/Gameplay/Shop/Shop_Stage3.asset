@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1a5d54f6b3a4eb9a8d716bdf02e9145, type: 3}
+  m_Name: Shop_Stage3
+  m_EditorClassIdentifier:
+  _shopId: shop_stage_03_salvage
+  _displayName: Salvage Market
+  _openAfterWaveNumbers:
+  - 3
+  _stagePriceMultiplier: 1.2
+  _offerTableData: {fileID: 11400000, guid: 2fecc89992d443ef97f1b7742f934e12, type: 2}
+  _presentationData: {fileID: 11400000, guid: 59a4c28f05794279b3a9a12cf7c5a116, type: 2}

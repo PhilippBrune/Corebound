@@ -14,7 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _presentationId: weapon_presentation_beam
   _iconSprite: {fileID: 0}
-  _iconSpritePath: 
+  _iconSpritePath: Assets/Art/UI/HUD/weapon_icon_sheet.png
+  _iconAtlasColumns: 3
+  _iconAtlasRows: 3
+  _iconColumn: 2
+  _iconRow: 0
   _accentColor: {r: 0.78, g: 0.6, b: 1, a: 1}
   _muzzleColor: {r: 0.88, g: 0.74, b: 1, a: 0.9}
   _muzzleRadius: 0.28

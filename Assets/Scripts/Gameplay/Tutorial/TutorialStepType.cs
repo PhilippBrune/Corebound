@@ -10,6 +10,11 @@ namespace Corebound.Gameplay.Tutorial
         ResourceCollect,
         TowerBuild,
         CardSelect,
-        CoreDefense
+        CoreDefense,
+
+        // Appended 2026-09-22 (spec review B7): the tutorial predated the six-weapon loadout and
+        // the Core repair. Appended, never inserted - the step assets serialize this by index.
+        WeaponLoadout,
+        CoreRepair
     }
 }

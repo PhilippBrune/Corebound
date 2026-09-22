@@ -29,8 +29,8 @@ Weapon-Identität entsteht über Reichweite, Rhythmus, Trefferbild und Synergy-M
 - Jede Weapon muss vollständig per Controller nutzbar sein.
 - Weapons verwenden die gemeinsame Combat-Pipeline für Damage, Status Effect und Trefferauflösung.
 - Weapon-Unterschiede entstehen über Daten für Pattern, Timing, Projectile und Modifikatoren.
-- Der Kernspezifikationsumfang geht von einer aktiven Weapon zur gleichen Zeit aus.
-- Zusätzliche Weapon-Slots oder Swap-Systeme benötigen eine separate Erweiterung, dürfen aber das Datenmodell nicht brechen.
+- Der Player trägt bis zu sechs Weapons gleichzeitig, die alle automatisch feuern; wie viele, wie sie erworben werden und was Duplikate bewirken, besitzt [WeaponLoadout.md](WeaponLoadout.md). Dieses Dokument besitzt weiterhin, was eine *einzelne* Weapon ist.
+- Das Datenmodell einer einzelnen Weapon bleibt davon unberührt.
 - Keine Weapon darf den Player zu Mauspräzision zwingen, die auf Controller nicht erreichbar ist.
 - Weapon-Verhalten darf neue Power-Spikes erzeugen, aber keine dominante Einheitsstrategie erzwingen.
 
@@ -125,7 +125,7 @@ Keine offenen Fragen für den ersten Vertical Slice.
 Festgelegte Entscheidungen:
 
 - Standardfeuer ist Hold-to-Fire; rhythmisches Tapping kann situativ nützlich sein, ist aber keine Pflicht.
-- Die erste Content-Welle enthält drei Weapon-Archetypen: schnelle Projectile Weapon, Spread Projectile Weapon und kurze Piercing- oder Beam Weapon.
+- Die erste Content-Welle enthielt drei Archetypen (Rapid, Spread, Beam); seit 2026-09-22 sind es neun, siehe "Weapon set 2026-09-22" am Ende dieses Dokuments.
 - Aim Assist wird global für Controller geregelt und pro WeaponData nur über Low-, Medium- oder High-Assist-Profile gewichtet.
 
 ## Acceptance Criteria

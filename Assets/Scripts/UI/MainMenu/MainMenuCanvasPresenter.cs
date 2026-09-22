@@ -25,6 +25,11 @@ namespace Corebound.UI.MainMenu
         // about 1006 units of height, leaving ~460 for the list, which needs 604 at full size.
         // Entries now shrink to fit (down to this height), recomputed when the screen changes.
         private const float MinEntryHeight = 46f;
+        private const float SecondaryRowBottom = 118f;
+        private const float SecondaryRowHeight = 96f;
+        private const float SecondaryRowSpacing = 12f;
+        private const float SecondaryEntryHeight = 44f;
+        private const float SecondaryMinWidth = 150f;
         private const float MinEntrySpacing = 6f;
         private const float StatusHeight = 92f;
         private const float StatusWidth = 920f;
@@ -53,6 +58,8 @@ namespace Corebound.UI.MainMenu
         private Text _statusText;
         private MainMenuGlyphHintBar _glyphHintBar;
         private VerticalLayoutGroup _menuLayout;
+        private GridLayoutGroup _secondaryLayout;
+        private RectTransform _secondaryRect;
         private Font _font;
         private Sprite _backgroundSprite;
         private Sprite _logoSprite;
@@ -172,6 +179,18 @@ namespace Corebound.UI.MainMenu
             _menuLayout.childControlWidth = true;
             _menuLayout.childForceExpandWidth = true;
 
+            // B4: the global routes live in their own row along the bottom. A grid rather than a
+            // horizontal group, because it wraps to a second line when the entries get too narrow.
+            var secondaryContainer = new GameObject("SecondaryRow", typeof(RectTransform), typeof(GridLayoutGroup));
+            secondaryContainer.transform.SetParent(_rootRect, false);
+            _secondaryRect = secondaryContainer.GetComponent<RectTransform>();
+            StretchToParent(_secondaryRect, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(HeaderLeft, SecondaryRowBottom), new Vector2(-HeaderLeft, SecondaryRowBottom + SecondaryRowHeight));
+            _secondaryLayout = secondaryContainer.GetComponent<GridLayoutGroup>();
+            _secondaryLayout.spacing = new Vector2(SecondaryRowSpacing, SecondaryRowSpacing);
+            _secondaryLayout.childAlignment = TextAnchor.MiddleLeft;
+            _secondaryLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            _secondaryLayout.constraintCount = 4;
+
             var statusPanel = CreateImage("StatusPanel", _rootRect, _buttonFrameSprite, ResolveIdleFrameTint(), ResolvePanelImageType(_buttonFrameSprite));
             SetAnchoredBox(statusPanel.rectTransform, new Vector2(0f, 0f), new Vector2(FooterLeft, FooterBottom), new Vector2(StatusWidth, StatusHeight));
 
@@ -205,6 +224,7 @@ namespace Corebound.UI.MainMenu
 
         private void ApplyEntrySizing()
         {
+            ApplySecondaryRowSizing();
             var menuRect = _menuLayout.transform as RectTransform;
             var count = _menuLayout.transform.childCount;
 
@@ -231,6 +251,38 @@ namespace Corebound.UI.MainMenu
             }
         }
 
+        // Equal-width cells; two rows once a cell would fall below SecondaryMinWidth.
+        private void ApplySecondaryRowSizing()
+        {
+            if (_secondaryLayout == null || _secondaryRect == null)
+            {
+                return;
+            }
+
+            var count = _secondaryRect.childCount;
+
+            if (count == 0)
+            {
+                return;
+            }
+
+            Canvas.ForceUpdateCanvases();
+            var width = _secondaryRect.rect.width;
+            var columns = count;
+            var cell = (width - SecondaryRowSpacing * (columns - 1)) / columns;
+
+            if (cell < SecondaryMinWidth && count > 1)
+            {
+                columns = Mathf.CeilToInt(count / 2f);
+                cell = (width - SecondaryRowSpacing * (columns - 1)) / columns;
+            }
+
+            _secondaryLayout.constraintCount = Mathf.Max(1, columns);
+            var rows = Mathf.CeilToInt(count / (float)_secondaryLayout.constraintCount);
+            var cellHeight = rows > 1 ? (SecondaryRowHeight - SecondaryRowSpacing) / 2f : SecondaryRowHeight;
+            _secondaryLayout.cellSize = new Vector2(Mathf.Max(80f, cell), Mathf.Max(28f, cellHeight));
+        }
+
         private void RebuildEntries()
         {
             _entryViews.Clear();
@@ -240,9 +292,21 @@ namespace Corebound.UI.MainMenu
                 return;
             }
 
-            for (var index = _menuLayout.transform.childCount - 1; index >= 0; index--)
+            DestroyEntryChildren(_menuLayout.transform);
+            DestroyEntryChildren(_secondaryRect);
+            BuildEntryViews();
+        }
+
+        private void DestroyEntryChildren(Transform parent)
+        {
+            if (parent == null)
             {
-                var child = _menuLayout.transform.GetChild(index);
+                return;
+            }
+
+            for (var index = parent.childCount - 1; index >= 0; index--)
+            {
+                var child = parent.GetChild(index);
 
                 if (Application.isPlaying)
                 {
@@ -257,17 +321,24 @@ namespace Corebound.UI.MainMenu
                     DestroyImmediate(child.gameObject);
                 }
             }
+        }
+
+        private void BuildEntryViews()
+        {
+            var primaryCount = _mainMenuController.PrimaryEntryCount;
 
             foreach (var entry in _mainMenuController.VisibleEntries)
             {
                 var entryIndex = _entryViews.Count;
+                var isSecondary = entryIndex >= primaryCount;
                 var entryObject = new GameObject(entry != null ? entry.Label : "Entry", typeof(RectTransform), typeof(LayoutElement), typeof(Image), typeof(MainMenuEntryView));
                 var layoutElement = entryObject.GetComponent<LayoutElement>();
-                layoutElement.preferredHeight = EntryHeight;
-                layoutElement.minHeight = MinEntryHeight;
+                layoutElement.preferredHeight = isSecondary ? SecondaryEntryHeight : EntryHeight;
+                layoutElement.minHeight = isSecondary ? SecondaryEntryHeight : MinEntryHeight;
 
                 var entryView = entryObject.GetComponent<MainMenuEntryView>();
-                entryView.Initialize(_menuLayout.transform as RectTransform, _font, _buttonFrameSprite, _focusMarkerSprite, _skinData, entryIndex, OnEntryPointerEnter, OnEntryPointerClick);
+                var parent = isSecondary && _secondaryRect != null ? _secondaryRect : _menuLayout.transform as RectTransform;
+                entryView.Initialize(parent, _font, _buttonFrameSprite, _focusMarkerSprite, _skinData, entryIndex, OnEntryPointerEnter, OnEntryPointerClick);
                 _entryViews.Add(entryView);
             }
         }

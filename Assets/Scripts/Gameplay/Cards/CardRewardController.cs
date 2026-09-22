@@ -85,6 +85,7 @@ namespace Corebound.Gameplay.Cards
                 InputReader.NavigatePerformed += OnNavigatePerformed;
                 InputReader.ConfirmPressed += OnConfirmPressed;
                 InputReader.CancelPressed += OnCancelPressed;
+                InputReader.PreviousPressed += OnRerollPressed;
             }
 
             WaveEvents.RewardPending += OnRewardPending;
@@ -98,6 +99,7 @@ namespace Corebound.Gameplay.Cards
                 InputReader.NavigatePerformed -= OnNavigatePerformed;
                 InputReader.ConfirmPressed -= OnConfirmPressed;
                 InputReader.CancelPressed -= OnCancelPressed;
+                InputReader.PreviousPressed -= OnRerollPressed;
             }
 
             WaveEvents.RewardPending -= OnRewardPending;
@@ -178,6 +180,20 @@ namespace Corebound.Gameplay.Cards
 
             StateChanged?.Invoke();
         }
+
+        // Skill Tree "Wider Draft": redraw the three cards, as often as the tree grants.
+        private void OnRerollPressed()
+        {
+            if (!_isOpen || _cardService == null || !_cardService.TryRerollOffer())
+            {
+                return;
+            }
+
+            _selectedIndex = 0;
+            StateChanged?.Invoke();
+        }
+
+        public int RemainingRerolls => _cardService != null ? _cardService.RemainingRerolls : 0;
 
         private void OnConfirmPressed()
         {

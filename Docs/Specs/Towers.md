@@ -40,17 +40,18 @@ Gelöst über eine zweite, vom bestehenden Tower Slot Cycling (Positions-Auswahl
 - Tower-Effekte nutzen bestehende Combat- und Resource-Regeln.
 - Neue Towers erweitern vorhandene Kategorien, statt neue Subsysteme einzuführen.
 - Sobald mehr als ein Tower-Typ gleichzeitig freigeschaltet ist, muss der Player den zu bauenden Typ aktiv wählen können — ein automatisches „immer der erste freigeschaltete Katalog-Eintrag" ist nur für genau einen verfügbaren Typ zulässig.
-- Die Tower-Typ-Auswahl folgt demselben Controller-First-Muster wie das bestehende Tower Slot Cycling: eine einzelne, wiederholbare Cycling-Geste, keine Liste mit Cursor-Navigation.
+- Die Tower-Typ-Auswahl bleibt controller-first und cursorlos. Erlaubt sind eine Cycling-Geste **oder** ein Build-Browser, solange er am Slot öffnet, per D-Pad navigiert wird und mit Cancel schließt (Owner-Entscheidung 2026-09-22). Umgesetzt ist der Browser (`TowerBuildBrowserPresenter`) mit Roster, Kosten und Upgrade-Karte; die Actions heißen `PreviousTowerType`/`NextTowerType` in `InputSystem_Actions.inputactions` (Build-Map).
 
 ## Data Model
 
 Tower-Daten werden in ScriptableObjects definiert.
 
-- TowerData: Basisdefinition, Rolle, Build-Kosten und Präsentationsdaten
+- TowerData: Basisdefinition, Rolle, Build-Kosten, Reichweite, Feuerintervall, Sprite-Pfad und Präsentationsdaten
 - TowerLevelData: Werte und Freischaltungen pro Upgrade-Stufe
-- TowerTargetingData: Zielprioritäten, Reichweiten und Auswahlregeln
-- TowerEffectData: Schadens-, Support- oder Resource-Verhalten
-- TowerSlotData: Slot-Typ, Einschränkungen und Arena-Platzierung
+- TowerCatalogData: die baubare Liste, gefiltert über Unlocks
+
+Zielwahl und Effekte liegen in `TowerRuntimeController` und dessen `DamageProfileData`/`ProjectileData`;
+Slot-Positionen stehen pro Stage in `StageData`. Eigene Assets dafür gibt es nicht.
 
 ## Technical Design
 
@@ -122,18 +123,18 @@ Resource-Towers benötigen klare Obergrenzen, damit Factory-Schleifen nicht den 
 
 ## Open Questions
 
-- `SelectedSlotSummary` zeigt den aktuell gewählten Tower-Typ bereits als Teil des bestehenden Text-Strings an (kein neues UI-Element nötig, da der String ohnehin `ResolveBuildTowerData().DisplayName` einschließt) — reicht diese Textdarstellung, oder braucht die Typ-Auswahl ein eigenes visuelles Overlay (Sprite-Vorschau am Slot)?
+Keine offenen Fragen. Die frühere Frage ("reicht die Textzeile, oder braucht die Typ-Auswahl ein eigenes Overlay?") ist seit 2026-09-22 beantwortet: der Build-Browser ist dieses Overlay — Roster mit Sprite, Kosten, Stärken/Schwächen und Upgrade-Karte.
 
 Festgelegte Entscheidungen:
 
-- Towers dürfen auch während aktiver Waves gebaut und verbessert werden, wenn der Player an einem gültigen Tower Slot steht und keine blockierende UI geöffnet ist.
+- Towers werden **nur während einer Intermission** gebaut und verbessert (Owner-Entscheidung 2026-09-22; vorher stand hier "auch während aktiver Waves", was der Code nie so umgesetzt hat). Begründung wie bei der Core-Reparatur: Bauen mitten in der Welle macht aus jeder Bedrohung ein Anhalten-und-Bezahlen statt einer Positionierungsentscheidung.
 - Jeder Tower besitzt im ersten Scope drei Stufen: Basiszustand plus zwei Upgrades.
 - Ein kontrollierter Rückbau oder Refund für Towers ist nicht Teil des ersten spielbaren Umfangs.
 - Sobald mehr als ein Tower-Typ freigeschaltet ist, braucht der Build-Flow eine explizite Typ-Auswahl (siehe „Tower-Typ-Auswahl" oben) — das ist jetzt mit dem dritten Tower-Typ (Mortar) real geworden und kein rein theoretischer Fall mehr.
 
 **Update 2026-09-10 — vierter Tower-Typ „Sentinel" (Piercing/Crowd-Control):** `TowerData`/`TowerRuntimeController` sind vollständig generisch datengetrieben (Cost, Range, Fire Interval, DamageProfile, Projectile, Upgrade-Levels) — ein neuer Tower-Typ braucht keinen neuen Code, exakt wie schon beim Mortar-Tower. `ProjectileData.PierceCount` existierte bereits im Code (`CombatProjectile` behandelt es generisch: ein Projektil mit Pierce > 0 wird bei einem Treffer nicht sofort freigegeben, sondern durchschlägt weitere Ziele), wurde aber bisher von keinem einzigen Tower/Weapon-Projectile-Asset genutzt. Sentinel Tower füllt diese Lücke: schnelle Feuerrate (0.6s), niedriger Schaden pro Treffer (2, wie `DamageProfile_PlayerPrimary`), aber `_pierceCount: 2` auf `Projectile_TowerSentinel` — durchschlägt bis zu 3 Gegner in einer Linie. Das ist eine strukturell andere Rolle als Ballista (ausbalanciertes Einzelziel), Mortar (langsam/schwer) oder Support (Meta-Progression-Unlock) und damit eine echte Erweiterung von Tower Philosophy's „verändern den Kampf", nicht nur eine weitere Zahlenvariante. In `TowerCatalog_Default.asset` registriert, ohne `_requiredUnlockId` (sofort verfügbar wie Ballista/Mortar) und automatisch über die bestehende Tower-Typ-Auswahl (Cycling) erreichbar, ohne weitere Verdrahtung.
 
-Bewusst ohne eigenes importiertes Sprite (kein Editor-Zugriff für neue Texturimporte in dieser Session) — nutzt den bereits im Code vorhandenen Fallback (`TowerRuntimeController.EnsureComponents()`: farbiges Quadrat, eingefärbt mit `_debugColor`), denselben Mechanismus, den auch andere Systeme dieses Projekts für noch nicht vertontes/bebildertes Placeholder-Content nutzen. Echtes Artwork ist ein dokumentierter Nachtrag.
+**Nachtrag 2026-09-22:** Der Sentinel hat inzwischen echtes Artwork (`Assets/Art/Towers/tower_sentinel_topdown.png`). Der Pfad stand zunächst fest im Code (`TowerRuntimeController.SentinelSpritePath`) und liegt jetzt wie bei jedem anderen Tower in den Daten (`TowerData._spritePath` mit optionalem Pixel-Rect), damit ein umbenanntes File auffällt und `Corebound > Validate Art Pipeline` es prüfen kann.
 
 ## Acceptance Criteria
 

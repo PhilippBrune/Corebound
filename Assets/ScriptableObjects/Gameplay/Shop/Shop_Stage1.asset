@@ -15,8 +15,7 @@ MonoBehaviour:
   _shopId: shop_stage_01_foundry
   _displayName: Foundry Exchange
   _openAfterWaveNumbers:
-  - 2
-  - 4
+  - 3
   _stagePriceMultiplier: 1
   _offerTableData: {fileID: 11400000, guid: 2fecc89992d443ef97f1b7742f934e12, type: 2}
   _presentationData: {fileID: 11400000, guid: 59a4c28f05794279b3a9a12cf7c5a116, type: 2}

@@ -80,7 +80,9 @@ The tree is built from **Key Nodes** and **Sub Nodes**, in the Diablo 4 arrangem
 A Key Node is a large, named, build-defining node. It is the entry point to a cluster.
 
 - Costs **3 SP**.
-- Grants a named, rule-changing effect (not a percentage).
+- Grants a named, rule-changing effect (not a percentage). Enforced since 2026-09-22: the four
+  numeric key nodes were replaced by rule changes (Magnetise, Wider Draft), see "Content: the
+  Vanguard tree".
 - Unlocks its own Sub Nodes for purchase.
 - Has at most one prerequisite Key Node, forming a directed acyclic graph, never a cycle.
 
@@ -318,10 +320,15 @@ Four branches, four key nodes each (3 SP), four sub nodes per key node. **212 SP
 | --- | --- |
 | Combat | Opening Volley (first volley of every wave crits) · Armory (+1 weapon slot) · Second Wind (once per stage, a lethal hit leaves 30% health) · Full Arsenal (+1 weapon slot) |
 | Construction | Forward Foundations (first tower each stage costs half; was free until 2026-09-22 - "too broken") · Field Repair (first Core repair each stage is free) · Overwatch (+30% tower range during boss fights) · Last Bastion (once per stage, the Core survives a lethal hit at 25%) |
-| Industry | Salvage Instinct (elites drop double Scrap) · Dividend (+15 Scrap each stage) · Scrap Surge (+15% Scrap) · Deep Reserves (+25 Scrap each stage) |
-| Command | Bargain Struck (-10% prices) · Veteran's Cache (start with a random relic) · War Chest (+40 starting Scrap) · Relic Hunter (a second starting relic) |
+| Industry | Salvage Instinct (elites drop double Scrap) · Dividend (+15 Scrap each stage) · **Magnetise** (Scrap flies to the player from anywhere in the arena) · Deep Reserves (+25 Scrap each stage) |
+| Command | Bargain Struck (-10% prices) · Veteran's Cache (start with a random relic) · **Wider Draft** (a reward screen can be redrawn once, Q / LB) · Relic Hunter (a second starting relic) |
 
-Industry and Command key nodes 3-4 are strong numerics rather than rule changes; four more distinct rules would have needed systems that do not exist yet (a pickup magnet, reward rerolls).
+**Update 2026-09-22 (spec review C8):** the two systems that were missing now exist, and the two
+numeric key nodes became rule changes. Magnetise adds to the pickup range
+(`SkillEffectTarget.PickupMagnetRange`, read by `ResourceWalletService`), Wider Draft grants reward
+rerolls (`SkillEffectTarget.RewardRerolls`, spent in `CardService.TryRerollOffer`). Deep Reserves and
+Relic Hunter keep their places: Relic Hunter is already a rule change, Deep Reserves stays numeric and
+is the one documented exception.
 
 ### Verification (autopilot, 2026-09-22)
 

@@ -10,11 +10,6 @@ namespace Corebound.Gameplay.Towers
 {
     public sealed class TowerRuntimeController : MonoBehaviour
     {
-        private const string BallistaSpritePath = "Assets/Art/Towers/tower_ballista_topdown.png.png";
-        private const string SupportSpritePath = "Assets/Art/Towers/tower_support_topdown.png";
-        private const string MortarSpritePath = "Assets/Art/Towers/tower_mortar_topdown.png";
-        private const string SentinelSpritePath = "Assets/Art/Towers/tower_sentinel_topdown.png";
-
         private TowerData _towerData;
         private TowerService _towerService;
         private CombatProjectile _projectilePrototype;
@@ -371,33 +366,18 @@ namespace Corebound.Gameplay.Towers
                 return null;
             }
 
-            switch (towerData.TowerId)
+            // Art by path, from the tower's own data (2026-09-22). A tower without a path keeps
+            // the coloured-square fallback in EnsureComponents().
+            if (string.IsNullOrWhiteSpace(towerData.SpritePath))
             {
-                case "tower_ballista":
-                    return DebugSpriteFactory.LoadProjectSprite(BallistaSpritePath);
-                case "tower_support":
-                    return DebugSpriteFactory.LoadProjectSprite(SupportSpritePath);
-                case "tower_mortar":
-                    // Tower_Mortar.asset's serialized _sprite reference (fileID 21300000) is stale -
-                    // the source texture is imported in Multiple sprite mode with a different
-                    // generated internal fileID, so the asset reference resolves to null at runtime.
-                    // Loading the art directly from disk sidesteps that broken reference, matching the
-                    // fallback already used for tower_ballista/tower_support above. The explicit pixel
-                    // rect matches the crop the Sprite Editor already defines for this texture (its
-                    // 910x910 canvas has a lot of transparent padding around the turret art itself,
-                    // which would otherwise make FitTransformToSprite scale the tower down to a speck).
-                    return DebugSpriteFactory.LoadProjectSpriteRect(MortarSpritePath, new Rect(166f, 150f, 578f, 624f));
-                case "tower_sentinel":
-                    // Tower_Sentinel.asset has no _sprite assigned at all (was never wired since no
-                    // art existed). Using the same by-path load as Mortar from the start, rather than
-                    // wiring the Inspector reference directly, sidesteps the exact stale-fileID trap
-                    // that broke Mortar's reference after a Sprite Editor re-slice - crop rect measured
-                    // from this texture's own 911x911 canvas (a lot of transparent padding around the
-                    // slim turret-on-a-pole art).
-                    return DebugSpriteFactory.LoadProjectSpriteRect(SentinelSpritePath, new Rect(304f, 138f, 302f, 659f));
-                default:
-                    return null;
+                return null;
             }
+
+            var rect = towerData.SpriteRect;
+
+            return rect.width > 0f && rect.height > 0f
+                ? DebugSpriteFactory.LoadProjectSpriteRect(towerData.SpritePath, rect)
+                : DebugSpriteFactory.LoadProjectSprite(towerData.SpritePath);
         }
     }
 }

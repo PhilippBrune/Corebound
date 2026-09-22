@@ -699,7 +699,13 @@ namespace Corebound.Gameplay.Waves
         {
             Perks,
             Player,
-            Towers
+            Towers,
+
+            // B6 (spec review 2026-09-22): Settings.md promises settings from allowed in-game
+            // menus. Volumes, aim assist and the input device are the ones worth changing without
+            // leaving a run; resolution and fullscreen stay in the main menu, where a confirmation
+            // flow can protect them.
+            Settings
         }
 
         private readonly List<PauseEffectEntry> _pauseEffectEntries = new List<PauseEffectEntry>();
@@ -749,7 +755,9 @@ namespace Corebound.Gameplay.Waves
             }
 
             EnsurePauseContentWidgets(panelRect);
-            var contentHeight = _pauseTab == PauseTab.Perks ? LayoutPerksTab() : LayoutStatsTab();
+            var contentHeight = _pauseTab == PauseTab.Perks
+                ? LayoutPerksTab()
+                : _pauseTab == PauseTab.Settings ? LayoutSettingsTab() : LayoutStatsTab();
             var height = FrameBorderTop + PauseTitleBandHeight + PauseTabBandHeight + contentHeight + PauseInstructionBandHeight + FrameBorderBottom;
             panelRect.sizeDelta = new Vector2(PauseEffectsWidePanelWidth, Mathf.Max(PausePanelHeight, height));
 
@@ -809,6 +817,7 @@ namespace Corebound.Gameplay.Waves
                 LocalizationService.Resolve("Perks", "Perks"),
                 LocalizationService.Resolve("Player", "Spieler"),
                 LocalizationService.Resolve("Towers", "Türme"),
+                LocalizationService.Resolve("Settings", "Einstellungen"),
             };
             var builder = new System.Text.StringBuilder(96);
 
@@ -904,6 +913,122 @@ namespace Corebound.Gameplay.Waves
             return gridHeight + PauseDescriptionHeight;
         }
 
+        // The in-run settings rows. Left/Right changes the selected row's value and commits it,
+        // so a change survives the run the same way the Settings screen's does.
+        private float LayoutSettingsTab()
+        {
+            for (var index = 0; index < _pauseEffectEntries.Count; index++)
+            {
+                _pauseEffectEntries[index].Root.gameObject.SetActive(false);
+            }
+
+            _pauseDescriptionText.gameObject.SetActive(false);
+            _pauseStatsLeft.gameObject.SetActive(true);
+            _pauseStatsRight.gameObject.SetActive(false);
+
+            var manager = ResolveSettingsManager();
+            var options = ResolvePauseSettingsOptions();
+            _pauseSettingsCount = options.Count;
+            _pauseSettingsIndex = Mathf.Clamp(_pauseSettingsIndex, 0, Mathf.Max(0, options.Count - 1));
+            var builder = new System.Text.StringBuilder(256);
+
+            if (manager == null || options.Count == 0)
+            {
+                builder.Append(LocalizationService.Resolve("Settings are unavailable in this scene.", "Einstellungen sind in dieser Szene nicht verfügbar."));
+            }
+            else
+            {
+                for (var index = 0; index < options.Count; index++)
+                {
+                    var option = options[index];
+                    builder.Append(index == _pauseSettingsIndex ? "<b>> " : "   ");
+                    builder.Append(option.Label);
+                    builder.Append(":  ");
+                    builder.Append(manager.GetDisplayValue(manager.RuntimeSettings, option));
+                    builder.Append(index == _pauseSettingsIndex ? "</b>" : string.Empty);
+                    builder.Append('\n');
+                }
+
+                builder.Append('\n');
+                builder.Append(LocalizationService.Resolve("Left / Right changes the selected setting.", "Links / Rechts ändert die gewählte Einstellung."));
+            }
+
+            _pauseStatsLeft.text = builder.ToString();
+            return (Mathf.Max(1, _pauseSettingsCount) + 3) * PauseStatRowHeight + 12f;
+        }
+
+        private int _pauseSettingsIndex;
+        private int _pauseSettingsCount;
+        private readonly List<Corebound.Settings.SettingsDefinitionData.OptionDefinition> _pauseSettingsOptions =
+            new List<Corebound.Settings.SettingsDefinitionData.OptionDefinition>();
+
+        private Corebound.Settings.SettingsManager ResolveSettingsManager()
+        {
+            if (_settingsManager == null)
+            {
+                _settingsManager = FindFirstObjectByType<Corebound.Settings.SettingsManager>();
+            }
+
+            return _settingsManager;
+        }
+
+        // Only the options that are safe to change mid-run.
+        private List<Corebound.Settings.SettingsDefinitionData.OptionDefinition> ResolvePauseSettingsOptions()
+        {
+            _pauseSettingsOptions.Clear();
+            var manager = ResolveSettingsManager();
+            var definition = manager != null ? manager.DefinitionData : null;
+
+            if (definition == null || definition.Categories == null)
+            {
+                return _pauseSettingsOptions;
+            }
+
+            for (var categoryIndex = 0; categoryIndex < definition.Categories.Length; categoryIndex++)
+            {
+                var category = definition.Categories[categoryIndex];
+
+                if (category == null || category.Options == null)
+                {
+                    continue;
+                }
+
+                for (var optionIndex = 0; optionIndex < category.Options.Length; optionIndex++)
+                {
+                    var option = category.Options[optionIndex];
+
+                    switch (option.Key)
+                    {
+                        case Corebound.Settings.SettingsOptionKey.MusicVolume:
+                        case Corebound.Settings.SettingsOptionKey.SfxVolume:
+                        case Corebound.Settings.SettingsOptionKey.UiVolume:
+                        case Corebound.Settings.SettingsOptionKey.ControllerAimAssistStrength:
+                        case Corebound.Settings.SettingsOptionKey.InputDevice:
+                            _pauseSettingsOptions.Add(option);
+                            break;
+                    }
+                }
+            }
+
+            return _pauseSettingsOptions;
+        }
+
+        private void AdjustPauseSetting(int direction)
+        {
+            var manager = ResolveSettingsManager();
+            var options = ResolvePauseSettingsOptions();
+
+            if (manager == null || _pauseSettingsIndex < 0 || _pauseSettingsIndex >= options.Count)
+            {
+                return;
+            }
+
+            var candidate = manager.CreateWorkingCopy();
+            manager.AdjustValue(candidate, options[_pauseSettingsIndex], direction);
+            manager.Commit(candidate);
+            LayoutPauseOverlay(true);
+        }
+
         private float LayoutStatsTab()
         {
             for (var index = 0; index < _pauseEffectEntries.Count; index++)
@@ -986,13 +1111,39 @@ namespace Corebound.Gameplay.Waves
                 return;
             }
 
-            _pauseTab = (PauseTab)(((int)_pauseTab + direction + 3) % 3);
+            _pauseTab = (PauseTab)(((int)_pauseTab + direction + 4) % 4);
             LayoutPauseOverlay(true);
         }
 
         private void OnPauseNavigate(Vector2 input)
         {
-            if (_overlayMode != OverlayMode.Pause || _pauseTab != PauseTab.Perks || _pauseEffectCount == 0)
+            if (_overlayMode != OverlayMode.Pause)
+            {
+                return;
+            }
+
+            if (_pauseTab == PauseTab.Settings)
+            {
+                if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
+                {
+                    if (Mathf.Abs(input.x) >= 0.5f)
+                    {
+                        AdjustPauseSetting(input.x > 0f ? 1 : -1);
+                    }
+
+                    return;
+                }
+
+                if (Mathf.Abs(input.y) >= 0.5f && _pauseSettingsCount > 0)
+                {
+                    _pauseSettingsIndex = Mathf.Clamp(_pauseSettingsIndex + (input.y > 0f ? -1 : 1), 0, _pauseSettingsCount - 1);
+                    LayoutPauseOverlay(true);
+                }
+
+                return;
+            }
+
+            if (_pauseTab != PauseTab.Perks || _pauseEffectCount == 0)
             {
                 return;
             }

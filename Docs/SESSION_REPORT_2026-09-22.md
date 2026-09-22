@@ -179,3 +179,63 @@ the Stage 2 reward resolved, the next Intermission placed it. Open design questi
 - Boss kills in *any* autopilot run pay SP and Alloy into the real profile. Today's runs were backed
   up and settled: one Stage 1 boss grant (+1 SP, +6 Alloy) was subtracted; a few Alloy from elite
   kills in that run could not be attributed and may remain.
+
+---
+
+# Third pass — the spec review, implemented
+
+The owner decided every finding of `SPEC_REVIEW_2026-09-22.md` and asked for all of them to be
+implemented. That file is now a decision record; the findings are gone because they are solved.
+
+## Code
+
+| Area | What changed |
+| --- | --- |
+| Interact (A1) | New `InteractRouter`: handlers register with a priority (tower slot > Core repair > Core guard) and one press goes to exactly one of them. A hold whose press was spent no longer raises the guard. |
+| Main menu (B4) | Two-tier layout: primary actions stacked, global routes in a wrapping grid row along the bottom. Up/Down steps between the tiers, Left/Right walks the row. |
+| Profiles (C3) | `ProfileSelection` owns three profiles, each with its own `run/settings/meta/statistics` files; the choice lives in `profile.json` beside the folders. `LocalProfileSaveManager` builds every path from it and drops its caches on a switch. A Profile route in the main menu lists the three with Ascension, Alloy, SP and whether a run is in progress. |
+| Start weapon (B11) | `StartWeaponOptions` decides which weapons a run may start with; the New Run panel lists them and stores the choice in `MetaProgressionSaveData.PreferredStartWeaponId`. A licence now only widens the offer pool. |
+| Settings (A12, B6) | New `InputDevice` option (Automatic / Controller / Mouse), honoured by `CoreboundInputReader`. The pause overlay has a fourth tab with volumes, aim assist and the device. |
+| Skill tree (C8) | Two systems built so key nodes are rules, not percentages: **Magnetise** (pickup range, `ResourceWalletService`) replaces Scrap Surge, **Wider Draft** (reward reroll on Q / LB, `CardService.TryRerollOffer`) replaces War Chest. |
+| Tower art (C11) | `TowerData._spritePath` / `_spriteRect`; the id switch in `TowerRuntimeController` is gone, so a renamed file is visible to the validator. |
+| Art validation (B9) | `Corebound > Validate Art Pipeline` now inspects pixels: opaque corners on a cut-out, an opaque centre on a frame, and the baked checkerboard pattern. |
+| Autopilot (B10) | Every run ends with a `SUMMARY` line: seconds per stage, damage split weapon vs tower, damage taken, kills, peak projectiles against the budget. |
+| Tutorial (B7) | Two more steps: open the loadout panel, repair the Core. |
+
+## Data
+
+- **Waves (A15):** stages 2-5 have their own six `WaveData` assets with 77 new spawn groups, shaped
+  by each stage's theme and rising in density (Reactor Depths ranged-heavy, Salvage Fields
+  bruiser-heavy, Cryo Vaults mixed, Core Nexus everything).
+- **Shops (C5, C6):** `Shop_Stage1` .. `Shop_Stage5`, one visit per stage after wave 3, price
+  multiplier 1.0 / 1.1 / 1.2 / 1.3 / 1.45.
+- **Factory (C7):** Mortar and Sentinel production nodes, so every tower in the catalog feeds a
+  chain.
+- **Cards (A9):** the fire-interval slot is one card per rarity now. Hair Trigger (Common) and Rapid
+  Cycler (Rare) keep it; Twin Barrel left the pool; Skirmisher's Kit is a projectile-speed card.
+- **Weapon icons:** all nine presentations point at cells of the future `weapon_icon_sheet.png`, so
+  the HUD picks them up the moment that file exists.
+
+## Specs
+
+Sixteen spec files changed. New: `Docs/Specs/VFX.md` (the file seven specs linked and none had).
+Economy.md gained the refund table, the currency table and the precise separation rule; Combat.md
+the modifier pipeline; Bosses.md the reward bundle; Input.md the binding table and the device rules;
+UI.md the resolution contract; SaveSystem.md the profile and service-lifetime rules.
+
+## Verified
+
+Two full autopilot runs after the changes, no exceptions: the shop opens after wave 3, the pause
+tabs and the two-tier menu render, the Profile route lists three profiles, and the summary line
+prints (`total=174.7s stage1=112.9s stage2=58.1s damage[weapons=401 (72%) towers=155 (28%)]
+kills=40 peakProjectiles=28/60`). That also answers a Combat.md balancing rule for the first time:
+the player's own weapons do about three quarters of the damage.
+
+## Not verified
+
+- The new stage 2-5 waves are generated, not playtested. One run died in Stage 2 wave 1 in 17
+  seconds; density may be too high.
+- Profile switching, the New Run weapon choice, the pause settings tab and the reward reroll are
+  wired and compile, but no autopilot path exercises them yet.
+- Magnetise and Wider Draft need a profile that has bought those nodes.
+- Assets 101-105 (weapon projectiles, icons, impacts) are specified, not created.

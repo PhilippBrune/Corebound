@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3a6c524aac44297a46a9e5b3bf5afe5, type: 3}
+  m_Name: TutorialStep_WeaponLoadout
+  m_EditorClassIdentifier:
+  _stepType: 6
+  _promptText: Press Select (or I) during an Intermission to open your weapon loadout.
+  _isBlocking: 0
+  _beatTitle: Your Loadout
+  _beatBody: You carry up to six weapons at once, and they all fire together. Open the
+    loadout between waves to upgrade a weapon, sell one you no longer want, or see which
+    Set Bonus your duplicates have reached.

@@ -15,7 +15,7 @@ using Corebound.Gameplay.Waves;
 
 namespace Corebound.Gameplay.Towers
 {
-    public sealed class TowerService : MonoBehaviour
+    public sealed class TowerService : MonoBehaviour, IInteractHandler
     {
         private const string GameplayMapName = "Gameplay";
         private const string InteractActionName = "Interact";
@@ -333,6 +333,7 @@ namespace Corebound.Gameplay.Towers
                 InputReader.PreviousPressed += OnPreviousPressed;
                 InputReader.NextPressed += OnNextPressed;
                 InputReader.InteractPressed += OnInteractPressed;
+                InteractRouter.Register(this);
                 InputReader.PreviousTowerTypePressed += OnPreviousTowerTypePressed;
                 InputReader.NextTowerTypePressed += OnNextTowerTypePressed;
             }
@@ -350,6 +351,7 @@ namespace Corebound.Gameplay.Towers
                 InputReader.PreviousPressed -= OnPreviousPressed;
                 InputReader.NextPressed -= OnNextPressed;
                 InputReader.InteractPressed -= OnInteractPressed;
+                InteractRouter.Unregister(this);
                 InputReader.PreviousTowerTypePressed -= OnPreviousTowerTypePressed;
                 InputReader.NextTowerTypePressed -= OnNextTowerTypePressed;
             }
@@ -699,11 +701,22 @@ namespace Corebound.Gameplay.Towers
 
         private void OnInteractPressed()
         {
-            if (!CanHandleBuildInput())
-            {
-                return;
-            }
+            InteractRouter.Dispatch();
+        }
 
+        // IInteractHandler (spec review A1): a tower slot outranks Core repair and the Core guard,
+        // so standing on a slot next to the Core builds and does nothing else.
+        public InteractPriority InteractPriority => InteractPriority.TowerSlot;
+
+        public bool CanHandleInteract => CanHandleBuildInput()
+            && _waveManager != null
+            && _waveManager.State == WaveState.Intermission
+            && _selectedSlotIndex >= 0
+            && _selectedSlotIndex < _runtimeSlots.Count
+            && IsPlayerNearSlot(_runtimeSlots[_selectedSlotIndex].Position);
+
+        public void HandleInteract()
+        {
             TryBuildSelectedTower();
         }
 

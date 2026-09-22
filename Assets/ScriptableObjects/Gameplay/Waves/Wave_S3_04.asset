@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bf2c8460bdd495cbe4414f3d60618a0, type: 3}
+  m_Name: Wave_S3_04
+  m_EditorClassIdentifier:
+  _waveId: wave_s3_04
+  _displayLabel: Wave 4 Elite
+  _spawnGroups:
+  - {fileID: 11400000, guid: 621d689df6154faf8797ca9ebcaca0c0, type: 2}
+  - {fileID: 11400000, guid: f9fa57cdb0c94ba8bbc147f7bd26b770, type: 2}
+  - {fileID: 11400000, guid: 061967a9161947cca693332c4778c4f3, type: 2}
+  - {fileID: 11400000, guid: 245e282ae7354f4a9c140193a1290670, type: 2}
+  _modifierData: {fileID: 11400000, guid: 9e3a79d0c8b24e61b0f4bdb2c91a0e65, type: 2}
+  _waveRewardData: {fileID: 11400000, guid: 246d5f4ff4e04986a882fa0d956cb5a7, type: 2}

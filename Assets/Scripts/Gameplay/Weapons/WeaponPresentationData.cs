@@ -15,6 +15,14 @@ namespace Corebound.Gameplay.Weapons
         [Header("Identity")]
         [SerializeField] private Sprite _iconSprite;
         [SerializeField] private string _iconSpritePath = string.Empty;
+
+        // Asset 102 is one 3x3 icon sheet for all nine weapons, so a weapon names its cell rather
+        // than its own file. Columns 0 means "the whole image", which is how a single-file icon
+        // still works. Until the sheet exists the HUD falls back to the weapon's short label.
+        [SerializeField] private int _iconAtlasColumns;
+        [SerializeField] private int _iconAtlasRows;
+        [SerializeField] private int _iconColumn;
+        [SerializeField] private int _iconRow;
         [SerializeField] private Color _accentColor = new Color(1f, 0.72f, 0.35f, 1f);
 
         [Header("Muzzle")]
@@ -90,7 +98,9 @@ namespace Corebound.Gameplay.Weapons
                 return null;
             }
 
-            return Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(_iconSpritePath);
+            return _iconAtlasColumns > 0 && _iconAtlasRows > 0
+                ? Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectAtlasCellSprite(_iconSpritePath, _iconColumn, _iconRow, _iconAtlasColumns, _iconAtlasRows)
+                : Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(_iconSpritePath);
         }
     }
 }

@@ -79,6 +79,7 @@ namespace Corebound.SaveSystem
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            ProfileSelection.ActiveProfileChanged += OnActiveProfileChanged;
             _saveStore.SaveFailed += (path, message) => SaveFailed?.Invoke(path, message);
             _saveStore.LoadFailed += (path, message) => LoadFailed?.Invoke(path, message);
         }
@@ -90,8 +91,19 @@ namespace Corebound.SaveSystem
             target.LoadFailed += (path, message) => LoadFailed?.Invoke(path, message);
         }
 
+        // Switching profile must not leave another profile's data in the caches.
+        private void OnActiveProfileChanged()
+        {
+            _runSaveData = null;
+            _settingsSaveData = null;
+            _metaProgressionSaveData = null;
+            _statisticsSaveData = null;
+        }
+
         private void OnDestroy()
         {
+            ProfileSelection.ActiveProfileChanged -= OnActiveProfileChanged;
+
             if (Instance == this)
             {
                 Instance = null;
@@ -309,7 +321,12 @@ namespace Corebound.SaveSystem
 
         private string GetProfileRootPath()
         {
-            return Path.Combine(Application.persistentDataPath, _profileFolderName);
+            // SaveSystem.md "Drei Profile": the folder follows the active profile, so all four save
+            // domains switch together. _profileFolderName stays as the fallback for a scene authored
+            // before profiles existed.
+            var folder = ProfileSelection.ActiveFolderName;
+
+            return Path.Combine(Application.persistentDataPath, string.IsNullOrWhiteSpace(folder) ? _profileFolderName : folder);
         }
     }
 }

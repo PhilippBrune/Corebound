@@ -40,7 +40,12 @@ namespace Corebound.MetaProgression
         EliteScrapMultiplier = 25,          // elites drop (1 + value) x Scrap
         StartingRelic = 26,                 // every run starts with value random relics
         BossTowerRangeMultiplier = 27,      // towers reach (1 + value) x further during a boss encounter
-        ExecuteDamageMultiplier = 28        // (1 + value) x damage to enemies below 30% health
+        ExecuteDamageMultiplier = 28,       // (1 + value) x damage to enemies below 30% health
+
+        // Appended 2026-09-22 (spec review C8). Both exist so that the Industry and Command
+        // branches can end in rule changes rather than in another percentage.
+        PickupMagnetRange = 29,             // Add: extra auto-pickup range in units; a large value is "everything"
+        RewardRerolls = 30                  // Add: rerolls available per reward screen
     }
 
     [Serializable]

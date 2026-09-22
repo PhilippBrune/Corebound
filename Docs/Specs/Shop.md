@@ -31,7 +31,7 @@ Er ergänzt den Build-Aufbau durch gezieltere Auswahlmöglichkeiten mit klaren O
 - Preise und Verfügbarkeiten werden datengetrieben definiert.
 - Der erste Vertical Slice nutzt feste Preis-Kategorien pro Angebotsart statt vollständig dynamischer Preisbildung.
 - Ein allgemeines Reroll-System ist nicht Teil des ersten Scope.
-- Refunds für Shop-Käufe existieren im ersten Scope nicht.
+- Für Cards gibt es keine Rückerstattung. Waffen sind die Ausnahme: sie werden im Loadout-Panel verkauft, eine abgelehnte gekaufte Waffe wird voll erstattet. Die verbindliche Tabelle steht in [Economy.md](Economy.md), Abschnitt "Refunds und Verkauf".
 - Der Shop bleibt vollständig controller-first bedienbar.
 
 ## Data Model
@@ -51,7 +51,9 @@ Ein Shop-Service kann später verfügbare Angebote aus ShopOfferTableData erzeug
 
 Events wie OnShopOpened, OnShopOfferSelected, OnPurchaseRequested und OnPurchaseSucceeded koordinieren UI, Audio und Wallet-Anpassungen.
 
-Der erste Vertical Slice setzt den Shop als intermission-basierten Blocking-Overlay-Flow nach Wave 3 von Stage 1 um, mit festen Card-Angeboten aus `ShopOfferTableData`, zentraler Wallet-Validierung und anschließender Tower-Placement-Phase.
+Der Shop ist ein intermission-basierter Blocking-Overlay-Flow mit Angeboten aus `ShopOfferTableData`, zentraler Wallet-Validierung und anschließender Tower-Placement-Phase.
+
+**Wann der Shop öffnet (2026-09-22):** ausschließlich datengetrieben über `ShopData._openAfterWaveNumbers`. Owner-Entscheidung 2026-09-22: **nach Wave 3 jeder Stage** — ein Shop-Besuch pro Stage statt zwei, damit jeder Kauf mehr wiegt. Das Feld ist die einzige Stelle, an der sich dieser Rhythmus ändert.
 
 ## Dependencies
 
@@ -95,14 +97,14 @@ Keine offenen Fragen für den ersten Vertical Slice.
 Festgelegte Entscheidungen:
 
 - Shop-Angebote nutzen feste Preis-Kategorien pro Angebotsart und optionale Stage-Multiplikatoren.
-- Ein Reroll-System und Refunds sind nicht Teil des ersten Scope.
+- Ein Reroll-System ist nicht Teil des Shops (der Command-Branch-Knoten "Wider Draft" in [SkillTree.md](SkillTree.md) ist ein separates Reward-Feature). Refunds folgen der Tabelle in [Economy.md](Economy.md).
 - Der Shop ergänzt Reward- und Card-Flows, ersetzt diese aber nicht als Hauptprogression.
 
 ## Acceptance Criteria
 
 - Der Shop nutzt zentrale Economy- und Resource-Regeln.
 - Angebote, Kosten und Kaufbarkeit sind controller-freundlich lesbar.
-- Keine neue Kernmechanik wie Inventarmanagement oder Reroll-Spiralen wird eingeführt.
+- Der Shop selbst führt keine neue Kernmechanik ein. Das Loadout-Panel aus [WeaponLoadout.md](WeaponLoadout.md) ist die einzige Inventar-Oberfläche und gehört nicht zum Shop.
 - Shop-Käufe lassen sich eventbasiert und datengetrieben integrieren.
 - Der Stage-1-Loop bleibt ohne komplexe Shop-Sonderregeln verständlich.
 

@@ -20,6 +20,7 @@ namespace Corebound.SaveSystem
         [SerializeField] private float _controllerAimAssistStrength = 0.65f;
         [SerializeField] private int _controlProfileIndex;
         [SerializeField] private int _languageIndex;
+        [SerializeField] private int _inputDeviceIndex;
 
         public int SaveFormatVersion => _saveFormatVersion;
 
@@ -50,6 +51,14 @@ namespace Corebound.SaveSystem
         // 0 = English, 1 = German. Index rather than a bool so a third language needs no
         // save-format change.
         public int LanguageIndex => _languageIndex;
+
+        // 0 = automatic, 1 = controller, 2 = mouse and keyboard (spec review A12).
+        public int InputDeviceIndex => _inputDeviceIndex;
+
+        public void SetInputDeviceIndex(int value)
+        {
+            _inputDeviceIndex = Mathf.Clamp(value, 0, 2);
+        }
 
         public SettingsSaveData Clone()
         {

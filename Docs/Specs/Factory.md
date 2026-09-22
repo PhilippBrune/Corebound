@@ -46,11 +46,11 @@ Diese Kette ist explizit ein **geschlossener Kreislauf mit Verstärkung**, kein 
 
 Factory-Daten werden über ScriptableObjects beschrieben.
 
-- ProductionChainData: Definition eines zusammenhängenden Produktionspfads oder Themas
-- ProductionNodeData: einzelner Erzeuger, Verbraucher oder Verstärker innerhalb einer Kette
-- ProductionTriggerData: Auslöser wie Zeit, Kill, Wave-Ende oder Tower-Aktivierung
+- ProductionChainData: Definition eines zusammenhängenden Produktionspfads inklusive seiner Tier-Stufen
+- ProductionNodeData: einzelner Erzeuger oder Verstärker innerhalb einer Kette, mit seinem Trigger (Kill, Tower-Puls, Wave-Ende) als Feld
 - ProductionModifierData: Multiplikatoren, Caps und Synergy-Bedingungen
-- ResourceConversionData: Umwandlung zwischen Resource-Typen oder Kostenstufen
+
+Eine Resource-Conversion-Stufe gibt es nicht; der erste Scope kennt nur Erzeugung und Multiplikation.
 
 ## Technical Design
 
@@ -112,7 +112,7 @@ Festgelegte Entscheidungen:
 - Der erste Factory-Umfang nutzt OnEnemyKilled, zeitbasierten Tower-Pulse und OnWaveCompleted als Production Triggers.
 - Resource Conversion ist nicht Teil des ersten spielbaren Umfangs; der Startfokus liegt auf Erzeugung und Multiplikation. Das deckt die ersten beiden Schritte der Vision-Beispielkette ab (Türme erzeugen Ressourcen, Ressourcen kaufen Karten über Shop/Economy); der Rückkopplungsschritt „Karten verbessern Türme" existiert bereits über bestehende Card-Effekte (`TowerDamageMultiplier`), eine explizite Resource-Conversion-Stufe bleibt offen für eine spätere Erweiterung.
 - Snowballing wird über Soft Caps auf doppelte Resource-Produzenten und harte Datenobergrenzen für Wave-Boni begrenzt.
-- Der erste implementierte Production Node deckte nur den Support-Tower ab; das war eine unbeabsichtigte Lücke gegenüber der Vision-Kette (die keinen bestimmten Tower-Typ bevorzugt) und wurde geschlossen, indem beide vorhandenen Turm-Typen (Ballista, Support) jeweils einen eigenen Tower-Pulse-Knoten erhalten haben.
+- **Jeder Tower im Katalog besitzt einen Tower-Pulse-Knoten** (Stand 2026-09-22: Ballista, Support, Mortar, Sentinel). Die Regel dahinter: ein neuer Tower-Typ bringt entweder einen eigenen Produktionsknoten mit, oder die Spec begründet, warum er reiner Kampfturm ist. Sonst entsteht wieder die Lücke von 2026-09-09, als nur der Support-Tower produzierte.
 
 ## Acceptance Criteria
 
