@@ -1063,7 +1063,7 @@ player cannot tell what they are spending. They must differ in silhouette, not o
 
 Target: Assets/Art/UI/SkillTree/skill_node_key_frame.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22, DEFECTIVE - the frame's centre is a baked-in checkerboard (fake transparency). Not wired; the Progression screen keeps its procedural rows. Needs a re-render with a real transparent centre.
 
 Needed because:
 
@@ -1077,7 +1077,7 @@ Prompt:
 
 Target: Assets/Art/UI/SkillTree/skill_node_sub_frame.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22, WRONG CONTENT - the image is a node-cluster diagram, not a single sub-node frame. Not wired. Needs a re-render as one small frame.
 
 Needed because:
 
@@ -1091,7 +1091,7 @@ Prompt:
 
 Target: Assets/Art/UI/SkillTree/skill_link_segment.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22. Mirrored to StreamingAssets; not wired yet (the tree is a tab strip, so there is nothing to link).
 
 Needed because:
 
@@ -1105,7 +1105,7 @@ Create a short horizontal 2D UI connector segment for a skill tree, designed to 
 
 Target: Assets/Art/UI/SkillTree/ascension_rank_badge.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22 and wired (main-menu Ascension badge).
 
 Needed because:
 
@@ -1119,7 +1119,7 @@ Prompt:
 
 Target: Assets/Art/UI/SkillTree/skill_branch_icon_sheet.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22 and wired (Progression screen branch emblem, four rects cut from the sheet).
 
 Needed because:
 
@@ -1133,7 +1133,7 @@ Create a unified 2D icon sheet containing exactly four icons in a single row, ev
 
 Target: Assets/Art/UI/HUD/weapon_slot_frame.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22 and wired with a workaround - the centre is a baked-in checkerboard, so the HUD draws it as a 9-slice with the centre not filled (border only). A re-render with a transparent centre would let it be used as-is.
 
 Needed because:
 
@@ -1147,7 +1147,7 @@ Prompt:
 
 Target: Assets/Art/UI/HUD/weapon_set_tier_pips.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22 and wired (HUD Set Bonus pips, off/on cells).
 
 Needed because:
 
@@ -1161,7 +1161,7 @@ Create a 2D icon sheet containing exactly five small pip shapes in a single row,
 
 Target: Assets/Art/Resources/resource_alloy_icon.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22 and wired (Progression header).
 
 Needed because:
 
@@ -1175,7 +1175,7 @@ Prompt:
 
 Target: Assets/Art/Resources/resource_skill_point_icon.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22 and wired (Progression header).
 
 Needed because:
 
@@ -1189,7 +1189,7 @@ Prompt:
 
 Target: Assets/Art/UI/HUD/core_repair_icon.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22 and wired (world prompt above the Core during an Intermission).
 
 Needed because:
 
@@ -1203,7 +1203,7 @@ Prompt:
 
 Target: Assets/Art/UI/HUD/factory_chain_tier_indicator.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22. Mirrored to StreamingAssets; not wired yet.
 
 Needed because:
 

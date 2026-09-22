@@ -155,6 +155,7 @@ namespace Corebound.Gameplay.Waves
             // a scene load and buff the next run from a destroyed object.
             EnemySupportAuraRegistry.Clear();
             BossEncounterState.SetActive(false);
+            MetaRewardLedger.ResetRunTotals();
 
             // Skill tree and upgrades, frozen for this run (idempotent per scene load).
             RunProgressionSnapshot.Capture(SaveManager, _metaProgressionDefinitionData);
@@ -523,7 +524,7 @@ namespace Corebound.Gameplay.Waves
                 // A running per-wave counter, NOT the spawn-group index: passing the group index
                 // meant every enemy in a group resolved to the identical position.
                 enemy.transform.position = _spawnPlacement.ResolveEnemySpawnPosition(
-                    _stageData, ArenaArtPresenter, _spawnPlacement.NextSpawnIndex(), _spawnAngleJitter);
+                    _stageData, ArenaArtPresenter, _spawnPlacement.NextSpawnIndex(), _spawnAngleJitter, _playerTarget);
                 enemy.Initialize(spawnGroup.EnemyData, spawnGroup.EliteModifierData, _playerTarget, _coreTarget, _sharedProjectilePrototype, _projectileParent);
                 _remainingAliveEnemies += 1;
                 spawnGroup.ConsumeSpawn();
@@ -626,6 +627,14 @@ namespace Corebound.Gameplay.Waves
         private void UpdateIntermission(float deltaTime)
         {
             if (_requiresIntermissionShopAction || _requiresIntermissionTowerAction)
+            {
+                StateChanged?.Invoke();
+                return;
+            }
+
+            // Playtest 2026-09-22: "don't start the countdown when in the weapon upgrade menu".
+            // Managing the loadout is part of the Intermission, not time taken from it.
+            if (Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.IsOpen)
             {
                 StateChanged?.Invoke();
                 return;

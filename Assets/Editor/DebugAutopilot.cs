@@ -247,12 +247,16 @@ namespace Corebound.EditorTools
             // "loadout3": stage 3 with all six slots filled (3 Rapid, 2 Spread, 1 Beam), so Set
             // Bonuses, the projectile budget and the loadout HUD can be exercised without first
             // earning slot unlocks.
-            var loadoutTest = contents.StartsWith("loadout", System.StringComparison.OrdinalIgnoreCase);
+            // "arsenal3": the same, with the six weapons added 2026-09-22 - one of each, so Full
+            // Arsenal is active and every new archetype fires in one run.
+            var arsenalTest = contents.StartsWith("arsenal", System.StringComparison.OrdinalIgnoreCase);
+            var loadoutTest = arsenalTest || contents.StartsWith("loadout", System.StringComparison.OrdinalIgnoreCase);
             SessionState.SetBool(LoadoutTestSessionKey, loadoutTest);
+            SessionState.SetBool(ArsenalTestSessionKey, arsenalTest);
 
             if (loadoutTest)
             {
-                contents = contents.Substring("loadout".Length).Trim();
+                contents = contents.Substring(arsenalTest ? "arsenal".Length : "loadout".Length).Trim();
             }
 
             // "progression1": grant test currency in the main menu, buy a scripted set of skill
@@ -310,6 +314,7 @@ namespace Corebound.EditorTools
         // works) or the "command: x" form the generated file uses. Lines starting with # are help
         // text, not input.
         public const string LoadoutTestSessionKey = "Corebound.Autopilot.LoadoutTest";
+        public const string ArsenalTestSessionKey = "Corebound.Autopilot.ArsenalTest";
         public const string ProgressionTestSessionKey = "Corebound.Autopilot.ProgressionTest";
         public const string AscensionTestSessionKey = "Corebound.Autopilot.AscensionTest";
         public const string GodModeSessionKey = "Corebound.Autopilot.GodMode";
@@ -430,6 +435,7 @@ namespace Corebound.EditorTools
             ConfirmNewRun,
             WaitForCombat,
             PlayRun,
+            AfterRun,
             Done
         }
 
@@ -491,6 +497,7 @@ namespace Corebound.EditorTools
         private int _pauseProbeStage;
         private float _pauseUnscaledTimer = -1f;
         private bool _pauseShotTaken;
+        private int _pauseTabShots;
         private int _shopUnchangedConfirms;
         private int _lastShopOfferCount = -1;
 
@@ -510,7 +517,7 @@ namespace Corebound.EditorTools
 
             if (loadoutTest)
             {
-                Debug.Log(DebugAutopilot.LogPrefix + " loadout test requested: six slots, 3 Rapid + 2 Spread + 1 Beam");
+                Debug.Log(DebugAutopilot.LogPrefix + " loadout test requested: six slots, " + (SessionState.GetBool(DebugAutopilot.ArsenalTestSessionKey, false) ? "one of each new weapon" : "3 Rapid + 2 Spread + 1 Beam"));
             }
 
             Debug.Log(DebugAutopilot.LogPrefix + " started, target stage " + _targetStageIndex);
@@ -539,6 +546,9 @@ namespace Corebound.EditorTools
                     break;
                 case Step.WaitForCombat:
                     TickWaitForCombat();
+                    break;
+                case Step.AfterRun:
+                    TickAfterRun();
                     break;
                 case Step.PlayRun:
                     TickPlayRun();
@@ -821,7 +831,7 @@ namespace Corebound.EditorTools
                     return;
                 case WaveState.Failed:
                     Debug.LogWarning(DebugAutopilot.LogPrefix + " run failed at wave " + _waveManager.CurrentWaveNumber);
-                    Finish();
+                    Advance(Step.AfterRun);
                     return;
                 case WaveState.Completed:
                     Debug.Log(DebugAutopilot.LogPrefix + " run completed");
@@ -1197,10 +1207,37 @@ namespace Corebound.EditorTools
 
                 // CaptureScreenshot renders at the end of the frame, so closing the menu in the
                 // same frame photographs it already closed. Shoot first, close a beat later.
-                if (_pauseUnscaledTimer < 0.4f && !_pauseShotTaken)
+                // Perks, then Player and Towers tabs: shoot, switch, shoot, switch, shoot.
+                if (_pauseUnscaledTimer < 2.2f && _pauseTabShots == 0)
                 {
-                    _pauseShotTaken = true;
+                    _pauseTabShots = 1;
                     Shot("stage" + _waveManager.StageIndex + "_pause");
+                }
+                else if (_pauseUnscaledTimer < 1.9f && _pauseTabShots == 1)
+                {
+                    _pauseTabShots = 2;
+                    _inputReader.DebugRaiseNext();
+                }
+                else if (_pauseUnscaledTimer < 1.5f && _pauseTabShots == 2)
+                {
+                    _pauseTabShots = 3;
+                    Shot("stage" + _waveManager.StageIndex + "_pause_player");
+                }
+                else if (_pauseUnscaledTimer < 1.2f && _pauseTabShots == 3)
+                {
+                    _pauseTabShots = 4;
+                    _inputReader.DebugRaiseNext();
+                }
+                else if (_pauseUnscaledTimer < 0.8f && _pauseTabShots == 4)
+                {
+                    _pauseTabShots = 5;
+                    Shot("stage" + _waveManager.StageIndex + "_pause_towers");
+                }
+                else if (_pauseUnscaledTimer < 0.5f && _pauseTabShots == 5)
+                {
+                    // Back to Perks, so the next pause opens where a player expects it.
+                    _pauseTabShots = 6;
+                    _inputReader.DebugRaiseNext();
                 }
 
                 if (_pauseUnscaledTimer < 0f)
@@ -1217,8 +1254,9 @@ namespace Corebound.EditorTools
                 _pauseProbed = true;
                 _pauseProbeStage = _waveManager.StageIndex;
                 _inputReader.DebugRaisePause();
-                _pauseUnscaledTimer = 1f;
+                _pauseUnscaledTimer = 2.5f;
                 _pauseShotTaken = false;
+                _pauseTabShots = 0;
                 Debug.Log(DebugAutopilot.LogPrefix + " PAUSE opened, timeScale=" + Time.timeScale);
                 return true;
             }
@@ -1243,6 +1281,20 @@ namespace Corebound.EditorTools
                     Debug.Log(DebugAutopilot.LogPrefix + " LOADOUT PANEL closed");
                 }
 
+                return true;
+            }
+
+            // The panel also opens by itself when a weapon arrives with every slot full. Confirm
+            // places the weapon; after that the panel stays open and would swallow every further
+            // Confirm (buying tier upgrades), and since 2026-09-22 the Intermission countdown
+            // pauses while it is open - so leave it the way a player would, with the Loadout key.
+            if (Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.IsOpen
+                && _playerCombat != null
+                && !_playerCombat.HasPendingWeapon
+                && Time.frameCount != Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.LastToggleFrame)
+            {
+                _inputReader.DebugRaiseLoadout();
+                Debug.Log(DebugAutopilot.LogPrefix + " LOADOUT PANEL closed after placing a pending weapon");
                 return true;
             }
 
@@ -1324,7 +1376,14 @@ namespace Corebound.EditorTools
             }
 
             _loadoutTestApplied = true;
-            _playerCombat.DebugConfigureLoadout("weapon_rapid", "weapon_rapid", "weapon_rapid", "weapon_spread", "weapon_spread", "weapon_beam");
+            if (SessionState.GetBool(DebugAutopilot.ArsenalTestSessionKey, false))
+            {
+                _playerCombat.DebugConfigureLoadout("weapon_scorcher", "weapon_cryo", "weapon_railgun", "weapon_nova", "weapon_launcher", "weapon_smg");
+            }
+            else
+            {
+                _playerCombat.DebugConfigureLoadout("weapon_rapid", "weapon_rapid", "weapon_rapid", "weapon_spread", "weapon_spread", "weapon_beam");
+            }
             Debug.Log(DebugAutopilot.LogPrefix + " loadout test applied: " + DescribeLoadout());
         }
 
@@ -1690,6 +1749,39 @@ namespace Corebound.EditorTools
         {
             _step = next;
             _stepTimer = 0f;
+        }
+
+        // After a failed run: photograph the Run Failed overlay, confirm back to the main menu and
+        // stay there long enough for [AudioProbe] to report what is still playing (playtest
+        // 2026-09-22: two sounds keep playing in the menu after a death).
+        private bool _afterRunShot;
+        private bool _afterRunConfirmed;
+
+        private float _afterRunTimer;
+
+        private void TickAfterRun()
+        {
+            // The Run Failed overlay pauses time; this step must not.
+            _afterRunTimer += Time.unscaledDeltaTime;
+
+            if (!_afterRunShot && _afterRunTimer > 1.2f)
+            {
+                _afterRunShot = true;
+                Shot("run_failed");
+            }
+
+            if (!_afterRunConfirmed && _afterRunTimer > 2.2f && _inputReader != null)
+            {
+                _afterRunConfirmed = true;
+                _inputReader.DebugRaiseConfirm();
+                Debug.Log(DebugAutopilot.LogPrefix + " confirmed Run Failed, returning to the main menu");
+            }
+
+            if (_afterRunTimer > 16f)
+            {
+                Debug.Log(DebugAutopilot.LogPrefix + " after-run observation done");
+                Finish();
+            }
         }
 
         private void Finish()

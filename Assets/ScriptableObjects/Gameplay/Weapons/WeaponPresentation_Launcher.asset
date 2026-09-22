@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a083ffac7218a849b14893fa3084ff4, type: 3}
+  m_Name: WeaponPresentation_Launcher
+  m_EditorClassIdentifier:
+  _presentationId: weapon_presentation_launcher
+  _iconSprite: {fileID: 0}
+  _iconSpritePath: 
+  _accentColor: {r: 1, g: 0.72, b: 0.3, a: 1}
+  _muzzleColor: {r: 1, g: 0.8, b: 0.45, a: 0.9}
+  _muzzleRadius: 0.34
+  _muzzleDurationSeconds: 0.06
+  _impactColor: {r: 1, g: 0.55, b: 0.2, a: 0.9}
+  _fireClip: {fileID: 0}
+  _fireFrequency: 98.0
+  _fireDurationSeconds: 0.14
+  _fireVolume: 0.08
+  _criticalClip: {fileID: 0}
+  _criticalFrequency: 196.0
+  _criticalDurationSeconds: 0.13
+  _criticalVolume: 0.11
+  _minFireCueIntervalSeconds: 0.3

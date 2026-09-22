@@ -19,7 +19,13 @@ namespace Corebound.Gameplay.Combat
         // Frames the arena's full height rather than using one fixed zoom for every stage.
         [SerializeField] private bool _frameArenaHeight = true;
         [SerializeField] private float _framingMargin = 0.4f;
-        [SerializeField] private float _minOrthographicSize = 5f;
+        // Lowered from 5 (2026-09-22): "cover" framing below needs to zoom in further on wide
+        // screens - a 16 x 10 arena fills a 2:1 screen only at about 4.
+        [SerializeField] private float _minOrthographicSize = 3.5f;
+
+        // The boundary wall art drawn just outside ArenaSize; the view may show this much past
+        // the playable edge, and no more.
+        [SerializeField] private float _wallAllowance = 0.6f;
         [SerializeField] private float _maxOrthographicSize = 7.5f;
         [SerializeField] private float _zoomSpeed = 4f;
 
@@ -28,6 +34,15 @@ namespace Corebound.Gameplay.Combat
 
         private void Awake()
         {
+            // The clear colour only ever shows if framing fails; it was project-default blue, which
+            // is what the playtest saw as "a blue frame around the arena" in fullscreen.
+            var ownCamera = GetComponent<Camera>();
+
+            if (ownCamera != null)
+            {
+                ownCamera.backgroundColor = new Color(0.05f, 0.06f, 0.08f, 1f);
+            }
+
             _camera = GetComponent<Camera>();
 
             if (_playerTarget == null)
@@ -87,7 +102,13 @@ namespace Corebound.Gameplay.Combat
                 return;
             }
 
-            var requiredSize = arenaSize.y * 0.5f + _framingMargin;
+            // Playtest 2026-09-22 (fullscreen): "a blue frame around the arena". Framing only the
+            // height left the sides past the walls on any screen wider than the arena. The view now
+            // covers: it fits inside arena + walls on BOTH axes, and the camera pans with the player
+            // along whichever axis the screen is longer on.
+            var heightFit = arenaSize.y * 0.5f + Mathf.Min(_framingMargin, _wallAllowance);
+            var widthFit = (arenaSize.x * 0.5f + _wallAllowance) / Mathf.Max(0.1f, _camera.aspect);
+            var requiredSize = Mathf.Min(heightFit, widthFit);
             var targetSize = Mathf.Clamp(requiredSize, _minOrthographicSize, _maxOrthographicSize);
 
             _camera.orthographicSize = Mathf.Approximately(_camera.orthographicSize, targetSize)
@@ -107,7 +128,7 @@ namespace Corebound.Gameplay.Combat
 
             var halfViewHeight = _camera.orthographicSize;
             var halfViewWidth = halfViewHeight * _camera.aspect;
-            var halfArena = arenaSize * 0.5f;
+            var halfArena = arenaSize * 0.5f + new Vector2(_wallAllowance, _wallAllowance);
 
             var clampX = ClampAxis(desired.x, halfArena.x, halfViewWidth);
             var clampY = ClampAxis(desired.y, halfArena.y, halfViewHeight);

@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04b43e4f37ab4f7ba068087eaf824db0, type: 3}
+  m_Name: Card_Weapon_Nova
+  m_EditorClassIdentifier:
+  _cardId: card_weapon_nova
+  _displayName: 'Nova Pulse'
+  _displayNameDe: 'Nova-Puls'
+  _description: 'Equip a Nova Pulse: a ring of shards in every direction. Copies build its Set Bonus.'
+  _descriptionDe: 'Rüste einen Nova-Puls aus: ein Ring aus Splittern in alle Richtungen. Kopien bauen seinen Setbonus auf.'
+  _rarity: 1
+  _requiredUnlockId: unlock_weapon_nova
+  _tags:
+  - 0
+  _effects: []
+  _weaponModifiers: []
+  _stackable: 1
+  _grantedWeapon: {fileID: 11400000, guid: 3535685c46364310b2ac45e53600f97c, type: 2}

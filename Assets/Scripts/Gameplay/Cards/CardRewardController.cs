@@ -41,13 +41,38 @@ namespace Corebound.Gameplay.Cards
 
         public InputContextData GameplayInputContext => _gameplayInputContext;
 
-        public string ResourceSummary => _resourceWalletService != null ? _resourceWalletService.DisplayLabel + ": " + _resourceWalletService.CurrentAmount : string.Empty;
+        // Reward_Screen.md: "Live run currency display (Scrap / Alloy counter)". Alloy is permanent,
+        // so what matters on this screen is what the current run has earned of it so far.
+        public string ResourceSummary => _resourceWalletService != null
+            ? _resourceWalletService.DisplayLabel + ": " + _resourceWalletService.CurrentAmount
+                + LocalizationService.Resolve("  ·  Alloy +", "  ·  Legierung +") + Corebound.MetaProgression.MetaRewardLedger.RunAlloy
+            : string.Empty;
 
         public string TowerSummary => _towerService != null ? LocalizationService.Resolve("Active Towers: ", "Aktive Tuerme: ") + _towerService.BuiltTowerCount : string.Empty;
 
         public string SelectedDescription => _cardService != null && _cardService.CurrentOffer.Count > 0 && _selectedIndex >= 0 && _selectedIndex < _cardService.CurrentOffer.Count
-            ? _cardService.CurrentOffer[_selectedIndex].Description
+            ? CardEffectDescriber.Describe(_cardService.CurrentOffer[_selectedIndex])
             : string.Empty;
+
+        public float OpenedAtUnscaledTime { get; private set; }
+
+        // Mouse support for the reward screen (the gameplay scene has no EventSystem, so the
+        // presenter hit-tests the slots itself and drives selection through these).
+        public void SelectIndex(int index)
+        {
+            if (!_isOpen || index == _selectedIndex || index < 0 || index >= GetCurrentOffer().Count)
+            {
+                return;
+            }
+
+            _selectedIndex = index;
+            StateChanged?.Invoke();
+        }
+
+        public void ConfirmSelection()
+        {
+            OnConfirmPressed();
+        }
 
         private IInputReader InputReader => _inputReaderSource as IInputReader;
 
@@ -99,6 +124,7 @@ namespace Corebound.Gameplay.Cards
 
             _pendingRewardLabel = string.IsNullOrWhiteSpace(runSaveData.PendingRewardLabel) ? LocalizationService.Resolve("Card Reward", "Kartenbelohnung") : runSaveData.PendingRewardLabel;
             _isOpen = true;
+            OpenedAtUnscaledTime = Time.unscaledTime;
             _selectedIndex = 0;
             _cardService.BuildRewardOffer();
 

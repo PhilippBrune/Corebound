@@ -167,3 +167,55 @@ what happens when several of the same kind are carried.
 - The UI section's single-weapon HUD widget is replaced by a six-slot strip.
 - Audio: the de-duplication rule in WeaponLoadout.md is what keeps this spec's "akustisch
   unterscheidbar" requirement true once six weapons fire at once.
+
+---
+
+## Weapon set 2026-09-22
+
+Playtest request 2026-09-22: *"create more different weapon designs"*. Six weapons were added
+to the three archetypes above, all built from existing rules. Each one differs in **shape**
+(where and how its damage lands), not only in its numbers. Nine distinct weapons also make
+WeaponLoadout.md's Arsenal bonus reachable for the first time.
+
+| Weapon | Id | Shape | Base (damage · interval · magazine / reload) | Innate | Gate |
+| --- | --- | --- | --- | --- | --- |
+| Scorcher | `weapon_scorcher` | 2-jet flame cone, 2.7 u reach, pierce 1 | 0.5 · 0.09 s · 36 / 1.6 s | every hit Burns | none |
+| Cryo Lance | `weapon_cryo` | slow piercing bolt | 2.8 · 0.48 s · 10 / 1.4 s | every hit Freezes (slow) | none |
+| Railgun | `weapon_railgun` | arena-crossing slug, pierce 4 | 9 · 1.05 s · 3 / 1.9 s | +15% crit chance | 45 Alloy licence |
+| Nova Pulse | `weapon_nova` | 8-shard ring, 3.5 u reach | 1.3 · 0.75 s · 6 / 1.5 s | full ring | 35 Alloy licence |
+| Scatter Launcher | `weapon_launcher` | shell, bursts for 75% splash in 1.1 u | 3.4 · 0.85 s · 4 / 1.7 s | explode on impact (new rule `ExplodeOnImpact`) | 40 Alloy licence |
+| Twin SMG | `weapon_smg` | two loose barrels | 0.65 · 0.11 s · 48 / 2.0 s | none | none |
+
+Sustained single-target DPS including reload, for comparison: Rapid ~9.5, Spread ~7.1, Beam
+~6.4, Scorcher ~7.4 + Burn, SMG ~8.6, Nova ~8.8 if every shard hits (realistically a quarter
+of that), Railgun ~6.1 across a whole line, Cryo ~4.5 + slow, Launcher ~2.7 + splash. These
+are first-pass numbers, not playtested.
+
+Every weapon has its own five-tier Set Bonus ladder, authored on its `WeaponData`. Tier 6 is
+the archetype's defining rule: a Scorcher ring of fire, a Cryo or Railgun guaranteed crit
+cycle, Nova shards that burst when they miss, a Launcher that fires three shells, and an SMG
+with +10% crit.
+
+### Data added
+
+- `WeaponData._innateEffects`: `(target, value)` pairs, the same type as Set Bonus effects,
+  applied to every copy from the first. This is how Nova's ring and the Launcher's burst are
+  expressed without new combat code.
+- `WeaponData._shortLabel`: the 1-2 character HUD tile label. Nine weapons made first letters
+  ambiguous (Spread / Scorcher / Scatter Launcher).
+- `WeaponData._displayNameDe` / `_summaryDe`.
+- `WeaponModifierTarget.ExplodeOnImpact` = 16 (appended): every hit bursts, reusing
+  `CombatProjectile.Explode`. The struck target is not hit twice.
+- Per weapon: pattern, damage profile, projectile (tinted cells of `projectile_sheet_core.png`),
+  presentation (its own synth fire frequency), card, shop offer, and entries in
+  `WeaponCatalog_Default`, `CardPool_Default` and `ShopOfferTable_Stage1`.
+
+### Not done
+
+- **Art.** Projectiles reuse the three existing sheet rows, tinted; the weapons have no icons
+  (the HUD shows the short label). Prompts for a dedicated sheet belong in
+  GRAPHICS_ASSET_PROMPTS.md.
+- **Balance.** Verified only that all six fire, drain and reload in a real run (autopilot
+  `arsenal3`, Stage 3), and that a Scorcher offered by the shop went pending with a full
+  loadout. Not verified: splash damage totals, Burn/Freeze uptime, and any tier-5/6 Set Bonus
+  in play.

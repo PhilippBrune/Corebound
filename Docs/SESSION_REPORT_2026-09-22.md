@@ -92,3 +92,90 @@ meta save is back to 5 Alloy, Spread unlocked, no skill nodes.
 - Open decision: is respec free every time (current build), or only once per tree version?
 - `Docs/SESSION_REPORT_2026-09-16.md`, `-20` and `-21` show as deleted in the working tree. This
   session did not delete them and did not restore them.
+
+---
+
+# Second pass — playtest round 2026-09-22
+
+Driven by the owner's second playtest list, the session-report answers, and three requests: more
+weapon designs, a completeness review of every spec, and a check of `Docs/AI/Reward_Screen.md`.
+
+## Playtest items
+
+| Item | Root cause / change | Verified |
+| --- | --- | --- |
+| HUD loses Player %, Core %, Scrap in fullscreen | Six HUD texts had rects 15-21 units tall with best-fit minimum 14 and vertical Truncate; at fullscreen scale the line no longer fitted and Legacy Text draws *nothing*. Rects made taller, minimum 10, Truncate kept (Overflow made them overlap) | screenshots, windowed; fullscreen reasoned only |
+| Pause: perk descriptions + stat tabs | Perks tab (grid, hover and d-pad selection, description field) and Player / Towers tabs listing base value and the bonus in brackets, from the same resolvers the game uses (`StatLine`, `CollectStatLines`) | screenshots of all three tabs |
+| Tower upgrade info | Build browser shows an upgrade card for a built tower: level, cost, DPS / range / interval before and after | screenshot |
+| `wave_banner.png` unused | Banner now drawn from the art (cropped to its plate, preserved aspect) | screenshot |
+| Loadout key "I" not visible | Shown in the Intermission line and the build browser hint | screenshot |
+| Countdown runs in the weapon menu | `WaveManager.UpdateIntermission` pauses while the loadout panel is open | log |
+| Enemies spawn on the player | Spawns keep 3.5 u from the player; blocked spots push outward, then mirror | code + runs, no close spawn seen |
+| Run Failed shows no SP / Alloy | Earnings line from `MetaRewardLedger.RunSkillPoints / RunAlloy` | screenshot |
+| Two sounds in the main menu after death | **Root cause found** with the new `[AudioProbe]` (polls every 2 s): `LocalProfileSaveManager` put MainMenu's whole shared GameObject into DontDestroyOnLoad, including AudioManager and MusicStateController. Now persists on its own host; scene instances forward | probe: one music source in menu, gameplay and after death |
+| Progression footer unreadable; slot unlock info | Footer moved inside the frame; header shows Alloy / SP icons; a slot-sources row explains slots 2-4 | screenshot (earlier pass) |
+| Forward Foundations too strong | First tower each stage costs 50% instead of 0 | code |
+| Blue frame around the arena in fullscreen | Camera now *covers* the arena; a darkened backdrop fills beyond the walls | screenshot |
+| New Run panel closes only on Enter | Left click confirms, right click cancels, for any open route panel | code only - mouse clicks cannot be scripted |
+| Crit feedback | Gold spark at 1.8x plus a rising "CRIT n" number | compiles and runs without errors; no screenshot happened to catch one |
+| Cooling Array = Rapid Cycler | They were both fire-interval cards. Cooling Array now reloads 25% faster and adds 3 rounds (new modifier targets) | code |
+| Weapon upgrades too cheap | Tier cost factor 0.75 -> 1.25 | loadout panel shows 20 Scrap for a 16-Scrap weapon |
+| Xbox 360 stick cannot aim | Aim was a Value action, so the mouse position (large magnitude) always won. Now PassThrough, with separate stick and pointer values; the stick claims at 0.25, the mouse must move 4 px to reclaim | code only - needs the controller |
+| Respec "once per tree" | First respec per tree version free, then 30 Alloy | code |
+
+## New weapons
+
+Six designs, each a different *shape* of damage: Scorcher (short flame cone, Burn), Cryo Lance
+(piercing bolt, Freeze), Railgun (3-round magazine, pierce 4, built-in crit), Nova Pulse (8-shard
+ring), Scatter Launcher (bursts on impact, new `ExplodeOnImpact` rule), Twin SMG (two loose barrels,
+deep magazine). Each has a five-tier Set Bonus ladder, a card, a shop offer and a HUD short label.
+Railgun, Nova and Launcher sit behind Alloy licences (45 / 35 / 40). Nine weapons make Arsenal
+reachable. Table and numbers in `Weapons.md`, "Weapon set 2026-09-22".
+
+Verified in autopilot `arsenal3` (new variant: one of each new weapon): all six fire, drain and
+reload; Arsenal active (budget 60 -> 68); a shop Scorcher with a full loadout went pending.
+**Not verified:** balance, splash totals, Burn/Freeze uptime, any tier 5/6 bonus.
+
+## Spec review
+
+`Docs/SPEC_REVIEW_2026-09-22.md`: 33 findings (15 cross-spec contradictions, 11 gaps, 12 stale
+statements, 2 broken references), each with at least two resolution options and a recommendation.
+The main-menu layout suggestion (a two-tier layout) is finding B4.
+
+## Reward screen vs `Docs/AI/Reward_Screen.md`
+
+Matches: modal steel-blue frame with amber corner nodes, title plaque, currency left and tower info
+right, three equal card columns with rarity frames, a footer banner for the focused card.
+
+Fixed in this pass:
+- The footer repeated the card text; it now shows the card's actual numbers ("+22% tower damage"),
+  built from its effect data by `CardEffectDescriber`, and a weapon card's stats.
+- No mouse: hovering a card selects it, clicking takes it (ignored for 0.5 s after the screen
+  opens, so a click aimed at the last enemy cannot pick a card).
+- Currency shows Alloy earned this run next to Scrap.
+- **Epic and Legendary card titles were invisible**: dark text on the dark plaque. Now light on those
+  frames; long names shrink instead of wrapping out of the plaque.
+
+Still different from the document: the tower-information field only counts towers (the document
+wants stats of the tower being upgraded); the card body has no artwork or modifier icons; the
+currency / tower line sits partly under the header rail. Also seen: the HUD Scrap value and the
+reward screen's can differ at the moment the screen opens (68 vs 85 in one shot) - not
+investigated.
+
+## Bug found by the autopilot
+
+A weapon from the boss reward with a full loadout stays pending into the next stage, which starts
+without an Intermission. The first reward there offered the same weapon card again, which
+`TryGrantWeapon` refuses while one is pending - Confirm on it did nothing. Weapon cards are no
+longer offered while a weapon is pending. Verified: `loadout1` reproduced the boss-Scorcher case,
+the Stage 2 reward resolved, the next Intermission placed it. Open design question in
+`10_OPEN_POINTS.md` item 0.
+
+## Process notes
+
+- Recompiling while an autopilot run is still playing reloads the domain mid-play (this Editor
+  recompiles and continues) and floods the log with `WeaponHudPresenter` NullReferenceExceptions
+  that look like a real bug. Cost one misdiagnosis today.
+- Boss kills in *any* autopilot run pay SP and Alloy into the real profile. Today's runs were backed
+  up and settled: one Stage 1 boss grant (+1 SP, +6 Alloy) was subtracted; a few Alloy from elite
+  kills in that run could not be attributed and may remain.

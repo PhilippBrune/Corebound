@@ -32,26 +32,62 @@ namespace Corebound.SaveSystem
         private MetaProgressionSaveData _metaProgressionSaveData;
         private StatisticsSaveData _statisticsSaveData;
 
+        // Every scene carries a LocalProfileSaveManager on a shared GameObject (MainMenu's
+        // MainMenuStateProvider, SampleScene's CombatRuntime), but exactly one of them may own the
+        // caches. That one lives on its own host object; every other instance forwards to it.
+        //
+        // Playtest 2026-09-22 ("after death there are still 2 sounds playing in the main menu",
+        // traced with [AudioProbe]): this used to call DontDestroyOnLoad on its own GameObject,
+        // which on MainMenuStateProvider also dragged AudioManager, MusicStateController,
+        // MetaProgressionService, SettingsManager and InputRebindManager into DontDestroyOnLoad.
+        // Every later MainMenu load added a second set, so two music loops played (and a stale
+        // MetaProgressionService survived). Duplicates also used to Destroy(this), which left the
+        // scene's references pointing at a destroyed component with its own, separate caches.
+        private LocalProfileSaveManager _forwardTo;
+
+        private static string _hostProfileFolderName;
+        private static RunSaveBootstrapData _hostRunBootstrapData;
+        private static bool _creatingHost;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
             {
-                // Destroy only this duplicate component, not gameObject - in SampleScene this
-                // script shares its GameObject (CombatRuntime) with WaveManager, ShopService,
-                // TowerService, CardService and StageArenaArtPresenter. Destroying gameObject here
-                // silently wiped out the entire combat runtime on every MainMenu -> New Run/
-                // Continue transition (MainMenu's own LocalProfileSaveManager already won the
-                // Instance race and survived via DontDestroyOnLoad), leaving only the separate
-                // PlayerRoot alive - the exact "blue ground, player moves, nothing else works,
-                // no console error" bug reported from the start of this project.
-                Destroy(this);
+                ForwardTo(Instance);
                 return;
+            }
+
+            if (!_creatingHost && gameObject.GetComponents<Component>().Length > 2)
+            {
+                // Shared GameObject: persist a dedicated host instead of everything on this one.
+                _hostProfileFolderName = _profileFolderName;
+                _hostRunBootstrapData = _runBootstrapData;
+                _creatingHost = true;
+                var host = new GameObject("LocalProfileSaveManager (persistent)");
+                DontDestroyOnLoad(host);
+                var persistent = host.AddComponent<LocalProfileSaveManager>();
+                _creatingHost = false;
+                ForwardTo(persistent);
+                return;
+            }
+
+            if (_creatingHost)
+            {
+                _profileFolderName = _hostProfileFolderName;
+                _runBootstrapData = _hostRunBootstrapData;
             }
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
             _saveStore.SaveFailed += (path, message) => SaveFailed?.Invoke(path, message);
             _saveStore.LoadFailed += (path, message) => LoadFailed?.Invoke(path, message);
+        }
+
+        private void ForwardTo(LocalProfileSaveManager target)
+        {
+            _forwardTo = target;
+            target.SaveFailed += (path, message) => SaveFailed?.Invoke(path, message);
+            target.LoadFailed += (path, message) => LoadFailed?.Invoke(path, message);
         }
 
         private void OnDestroy()
@@ -64,6 +100,11 @@ namespace Corebound.SaveSystem
 
         public RunSaveData LoadRunSaveData()
         {
+            if (_forwardTo != null)
+            {
+                return _forwardTo.LoadRunSaveData();
+            }
+
             if (_runSaveData != null)
             {
                 return _runSaveData;
@@ -88,6 +129,12 @@ namespace Corebound.SaveSystem
 
         public void SaveRunSaveData(RunSaveData saveData)
         {
+            if (_forwardTo != null)
+            {
+                _forwardTo.SaveRunSaveData(saveData);
+                return;
+            }
+
             _runSaveData = saveData ?? RunSaveData.CreateBootstrap(_runBootstrapData);
             _runSaveData.Touch();
             _saveStore.Save(GetRunPath(), _runSaveData);
@@ -95,12 +142,24 @@ namespace Corebound.SaveSystem
 
         public void ResetRunSaveDataToBootstrap()
         {
+            if (_forwardTo != null)
+            {
+                _forwardTo.ResetRunSaveDataToBootstrap();
+                return;
+            }
+
             _runSaveData = RunSaveData.CreateBootstrap(_runBootstrapData);
             SaveRunSaveData(_runSaveData);
         }
 
         public void ClearRunSaveData()
         {
+            if (_forwardTo != null)
+            {
+                _forwardTo.ClearRunSaveData();
+                return;
+            }
+
             _runSaveData = new RunSaveData();
             _runSaveData.SetInactive();
             _saveStore.Save(GetRunPath(), _runSaveData);
@@ -108,6 +167,11 @@ namespace Corebound.SaveSystem
 
         public SettingsSaveData LoadSettingsSaveData(SettingsSaveData defaults)
         {
+            if (_forwardTo != null)
+            {
+                return _forwardTo.LoadSettingsSaveData(defaults);
+            }
+
             if (_settingsSaveData != null)
             {
                 return _settingsSaveData;
@@ -126,12 +190,23 @@ namespace Corebound.SaveSystem
 
         public void SaveSettingsSaveData(SettingsSaveData saveData)
         {
+            if (_forwardTo != null)
+            {
+                _forwardTo.SaveSettingsSaveData(saveData);
+                return;
+            }
+
             _settingsSaveData = saveData != null ? saveData.Clone() : new SettingsSaveData();
             _saveStore.Save(GetSettingsPath(), _settingsSaveData);
         }
 
         public MetaProgressionSaveData LoadMetaProgressionSaveData(MetaProgressionSaveData defaults)
         {
+            if (_forwardTo != null)
+            {
+                return _forwardTo.LoadMetaProgressionSaveData(defaults);
+            }
+
             if (_metaProgressionSaveData != null)
             {
                 return _metaProgressionSaveData;
@@ -158,12 +233,23 @@ namespace Corebound.SaveSystem
 
         public void SaveMetaProgressionSaveData(MetaProgressionSaveData saveData)
         {
+            if (_forwardTo != null)
+            {
+                _forwardTo.SaveMetaProgressionSaveData(saveData);
+                return;
+            }
+
             _metaProgressionSaveData = saveData != null ? saveData.Clone() : new MetaProgressionSaveData();
             _saveStore.Save(GetMetaPath(), _metaProgressionSaveData);
         }
 
         public StatisticsSaveData LoadStatisticsSaveData(StatisticsSaveData defaults)
         {
+            if (_forwardTo != null)
+            {
+                return _forwardTo.LoadStatisticsSaveData(defaults);
+            }
+
             if (_statisticsSaveData != null)
             {
                 return _statisticsSaveData;
@@ -182,6 +268,12 @@ namespace Corebound.SaveSystem
 
         public void SaveStatisticsSaveData(StatisticsSaveData saveData)
         {
+            if (_forwardTo != null)
+            {
+                _forwardTo.SaveStatisticsSaveData(saveData);
+                return;
+            }
+
             _statisticsSaveData = saveData != null ? saveData.Clone() : new StatisticsSaveData();
             _saveStore.Save(GetStatisticsPath(), _statisticsSaveData);
         }

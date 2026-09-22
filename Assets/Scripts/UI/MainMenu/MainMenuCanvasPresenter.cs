@@ -19,6 +19,13 @@ namespace Corebound.UI.MainMenu
         private const float MenuWidth = 648f;
         private const float EntryHeight = 76f;
         private const float EntrySpacing = 12f;
+
+        // Playtest 2026-09-22 (fullscreen, 2550 x 1246): with Continue available the seven entries
+        // ran past the status bar and Quit was cut off. At match 0.5 a wide screen gives the canvas
+        // about 1006 units of height, leaving ~460 for the list, which needs 604 at full size.
+        // Entries now shrink to fit (down to this height), recomputed when the screen changes.
+        private const float MinEntryHeight = 46f;
+        private const float MinEntrySpacing = 6f;
         private const float StatusHeight = 92f;
         private const float StatusWidth = 920f;
         private const float FooterLeft = 92f;
@@ -179,6 +186,51 @@ namespace Corebound.UI.MainMenu
             _glyphHintBar.Initialize(_font, _buttonFrameSprite, _skinData);
         }
 
+        private Vector2Int _sizedForScreen;
+        private int _sizedForEntries = -1;
+
+        private void LateUpdate()
+        {
+            var screen = new Vector2Int(Screen.width, Screen.height);
+
+            if (_menuLayout == null || (screen == _sizedForScreen && _entryViews.Count == _sizedForEntries))
+            {
+                return;
+            }
+
+            _sizedForScreen = screen;
+            _sizedForEntries = _entryViews.Count;
+            ApplyEntrySizing();
+        }
+
+        private void ApplyEntrySizing()
+        {
+            var menuRect = _menuLayout.transform as RectTransform;
+            var count = _menuLayout.transform.childCount;
+
+            if (menuRect == null || count == 0)
+            {
+                return;
+            }
+
+            Canvas.ForceUpdateCanvases();
+            var available = menuRect.rect.height;
+            var spacing = Mathf.Clamp((available - count * EntryHeight) / Mathf.Max(1, count - 1), MinEntrySpacing, EntrySpacing);
+            var height = Mathf.Clamp((available - spacing * (count - 1)) / count, MinEntryHeight, EntryHeight);
+            _menuLayout.spacing = spacing;
+
+            for (var index = 0; index < count; index++)
+            {
+                var element = _menuLayout.transform.GetChild(index).GetComponent<LayoutElement>();
+
+                if (element != null)
+                {
+                    element.preferredHeight = height;
+                    element.minHeight = height;
+                }
+            }
+        }
+
         private void RebuildEntries()
         {
             _entryViews.Clear();
@@ -194,6 +246,10 @@ namespace Corebound.UI.MainMenu
 
                 if (Application.isPlaying)
                 {
+                    // Detached first: Destroy is deferred, and a doomed entry still in the layout
+                    // would be counted and sized by ApplyEntrySizing for the rest of the frame.
+                    child.gameObject.SetActive(false);
+                    child.SetParent(null, false);
                     Destroy(child.gameObject);
                 }
                 else
@@ -208,7 +264,7 @@ namespace Corebound.UI.MainMenu
                 var entryObject = new GameObject(entry != null ? entry.Label : "Entry", typeof(RectTransform), typeof(LayoutElement), typeof(Image), typeof(MainMenuEntryView));
                 var layoutElement = entryObject.GetComponent<LayoutElement>();
                 layoutElement.preferredHeight = EntryHeight;
-                layoutElement.minHeight = EntryHeight;
+                layoutElement.minHeight = MinEntryHeight;
 
                 var entryView = entryObject.GetComponent<MainMenuEntryView>();
                 entryView.Initialize(_menuLayout.transform as RectTransform, _font, _buttonFrameSprite, _focusMarkerSprite, _skinData, entryIndex, OnEntryPointerEnter, OnEntryPointerClick);

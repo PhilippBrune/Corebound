@@ -40,11 +40,17 @@ namespace Corebound.Gameplay.Weapons
 
         public bool ExplodeOnExpire { get; private set; }
 
+        public bool ExplodeOnImpact { get; private set; }
+
         public bool SlowOnHit { get; private set; }
 
         public float HeldDamageRampPerSecond { get; private set; }
 
         public float SpreadAngleMultiplier { get; private set; } = 1f;
+
+        public int MagazineBonus { get; private set; }
+
+        public float ReloadTimeMultiplier { get; private set; } = 1f;
 
         // The share of DamageMultiplier / FireIntervalMultiplier that came from the loadout's Set
         // Bonuses, kept apart so the HUD can say "from your loadout" separately from "from your
@@ -108,9 +114,12 @@ namespace Corebound.Gameplay.Weapons
             CriticalEveryNthShot = 0;
             FullRing = false;
             ExplodeOnExpire = false;
+            ExplodeOnImpact = false;
             SlowOnHit = false;
             HeldDamageRampPerSecond = 0f;
             SpreadAngleMultiplier = 1f;
+            MagazineBonus = 0;
+            ReloadTimeMultiplier = 1f;
             LoadoutDamageMultiplier = 1f;
             LoadoutFireIntervalMultiplier = 1f;
 
@@ -219,8 +228,11 @@ namespace Corebound.Gameplay.Weapons
                 + (FullRing ? 1 << 10 : 0)
                 + (ExplodeOnExpire ? 1 << 11 : 0)
                 + (SlowOnHit ? 1 << 12 : 0)
+                + (ExplodeOnImpact ? 1 << 9 : 0)
                 + Mathf.RoundToInt(HeldDamageRampPerSecond * 100f) * (1 << 13)
-                + Mathf.RoundToInt(SpreadAngleMultiplier * 100f) * 7;
+                + Mathf.RoundToInt(SpreadAngleMultiplier * 100f) * 7
+                + MagazineBonus * 131
+                + Mathf.RoundToInt(ReloadTimeMultiplier * 100f) * 17;
         }
 
         private void Apply(WeaponModifierData modifier)
@@ -267,6 +279,9 @@ namespace Corebound.Gameplay.Weapons
                 case WeaponModifierTarget.ExplodeOnExpire:
                     ExplodeOnExpire |= value > 0f;
                     return;
+                case WeaponModifierTarget.ExplodeOnImpact:
+                    ExplodeOnImpact |= value > 0f;
+                    return;
                 case WeaponModifierTarget.SlowOnHit:
                     SlowOnHit |= value > 0f;
                     return;
@@ -275,6 +290,12 @@ namespace Corebound.Gameplay.Weapons
                     return;
                 case WeaponModifierTarget.SpreadAngleMultiplier:
                     SpreadAngleMultiplier *= value;
+                    return;
+                case WeaponModifierTarget.MagazineBonus:
+                    MagazineBonus += Mathf.RoundToInt(value);
+                    return;
+                case WeaponModifierTarget.ReloadTimeMultiplier:
+                    ReloadTimeMultiplier *= value;
                     return;
             }
         }

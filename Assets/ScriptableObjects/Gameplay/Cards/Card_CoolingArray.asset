@@ -15,12 +15,14 @@ MonoBehaviour:
   _cardId: card_cooling_array
   _displayName: Cooling Array
   _displayNameDe: Kühlfeld
-  _description: Reduce Weapon fire interval to sustain faster output.
-  _descriptionDe: Verkürzt das Feuerintervall der Waffe für schnelleren Dauerausstoß.
+  _description: 'Coolant loop: every weapon reloads 25% faster and holds 3 more rounds.'
+  _descriptionDe: 'Kühlkreislauf: Jede Waffe lädt 25 % schneller nach und fasst 3 Schuss mehr.'
   _rarity: 1
   _requiredUnlockId: 
   _tags:
   - 0
-  _effects:
-  - {fileID: 11400000, guid: 48f17cb0e6b44d588e2f3b645d9433f5, type: 2}
+  _effects: []
+  _weaponModifiers:
+  - {fileID: 11400000, guid: 19a6b2a05ff748bebb67c58ee5d165f1, type: 2}
+  - {fileID: 11400000, guid: 4fbe7091cf45428b9a14362ad9251e14, type: 2}
   _stackable: 1

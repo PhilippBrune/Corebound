@@ -16,17 +16,24 @@ namespace Corebound.UI.Gameplay
     // Each tile also carries an ammo bar, because the reload loop (Upgrades.md option a) is only
     // fair if the player can see a magazine running dry before it does.
     //
-    // Assets 90 (weapon_slot_frame.png) and 91 (weapon_set_tier_pips.png) do not exist yet; the
-    // tiles are drawn procedurally and pick the art up by path once it does.
+    // Assets 90 (weapon_slot_frame.png) and 91 (weapon_set_tier_pips.png), delivered 2026-09-22.
+    // The slot frame's centre is a baked-in checkerboard, so it is drawn as a 9-slice with its
+    // centre not filled - only the metal border shows, over the tile. Pips use the sheet's empty
+    // ring and fully lit states.
     public sealed class WeaponHudPresenter : MonoBehaviour
     {
         private const string CanvasName = "WeaponHudCanvas";
         private const string SlotFramePath = "Assets/Art/UI/HUD/weapon_slot_frame.png";
+        private const string TierPipsPath = "Assets/Art/UI/HUD/weapon_set_tier_pips.png";
+        private static readonly Rect SlotFrameRect = new Rect(136f, 136f, 639f, 639f);
+        private static readonly Vector4 SlotFrameBorder = new Vector4(96f, 96f, 96f, 96f);
+        private static readonly Rect PipOffRect = new Rect(43f, 386f, 140f, 140f);
+        private static readonly Rect PipOnRect = new Rect(712f, 366f, 167f, 178f);
         private const float TileSize = 58f;
         private const float TileGap = 8f;
         private const float PanelPadding = 10f;
         private const float AmmoBarHeight = 6f;
-        private const float PipSize = 10f;
+        private const float PipSize = 12f;
 
         // Locked tiles were invisible against the strip in the first screenshots (the strip read as
         // one slot), so locked is a visible grey and empty a brighter, bluer "open" tile.
@@ -48,6 +55,8 @@ namespace Corebound.UI.Gameplay
         private readonly Image[] _pips = new Image[18];
         private Sprite _squareSprite;
         private Sprite _frameSprite;
+        private Sprite _pipOffSprite;
+        private Sprite _pipOnSprite;
         private UIManagedPanel _managedPanel;
         private int _renderedVersion = -1;
         private int _renderedUnlocked = -1;
@@ -56,7 +65,9 @@ namespace Corebound.UI.Gameplay
         {
             ResolveCombatController();
             _squareSprite = DebugSpriteFactory.CreateSquare(100f);
-            _frameSprite = DebugSpriteFactory.LoadProjectSprite(SlotFramePath);
+            _frameSprite = DebugSpriteFactory.LoadProjectSpriteRect(SlotFramePath, SlotFrameRect, 100f, SlotFrameBorder);
+            _pipOffSprite = DebugSpriteFactory.LoadProjectSpriteRect(TierPipsPath, PipOffRect);
+            _pipOnSprite = DebugSpriteFactory.LoadProjectSpriteRect(TierPipsPath, PipOnRect);
             BuildCanvas();
             _managedPanel = UIManager.RegisterPanel(_canvasRoot, "weapon_hud", UIPanelLayer.HUD, false, false);
         }
@@ -117,7 +128,7 @@ namespace Corebound.UI.Gameplay
                 tile.Icon.enabled = icon != null;
                 tile.Icon.color = presentation != null ? presentation.AccentColor : Color.white;
                 tile.AmmoBar.gameObject.SetActive(!slot.IsEmpty);
-                tile.Letter.text = !slot.IsEmpty && icon == null ? slot.Weapon.DisplayName.Substring(0, 1) : string.Empty;
+                tile.Letter.text = !slot.IsEmpty && icon == null ? slot.Weapon.ShortLabel : string.Empty;
             }
         }
 
@@ -143,7 +154,17 @@ namespace Corebound.UI.Gameplay
                 {
                     var pip = _pips[pipIndex++];
                     pip.gameObject.SetActive(true);
-                    pip.color = column < bonus.Copies ? accent : PipOffColor;
+                    var lit = column < bonus.Copies;
+
+                    if (_pipOnSprite != null && _pipOffSprite != null)
+                    {
+                        pip.sprite = lit ? _pipOnSprite : _pipOffSprite;
+                        pip.color = lit ? Color.Lerp(Color.white, accent, 0.35f) : Color.white;
+                    }
+                    else
+                    {
+                        pip.color = lit ? accent : PipOffColor;
+                    }
                     pip.rectTransform.anchoredPosition = new Vector2(column * (PipSize + 3f), -row * (PipSize + 4f));
                 }
             }
@@ -251,6 +272,7 @@ namespace Corebound.UI.Gameplay
                 pip.rectTransform.anchorMax = new Vector2(0f, 1f);
                 pip.rectTransform.pivot = new Vector2(0f, 1f);
                 pip.rectTransform.sizeDelta = new Vector2(PipSize, PipSize);
+                pip.preserveAspect = true;
                 pip.gameObject.SetActive(false);
                 _pips[index] = pip;
             }
@@ -259,7 +281,7 @@ namespace Corebound.UI.Gameplay
         private TileView CreateTile(int index, Font font)
         {
             var x = PanelPadding + index * (TileSize + TileGap);
-            var edge = ProceduralUIFactory.CreateImage("Slot" + index, _panel, _frameSprite != null ? _frameSprite : _squareSprite, Color.clear, Image.Type.Simple);
+            var edge = ProceduralUIFactory.CreateImage("Slot" + index, _panel, _squareSprite, Color.clear, Image.Type.Simple);
             edge.raycastTarget = false;
             var edgeRect = edge.rectTransform;
             edgeRect.anchorMin = Vector2.zero;
@@ -283,6 +305,16 @@ namespace Corebound.UI.Gameplay
             Stretch(letter.rectTransform, 0f);
 
             // Radial sweep over the icon: cooldown between volleys, reload in a warm colour.
+            // The metal frame over the tile; centre not filled, so the art's checkerboard is hidden.
+            if (_frameSprite != null)
+            {
+                var frame = ProceduralUIFactory.CreateImage("Frame", edgeRect, _frameSprite, Color.white, Image.Type.Sliced);
+                frame.fillCenter = false;
+                frame.raycastTarget = false;
+                frame.pixelsPerUnitMultiplier = SlotFrameBorder.x / 8f;
+                Stretch(frame.rectTransform, 0f);
+            }
+
             var sweep = ProceduralUIFactory.CreateImage("Sweep", edgeRect, _squareSprite, SweepColor, Image.Type.Filled);
             sweep.raycastTarget = false;
             sweep.fillMethod = Image.FillMethod.Radial360;

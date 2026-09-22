@@ -2,6 +2,7 @@ using System;
 using Corebound.Gameplay.Economy;
 using Corebound.Input;
 using Corebound.Gameplay.Waves;
+using Corebound.UI;
 using UnityEngine;
 
 namespace Corebound.Gameplay.Combat
@@ -115,6 +116,106 @@ namespace Corebound.Gameplay.Combat
         private void OnInteractPressed()
         {
             TryRepair();
+        }
+
+        // The repair had no prompt at all - a player had to know that Interact near the Core does
+        // something. Asset 94 (core_repair_icon.png) now marks it: shown above the Core during an
+        // Intermission while the player is in range and the Core is damaged, with the price.
+        private const string RepairIconPath = "Assets/Art/UI/HUD/core_repair_icon.png";
+        private GameObject _prompt;
+        private TextMesh _promptText;
+
+        private void LateUpdate()
+        {
+            ResolveCoreHitReceiver();
+            var show = _coreHitReceiver != null && IsCoreDamaged && IsPlayerInRange
+                && _waveManager != null && _waveManager.State == WaveState.Intermission && Time.timeScale > 0f;
+
+            if (!show)
+            {
+                if (_prompt != null && _prompt.activeSelf)
+                {
+                    _prompt.SetActive(false);
+                }
+
+                return;
+            }
+
+            EnsurePrompt();
+            _prompt.SetActive(true);
+            _prompt.transform.position = _coreHitReceiver.transform.position + new Vector3(0f, 1.6f, 0f);
+            var cost = CurrentRepairCost;
+            var key = ResolveInteractKeyLabel();
+            _promptText.text = key + LocalizationService.Resolve(": Repair +", ": Reparieren +") + Mathf.RoundToInt(_repairFraction * 100f) + "%  ·  "
+                + (cost == 0 ? LocalizationService.Resolve("free", "gratis") : cost + LocalizationService.Resolve(" Scrap", " Schrott"));
+            _promptText.color = CanAfford ? new Color(0.95f, 0.97f, 1f, 1f) : new Color(1f, 0.5f, 0.45f, 1f);
+        }
+
+        private void EnsurePrompt()
+        {
+            if (_prompt != null)
+            {
+                return;
+            }
+
+            // A scene-root object: world-space, and never a child of CombatRuntime (see the shared
+            // GameObject Canvas gotcha - this is not a canvas, but it stays independent anyway).
+            _prompt = new GameObject("CoreRepairPrompt");
+            var icon = new GameObject("Icon");
+            icon.transform.SetParent(_prompt.transform, false);
+            icon.transform.localPosition = new Vector3(-1.35f, 0f, 0f);
+            var sprite = Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(RepairIconPath);
+            var renderer = icon.AddComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+            renderer.sortingOrder = 58;
+
+            if (sprite != null)
+            {
+                Corebound.Gameplay.Shared.DebugSpriteFactory.FitTransformToSprite(icon.transform, sprite, new Vector2(0.6f, 0.6f));
+            }
+
+            var textObject = new GameObject("Text");
+            textObject.transform.SetParent(_prompt.transform, false);
+            textObject.transform.localPosition = new Vector3(0.15f, 0f, 0f);
+            _promptText = textObject.AddComponent<TextMesh>();
+            _promptText.fontSize = 40;
+            _promptText.characterSize = 0.05f;
+            _promptText.anchor = TextAnchor.MiddleCenter;
+            _promptText.fontStyle = FontStyle.Bold;
+            var font = Corebound.UI.UIFontResolver.Resolve();
+
+            if (font != null)
+            {
+                _promptText.font = font;
+                textObject.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+            }
+
+            textObject.GetComponent<MeshRenderer>().sortingOrder = 58;
+        }
+
+        private string ResolveInteractKeyLabel()
+        {
+            if (_inputReaderSource is CoreboundInputReader reader)
+            {
+                var display = reader.GetBindingDisplayString("Gameplay", "Interact", reader.IsUsingGamepad ? "Gamepad" : "Keyboard&Mouse");
+
+                if (!string.IsNullOrWhiteSpace(display))
+                {
+                    return display.ToUpperInvariant();
+                }
+
+                return reader.IsUsingGamepad ? "Y" : "E";
+            }
+
+            return "E";
+        }
+
+        private void OnDestroy()
+        {
+            if (_prompt != null)
+            {
+                Destroy(_prompt);
+            }
         }
 
         private float ResolvePlayerDistanceToCore()

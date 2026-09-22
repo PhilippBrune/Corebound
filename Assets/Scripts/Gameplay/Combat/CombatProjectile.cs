@@ -18,6 +18,7 @@ namespace Corebound.Gameplay.Combat
         private Rigidbody2D _rigidbody2D;
         private int _remainingPierceCount;
         private bool _explodeOnExpire;
+        private bool _explodeOnImpact;
         private bool _countsTowardPlayerBudget;
 
         // WeaponLoadout.md readability rules. Player shots draw below enemy shots and below boss
@@ -51,7 +52,7 @@ namespace Corebound.Gameplay.Combat
 
             if (_remainingLifetime <= 0f)
             {
-                if (_explodeOnExpire && _hitTargets.Count == 0)
+                if ((_explodeOnExpire || _explodeOnImpact) && _hitTargets.Count == 0)
                 {
                     Explode();
                 }
@@ -80,7 +81,8 @@ namespace Corebound.Gameplay.Combat
                 _damageContext.Amount * ExpireExplosionDamageScale,
                 transform.position,
                 _direction,
-                _damageContext.StatusEffect);
+                _damageContext.StatusEffect,
+                _damageContext.IsCritical);
 
             for (var index = 0; index < count; index++)
             {
@@ -154,9 +156,19 @@ namespace Corebound.Gameplay.Combat
                 _damageContext.Amount,
                 transform.position,
                 _damageContext.HitDirection,
-                _damageContext.StatusEffect);
+                _damageContext.StatusEffect,
+                _damageContext.IsCritical);
 
             hitbox.ReceiveHit(_owner, impactContext);
+
+            if (_explodeOnImpact)
+            {
+                // The direct target is already in _hitTargets, so the burst only reaches the
+                // enemies around it - no double hit on the one that was struck.
+                Explode();
+                Release();
+                return;
+            }
 
             if (_remainingPierceCount > 0)
             {
@@ -172,8 +184,9 @@ namespace Corebound.Gameplay.Combat
             Launch(owner, projectileData, origin, direction, damageContext, speedMultiplier, 0, false);
         }
 
-        public void Launch(GameObject owner, ProjectileData projectileData, Vector2 origin, Vector2 direction, DamageContext damageContext, float speedMultiplier, int extraPierce, bool explodeOnExpire)
+        public void Launch(GameObject owner, ProjectileData projectileData, Vector2 origin, Vector2 direction, DamageContext damageContext, float speedMultiplier, int extraPierce, bool explodeOnExpire, bool explodeOnImpact = false)
         {
+            _explodeOnImpact = explodeOnImpact;
             EnsureComponents();
             _owner = owner;
             _direction = direction.sqrMagnitude < Mathf.Epsilon ? Vector2.right : direction.normalized;

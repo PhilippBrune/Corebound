@@ -258,11 +258,10 @@ namespace Corebound.Gameplay.Shared
             var openCells = BuildOpenMazeCells(layoutData, layoutRandom);
             var visualsRoot = EnsureWorldRoot("ArenaVisualsRoot");
             visualsRoot.position = Vector3.zero;
-            CreateGroundTiles(
-                visualsRoot,
-                ResolveTexture(_groundTexture, stageThemeData != null ? stageThemeData.GroundTexture : null, ref _runtimeGroundTexture, stageThemeData != null ? stageThemeData.GroundTexturePath : null, GroundTexturePath),
-                arenaSize,
-                stageThemeData != null ? stageThemeData.GroundTint : Color.white);
+            var groundTexture = ResolveTexture(_groundTexture, stageThemeData != null ? stageThemeData.GroundTexture : null, ref _runtimeGroundTexture, stageThemeData != null ? stageThemeData.GroundTexturePath : null, GroundTexturePath);
+            var groundTint = stageThemeData != null ? stageThemeData.GroundTint : Color.white;
+            CreateBackdropTiles(visualsRoot, groundTexture, arenaSize, groundTint);
+            CreateGroundTiles(visualsRoot, groundTexture, arenaSize, groundTint);
             CreateBoundaryVisuals(
                 visualsRoot,
                 ResolveTexture(_boundaryTexture, stageThemeData != null ? stageThemeData.BoundaryTexture : null, ref _runtimeBoundaryTexture, stageThemeData != null ? stageThemeData.BoundaryTexturePath : null, BoundaryTexturePath),
@@ -293,14 +292,29 @@ namespace Corebound.Gameplay.Shared
 
         private void CreateGroundTiles(Transform parent, Texture2D groundTexture, Vector2 arenaSize, Color tint)
         {
+            CreateGroundTiles(parent, groundTexture, arenaSize, tint, "GroundTilesRoot", -20, DefaultGroundTileWorldSize);
+        }
+
+        // Out-of-bounds floor under the arena (2026-09-22). Cover framing keeps the view inside the
+        // walls, but at the minimum zoom on a very wide screen, or while the zoom is still easing in,
+        // a sliver past the walls can show - it now shows darkened floor, not the camera colour.
+        // Larger tiles than the arena's own, since nobody plays on it and it is several arenas wide.
+        private void CreateBackdropTiles(Transform parent, Texture2D groundTexture, Vector2 arenaSize, Color tint)
+        {
+            var backdropTint = new Color(tint.r * 0.35f, tint.g * 0.35f, tint.b * 0.4f, 1f);
+            CreateGroundTiles(parent, groundTexture, arenaSize * 3f, backdropTint, "BackdropTilesRoot", -30, 4f);
+        }
+
+        private void CreateGroundTiles(Transform parent, Texture2D groundTexture, Vector2 arenaSize, Color tint, string rootName, int sortingOrder, float tileWorldSize)
+        {
             if (groundTexture == null)
             {
                 return;
             }
 
-            var groundRoot = EnsureChild("GroundTilesRoot", parent);
-            var layoutColumns = Mathf.Max(4, Mathf.RoundToInt(arenaSize.x / DefaultGroundTileWorldSize));
-            var layoutRows = Mathf.Max(3, Mathf.RoundToInt(arenaSize.y / DefaultGroundTileWorldSize));
+            var groundRoot = EnsureChild(rootName, parent);
+            var layoutColumns = Mathf.Max(4, Mathf.RoundToInt(arenaSize.x / tileWorldSize));
+            var layoutRows = Mathf.Max(3, Mathf.RoundToInt(arenaSize.y / tileWorldSize));
             var tileSize = new Vector2(arenaSize.x / layoutColumns, arenaSize.y / layoutRows);
 
             for (var row = 0; row < layoutRows; row++)
@@ -319,7 +333,7 @@ namespace Corebound.Gameplay.Shared
                         sprite,
                         localPosition,
                         tileSize,
-                        -20,
+                        sortingOrder,
                         tint,
                         atlasCell.RotationDegrees,
                         false);

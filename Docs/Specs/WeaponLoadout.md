@@ -262,7 +262,7 @@ A full loadout panel:
 | Firing | `PlayerCombatController` ticks every unlocked slot; one Primary Fire input drives all |
 | Budget | `PlayerCombatData._projectileBudget` = 60, `_arsenalProjectileBudgetBonus` = 8; `CombatProjectile.ActivePlayerProjectileCount` |
 | Audio | `WeaponAudioCuePlayer` de-duplicates per `WeaponPresentationData` (fire cues by `MinFireCueIntervalSeconds`, crits within 0.08 s) |
-| Tiers | `WeaponTierRules`: damage x1 / 1.2 / 1.45 / 1.75, fire interval x1 / 0.95 / 0.9 / 0.85, upgrade cost 0.75 x price x (tier + 1) |
+| Tiers | `WeaponTierRules`: damage x1 / 1.2 / 1.45 / 1.75, fire interval x1 / 0.95 / 0.9 / 0.85, upgrade cost 1.25 x price x (tier + 1) (raised from 0.75 on 2026-09-22: "increase the cost of upgrading weapons in a run") |
 | Acquisition | weapon cards (`CardData._grantedWeapon`) in the reward pool and as shop offers; the reward after every boss guarantees one |
 | Loadout panel | `WeaponLoadoutPanelPresenter` - Select / I during an Intermission, or automatically when a weapon arrives with every slot full |
 | HUD | `WeaponHudPresenter` - six tiles with cooldown and reload sweeps, ammo bars, Set Bonus pips |
@@ -279,7 +279,7 @@ A full loadout panel:
 - **Declining refunds only what was paid** (a shop purchase), nothing for a reward.
 - **The last weapon cannot be sold.**
 - **A weapon's tier upgrade cost joins its sell basis**, so selling returns half of everything the copy cost.
-- **Arsenal cannot trigger yet**: it needs six distinct weapons and the game has three (Rapid, Spread, Beam).
+- ~~**Arsenal cannot trigger yet**~~ - reachable since 2026-09-22: nine weapons exist (see Weapons.md, "Weapon set 2026-09-22"). Seen active in autopilot `arsenal3`: budget 60 -> 68, one of each new weapon.
 
 ### Readability rules, as built
 

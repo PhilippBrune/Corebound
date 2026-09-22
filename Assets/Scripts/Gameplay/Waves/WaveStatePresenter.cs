@@ -35,8 +35,18 @@ namespace Corebound.Gameplay.Waves
         // smaller box.
         private const float StatusPanelWidth = 640f;
         private const float StatusPanelHeight = 102f;
-        private const float BannerWidth = 760f;
-        private const float BannerHeight = 84f;
+        // Playtest 2026-09-22 ("wave_banner.png still not in use", screenshot of two spear shapes):
+        // the art WAS in use, but 9-sliced into a 760 x 84 rect. With 220/140 px borders on a
+        // frame whose visible part is 943 x 387, slicing removed the whole middle and left only the
+        // metal end caps. The banner now shows the cropped art unsliced at its own aspect (2.44),
+        // with the text inside the art's dark screen.
+        private const float BannerWidth = 520f;
+        private const float BannerHeight = 213f;
+        private static readonly Rect WaveBannerArtRect = new Rect(85f, 110f, 944f, 388f);
+
+        // The art's inner dark screen, as insets from the banner edges (measured on the art).
+        private static readonly Vector2 BannerTextInsetMin = new Vector2(108f, 56f);
+        private static readonly Vector2 BannerTextInsetMax = new Vector2(-104f, -50f);
         private const float BannerDisplaySeconds = 1.85f;
         // The frame art (button_primary_frame.png) has a huge fixed 220px/140px (horiz/vert)
         // 9-slice border baked into its texture - any panel using it needs to be comfortably
@@ -312,6 +322,9 @@ namespace Corebound.Gameplay.Waves
                 InputReader.PausePressed += OnPausePressed;
                 InputReader.ConfirmPressed += OnConfirmPressed;
                 InputReader.CancelPressed += OnCancelPressed;
+                InputReader.PreviousPressed += OnPausePreviousPressed;
+                InputReader.NextPressed += OnPauseNextPressed;
+                InputReader.NavigatePerformed += OnPauseNavigate;
             }
 
             Refresh();
@@ -359,6 +372,9 @@ namespace Corebound.Gameplay.Waves
             if (InputReader != null)
             {
                 InputReader.PausePressed -= OnPausePressed;
+                InputReader.PreviousPressed -= OnPausePreviousPressed;
+                InputReader.NextPressed -= OnPauseNextPressed;
+                InputReader.NavigatePerformed -= OnPauseNavigate;
                 InputReader.ConfirmPressed -= OnConfirmPressed;
                 InputReader.CancelPressed -= OnCancelPressed;
             }
@@ -378,6 +394,8 @@ namespace Corebound.Gameplay.Waves
 
         private void Update()
         {
+            UpdatePauseHover();
+
             if (_bannerTimer > 0f)
             {
                 _bannerTimer = Mathf.Max(0f, _bannerTimer - Time.deltaTime);
@@ -470,7 +488,7 @@ namespace Corebound.Gameplay.Waves
             StretchToParent(_stateText.rectTransform, new Vector2(0.65f, 0f), new Vector2(1f, 0.56f), new Vector2(12f, 12f), new Vector2(-27f, -12f));
             ConfigureResponsiveHudText(_stateText, 10, 14);
 
-            var bannerPanel = CreateImage("WaveBanner", rectTransform, _waveBannerSprite != null ? _waveBannerSprite : _statusPanelSprite, new Color(1f, 1f, 1f, 0.98f), ResolvePanelType(_waveBannerSprite != null ? _waveBannerSprite : _statusPanelSprite));
+            var bannerPanel = CreateImage("WaveBanner", rectTransform, _waveBannerSprite != null ? _waveBannerSprite : _statusPanelSprite, new Color(1f, 1f, 1f, 0.98f), ResolveBannerImageType());
             var bannerRect = bannerPanel.rectTransform;
             bannerRect.anchorMin = new Vector2(0.5f, 1f);
             bannerRect.anchorMax = new Vector2(0.5f, 1f);
@@ -481,7 +499,7 @@ namespace Corebound.Gameplay.Waves
             _bannerImage = bannerPanel;
 
             _bannerText = CreateText("WaveBannerText", bannerRect, 30, TextAnchor.MiddleCenter, new Color(0.1f, 0.12f, 0.16f, 0.95f));
-            StretchToParent(_bannerText.rectTransform, Vector2.zero, Vector2.one, new Vector2(48f, 18f), new Vector2(-48f, -18f));
+            StretchToParent(_bannerText.rectTransform, Vector2.zero, Vector2.one, BannerTextInsetMin, BannerTextInsetMax);
 
             var modalSprite = _modalPanelSprite != null ? _modalPanelSprite : _statusPanelSprite;
             _pausePanel = CreateImage("PausePanel", rectTransform, modalSprite, new Color(1f, 1f, 1f, 0.98f), ResolvePanelType(modalSprite));
@@ -533,7 +551,7 @@ namespace Corebound.Gameplay.Waves
                 OpenOverlay(
                     OverlayMode.Failed,
                     LocalizationService.Resolve("Run Failed", "Run gescheitert"),
-                    _waveManager.FailureCauseLabel + LocalizationService.Resolve(". Confirm returns to the Main Menu.", ". Bestätigen kehrt zum Hauptmenü zurück."));
+                    _waveManager.FailureCauseLabel + ".\n" + ResolveRunEarningsLine() + "\n" + LocalizationService.Resolve("Confirm returns to the Main Menu.", "Bestätigen kehrt zum Hauptmenü zurück."));
             }
 
             _waveText.text = _waveManager.StageLabel + " | " + ResolveHeaderLabel();
@@ -587,6 +605,7 @@ namespace Corebound.Gameplay.Waves
                         : LocalizationService.Resolve("Intermission | ", "Zwischenphase | ") + _waveManager.IntermissionSecondsRemaining.ToString("0.0") + LocalizationService.Resolve("s or Confirm to continue.", "s oder Bestätigen zum Fortfahren.");
 
                     _stateText.text += ResolveFactoryStatusSuffix();
+                    _stateText.text += ResolveLoadoutHint();
                     return;
                 case WaveState.Failed:
                     _stateText.text = LocalizationService.Resolve("Run Failed | ", "Run gescheitert | ") + _waveManager.FailureCauseLabel + ".";
@@ -662,29 +681,53 @@ namespace Corebound.Gameplay.Waves
         private const float PauseEffectIconSize = 26f;
         private const int PauseEffectMaxIcons = 2;
         private const float PauseEffectsWidePanelWidth = 1240f;
-        private const float PauseInstructionBandHeight = 56f;
+        private const float PauseInstructionBandHeight = 76f;
         private const float PauseTitleBandHeight = 60f;
+        private const float PauseTabBandHeight = 36f;
+        private const float PauseDescriptionHeight = 64f;
+        private const float PauseStatRowHeight = 24f;
+
+        private static readonly Color PauseTextColor = new Color(0.1f, 0.12f, 0.16f, 0.96f);
+        private static readonly Color PauseSelectedColor = new Color(0.55f, 0.32f, 0.02f, 1f);
+
+        // Playtest 2026-09-22: the pause menu showed icons and names but not "what the perk is
+        // doing", and there was nowhere to see overall numbers. Three tabs now: Perks (a grid; the
+        // selected card's description below it; select with the arrows or by hovering with the
+        // mouse), Player and Towers (every stat as base value with the bonus in brackets).
+        // Previous/Next (Q / Tab, LB / RB) switch tab, like the build context.
+        private enum PauseTab
+        {
+            Perks,
+            Player,
+            Towers
+        }
 
         private readonly List<PauseEffectEntry> _pauseEffectEntries = new List<PauseEffectEntry>();
+        private readonly List<StatLine> _pauseStatLines = new List<StatLine>();
         private RectTransform _pauseEffectsGrid;
+        private Text _pauseTabText;
+        private Text _pauseDescriptionText;
+        private Text _pauseStatsLeft;
+        private Text _pauseStatsRight;
+        private PauseTab _pauseTab;
+        private int _pauseSelectedEffect;
+        private int _pauseEffectCount;
+        private Vector2 _lastPausePointer;
 
         // The pause panel's 9-slice border is large (230/165/140 px), which leaves a 540x100 band -
-        // room for one line of text, not a list. With effects to show, the panel grows to fit them
-        // and the three bands (title, effects, instructions) are laid out from the top and bottom
+        // room for one line of text, not a list. With content to show the panel grows to fit it,
+        // and the bands (title, tabs, content, instructions) are laid out from the top and bottom
         // edges instead of the fixed offsets that assumed a 500 px panel.
-        private void LayoutPauseOverlay(bool showEffects)
+        private void LayoutPauseOverlay(bool showPauseContent)
         {
             if (_pausePanel == null || _pauseTitleText == null || _pauseBodyText == null)
             {
                 return;
             }
 
-            var cards = showEffects && _cardService != null ? _cardService.SelectedCards : null;
-            var cardCount = cards != null ? cards.Count : 0;
-            var rows = cardCount > 0 ? Mathf.CeilToInt(cardCount / (float)PauseEffectColumns) : 0;
             var panelRect = _pausePanel.rectTransform;
 
-            if (rows == 0)
+            if (!showPauseContent)
             {
                 panelRect.sizeDelta = new Vector2(PausePanelWidth, PausePanelHeight);
                 StretchToParent(_pauseTitleText.rectTransform, Vector2.zero, Vector2.one, new Vector2(FrameBorderHorizontal, 255f), new Vector2(-FrameBorderHorizontal, -FrameBorderTop));
@@ -695,34 +738,104 @@ namespace Corebound.Gameplay.Waves
                     _pauseEffectsGrid.gameObject.SetActive(false);
                 }
 
+                // The tab strip is a sibling of the grid, not a child, so it needs hiding on its
+                // own - otherwise it stays on the Run Failed / Stage Complete overlays.
+                if (_pauseTabText != null)
+                {
+                    _pauseTabText.gameObject.SetActive(false);
+                }
+
                 return;
             }
 
-            var gridHeight = rows * PauseEffectRowHeight + 16f;
-            var height = FrameBorderTop + PauseTitleBandHeight + gridHeight + PauseInstructionBandHeight + FrameBorderBottom;
+            EnsurePauseContentWidgets(panelRect);
+            var contentHeight = _pauseTab == PauseTab.Perks ? LayoutPerksTab() : LayoutStatsTab();
+            var height = FrameBorderTop + PauseTitleBandHeight + PauseTabBandHeight + contentHeight + PauseInstructionBandHeight + FrameBorderBottom;
             panelRect.sizeDelta = new Vector2(PauseEffectsWidePanelWidth, Mathf.Max(PausePanelHeight, height));
 
             StretchToParent(_pauseTitleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
                 new Vector2(FrameBorderHorizontal, -FrameBorderTop - PauseTitleBandHeight), new Vector2(-FrameBorderHorizontal, -FrameBorderTop + 20f));
             StretchToParent(_pauseBodyText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
-                new Vector2(FrameBorderHorizontal, FrameBorderBottom - 20f), new Vector2(-FrameBorderHorizontal, FrameBorderBottom + PauseInstructionBandHeight - 20f));
+                new Vector2(FrameBorderHorizontal, FrameBorderBottom + 6f), new Vector2(-FrameBorderHorizontal, FrameBorderBottom + PauseInstructionBandHeight + 6f));
 
-            if (_pauseEffectsGrid == null)
+            var gridInset = FrameBorderHorizontal - 60f;
+            var top = -FrameBorderTop - PauseTitleBandHeight;
+            StretchToParent(_pauseTabText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(gridInset, top - PauseTabBandHeight), new Vector2(-gridInset, top));
+            StretchToParent(_pauseEffectsGrid, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                new Vector2(gridInset, top - PauseTabBandHeight - contentHeight), new Vector2(-gridInset, top - PauseTabBandHeight));
+            _pauseEffectsGrid.gameObject.SetActive(true);
+            _pauseTabText.gameObject.SetActive(true);
+            _pauseTabText.text = BuildPauseTabStrip();
+        }
+
+        private void EnsurePauseContentWidgets(RectTransform panelRect)
+        {
+            if (_pauseEffectsGrid != null)
             {
-                var gridObject = new GameObject("PauseEffectsGrid", typeof(RectTransform));
-                _pauseEffectsGrid = gridObject.GetComponent<RectTransform>();
-                _pauseEffectsGrid.SetParent(panelRect, false);
+                return;
             }
 
-            _pauseEffectsGrid.gameObject.SetActive(true);
-            var gridInset = FrameBorderHorizontal - 60f;
-            StretchToParent(_pauseEffectsGrid, new Vector2(0f, 1f), new Vector2(1f, 1f),
-                new Vector2(gridInset, -FrameBorderTop - PauseTitleBandHeight - gridHeight),
-                new Vector2(-gridInset, -FrameBorderTop - PauseTitleBandHeight));
+            var gridObject = new GameObject("PauseEffectsGrid", typeof(RectTransform));
+            _pauseEffectsGrid = gridObject.GetComponent<RectTransform>();
+            _pauseEffectsGrid.SetParent(panelRect, false);
 
-            var columnWidth = (PauseEffectsWidePanelWidth - 2f * gridInset) / PauseEffectColumns;
+            _pauseTabText = CreateText("PauseTabs", panelRect, 20, TextAnchor.MiddleCenter, PauseTextColor);
+            _pauseTabText.supportRichText = true;
 
-            while (_pauseEffectEntries.Count < cardCount)
+            _pauseDescriptionText = CreateText("PauseDescription", _pauseEffectsGrid, 17, TextAnchor.UpperLeft, PauseTextColor);
+            _pauseDescriptionText.supportRichText = true;
+            _pauseDescriptionText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _pauseDescriptionText.verticalOverflow = VerticalWrapMode.Overflow;
+
+            _pauseStatsLeft = CreateStatsColumn("PauseStatsLeft", 0f, 0.5f);
+            _pauseStatsRight = CreateStatsColumn("PauseStatsRight", 0.5f, 1f);
+        }
+
+        private Text CreateStatsColumn(string name, float xMin, float xMax)
+        {
+            var text = CreateText(name, _pauseEffectsGrid, 16, TextAnchor.UpperLeft, PauseTextColor);
+            text.supportRichText = true;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.lineSpacing = 1.1f;
+            StretchToParent(text.rectTransform, new Vector2(xMin, 0f), new Vector2(xMax, 1f), new Vector2(10f, 0f), new Vector2(-10f, -6f));
+            return text;
+        }
+
+        private string BuildPauseTabStrip()
+        {
+            var names = new[]
+            {
+                LocalizationService.Resolve("Perks", "Perks"),
+                LocalizationService.Resolve("Player", "Spieler"),
+                LocalizationService.Resolve("Towers", "Türme"),
+            };
+            var builder = new System.Text.StringBuilder(96);
+
+            for (var index = 0; index < names.Length; index++)
+            {
+                builder.Append(index > 0 ? "      " : string.Empty);
+                builder.Append(index == (int)_pauseTab ? "<b><color=#8A5200>[" + names[index] + "]</color></b>" : names[index]);
+            }
+
+            builder.Append(LocalizationService.Resolve("      <size=15>(Q / Tab or LB / RB)</size>", "      <size=15>(Q / Tab oder LB / RB)</size>"));
+            return builder.ToString();
+        }
+
+        private float LayoutPerksTab()
+        {
+            _pauseStatsLeft.gameObject.SetActive(false);
+            _pauseStatsRight.gameObject.SetActive(false);
+            _pauseDescriptionText.gameObject.SetActive(true);
+
+            var cards = _cardService != null ? _cardService.SelectedCards : null;
+            _pauseEffectCount = cards != null ? cards.Count : 0;
+            _pauseSelectedEffect = Mathf.Clamp(_pauseSelectedEffect, 0, Mathf.Max(0, _pauseEffectCount - 1));
+            var rows = Mathf.Max(1, Mathf.CeilToInt(_pauseEffectCount / (float)PauseEffectColumns));
+            var gridHeight = rows * PauseEffectRowHeight + 16f;
+            var columnWidth = (PauseEffectsWidePanelWidth - 2f * (FrameBorderHorizontal - 60f)) / PauseEffectColumns;
+
+            while (_pauseEffectEntries.Count < _pauseEffectCount)
             {
                 _pauseEffectEntries.Add(CreatePauseEffectEntry(_pauseEffectsGrid, _pauseEffectEntries.Count));
             }
@@ -730,7 +843,7 @@ namespace Corebound.Gameplay.Waves
             for (var index = 0; index < _pauseEffectEntries.Count; index++)
             {
                 var entry = _pauseEffectEntries[index];
-                var card = index < cardCount ? cards[index] : null;
+                var card = index < _pauseEffectCount ? cards[index] : null;
                 entry.Root.gameObject.SetActive(card != null);
 
                 if (card == null)
@@ -767,7 +880,173 @@ namespace Corebound.Gameplay.Waves
                 var textLeft = PauseEffectMaxIcons * (PauseEffectIconSize + 2f) + 6f;
                 entry.Label.rectTransform.offsetMin = new Vector2(textLeft, 0f);
                 entry.Label.rectTransform.offsetMax = Vector2.zero;
-                entry.Label.text = card.DisplayName;
+                var selected = index == _pauseSelectedEffect;
+                entry.Label.text = selected ? "<b>" + card.DisplayName + "</b>" : card.DisplayName;
+                entry.Label.supportRichText = true;
+                entry.Label.color = selected ? PauseSelectedColor : PauseTextColor;
+            }
+
+            var descriptionTop = gridHeight;
+            StretchToParent(_pauseDescriptionText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                new Vector2(10f, -descriptionTop - PauseDescriptionHeight), new Vector2(-10f, -descriptionTop));
+
+            if (_pauseEffectCount == 0)
+            {
+                _pauseDescriptionText.text = LocalizationService.Resolve("No perks yet - card rewards add them.", "Noch keine Perks - Kartenbelohnungen fügen sie hinzu.");
+            }
+            else
+            {
+                var selectedCard = cards[_pauseSelectedEffect];
+                _pauseDescriptionText.text = "<b>" + selectedCard.DisplayName + "</b>  ·  " + selectedCard.Description
+                    + LocalizationService.Resolve("\n<size=14>Arrows or mouse to select a perk.</size>", "\n<size=14>Pfeiltasten oder Maus zum Auswählen.</size>");
+            }
+
+            return gridHeight + PauseDescriptionHeight;
+        }
+
+        private float LayoutStatsTab()
+        {
+            for (var index = 0; index < _pauseEffectEntries.Count; index++)
+            {
+                _pauseEffectEntries[index].Root.gameObject.SetActive(false);
+            }
+
+            _pauseDescriptionText.gameObject.SetActive(false);
+            _pauseStatsLeft.gameObject.SetActive(true);
+            _pauseStatsRight.gameObject.SetActive(true);
+
+            if (_pauseTab == PauseTab.Player)
+            {
+                if (_playerCombatController != null)
+                {
+                    _playerCombatController.CollectStatLines(_pauseStatLines);
+                }
+                else
+                {
+                    _pauseStatLines.Clear();
+                }
+            }
+            else if (_towerService != null)
+            {
+                _towerService.CollectStatLines(_pauseStatLines);
+            }
+            else
+            {
+                _pauseStatLines.Clear();
+            }
+
+            // Two columns, split at a header where possible so a weapon's block is never cut.
+            var split = _pauseStatLines.Count / 2;
+
+            for (var index = split; index < _pauseStatLines.Count; index++)
+            {
+                if (_pauseStatLines[index].IsHeader)
+                {
+                    split = index;
+                    break;
+                }
+            }
+
+            _pauseStatsLeft.text = FormatStatLines(0, split);
+            _pauseStatsRight.text = FormatStatLines(split, _pauseStatLines.Count);
+            var rows = Mathf.Max(split, _pauseStatLines.Count - split) + 1;
+            return rows * PauseStatRowHeight + 12f;
+        }
+
+        private string FormatStatLines(int from, int to)
+        {
+            var builder = new System.Text.StringBuilder(512);
+
+            for (var index = from; index < to; index++)
+            {
+                var line = _pauseStatLines[index];
+                builder.Append(line.IsHeader
+                    ? (index > from ? "\n" : string.Empty) + "<b>" + line.Label + "</b>"
+                    : line.Label + (line.Text.Length > 0 ? ":  " + line.Text : string.Empty));
+                builder.Append('\n');
+            }
+
+            return builder.ToString();
+        }
+
+        private void OnPausePreviousPressed()
+        {
+            SwitchPauseTab(-1);
+        }
+
+        private void OnPauseNextPressed()
+        {
+            SwitchPauseTab(1);
+        }
+
+        private void SwitchPauseTab(int direction)
+        {
+            if (_overlayMode != OverlayMode.Pause)
+            {
+                return;
+            }
+
+            _pauseTab = (PauseTab)(((int)_pauseTab + direction + 3) % 3);
+            LayoutPauseOverlay(true);
+        }
+
+        private void OnPauseNavigate(Vector2 input)
+        {
+            if (_overlayMode != OverlayMode.Pause || _pauseTab != PauseTab.Perks || _pauseEffectCount == 0)
+            {
+                return;
+            }
+
+            var step = Mathf.Abs(input.x) >= Mathf.Abs(input.y)
+                ? (input.x > 0.5f ? 1 : input.x < -0.5f ? -1 : 0)
+                : (input.y > 0.5f ? -PauseEffectColumns : input.y < -0.5f ? PauseEffectColumns : 0);
+
+            if (step == 0)
+            {
+                return;
+            }
+
+            _pauseSelectedEffect = Mathf.Clamp(_pauseSelectedEffect + step, 0, _pauseEffectCount - 1);
+            LayoutPauseOverlay(true);
+        }
+
+        // Mouse hover selects a perk. The gameplay scene has no EventSystem (MainMenu owns the only
+        // one), so this hit-tests the entry rects directly - and it keeps working at timeScale 0.
+        private void UpdatePauseHover()
+        {
+            if (_overlayMode != OverlayMode.Pause || _pauseTab != PauseTab.Perks || _pauseEffectCount == 0)
+            {
+                return;
+            }
+
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+
+            if (mouse == null)
+            {
+                return;
+            }
+
+            var pointer = mouse.position.ReadValue();
+
+            if ((pointer - _lastPausePointer).sqrMagnitude < 1f)
+            {
+                return;
+            }
+
+            _lastPausePointer = pointer;
+
+            for (var index = 0; index < _pauseEffectCount && index < _pauseEffectEntries.Count; index++)
+            {
+                if (RectTransformUtility.RectangleContainsScreenPoint(_pauseEffectEntries[index].Root, pointer, null))
+                {
+                    if (index != _pauseSelectedEffect)
+                    {
+                        _pauseSelectedEffect = index;
+                        LayoutPauseOverlay(true);
+                    }
+
+                    return;
+                }
             }
         }
 
@@ -793,11 +1072,11 @@ namespace Corebound.Gameplay.Waves
                 icons[iconIndex] = icon;
             }
 
-            var label = CreateText("Name", root, 18, TextAnchor.MiddleLeft, new Color(0.1f, 0.12f, 0.16f, 0.96f));
+            var label = CreateText("Name", root, 18, TextAnchor.MiddleLeft, PauseTextColor);
             label.rectTransform.anchorMin = Vector2.zero;
             label.rectTransform.anchorMax = Vector2.one;
             label.horizontalOverflow = HorizontalWrapMode.Wrap;
-            label.verticalOverflow = VerticalWrapMode.Truncate;
+            label.verticalOverflow = VerticalWrapMode.Overflow;
             ConfigureResponsiveHudText(label, 12, 18);
 
             return new PauseEffectEntry(root, icons, label);
@@ -938,6 +1217,43 @@ namespace Corebound.Gameplay.Waves
             {
                 _bannerImage.gameObject.SetActive(false);
             }
+        }
+
+        // Skill Points and Alloy are paid at the kill, so a failed run keeps them - the screen says
+        // so, and says how to earn them when there is nothing to show.
+        private static string ResolveRunEarningsLine()
+        {
+            var skillPoints = Corebound.MetaProgression.MetaRewardLedger.RunSkillPoints;
+            var alloy = Corebound.MetaProgression.MetaRewardLedger.RunAlloy;
+
+            if (skillPoints <= 0 && alloy <= 0)
+            {
+                return LocalizationService.Resolve(
+                    "Earned this run: nothing - bosses pay Skill Points and Alloy, elites pay Alloy.",
+                    "In diesem Run verdient: nichts - Bosse geben Fertigkeitspunkte und Legierung, Elite-Gegner Legierung.");
+            }
+
+            return LocalizationService.Resolve("Earned this run (kept): ", "In diesem Run verdient (bleibt erhalten): ")
+                + "+" + skillPoints + LocalizationService.Resolve(" Skill Points", " Fertigkeitspunkte")
+                + "   +" + alloy + LocalizationService.Resolve(" Alloy", " Legierung");
+        }
+
+        // Playtest 2026-09-22: "unclear how to enter the weapon upgrade menu; figured out it is bound
+        // to I - make this bind visible." Shown in every Intermission line, with the active device's
+        // binding (I on keyboard, the Select/View button on a pad).
+        private string ResolveLoadoutHint()
+        {
+            var reader = InputReader as CoreboundInputReader;
+            var key = reader != null
+                ? reader.GetBindingDisplayString("System", "Loadout", reader.IsUsingGamepad ? "Gamepad" : "Keyboard&Mouse")
+                : string.Empty;
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                key = reader != null && reader.IsUsingGamepad ? "Select" : "I";
+            }
+
+            return LocalizationService.Resolve("  |  " + key.ToUpperInvariant() + ": Weapons", "  |  " + key.ToUpperInvariant() + ": Waffen");
         }
 
         private string ResolveCurrencyText()
@@ -1136,6 +1452,14 @@ namespace Corebound.Gameplay.Waves
                 return;
             }
 
+            // Retired 2026-09-22: 9-slicing wave_banner.png behind the one-line HUD wave text had
+            // the same squash problem as the announcement banner (end caps only, no frame), and at
+            // that size the art cannot be shown whole. The art now lives on the announcement banner.
+            if (_waveBannerSprite != null)
+            {
+                return;
+            }
+
             var backing = CreateImage(WaveBannerBackingName, parent, _waveBannerSprite, new Color(1f, 1f, 1f, 0.92f), ResolvePanelType(_waveBannerSprite));
             var source = _waveText.rectTransform;
             var rect = backing.rectTransform;
@@ -1254,7 +1578,7 @@ namespace Corebound.Gameplay.Waves
 
                 if (_bannerImage == null || _bannerText == null)
                 {
-                    var bannerPanel = CreateImage("WaveBanner", overlayParent, _waveBannerSprite != null ? _waveBannerSprite : _statusPanelSprite, new Color(1f, 1f, 1f, 0.98f), ResolvePanelType(_waveBannerSprite != null ? _waveBannerSprite : _statusPanelSprite));
+                    var bannerPanel = CreateImage("WaveBanner", overlayParent, _waveBannerSprite != null ? _waveBannerSprite : _statusPanelSprite, new Color(1f, 1f, 1f, 0.98f), ResolveBannerImageType());
                     var bannerRect = bannerPanel.rectTransform;
                     bannerRect.anchorMin = new Vector2(0.5f, 1f);
                     bannerRect.anchorMax = new Vector2(0.5f, 1f);
@@ -1264,7 +1588,7 @@ namespace Corebound.Gameplay.Waves
                     _bannerImage = bannerPanel;
 
                     _bannerText = CreateText("WaveBannerText", bannerRect, 30, TextAnchor.MiddleCenter, new Color(0.1f, 0.12f, 0.16f, 0.95f));
-                    StretchToParent(_bannerText.rectTransform, Vector2.zero, Vector2.one, new Vector2(48f, 18f), new Vector2(-48f, -18f));
+                    StretchToParent(_bannerText.rectTransform, Vector2.zero, Vector2.one, BannerTextInsetMin, BannerTextInsetMax);
                 }
 
                 // Re-apply the sprite/layout unconditionally, even when reusing an existing banner
@@ -1274,7 +1598,8 @@ namespace Corebound.Gameplay.Waves
                 // existing banner was found at all.
                 var reusedBannerSprite = _waveBannerSprite != null ? _waveBannerSprite : _statusPanelSprite;
                 _bannerImage.sprite = reusedBannerSprite;
-                _bannerImage.type = ResolvePanelType(reusedBannerSprite);
+                _bannerImage.type = ResolveBannerImageType();
+                _bannerImage.preserveAspect = _waveBannerSprite != null;
                 var reusedBannerRect = _bannerImage.rectTransform;
                 reusedBannerRect.anchorMin = new Vector2(0.5f, 1f);
                 reusedBannerRect.anchorMax = new Vector2(0.5f, 1f);
@@ -1284,7 +1609,7 @@ namespace Corebound.Gameplay.Waves
 
                 if (_bannerText != null)
                 {
-                    StretchToParent(_bannerText.rectTransform, Vector2.zero, Vector2.one, new Vector2(48f, 18f), new Vector2(-48f, -18f));
+                    StretchToParent(_bannerText.rectTransform, Vector2.zero, Vector2.one, BannerTextInsetMin, BannerTextInsetMax);
                 }
 
                 // _bannerTimer starts at 0 (no countdown restored across a domain reload), so
@@ -1462,7 +1787,9 @@ namespace Corebound.Gameplay.Waves
         private void CreateRuntimeSprites()
         {
             _statusPanelSprite = CreateRuntimeSpriteRect(_statusPanelTexture, HudFrameContentRect, ResolveStatusPanelBorder());
-            _waveBannerSprite = CreateRuntimeSprite(_waveBannerTexture, ResolveWaveBannerBorder());
+            _waveBannerSprite = _waveBannerTexture != null && _waveBannerTexture.width >= WaveBannerArtRect.xMax && _waveBannerTexture.height >= WaveBannerArtRect.yMax
+                ? CreateRuntimeSpriteRect(_waveBannerTexture, WaveBannerArtRect, Vector4.zero)
+                : CreateRuntimeSprite(_waveBannerTexture, ResolveWaveBannerBorder());
             _modalPanelSprite = ResolveModalSprite();
         }
 
@@ -1496,6 +1823,12 @@ namespace Corebound.Gameplay.Waves
         private Vector4 ResolveWaveBannerBorder()
         {
             return _waveBannerBorder.sqrMagnitude > 0f ? _waveBannerBorder : new Vector4(220f, 140f, 220f, 140f);
+        }
+
+        // The wave banner art is shown whole; only the status-panel fallback is a 9-slice frame.
+        private Image.Type ResolveBannerImageType()
+        {
+            return _waveBannerSprite != null ? Image.Type.Simple : ResolvePanelType(_statusPanelSprite);
         }
 
         private static Image.Type ResolvePanelType(Sprite sprite)

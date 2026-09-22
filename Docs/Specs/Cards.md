@@ -153,3 +153,21 @@ today.
 
 This makes the offer pool simpler to reason about and removes the case where a reward screen
 showed a card the player already had and could not take.
+
+---
+
+## Cooling Array re-targeted (2026-09-22)
+
+Playtest 2026-09-22: *"Cooling Array and Rapid Cycler sound the same - are they doing the
+same?"* They were. Both were a flat fire-interval multiplier. Cooling Array now works on the
+reload loop instead: `WeaponModifier_CoolingArrayReload` (reload time x0.75) and
+`WeaponModifier_CoolingArrayMagazine` (+3 rounds), via the new `WeaponModifierTarget`s
+`ReloadTimeMultiplier` (15) and `MagazineBonus` (14). The old `CardEffect_FireRateUp` asset is
+unreferenced but kept.
+
+Rapid Cycler, Hair Trigger, Twin Barrel and Skirmisher's Kit still share the fire-interval
+target. See `Docs/SPEC_REVIEW_2026-09-22.md` finding A9 for the options.
+
+The reward screen footer now shows each card's actual numbers, built from its effect data
+(`CardEffectDescriber`), e.g. "+22% tower damage". This means two cards that do the same
+thing are now visibly the same.

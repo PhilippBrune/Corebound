@@ -7,5 +7,9 @@ namespace Corebound.Gameplay.Weapons
         // purchasePrice is what was paid (0 for a reward), the basis of the copy's sell value and
         // of the refund if the player declines a weapon that did not fit.
         bool TryGrantWeapon(WeaponData weapon, int tier, int purchasePrice);
+
+        // True while an acquired weapon is waiting for a slot. Only one can wait, so no further
+        // weapon may be offered until it is placed or declined.
+        bool HasPendingWeapon { get; }
     }
 }

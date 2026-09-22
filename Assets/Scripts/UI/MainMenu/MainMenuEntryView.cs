@@ -106,6 +106,13 @@ namespace Corebound.UI.MainMenu
             _labelText.color = skinData != null ? skinData.IdleLabelColor : Color.white;
             _labelText.raycastTarget = false;
 
+            // Entries shrink to fit short screens (MainMenuCanvasPresenter.ApplyEntrySizing), so the
+            // label shrinks with them instead of being clipped, and never vanishes on overflow.
+            _labelText.resizeTextForBestFit = true;
+            _labelText.resizeTextMinSize = 18;
+            _labelText.resizeTextMaxSize = LabelFontSize;
+            _labelText.verticalOverflow = VerticalWrapMode.Overflow;
+
             var outline = labelObject.GetComponent<Outline>();
             outline.effectColor = new Color(0.03f, 0.04f, 0.06f, 0.85f);
             outline.effectDistance = new Vector2(2f, -2f);

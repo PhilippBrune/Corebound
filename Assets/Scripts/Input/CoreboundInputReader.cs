@@ -56,7 +56,31 @@ namespace Corebound.Input
 
         public Vector2 Move { get; private set; }
 
-        public Vector2 Aim { get; private set; }
+        // Stick and pointer are kept apart (playtest 2026-09-22, Xbox 360 pad: "not possible to aim
+        // because the char turns always towards the mouse"). Aim used to be one Value action over
+        // both the right stick and <Pointer>/position, and a Value action follows the control with
+        // the largest actuation - a mouse position of (1200, 600) always outweighs a stick in
+        // [-1, 1], so Aim kept reporting the mouse and flipped IsUsingGamepad back to false. The
+        // action is PassThrough now, each control reports itself, and Aim returns the one that
+        // matches the active device.
+        public Vector2 Aim
+        {
+            get => IsUsingGamepad ? _stickAim : _pointerAim;
+            private set
+            {
+                _stickAim = value;
+                _pointerAim = value;
+            }
+        }
+
+        private Vector2 _stickAim;
+        private Vector2 _pointerAim;
+        private bool _hasPointerSample;
+
+        // A mouse that has not moved must not take aiming back from the stick; pointer position
+        // events also arrive for sub-pixel jitter and window focus changes.
+        private const float PointerTakeoverPixels = 4f;
+        private const float StickTakeoverMagnitude = 0.25f;
 
         public bool IsPrimaryFireHeld { get; private set; }
 
@@ -388,13 +412,33 @@ namespace Corebound.Input
 
         private void OnAimPerformed(InputAction.CallbackContext context)
         {
-            UpdateInputDevice(context);
-            Aim = context.ReadValue<Vector2>();
+            var value = context.ReadValue<Vector2>();
+
+            if (context.control?.device is Gamepad)
+            {
+                _stickAim = value;
+
+                if (value.sqrMagnitude >= StickTakeoverMagnitude * StickTakeoverMagnitude)
+                {
+                    IsUsingGamepad = true;
+                }
+
+                return;
+            }
+
+            var moved = !_hasPointerSample || (value - _pointerAim).sqrMagnitude >= PointerTakeoverPixels * PointerTakeoverPixels;
+            _pointerAim = value;
+            _hasPointerSample = true;
+
+            if (moved)
+            {
+                IsUsingGamepad = false;
+            }
         }
 
         private void OnAimCanceled(InputAction.CallbackContext context)
         {
-            Aim = Vector2.zero;
+            _stickAim = Vector2.zero;
         }
 
         private void OnPrimaryFirePerformed(InputAction.CallbackContext context)

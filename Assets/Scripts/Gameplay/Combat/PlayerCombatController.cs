@@ -55,6 +55,8 @@ namespace Corebound.Gameplay.Combat
 
         public WeaponLoadoutRuntime Loadout => _loadout;
 
+        public bool HasPendingWeapon => _loadout != null && _loadout.HasPendingWeapon;
+
         // The first equipped copy stands in wherever something still asks for "the" weapon (the
         // tutorial, save checkpoints, the HUD's name label).
         public WeaponData ActiveWeapon => ResolvePrimarySlot()?.Weapon;
@@ -175,7 +177,7 @@ namespace Corebound.Gameplay.Combat
 
             var weapon = slot.Weapon;
             var pattern = weapon.AttackPattern;
-            slot.MagazineSize = ResolveMagazineSize(weapon);
+            slot.MagazineSize = ResolveMagazineSize(slot);
 
             if (slot.Ammo > slot.MagazineSize)
             {
@@ -230,7 +232,7 @@ namespace Corebound.Gameplay.Combat
 
         private void BeginReload(WeaponSlotRuntime slot, WeaponData weapon)
         {
-            var reload = ResolveReloadSeconds(weapon);
+            var reload = ResolveReloadSeconds(slot);
             slot.ReloadDuration = reload;
             slot.ReloadTimer = reload;
         }
@@ -304,9 +306,9 @@ namespace Corebound.Gameplay.Combat
                 }
 
                 var spawnPosition = origin + shotDirection * spawnDistance;
-                var damageContext = CreateDamageContext(weapon, modifiers, spawnPosition, shotDirection, damageMultiplier);
+                var damageContext = CreateDamageContext(weapon, modifiers, spawnPosition, shotDirection, damageMultiplier, isCritical);
                 var projectile = _projectilePool.Get(_projectilePrefab);
-                projectile.Launch(gameObject, weapon.Projectile, spawnPosition, shotDirection, damageContext, projectileSpeedMultiplier, modifiers.AdditionalPierce, modifiers.ExplodeOnExpire);
+                projectile.Launch(gameObject, weapon.Projectile, spawnPosition, shotDirection, damageContext, projectileSpeedMultiplier, modifiers.AdditionalPierce, modifiers.ExplodeOnExpire, modifiers.ExplodeOnImpact);
 
                 WeaponEvents.RaiseProjectileSpawned(new ProjectileSpawnedEventArgs(gameObject, weapon, spawnPosition, shotDirection, damageContext.Amount, shotIndex, isCritical));
                 shotIndex++;
@@ -339,8 +341,9 @@ namespace Corebound.Gameplay.Combat
                 * slot.Modifiers.FireIntervalMultiplier);
         }
 
-        private int ResolveMagazineSize(WeaponData weapon)
+        private int ResolveMagazineSize(WeaponSlotRuntime slot)
         {
+            var weapon = slot.Weapon;
             var baseSize = weapon.AttackPattern != null ? weapon.AttackPattern.MagazineSize : 0;
 
             if (baseSize <= 0)
@@ -350,15 +353,18 @@ namespace Corebound.Gameplay.Combat
 
             return Mathf.Max(1, baseSize
                 + Mathf.RoundToInt(_progression.Upgrades.Get(weapon.WeaponId, UpgradableStat.Magazine))
-                + Mathf.RoundToInt(_progression.Skills[SkillEffectTarget.MagazineSize]));
+                + Mathf.RoundToInt(_progression.Skills[SkillEffectTarget.MagazineSize])
+                + slot.Modifiers.MagazineBonus);
         }
 
-        private float ResolveReloadSeconds(WeaponData weapon)
+        private float ResolveReloadSeconds(WeaponSlotRuntime slot)
         {
+            var weapon = slot.Weapon;
             var baseSeconds = weapon.AttackPattern != null ? weapon.AttackPattern.ReloadSeconds : 1f;
             return Mathf.Max(0.1f, baseSeconds
                 * _progression.Upgrades.GetReductionMultiplier(weapon.WeaponId, UpgradableStat.ReloadSpeed)
-                * _progression.Skills[SkillEffectTarget.ReloadTimeMultiplier]);
+                * _progression.Skills[SkillEffectTarget.ReloadTimeMultiplier]
+                * slot.Modifiers.ReloadTimeMultiplier);
         }
 
         // Rebuilt every frame rather than on CardService.StateChanged: a pull model has no
@@ -376,6 +382,11 @@ namespace Corebound.Gameplay.Combat
                 }
 
                 _loadout.CollectLoadoutEffects(slot.Weapon.WeaponId, _loadoutEffectBuffer);
+
+                if (slot.Weapon.InnateEffects != null)
+                {
+                    _loadoutEffectBuffer.AddRange(slot.Weapon.InnateEffects);
+                }
                 var changed = slot.Modifiers.Rebuild(
                     slot.Weapon.WeaponId,
                     _cardService != null ? _cardService.WeaponDamageMultiplier : 1f,
@@ -391,7 +402,7 @@ namespace Corebound.Gameplay.Combat
             }
         }
 
-        private DamageContext CreateDamageContext(WeaponData weapon, WeaponModifierState modifiers, Vector2 hitPoint, Vector2 direction, float damageMultiplier)
+        private DamageContext CreateDamageContext(WeaponData weapon, WeaponModifierState modifiers, Vector2 hitPoint, Vector2 direction, float damageMultiplier, bool isCritical)
         {
             StatusEffectType? statusEffect = null;
             var profile = weapon.DamageProfile;
@@ -412,7 +423,69 @@ namespace Corebound.Gameplay.Combat
                 (profile != null ? profile.BaseDamage : 1f) * damageMultiplier,
                 hitPoint,
                 direction,
-                statusEffect);
+                statusEffect,
+                isCritical);
+        }
+
+        // Pause menu Player tab: every stat as base (+ what perks, skills, upgrades, tiers and set
+        // bonuses add). Computed with the same resolvers the firing code uses, so it cannot drift
+        // from what actually happens. One block per distinct weapon, from its first copy.
+        public void CollectStatLines(List<StatLine> lines)
+        {
+            lines.Clear();
+
+            if (_runtime == null || _combatData == null)
+            {
+                return;
+            }
+
+            lines.Add(StatLine.Header(LocalizationService.Resolve("Player", "Spieler")));
+            lines.Add(StatLine.Value(LocalizationService.Resolve("Max health", "Max. Leben"), _combatData.MaxHealth, _runtime.MaxHealth, "0.#"));
+            lines.Add(StatLine.Value(LocalizationService.Resolve("Move speed", "Tempo"), 100f, MovementSpeedMultiplier * 100f, "0", "%"));
+            var incoming = (_cardService != null ? _cardService.IncomingDamageTakenMultiplier : 1f) * _progression.Skills[SkillEffectTarget.IncomingDamageMultiplier];
+            lines.Add(StatLine.Value(LocalizationService.Resolve("Damage taken", "Erlittener Schaden"), 100f, incoming * 100f, "0", "%", true));
+            lines.Add(StatLine.Plain(LocalizationService.Resolve("Projectiles in flight", "Projektile im Flug"), LiveProjectileCount + " / " + ProjectileBudget));
+
+            var seen = new List<string>();
+
+            for (var index = 0; index < WeaponLoadoutRuntime.Capacity; index++)
+            {
+                var slot = _loadout.GetSlot(index);
+
+                if (slot.IsEmpty || seen.Contains(slot.Weapon.WeaponId))
+                {
+                    continue;
+                }
+
+                seen.Add(slot.Weapon.WeaponId);
+                var weapon = slot.Weapon;
+                var pattern = weapon.AttackPattern;
+                var modifiers = slot.Modifiers;
+                var upgrades = _progression.Upgrades;
+                var skills = _progression.Skills;
+                var baseDamage = weapon.DamageProfile != null ? weapon.DamageProfile.BaseDamage : 1f;
+                var damage = baseDamage * WeaponTierRules.DamageMultiplier(slot.Tier)
+                    * upgrades.GetIncreaseMultiplier(weapon.WeaponId, UpgradableStat.Damage)
+                    * skills[SkillEffectTarget.WeaponDamageMultiplier]
+                    * modifiers.DamageMultiplier;
+                var baseInterval = pattern != null ? pattern.FireIntervalSeconds : 0.2f;
+                var baseProjectiles = pattern != null ? pattern.ProjectileCount : 1;
+                var critChance = Mathf.Clamp01(modifiers.CriticalChance + skills[SkillEffectTarget.CriticalChance] + upgrades.Get(weapon.WeaponId, UpgradableStat.CriticalChance));
+                var critDamage = modifiers.CriticalDamageMultiplier * skills[SkillEffectTarget.CriticalDamageMultiplier] * upgrades.GetIncreaseMultiplier(weapon.WeaponId, UpgradableStat.CriticalDamage);
+
+                lines.Add(StatLine.Header(weapon.DisplayName + "  x" + _loadout.CountCopies(weapon.WeaponId)));
+                lines.Add(StatLine.Value(LocalizationService.Resolve("Damage per shot", "Schaden pro Schuss"), baseDamage, damage, "0.##"));
+                lines.Add(StatLine.Value(LocalizationService.Resolve("Fire interval", "Feuerintervall"), baseInterval, ResolveFireInterval(slot), "0.00", "s", true));
+                lines.Add(StatLine.Value(LocalizationService.Resolve("Projectiles", "Projektile"), baseProjectiles, modifiers.FullRing ? Mathf.Max(6, baseProjectiles + modifiers.AdditionalProjectiles) : baseProjectiles + modifiers.AdditionalProjectiles, "0"));
+                lines.Add(StatLine.Value(LocalizationService.Resolve("Crit chance", "Kritische Chance"), 0f, critChance * 100f, "0.#", "%"));
+                lines.Add(StatLine.Value(LocalizationService.Resolve("Crit damage", "Kritischer Schaden"), 2f, critDamage, "0.00", "x"));
+
+                if (pattern != null && pattern.MagazineSize > 0)
+                {
+                    lines.Add(StatLine.Value(LocalizationService.Resolve("Magazine", "Magazin"), pattern.MagazineSize, ResolveMagazineSize(slot), "0"));
+                    lines.Add(StatLine.Value(LocalizationService.Resolve("Reload", "Nachladen"), pattern.ReloadSeconds, ResolveReloadSeconds(slot), "0.00", "s", true));
+                }
+            }
         }
 
         // Skill tree Executioner (SkillTree.md): bonus damage to enemies below 30% health. Read
@@ -619,7 +692,7 @@ namespace Corebound.Gameplay.Combat
                 damageContext.Amount * incomingMultiplier,
                 damageContext.HitPoint,
                 damageContext.HitDirection,
-                damageContext.StatusEffect);
+                damageContext.StatusEffect, damageContext.IsCritical);
         }
 
         private void RestoreRuntimeStateFromSave()

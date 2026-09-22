@@ -67,12 +67,13 @@ namespace Corebound.Gameplay.Weapons
             return FireIntervalMultipliers[Mathf.Clamp(tier, 0, MaxTier)];
         }
 
-        // Scrap to raise a copy from tier to tier + 1. Scales with the weapon's price so an
+        // Scrap to raise a copy from tier to tier + 1 (raised from 0.75x on 2026-09-22: "increase the
+        // cost of upgrading weapons in a run"). Scales with the weapon's price so an
         // expensive weapon is expensive to improve, and with the tier so Legendary is a goal.
         public static int UpgradeCost(WeaponData weapon, int tier)
         {
             var basePrice = weapon != null ? weapon.BasePurchaseCost : 14;
-            return Mathf.RoundToInt(basePrice * 0.75f * (Mathf.Clamp(tier, 0, MaxTier) + 1));
+            return Mathf.RoundToInt(basePrice * 1.25f * (Mathf.Clamp(tier, 0, MaxTier) + 1));
         }
 
         // WeaponLoadout.md, Selling: 50% of what the copy cost, rounded down.

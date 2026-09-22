@@ -24,7 +24,15 @@ namespace Corebound.Gameplay.Weapons
         ExplodeOnExpire = 10,           // Add: > 0 makes projectiles that hit nothing explode
         SlowOnHit = 11,                 // Add: > 0 applies Freeze (a slow) on hit
         HeldDamageRamp = 12,            // Add: damage gained per second of held fire (resets on release)
-        SpreadAngleMultiplier = 13      // Multiply: < 1 narrows the spread
+        SpreadAngleMultiplier = 13,     // Multiply: < 1 narrows the spread
+
+        // Appended 2026-09-22 so cards can reach the reload loop (Cooling Array).
+        MagazineBonus = 14,             // Add: rounds per magazine
+        ReloadTimeMultiplier = 15,      // Multiply: < 1 reloads faster
+
+        // Launcher (2026-09-22 weapon set): every hit also bursts for splash damage, not only a
+        // shot that expired without hitting (ExplodeOnExpire, Spread Synchronised).
+        ExplodeOnImpact = 16            // Add: > 0 makes every hit burst
     }
 
     // Multiplicative targets compose by multiplying, additive ones by summing. Keeping this on the
@@ -37,7 +45,8 @@ namespace Corebound.Gameplay.Weapons
                 || target == WeaponModifierTarget.FireIntervalMultiplier
                 || target == WeaponModifierTarget.ProjectileSpeedMultiplier
                 || target == WeaponModifierTarget.CriticalDamageMultiplier
-                || target == WeaponModifierTarget.SpreadAngleMultiplier;
+                || target == WeaponModifierTarget.SpreadAngleMultiplier
+                || target == WeaponModifierTarget.ReloadTimeMultiplier;
         }
     }
 

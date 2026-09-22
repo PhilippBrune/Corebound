@@ -235,6 +235,15 @@ namespace Corebound.Gameplay.Cards
                 return false;
             }
 
+            // Autopilot 2026-09-22: the boss's guaranteed weapon went pending (full loadout), the
+            // next stage starts without an Intermission to place it, and the first reward of that
+            // stage offered the same weapon again. TryGrantWeapon refuses while one is pending, so
+            // Confirm on that card silently did nothing. Never offer a card that cannot be taken.
+            if (card.IsWeaponCard && WeaponGrantHandler.HasPendingWeapon)
+            {
+                return false;
+            }
+
             if (ContainsSelected(card.CardId) && !card.Stackable)
             {
                 return false;

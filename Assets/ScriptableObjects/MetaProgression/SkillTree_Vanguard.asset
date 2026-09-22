@@ -262,15 +262,15 @@ MonoBehaviour:
     - _nodeId: construction_forward_foundations
       _displayName: 'Forward Foundations'
       _displayNameDe: 'Vorgeschobene Fundamente'
-      _description: 'The first tower you build each stage costs no Scrap.'
-      _descriptionDe: 'Der erste Turm, den du pro Stage baust, kostet keinen Schrott.'
+      _description: 'The first tower you build each stage costs half.'
+      _descriptionDe: 'Der erste Turm, den du pro Stage baust, kostet die Hälfte.'
       _cost: 3
       _prerequisiteNodeId: 
       _branchSpendRequirement: 0
       _effects:
       - _target: 23
         _operation: 0
-        _value: 1
+        _value: 0.5
       _subNodes:
       - _nodeId: construction_calibrated_barrels
         _displayName: 'Calibrated Barrels'

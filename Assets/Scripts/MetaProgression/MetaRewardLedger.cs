@@ -32,6 +32,26 @@ namespace Corebound.MetaProgression
     {
         public static event Action<MetaRewardGrant> RewardGranted;
 
+        // What the current run has earned so far, for the Run Failed screen (playtest 2026-09-22:
+        // "add to Run Failed the earned resources"). Reset by WaveManager when a run's scene loads;
+        // a resumed run therefore shows what it earned since the resume.
+        public static int RunSkillPoints { get; private set; }
+
+        public static int RunAlloy { get; private set; }
+
+        public static void ResetRunTotals()
+        {
+            RunSkillPoints = 0;
+            RunAlloy = 0;
+        }
+
+        private static void Record(MetaRewardGrant grant)
+        {
+            RunSkillPoints += grant.SkillPoints;
+            RunAlloy += grant.Alloy;
+            RewardGranted?.Invoke(grant);
+        }
+
         public static MetaRewardGrant GrantBossDefeat(ISaveManager saveManager, MetaProgressionDefinitionData definition, int stageIndex, string bossId)
         {
             if (saveManager == null || definition == null)
@@ -48,7 +68,7 @@ namespace Corebound.MetaProgression
             saveManager.SaveMetaProgressionSaveData(saveData);
 
             var grant = new MetaRewardGrant(skillPoints, alloy, isFirstKill);
-            RewardGranted?.Invoke(grant);
+            Record(grant);
             return grant;
         }
 
@@ -64,7 +84,7 @@ namespace Corebound.MetaProgression
             saveManager.SaveMetaProgressionSaveData(saveData);
 
             var grant = new MetaRewardGrant(0, definition.EliteKillAlloy, false);
-            RewardGranted?.Invoke(grant);
+            Record(grant);
             return grant;
         }
 

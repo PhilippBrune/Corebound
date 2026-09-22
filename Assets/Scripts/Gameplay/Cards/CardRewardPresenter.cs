@@ -208,6 +208,49 @@ namespace Corebound.Gameplay.Cards
             Refresh();
         }
 
+        // A click within this window after the screen opens is ignored: the reward usually opens
+        // while the player is still clicking at the last enemy, and that click must not pick a card.
+        private const float ClickGuardSeconds = 0.5f;
+        private Vector2 _lastPointer;
+
+        private void Update()
+        {
+            if (_controller == null || !_controller.IsOpen || UnityEngine.InputSystem.Mouse.current == null)
+            {
+                return;
+            }
+
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            var pointer = mouse.position.ReadValue();
+            var moved = (pointer - _lastPointer).sqrMagnitude > 4f;
+            _lastPointer = pointer;
+            var clicked = mouse.leftButton.wasPressedThisFrame && Time.unscaledTime - _controller.OpenedAtUnscaledTime > ClickGuardSeconds;
+
+            if (!moved && !clicked)
+            {
+                return;
+            }
+
+            for (var index = 0; index < _slotRoots.Length; index++)
+            {
+                var slot = _slotRoots[index];
+
+                if (slot == null || !slot.gameObject.activeInHierarchy || !RectTransformUtility.RectangleContainsScreenPoint(slot, pointer, null))
+                {
+                    continue;
+                }
+
+                _controller.SelectIndex(index);
+
+                if (clicked)
+                {
+                    _controller.ConfirmSelection();
+                }
+
+                return;
+            }
+        }
+
         private void OnDisable()
         {
             AdditiveCanvasSceneLoader.CanvasSceneReady -= OnCanvasSceneReady;
@@ -387,7 +430,8 @@ namespace Corebound.Gameplay.Cards
             _titleText.text = _controller.PendingRewardLabel;
             _resourceText.text = _controller.ResourceSummary;
             _towerText.text = _controller.TowerSummary;
-            _descriptionText.text = _controller.SelectedDescription + LocalizationService.Resolve("  Confirm accepts the selected card.", "  Bestaetigen nimmt die gewaehlte Karte an.");
+            // The card body already carries the prose; the footer carries the numbers.
+            _descriptionText.text = _controller.SelectedDescription + LocalizationService.Resolve("   (Confirm or click to take)", "   (Bestätigen oder Klick zum Nehmen)");
 
             RebuildCards();
 
@@ -467,7 +511,17 @@ namespace Corebound.Gameplay.Cards
                 _slotFrameImages[index].type = Image.Type.Sliced;
                 _slotHighlights[index].color = index == _controller.SelectedIndex ? CardSelectedFillColor : CardFillColor;
                 _slotTitleTexts[index].text = card.DisplayName;
-                _slotTitleTexts[index].color = index == _controller.SelectedIndex ? (_skinData != null ? _skinData.SelectedLabelColor : Color.white) : new Color(0.14f, 0.12f, 0.1f, 0.98f);
+                // Epic and Legendary frames have a dark header plaque; the dark title colour that
+                // reads on Common/Rare silver vanished on them entirely (autopilot shot 2026-09-22).
+                var darkPlaque = card.Rarity == CardRarity.Epic || card.Rarity == CardRarity.Legendary;
+                _slotTitleTexts[index].color = index == _controller.SelectedIndex
+                    ? (_skinData != null ? _skinData.SelectedLabelColor : Color.white)
+                    : darkPlaque ? new Color(0.95f, 0.91f, 0.82f, 1f) : new Color(0.14f, 0.12f, 0.1f, 0.98f);
+                // Long names ("Overcharged Rounds") wrapped out of the plaque; shrink instead.
+                _slotTitleTexts[index].resizeTextForBestFit = true;
+                _slotTitleTexts[index].resizeTextMinSize = 10;
+                _slotTitleTexts[index].resizeTextMaxSize = Mathf.Max(11, _slotTitleTexts[index].fontSize);
+                _slotTitleTexts[index].verticalOverflow = VerticalWrapMode.Truncate;
                 _slotRarityTexts[index].text = card.Rarity.ToString();
                 _slotDescriptionTexts[index].text = card.Description;
                 ApplyTagIcons(index, card);

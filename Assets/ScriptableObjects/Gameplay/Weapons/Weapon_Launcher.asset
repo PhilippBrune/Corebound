@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 866988846fbcee94db9b2e315b27225c, type: 3}
+  m_Name: Weapon_Launcher
+  m_EditorClassIdentifier:
+  _weaponId: weapon_launcher
+  _displayName: Scatter Launcher
+  _shortLabel: GL
+  _summary: 'Lobbed shells that burst on impact and splash everything nearby - or at the end of their flight if they miss.'
+  _attackPattern: {fileID: 11400000, guid: 535565c6404a49b983fbcba54b7418d6, type: 2}
+  _damageProfile: {fileID: 11400000, guid: aaf715b520f3436ba42ae06e541385da, type: 2}
+  _projectile: {fileID: 11400000, guid: dcd32252aea141998cb0bb7ac39e5f86, type: 2}
+  _aimAssistProfile: 1
+  _presentation: {fileID: 11400000, guid: c6d0163e684d44de8d52719e054ad3d0, type: 2}
+  _rarity: 1
+  _basePurchaseCost: 22
+  _setBonuses:
+  - _requiredCopies: 2
+    _displayName: Paired
+    _displayNameDe: Gepaart
+    _description: '+15% damage.'
+    _descriptionDe: '+15 % Schaden.'
+    _effects:
+    - _target: 0
+      _value: 1.15
+  - _requiredCopies: 3
+    _displayName: Aligned
+    _displayNameDe: Ausgerichtet
+    _description: '+1 shell per volley.'
+    _descriptionDe: '+1 Granate pro Salve.'
+    _effects:
+    - _target: 5
+      _value: 1
+  - _requiredCopies: 4
+    _displayName: Focused
+    _displayNameDe: Fokussiert
+    _description: '+30% damage, +1 shell per volley.'
+    _descriptionDe: '+30 % Schaden, +1 Granate pro Salve.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 5
+      _value: 1
+  - _requiredCopies: 5
+    _displayName: Synchronised
+    _displayNameDe: Synchronisiert
+    _description: 'As Focused, and reloads 25% faster.'
+    _descriptionDe: 'Wie Fokussiert, und lädt 25 % schneller nach.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 5
+      _value: 1
+    - _target: 15
+      _value: 0.75
+  - _requiredCopies: 6
+    _displayName: Perfected
+    _displayNameDe: Perfektioniert
+    _description: 'As Synchronised, +2 rounds per magazine and +1 more shell.'
+    _descriptionDe: 'Wie Synchronisiert, +2 Schuss pro Magazin und +1 weitere Granate.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 5
+      _value: 2
+    - _target: 15
+      _value: 0.75
+    - _target: 14
+      _value: 2
+  _innateEffects:
+  - _target: 16
+    _value: 1
+  _displayNameDe: Streuwerfer
+  _summaryDe: 'Granaten, die beim Aufprall zerplatzen und alles in der Nähe treffen - oder am Ende ihres Flugs, wenn sie verfehlen.'

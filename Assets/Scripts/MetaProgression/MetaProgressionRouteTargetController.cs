@@ -84,6 +84,31 @@ namespace Corebound.MetaProgression
             }
         }
 
+        // The header's parts, so the presenter can put the Alloy and Skill Point icons (Assets 92,
+        // 93) next to their own numbers.
+        public string AlloyText => _metaProgressionService == null ? string.Empty
+            : (_metaProgressionService.DefinitionData != null ? _metaProgressionService.DefinitionData.MetaCurrencyLabel : "Alloy") + ": " + _metaProgressionService.AlloyBalance;
+
+        public string SkillPointText => _metaProgressionService == null ? string.Empty
+            : LocalizationService.Resolve("Skill Points: ", "Fertigkeitspunkte: ") + _metaProgressionService.SkillPointsAvailable;
+
+        public string AscensionText => _metaProgressionService == null || _metaProgressionService.AscensionRank <= 0 ? string.Empty
+            : LocalizationService.Resolve("Ascension ", "Aufstieg ") + _metaProgressionService.AscensionRank;
+
+        // 0-3 while a skill branch tab is shown (the branch icon sheet's order), otherwise -1.
+        public int ActiveBranchIndex
+        {
+            get
+            {
+                if (_metaProgressionService == null || _metaProgressionService.ActiveSkillTree == null)
+                {
+                    return -1;
+                }
+
+                return ResolveTab(out var branch) == Tab.Branch ? System.Array.IndexOf(_metaProgressionService.ActiveSkillTree.Branches, branch) : -1;
+            }
+        }
+
         public string Summary
         {
             get
@@ -335,6 +360,8 @@ namespace Corebound.MetaProgression
                 return;
             }
 
+            AddWeaponSlotSourceRows();
+
             for (var index = 0; index < unlocks.Length; index++)
             {
                 var unlock = unlocks[index];
@@ -348,6 +375,39 @@ namespace Corebound.MetaProgression
                     unlock.Summary + (owned || affordable ? string.Empty : "\n" + LocalizationService.Resolve("Not enough Alloy.", "Nicht genug Legierung.")),
                     () => !owned && _metaProgressionService.TryPurchase(unlockIndex)));
             }
+        }
+
+        // Playtest 2026-09-22: "I can see how to unlock the 5th and 6th weapon slot, but how do I
+        // unlock the 2nd, 3rd and 4th?" Slots 2-4 are not bought here, so they had no row at all.
+        // They are listed as information (not selectable) above the Alloy unlocks, each with its
+        // source and whether it is already earned.
+        private void AddWeaponSlotSourceRows()
+        {
+            var save = _metaProgressionService.SaveData;
+            var tree = _metaProgressionService.ActiveSkillTree;
+
+            AddSlotSourceRow(
+                LocalizationService.Resolve("Second Weapon Mount", "Zweite Waffenhalterung"),
+                save.HasClearedAnyStage,
+                LocalizationService.Resolve("Clear any stage once (beat its boss).", "Schließe einmal eine beliebige Stage ab (besiege ihren Boss)."));
+            AddSlotSourceRow(
+                LocalizationService.Resolve("Third Weapon Mount", "Dritte Waffenhalterung"),
+                tree != null && save.GetSkillNodeRank(tree.CharacterId, "combat_armory") > 0,
+                LocalizationService.Resolve("Skill tree, Combat branch: Armory.", "Fertigkeitsbaum, Zweig Kampf: Waffenkammer."));
+            AddSlotSourceRow(
+                LocalizationService.Resolve("Fourth Weapon Mount", "Vierte Waffenhalterung"),
+                tree != null && save.GetSkillNodeRank(tree.CharacterId, "combat_full_arsenal") > 0,
+                LocalizationService.Resolve("Skill tree, Combat branch: Full Arsenal.", "Fertigkeitsbaum, Zweig Kampf: Volles Arsenal."));
+        }
+
+        private void AddSlotSourceRow(string name, bool owned, string source)
+        {
+            _commands.Add(new RowCommand(
+                name + "  ·  " + source,
+                owned ? LocalizationService.Resolve("Owned", "Besessen") : LocalizationService.Resolve("Not yet", "Noch nicht"),
+                owned ? RowState.Owned : RowState.Header,
+                source,
+                null));
         }
 
         // ---- Upgrades (Alloy, per weapon and per tower) -------------------------------------------
@@ -624,15 +684,18 @@ namespace Corebound.MetaProgression
 
             // Respec: full only, from the main menu only, confirm twice (SkillTree.md).
             var refund = SkillTreeRules.ResolveTotalTreeSpend(save, tree);
+            var respecFree = SkillTreeRules.IsNextRespecFree(save, tree);
+            var respecPrice = respecFree ? LocalizationService.Resolve("free", "gratis") : tree.PaidRespecAlloyCost + " Alloy";
             _commands.Add(new RowCommand(
                 _respecArmed
                     ? LocalizationService.Resolve("Confirm again to reset the whole tree", "Zum Zurücksetzen des ganzen Baums erneut bestätigen")
                     : LocalizationService.Resolve("Respec tree", "Baum zurücksetzen"),
-                LocalizationService.Resolve("Refund ", "Erstattung ") + refund + " SP",
+                LocalizationService.Resolve("Refund ", "Erstattung ") + refund + " SP  ·  " + respecPrice,
                 refund > 0 ? RowState.Action : RowState.Locked,
                 LocalizationService.Resolve(
-                    "Refunds every Skill Point spent in the tree, across all branches. Ascension ranks stay.",
-                    "Erstattet alle im Baum ausgegebenen Fertigkeitspunkte, über alle Zweige. Aufstiegsränge bleiben."),
+                    "Refunds every Skill Point spent in the tree, across all branches. Ascension ranks stay. The first respec per tree version is free; after that it costs ",
+                    "Erstattet alle im Baum ausgegebenen Fertigkeitspunkte, über alle Zweige. Aufstiegsränge bleiben. Der erste Reset pro Baumversion ist gratis, danach kostet er ")
+                    + tree.PaidRespecAlloyCost + " Alloy.",
                 () =>
                 {
                     if (refund <= 0)
@@ -647,7 +710,13 @@ namespace Corebound.MetaProgression
                     }
 
                     _respecArmed = false;
-                    SkillTreeRules.Respec(save, tree);
+
+                    if (!SkillTreeRules.TryPlayerRespec(save, tree, out _))
+                    {
+                        _statusMessage = LocalizationService.Resolve("Not enough Alloy for a respec.", "Nicht genug Legierung für einen Reset.");
+                        return false;
+                    }
+
                     _statusMessage = LocalizationService.Resolve("Tree reset. ", "Baum zurückgesetzt. ") + refund + LocalizationService.Resolve(" SP refunded.", " FP erstattet.");
                     return true;
                 }));

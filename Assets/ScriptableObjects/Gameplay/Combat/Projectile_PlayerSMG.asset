@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c23467e541d3df7429768d96d4ab5f2c, type: 3}
+  m_Name: Projectile_PlayerSMG
+  m_EditorClassIdentifier:
+  _sprite: {fileID: 0}
+  _projectSpritePath: 
+  _atlasSheetPath: Assets/Art/Combat/Projectiles/projectile_sheet_core.png
+  _atlasColumn: 0
+  _atlasRow: 0
+  _atlasColumns: 4
+  _atlasRows: 4
+  _speed: 13
+  _lifetimeSeconds: 0.85
+  _radius: 0.15
+  _pierceCount: 0
+  _debugColor: {r: 1, g: 1, b: 0.8, a: 1}

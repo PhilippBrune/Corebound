@@ -272,7 +272,7 @@ A dedicated Skill Tree route from the main menu, alongside Meta Progression.
   progression arc rather than an instantly-maxed one.
 - ~~Should failing a run on Stage 1 pay 0 SP or 1?~~ **Answered 2026-09-22: 0.** SP is paid only for defeating a boss, on a curve that grows with depth (see Earning rates).
 - ~~Does Ascension need a visible prestige marker?~~ **Answered 2026-09-22: yes.** A rank badge sits in the main menu's top-right corner from Ascension rank 1 (`AscensionRankBadgePresenter`).
-- **Open:** is respec free every time? The spec says "free the first time per tree version" without saying what later ones cost. The build makes every respec free; a price is easy to add if respec turns out to be used to dodge decisions.
+- ~~Is respec free every time?~~ **Answered 2026-09-22: free once per tree (version), then paid.** `SkillTreeRules.TryPlayerRespec` refunds every SP; the first respec per `_skillTreeVersion` is free (`MetaProgressionSaveData.FreeRespecUsedTreeVersion`), every later one costs `SkillTreeDefinitionData._paidRespecAlloyCost` = 30 Alloy. A tree content update bumps the version and so grants a new free respec. Pricing an SP action in Alloy is deliberate - it has to cost something the player also wants - and makes paid respec Alloy's third sink (see Upgrades.md).
 
 ---
 
@@ -317,7 +317,7 @@ Four branches, four key nodes each (3 SP), four sub nodes per key node. **212 SP
 | Branch | Key nodes (spend requirement 0 / 4 / 10 / 18) |
 | --- | --- |
 | Combat | Opening Volley (first volley of every wave crits) · Armory (+1 weapon slot) · Second Wind (once per stage, a lethal hit leaves 30% health) · Full Arsenal (+1 weapon slot) |
-| Construction | Forward Foundations (first tower each stage is free) · Field Repair (first Core repair each stage is free) · Overwatch (+30% tower range during boss fights) · Last Bastion (once per stage, the Core survives a lethal hit at 25%) |
+| Construction | Forward Foundations (first tower each stage costs half; was free until 2026-09-22 - "too broken") · Field Repair (first Core repair each stage is free) · Overwatch (+30% tower range during boss fights) · Last Bastion (once per stage, the Core survives a lethal hit at 25%) |
 | Industry | Salvage Instinct (elites drop double Scrap) · Dividend (+15 Scrap each stage) · Scrap Surge (+15% Scrap) · Deep Reserves (+25 Scrap each stage) |
 | Command | Bargain Struck (-10% prices) · Veteran's Cache (start with a random relic) · War Chest (+40 starting Scrap) · Relic Hunter (a second starting relic) |
 
@@ -325,6 +325,6 @@ Industry and Command key nodes 3-4 are strong numerics rather than rule changes;
 
 ### Verification (autopilot, 2026-09-22)
 
-- `progression1`: 28 SP and 75 Alloy spent through the Progression screen; the next run's snapshot showed the purchases; Seed Capital + Quartermaster paid exactly +10 starting Scrap; Forward Foundations built a Ballista for 0 Scrap.
+- `progression1`: 28 SP and 75 Alloy spent through the Progression screen; the next run's snapshot showed the purchases; Seed Capital + Quartermaster paid exactly +10 starting Scrap; Forward Foundations built a Ballista for 0 Scrap (before the 2026-09-22 change to 50%).
 - `ascension1`: the whole tree bought through `SkillTreeRules` (212 SP, prerequisites and branch spend enforced), one Ascension rank bought on screen, the badge shown in the main menu; the next run had 3 weapon slots, +116 starting Scrap (the sum of every Starting Scrap node) and 2 relics.
 - Not verified by a run: Second Wind, Last Bastion, Overwatch, Executioner and Field Repair firing in combat. The code paths exist; the autopilot rarely reaches a lethal hit or a boss with those nodes bought.

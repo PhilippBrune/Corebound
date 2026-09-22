@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 866988846fbcee94db9b2e315b27225c, type: 3}
+  m_Name: Weapon_Scorcher
+  m_EditorClassIdentifier:
+  _weaponId: weapon_scorcher
+  _displayName: Scorcher
+  _shortLabel: Fl
+  _summary: 'Short-range flame jet. Every hit sets the target burning and the flames pass through the front rank.'
+  _attackPattern: {fileID: 11400000, guid: 4985bec71508490abc0d2ac91bd0e652, type: 2}
+  _damageProfile: {fileID: 11400000, guid: e1cbc1ce4be64a20b415323c5d60b0a9, type: 2}
+  _projectile: {fileID: 11400000, guid: d3dc223b36e74b8d813020b09f4dde22, type: 2}
+  _aimAssistProfile: 2
+  _presentation: {fileID: 11400000, guid: 7cd6d7e743be4f8daa525bd635c7f915, type: 2}
+  _rarity: 0
+  _basePurchaseCost: 16
+  _setBonuses:
+  - _requiredCopies: 2
+    _displayName: Paired
+    _displayNameDe: Gepaart
+    _description: '+15% damage.'
+    _descriptionDe: '+15 % Schaden.'
+    _effects:
+    - _target: 0
+      _value: 1.15
+  - _requiredCopies: 3
+    _displayName: Aligned
+    _displayNameDe: Ausgerichtet
+    _description: '+20% reach.'
+    _descriptionDe: '+20 % Reichweite.'
+    _effects:
+    - _target: 2
+      _value: 1.2
+  - _requiredCopies: 4
+    _displayName: Focused
+    _displayNameDe: Fokussiert
+    _description: '+30% damage, +20% reach.'
+    _descriptionDe: '+30 % Schaden, +20 % Reichweite.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 2
+      _value: 1.2
+  - _requiredCopies: 5
+    _displayName: Synchronised
+    _displayNameDe: Synchronisiert
+    _description: 'As Focused, and flames pass through one more target.'
+    _descriptionDe: 'Wie Fokussiert, und die Flammen durchdringen ein weiteres Ziel.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 2
+      _value: 1.2
+    - _target: 7
+      _value: 1
+  - _requiredCopies: 6
+    _displayName: Perfected
+    _displayNameDe: Perfektioniert
+    _description: 'As Synchronised, and the jet becomes a full ring of fire.'
+    _descriptionDe: 'Wie Synchronisiert, und der Strahl wird zu einem vollen Feuerring.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 2
+      _value: 1.2
+    - _target: 7
+      _value: 1
+    - _target: 9
+      _value: 1
+  _innateEffects: []
+  _displayNameDe: Brenner
+  _summaryDe: 'Flammenstrahl mit kurzer Reichweite. Jeder Treffer setzt das Ziel in Brand, die Flammen durchdringen die vorderste Reihe.'

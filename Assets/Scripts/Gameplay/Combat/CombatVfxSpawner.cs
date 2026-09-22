@@ -110,8 +110,21 @@ namespace Corebound.Gameplay.Combat
                 return;
             }
 
+            // Playtest 2026-09-22: "crit hit feedback should be implemented". A crit gets a larger,
+            // gold spark and a rising number, so a build that stacks crit can see it paying off -
+            // the crit audio cue alone was the only signal, and it is de-duplicated.
+            if (eventArgs.DamageContext.IsCritical && eventArgs.DamageContext.SourceType == DamageSourceType.Player)
+            {
+                SpawnBurst(eventArgs.DamageContext.HitPoint, _hitSparkSprite, CriticalSparkColor, _hitSparkSize * CriticalSparkScale, _hitSparkLifetimeSeconds * 1.4f, 46, EffectsIntensityScale, CriticalSparkColor);
+                CriticalHitPopup.Spawn(eventArgs.DamageContext.HitPoint, eventArgs.DamageContext.Amount);
+                return;
+            }
+
             SpawnBurst(eventArgs.DamageContext.HitPoint, _hitSparkSprite, _hitSparkColor, _hitSparkSize, _hitSparkLifetimeSeconds, 45, EffectsIntensityScale);
         }
+
+        private static readonly Color CriticalSparkColor = new Color(1f, 0.82f, 0.25f, 1f);
+        private const float CriticalSparkScale = 1.8f;
 
         private void OnCombatantDied(DeathEventArgs eventArgs)
         {
@@ -141,6 +154,12 @@ namespace Corebound.Gameplay.Combat
 
         private static void SpawnBurst(Vector2 position, Sprite artSprite, Color fallbackColor, float targetSize, float lifetimeSeconds, int sortingOrder, float intensityScale)
         {
+            SpawnBurst(position, artSprite, fallbackColor, targetSize, lifetimeSeconds, sortingOrder, intensityScale, Color.white);
+        }
+
+        // artTint multiplies the art sprite (white = unchanged); the crit spark is the same art in gold.
+        private static void SpawnBurst(Vector2 position, Sprite artSprite, Color fallbackColor, float targetSize, float lifetimeSeconds, int sortingOrder, float intensityScale, Color artTint)
+        {
             var burstObject = new GameObject("CombatVfxBurst");
             burstObject.transform.position = position;
 
@@ -149,7 +168,7 @@ namespace Corebound.Gameplay.Combat
             if (artSprite != null)
             {
                 spriteRenderer.sprite = artSprite;
-                spriteRenderer.color = new Color(1f, 1f, 1f, intensityScale);
+                spriteRenderer.color = new Color(artTint.r, artTint.g, artTint.b, intensityScale);
             }
             else
             {

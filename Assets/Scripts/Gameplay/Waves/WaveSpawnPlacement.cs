@@ -68,6 +68,42 @@ namespace Corebound.Gameplay.Waves
             }
         }
 
+        // Playtest 2026-09-22: "I died because an enemy just spawned on me." A spawn point is where
+        // enemies enter, not a guarantee the player is elsewhere - standing on a gate used to mean
+        // being spawned into. Enemies now never appear closer than this to the player.
+        private const float EnemyMinPlayerDistance = 3.5f;
+
+        public Vector3 ResolveEnemySpawnPosition(StageData stageData, StageArenaArtPresenter arena, int spawnIndex, float angleJitter, Transform playerTarget)
+        {
+            var position = (Vector2)ResolveEnemySpawnPosition(stageData, arena, spawnIndex, angleJitter);
+
+            if (playerTarget == null)
+            {
+                return position;
+            }
+
+            var player = (Vector2)playerTarget.position;
+            var fromPlayer = position - player;
+
+            if (fromPlayer.sqrMagnitude >= EnemyMinPlayerDistance * EnemyMinPlayerDistance)
+            {
+                return position;
+            }
+
+            // Push straight away from the player; if a wall stops that (player standing in a
+            // corner by the gate), mirror through the player instead, which always has room in an
+            // arena at least twice the minimum distance across.
+            var away = fromPlayer.sqrMagnitude > 0.0001f ? fromPlayer.normalized : Random.insideUnitCircle.normalized;
+            var pushed = (Vector2)ClampToArena(player + away * EnemyMinPlayerDistance, arena);
+
+            if ((pushed - player).sqrMagnitude >= EnemyMinPlayerDistance * EnemyMinPlayerDistance * 0.9f)
+            {
+                return pushed;
+            }
+
+            return ClampToArena(player - away * EnemyMinPlayerDistance, arena);
+        }
+
         public Vector3 ResolveEnemySpawnPosition(StageData stageData, StageArenaArtPresenter arena, int spawnIndex, float angleJitter)
         {
             var spawnPoints = stageData != null ? stageData.SpawnPoints : null;

@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04b43e4f37ab4f7ba068087eaf824db0, type: 3}
+  m_Name: Card_Weapon_Cryo
+  m_EditorClassIdentifier:
+  _cardId: card_weapon_cryo
+  _displayName: 'Cryo Lance'
+  _displayNameDe: 'Kryolanze'
+  _description: 'Equip a Cryo Lance: piercing ice bolts that slow every target they hit. Copies build its Set Bonus.'
+  _descriptionDe: 'Rüste eine Kryolanze aus: durchdringende Eisbolzen, die jedes getroffene Ziel verlangsamen. Kopien bauen ihren Setbonus auf.'
+  _rarity: 1
+  _requiredUnlockId: 
+  _tags:
+  - 0
+  _effects: []
+  _weaponModifiers: []
+  _stackable: 1
+  _grantedWeapon: {fileID: 11400000, guid: dfd6c31a34f147289607ff2db3d15bca, type: 2}

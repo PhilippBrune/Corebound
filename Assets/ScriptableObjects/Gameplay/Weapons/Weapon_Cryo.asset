@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 866988846fbcee94db9b2e315b27225c, type: 3}
+  m_Name: Weapon_Cryo
+  m_EditorClassIdentifier:
+  _weaponId: weapon_cryo
+  _displayName: Cryo Lance
+  _shortLabel: Cr
+  _summary: 'Slow, piercing ice bolts. Every hit freezes the target, slowing it down - control, not raw damage.'
+  _attackPattern: {fileID: 11400000, guid: bbf2d782dcda4141b769adae3787a7c5, type: 2}
+  _damageProfile: {fileID: 11400000, guid: aef9ccfabf784f8fba593b794fb1c59d, type: 2}
+  _projectile: {fileID: 11400000, guid: a78d14a6b3324499ab170e7bccd82991, type: 2}
+  _aimAssistProfile: 1
+  _presentation: {fileID: 11400000, guid: 50c191b4077e4870a33d328f754802b5, type: 2}
+  _rarity: 1
+  _basePurchaseCost: 18
+  _setBonuses:
+  - _requiredCopies: 2
+    _displayName: Paired
+    _displayNameDe: Gepaart
+    _description: '+15% damage.'
+    _descriptionDe: '+15 % Schaden.'
+    _effects:
+    - _target: 0
+      _value: 1.15
+  - _requiredCopies: 3
+    _displayName: Aligned
+    _displayNameDe: Ausgerichtet
+    _description: 'Bolts pierce one more target.'
+    _descriptionDe: 'Bolzen durchdringen ein weiteres Ziel.'
+    _effects:
+    - _target: 7
+      _value: 1
+  - _requiredCopies: 4
+    _displayName: Focused
+    _displayNameDe: Fokussiert
+    _description: '+30% damage, pierces one more target.'
+    _descriptionDe: '+30 % Schaden, durchdringt ein weiteres Ziel.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 7
+      _value: 1
+  - _requiredCopies: 5
+    _displayName: Synchronised
+    _displayNameDe: Synchronisiert
+    _description: 'As Focused, and fires 15% faster.'
+    _descriptionDe: 'Wie Fokussiert, und feuert 15 % schneller.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 7
+      _value: 1
+    - _target: 1
+      _value: 0.85
+  - _requiredCopies: 6
+    _displayName: Perfected
+    _displayNameDe: Perfektioniert
+    _description: 'As Synchronised, and every 4th bolt is a critical hit.'
+    _descriptionDe: 'Wie Synchronisiert, und jeder 4. Bolzen ist ein kritischer Treffer.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 7
+      _value: 1
+    - _target: 1
+      _value: 0.85
+    - _target: 8
+      _value: 4
+  _innateEffects: []
+  _displayNameDe: Kryolanze
+  _summaryDe: 'Langsame, durchdringende Eisbolzen. Jeder Treffer friert das Ziel ein und verlangsamt es - Kontrolle statt roher Schaden.'

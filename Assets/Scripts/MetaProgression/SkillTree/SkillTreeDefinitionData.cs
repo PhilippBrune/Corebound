@@ -35,7 +35,7 @@ namespace Corebound.MetaProgression
         OpeningVolleyCritical = 20,         // first volley of every wave is a guaranteed crit
         SecondWind = 21,                    // once per stage a lethal hit leaves the player at value x max health
         CoreContingency = 22,               // once per stage a lethal hit leaves the Core at value x max health
-        FreeFirstTowerPerStage = 23,        // the first tower built each stage costs no Scrap
+        FreeFirstTowerPerStage = 23,        // the first tower built each stage costs (1 - value) of its price (name kept: serialized)
         FreeFirstRepairPerStage = 24,       // the first Core repair each stage costs no Scrap
         EliteScrapMultiplier = 25,          // elites drop (1 + value) x Scrap
         StartingRelic = 26,                 // every run starts with value random relics
@@ -169,6 +169,10 @@ namespace Corebound.MetaProgression
         [SerializeField] private int _ascensionBaseCost = 5;
         [SerializeField] private int _ascensionOfferCount = 3;
 
+        // Price of every respec after the free one per tree version. Not specified by the owner;
+        // 30 Alloy is about one boss-heavy run, which makes a second respec a real decision.
+        [SerializeField] private int _paidRespecAlloyCost = 30;
+
         public string CharacterId => _characterId;
 
         public string CharacterName => LocalizationService.Resolve(_characterName, _characterNameDe);
@@ -180,6 +184,8 @@ namespace Corebound.MetaProgression
         public AscensionBonusData[] AscensionPool => _ascensionPool;
 
         public int AscensionOfferCount => Mathf.Max(1, _ascensionOfferCount);
+
+        public int PaidRespecAlloyCost => Mathf.Max(0, _paidRespecAlloyCost);
 
         // SkillTree.md: rank n costs 5 + floor(n / 10), so the curve stretches rather than walls.
         public int AscensionCostForRank(int currentRank)

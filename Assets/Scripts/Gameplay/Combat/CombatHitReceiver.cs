@@ -187,7 +187,7 @@ namespace Corebound.Gameplay.Combat
                     damageContext.Amount * incomingMultiplier,
                     damageContext.HitPoint,
                     damageContext.HitDirection,
-                    damageContext.StatusEffect);
+                    damageContext.StatusEffect, damageContext.IsCritical);
             }
 
             // Skill tree Executioner: the player's shots hit harder on a nearly dead enemy.
@@ -197,7 +197,7 @@ namespace Corebound.Gameplay.Combat
 
                 if (executeMultiplier > 1f)
                 {
-                    damageContext = new DamageContext(damageContext.SourceType, damageContext.DamageKind, damageContext.Amount * executeMultiplier, damageContext.HitPoint, damageContext.HitDirection, damageContext.StatusEffect);
+                    damageContext = new DamageContext(damageContext.SourceType, damageContext.DamageKind, damageContext.Amount * executeMultiplier, damageContext.HitPoint, damageContext.HitDirection, damageContext.StatusEffect, damageContext.IsCritical);
                 }
             }
 

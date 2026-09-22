@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 1.9 · Created 2026-09-20 · Last updated 2026-09-22 · Status: Active
+Version: 2.0 · Created 2026-09-20 · Last updated 2026-09-22 (second pass) · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is the *punch list*. Every entry states what is missing, why it matters, and what "done" looks like, so none of them has to be re-derived next session.
 
@@ -30,15 +30,32 @@ firing in combat; Spread explode/ring and Beam slow/ramp tiers (need 5-6 copies)
 track's effect; Build Discount. Arsenal cannot trigger: it needs six distinct weapons and there are
 three.
 
-**Open decision:** respec is free every time; the spec only says the first respec per tree version is
-free (SkillTree.md, Open Questions).
+**Owner answers 2026-09-22 (second pass):** magazines, reload, SP/Alloy pace and prices "feel
+good"; audio de-dup "feels good"; respec is free **once per tree**, later ones now cost 30 Alloy.
+Changed in the same pass: weapon tier upgrades cost 1.25 x price x (tier + 1) (was 0.75); Forward
+Foundations is a 50% discount on the first tower each stage (was free). Six new weapons exist, so
+Arsenal is now reachable (seen active in autopilot `arsenal3`).
+
+**Still not verified in a run:** Second Wind, Last Bastion, Overwatch, Executioner, Field Repair;
+tier-5/6 Set Bonuses of any weapon; the new weapons' splash, Burn and Freeze in numbers.
+
+**New open design question (found by autopilot 2026-09-22):** a weapon acquired from the boss reward
+with a full loadout stays pending through the whole first wave of the next stage, because a stage
+starts without an Intermission. Weapon cards are no longer offered while one is pending (they
+could not be taken). Should a new stage open with a short Intermission when a weapon is pending?
+
+**Spec review:** [`SPEC_REVIEW_2026-09-22.md`](SPEC_REVIEW_2026-09-22.md) lists 33 gaps and
+contradictions across `Docs/Specs`, each with resolution options. Items A1, A2, A4, A5, B2 and B3
+decide behaviour and are the first to settle.
 
 ### 0a. Art still missing or defective (2026-09-22)
 
-Assets 96-100 were delivered on 2026-09-21 and 96-99 are wired. Still missing: **Assets 85-95**
-(skill node frames, link segment, Ascension badge, branch icons, weapon slot frame, set tier pips,
-Alloy and SP icons, Core repair icon, factory tier indicator) - every one has a procedural stand-in
-and is picked up by path once it exists - and all ten Zone Denier / Relay Warden sprites (75-84).
+Assets 85-95 were delivered on 2026-09-22 and mirrored to StreamingAssets; 88-94 are wired, 87
+and 95 are not yet used. **Defective:** 85 (`skill_node_key_frame`) and 90 (`weapon_slot_frame`)
+have a baked-in checkerboard centre - 90 is drawn border-only as a workaround - and 86
+(`skill_node_sub_frame`) is a diagram rather than a frame. Still missing: all ten Zone Denier /
+Relay Warden sprites (75-84), and projectile art and icons for the six weapons added 2026-09-22
+(they reuse tinted cells of `projectile_sheet_core.png`).
 
 **Defects in delivered art:** `vfx_boss_telegraph_lance.png` has a baked-in checkerboard at the tip
 and `character_portrait_frame.png` a baked-in checkerboard centre (fake transparency); the portrait
@@ -262,9 +279,17 @@ offers. All five stages reference a shop.
   `ShopService.RefundPurchase()` exists. It only rolls back a purchase whose *application* failed
   after payment, a correctness guard rather than a player-facing refund. Recommend keeping it and
   noting the exception in the spec.
-### 5. Main Menu plays two sounds after a run — unresolved
+### 5. Main Menu plays two sounds after a run — FIXED (2026-09-22)
 
-The one concrete overlap found is fixed (`MainMenuAudioCuePlayer.OnEnable()` no longer fires its open cue), and a surviving duplicate `MusicStateController` is ruled out (no `DontDestroyOnLoad`, no singleton). Still reported. **Blocked on information, not effort:** agents cannot hear audio. Needs either the two sounds named, or a recording. A per-cue `Debug.Log` behind the debug flag would also settle it.
+Found with the new `AudioPlaybackProbe` (Editor/development builds log every playing source every
+2 s behind `[AudioProbe]`): two `music_calm_loop` sources, one of them under `[DontDestroyOnLoad]`.
+`LocalProfileSaveManager` called `DontDestroyOnLoad(gameObject)` on MainMenu's shared
+`MainMenuStateProvider`, which dragged AudioManager, MusicStateController, MetaProgressionService,
+SettingsManager and InputRebindManager along; every return to the menu added a second set. The
+save manager now persists on its own host object and every scene instance forwards to it. The
+earlier note ruling out a duplicate `MusicStateController` was wrong - it had no DontDestroyOnLoad
+of its own, but rode along on its neighbour's. Verified by probe: one music source in the menu,
+in gameplay and after death.
 
 ### 6. Localization — DONE (2026-09-20)
 

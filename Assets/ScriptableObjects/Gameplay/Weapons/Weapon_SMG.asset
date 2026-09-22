@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 866988846fbcee94db9b2e315b27225c, type: 3}
+  m_Name: Weapon_SMG
+  m_EditorClassIdentifier:
+  _weaponId: weapon_smg
+  _displayName: Twin SMG
+  _shortLabel: 2x
+  _summary: 'Two barrels, a deep magazine and a long reload. Loose bullets at close range - keep moving while it empties.'
+  _attackPattern: {fileID: 11400000, guid: 9ea502c6ddc74e74a6df30d90257c6b6, type: 2}
+  _damageProfile: {fileID: 11400000, guid: be56fd61a666489a983aa0ef4a7ed2f6, type: 2}
+  _projectile: {fileID: 11400000, guid: 78e264559a9d4eb09db274859d06b72a, type: 2}
+  _aimAssistProfile: 1
+  _presentation: {fileID: 11400000, guid: 1e5a3642f62f484fb57a403b4c89fa1c, type: 2}
+  _rarity: 0
+  _basePurchaseCost: 15
+  _setBonuses:
+  - _requiredCopies: 2
+    _displayName: Paired
+    _displayNameDe: Gepaart
+    _description: '+15% damage.'
+    _descriptionDe: '+15 % Schaden.'
+    _effects:
+    - _target: 0
+      _value: 1.15
+  - _requiredCopies: 3
+    _displayName: Aligned
+    _displayNameDe: Ausgerichtet
+    _description: '+8 rounds per magazine.'
+    _descriptionDe: '+8 Schuss pro Magazin.'
+    _effects:
+    - _target: 14
+      _value: 8
+  - _requiredCopies: 4
+    _displayName: Focused
+    _displayNameDe: Fokussiert
+    _description: '+30% damage, +8 rounds per magazine.'
+    _descriptionDe: '+30 % Schaden, +8 Schuss pro Magazin.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 14
+      _value: 8
+  - _requiredCopies: 5
+    _displayName: Synchronised
+    _displayNameDe: Synchronisiert
+    _description: 'As Focused, and reloads 30% faster.'
+    _descriptionDe: 'Wie Fokussiert, und lädt 30 % schneller nach.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 14
+      _value: 8
+    - _target: 15
+      _value: 0.7
+  - _requiredCopies: 6
+    _displayName: Perfected
+    _displayNameDe: Perfektioniert
+    _description: 'As Synchronised, fires 15% faster and gains +10% crit chance.'
+    _descriptionDe: 'Wie Synchronisiert, feuert 15 % schneller und erhält +10 % Kritchance.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 14
+      _value: 8
+    - _target: 15
+      _value: 0.7
+    - _target: 1
+      _value: 0.85
+    - _target: 3
+      _value: 0.1
+  _innateEffects: []
+  _displayNameDe: Zwillings-MP
+  _summaryDe: 'Zwei Läufe, ein tiefes Magazin und langes Nachladen. Streuende Kugeln auf kurze Distanz - in Bewegung bleiben, während es sich leert.'

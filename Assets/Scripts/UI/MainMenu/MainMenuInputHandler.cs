@@ -99,6 +99,43 @@ namespace Corebound.UI.MainMenu
             }
         }
 
+        // Playtest 2026-09-22: the New Run confirmation "can only be closed via Enter - make it Enter
+        // or left mouse click". Route info panels (New Run, Quit, Continue...) have no clickable
+        // element, so a click anywhere acts as Confirm and a right click as Cancel. Only for those
+        // panels: an interactive target like the Progression screen would turn a stray click into a
+        // purchase. Ignored in the frame the panel opened, or the click that opened it would also
+        // confirm it.
+        private int _panelOpenedFrame = -1;
+        private bool _wasPanelOpen;
+
+        private void Update()
+        {
+            var controller = RouteTargetController;
+            var panelOpen = controller != null && controller.IsRouteTargetOpen && controller.ActivePanelData != null;
+
+            if (panelOpen && !_wasPanelOpen)
+            {
+                _panelOpenedFrame = Time.frameCount;
+            }
+
+            _wasPanelOpen = panelOpen;
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+
+            if (!panelOpen || mouse == null || Time.frameCount <= _panelOpenedFrame + 1)
+            {
+                return;
+            }
+
+            if (mouse.leftButton.wasPressedThisFrame)
+            {
+                OnConfirmPressed();
+            }
+            else if (mouse.rightButton.wasPressedThisFrame)
+            {
+                OnCancelPressed();
+            }
+        }
+
         // Mouse-driven counterpart to keyboard/gamepad Confirm - reuses the exact same routing
         // (route-target-open vs. top-level list) so a click behaves identically to pressing
         // Enter/gamepad South on the same entry.

@@ -30,6 +30,33 @@ namespace Corebound.Gameplay.Towers
 
         public int CurrentUpgradeLevel => _currentUpgradeLevel;
 
+        public TowerData Data => _towerData;
+
+        // Stats at a given upgrade level with every current modifier applied (cards, skills,
+        // upgrades). The pause menu's Towers tab and the upgrade overlay compare level N with N + 1.
+        public float DamageAtLevel(int level)
+        {
+            return _towerData != null && _towerData.DamageProfile != null
+                ? _towerData.DamageProfile.BaseDamage * _towerService.TowerDamageMultiplier * ResolveDamageMultiplier(level) * ResolveProgressionDamageMultiplier()
+                : 0f;
+        }
+
+        public float FireIntervalAtLevel(int level)
+        {
+            return ResolveFireIntervalSeconds(level);
+        }
+
+        public float RangeAtLevel(int level)
+        {
+            return ResolveRange(level);
+        }
+
+        public float DpsAtLevel(int level)
+        {
+            var interval = FireIntervalAtLevel(level);
+            return interval > Mathf.Epsilon ? DamageAtLevel(level) / interval : 0f;
+        }
+
         public string DisplayName => _towerData != null ? _towerData.DisplayName : LocalizationService.Resolve("Tower", "Turm");
 
         public bool CanUpgrade => _towerData != null && _towerData.UpgradeLevels != null && _currentUpgradeLevel < _towerData.UpgradeLevels.Length;
@@ -123,7 +150,7 @@ namespace Corebound.Gameplay.Towers
             var direction = ((Vector2)target.transform.position - (Vector2)transform.position).normalized;
             FaceFireDirection(direction);
             var damageAmount = _towerData.DamageProfile != null
-                ? _towerData.DamageProfile.BaseDamage * _towerService.TowerDamageMultiplier * ResolveDamageMultiplier() * ResolveProgressionDamageMultiplier()
+                ? _towerData.DamageProfile.BaseDamage * _towerService.TowerDamageMultiplier * ResolveDamageMultiplier(_currentUpgradeLevel) * ResolveProgressionDamageMultiplier()
                 : 1f;
             var statusEffect = _towerData.DamageProfile != null && _towerData.DamageProfile.ApplyStatusEffect ? _towerData.DamageProfile.StatusEffectType : (StatusEffectType?)null;
             var damageContext = new DamageContext(
@@ -194,6 +221,11 @@ namespace Corebound.Gameplay.Towers
 
         private float ResolveRange()
         {
+            return ResolveRange(_currentUpgradeLevel);
+        }
+
+        private float ResolveRange(int level)
+        {
             var progression = Corebound.MetaProgression.RunProgressionSnapshot.Current;
             var towerId = _towerData != null ? _towerData.TowerId : string.Empty;
 
@@ -201,13 +233,13 @@ namespace Corebound.Gameplay.Towers
             var bossRange = Corebound.Gameplay.Bosses.BossEncounterState.IsActive
                 ? 1f + progression.Skills[Corebound.MetaProgression.SkillEffectTarget.BossTowerRangeMultiplier]
                 : 1f;
-            return ResolveBaseRange()
+            return ResolveBaseRange(level)
                 * progression.Upgrades.GetIncreaseMultiplier(towerId, Corebound.MetaProgression.UpgradableStat.Range)
                 * progression.Skills[Corebound.MetaProgression.SkillEffectTarget.TowerRangeMultiplier]
                 * bossRange;
         }
 
-        private float ResolveBaseRange()
+        private float ResolveBaseRange(int level)
         {
             var range = _towerData != null ? _towerData.Range : 6f;
 
@@ -216,7 +248,7 @@ namespace Corebound.Gameplay.Towers
                 return range;
             }
 
-            for (var index = 0; index < _currentUpgradeLevel; index++)
+            for (var index = 0; index < level && index < _towerData.UpgradeLevels.Length; index++)
             {
                 var levelData = _towerData.UpgradeLevels[index];
 
@@ -231,14 +263,19 @@ namespace Corebound.Gameplay.Towers
 
         private float ResolveFireIntervalSeconds()
         {
+            return ResolveFireIntervalSeconds(_currentUpgradeLevel);
+        }
+
+        private float ResolveFireIntervalSeconds(int level)
+        {
             var progression = Corebound.MetaProgression.RunProgressionSnapshot.Current;
             var towerId = _towerData != null ? _towerData.TowerId : string.Empty;
-            return Mathf.Max(0.05f, ResolveBaseFireIntervalSeconds()
+            return Mathf.Max(0.05f, ResolveBaseFireIntervalSeconds(level)
                 * progression.Upgrades.GetReductionMultiplier(towerId, Corebound.MetaProgression.UpgradableStat.FireSpeed)
                 * progression.Skills[Corebound.MetaProgression.SkillEffectTarget.TowerFireIntervalMultiplier]);
         }
 
-        private float ResolveBaseFireIntervalSeconds()
+        private float ResolveBaseFireIntervalSeconds(int level)
         {
             var fireInterval = _towerData != null ? _towerData.FireIntervalSeconds : 0.85f;
 
@@ -247,7 +284,7 @@ namespace Corebound.Gameplay.Towers
                 return fireInterval;
             }
 
-            for (var index = 0; index < _currentUpgradeLevel; index++)
+            for (var index = 0; index < level && index < _towerData.UpgradeLevels.Length; index++)
             {
                 var levelData = _towerData.UpgradeLevels[index];
 
@@ -260,7 +297,7 @@ namespace Corebound.Gameplay.Towers
             return fireInterval;
         }
 
-        private float ResolveDamageMultiplier()
+        private float ResolveDamageMultiplier(int level)
         {
             var damageMultiplier = 1f;
 
@@ -269,7 +306,7 @@ namespace Corebound.Gameplay.Towers
                 return damageMultiplier;
             }
 
-            for (var index = 0; index < _currentUpgradeLevel; index++)
+            for (var index = 0; index < level && index < _towerData.UpgradeLevels.Length; index++)
             {
                 var levelData = _towerData.UpgradeLevels[index];
 

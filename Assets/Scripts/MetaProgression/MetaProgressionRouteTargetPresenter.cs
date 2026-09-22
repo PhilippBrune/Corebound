@@ -35,6 +35,24 @@ namespace Corebound.MetaProgression
         private ScrollRect _scrollRect;
         private Text _titleText;
         private Text _currencyText;
+        private Text _skillPointText;
+        private Text _ascensionText;
+        private Image _branchEmblem;
+
+        // Assets 89, 92, 93 (delivered 2026-09-22). The branch sheet is a 2 x 2 of Combat,
+        // Construction, Industry, Command; rects measured on the 911 px sheet (bottom-left origin).
+        private const string AlloyIconPath = "Assets/Art/Resources/resource_alloy_icon.png";
+        private const string SkillPointIconPath = "Assets/Art/Resources/resource_skill_point_icon.png";
+        private const string BranchSheetPath = "Assets/Art/UI/SkillTree/skill_branch_icon_sheet.png";
+        private const float HeaderIconSize = 34f;
+        private static readonly Rect[] BranchIconRects =
+        {
+            new Rect(55f, 485f, 370f, 370f),
+            new Rect(510f, 485f, 320f, 365f),
+            new Rect(75f, 70f, 330f, 350f),
+            new Rect(545f, 70f, 260f, 350f),
+        };
+        private readonly Sprite[] _branchSprites = new Sprite[4];
         private Text _summaryText;
         private Text _tabText;
         private Text _footerText;
@@ -117,15 +135,40 @@ namespace Corebound.MetaProgression
             _tabText.supportRichText = true;
             StretchToParent(_tabText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -275f), new Vector2(-230f, -240f));
 
-            _currencyText = CreateText("Currency", _panelRect, CurrencyFontSize, FontStyle.Bold, _skinData != null ? _skinData.PromptLabelColor : Color.white, TextAnchor.UpperLeft);
-            StretchToParent(_currencyText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -315f), new Vector2(-230f, -280f));
+            // Header: [Alloy icon] Alloy: 19    [SP icon] Skill Points: 3    Ascension 2
+            var headerColor = _skinData != null ? _skinData.PromptLabelColor : Color.white;
+            CreateHeaderIcon("AlloyIcon", AlloyIconPath, 230f);
+            _currencyText = CreateText("Currency", _panelRect, CurrencyFontSize, FontStyle.Bold, headerColor, TextAnchor.MiddleLeft);
+            PlaceHeaderText(_currencyText, 230f + HeaderIconSize + 8f, 260f);
+            CreateHeaderIcon("SkillPointIcon", SkillPointIconPath, 530f);
+            _skillPointText = CreateText("SkillPoints", _panelRect, CurrencyFontSize, FontStyle.Bold, headerColor, TextAnchor.MiddleLeft);
+            PlaceHeaderText(_skillPointText, 530f + HeaderIconSize + 8f, 320f);
+            _ascensionText = CreateText("Ascension", _panelRect, CurrencyFontSize, FontStyle.Bold, headerColor, TextAnchor.MiddleLeft);
+            PlaceHeaderText(_ascensionText, 900f, 300f);
+
+            for (var index = 0; index < BranchIconRects.Length; index++)
+            {
+                _branchSprites[index] = Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSpriteRect(BranchSheetPath, BranchIconRects[index]);
+            }
+
+            _branchEmblem = CreateImage("BranchEmblem", _panelRect, null, Color.white, Image.Type.Simple);
+            _branchEmblem.preserveAspect = true;
+            _branchEmblem.raycastTarget = false;
+            var emblemRect = _branchEmblem.rectTransform;
+            emblemRect.anchorMin = new Vector2(1f, 1f);
+            emblemRect.anchorMax = new Vector2(1f, 1f);
+            emblemRect.pivot = new Vector2(1f, 1f);
+            emblemRect.anchoredPosition = new Vector2(-240f, -150f);
+            emblemRect.sizeDelta = new Vector2(110f, 110f);
 
             _summaryText = CreateText("Summary", _panelRect, SummaryFontSize, FontStyle.Normal, _skinData != null ? _skinData.StatusLabelColor : Color.white, TextAnchor.UpperLeft);
             _summaryText.supportRichText = true;
             StretchToParent(_summaryText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -400f), new Vector2(-230f, -320f));
 
-            _footerText = CreateText("Footer", _panelRect, 18, FontStyle.Normal, _skinData != null ? _skinData.StatusLabelColor : Color.white, TextAnchor.LowerLeft);
-            StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(230f, 110f), new Vector2(-230f, 140f));
+            _footerText = CreateText("Footer", _panelRect, 18, FontStyle.Normal, _skinData != null ? _skinData.PromptLabelColor : Color.white, TextAnchor.MiddleLeft);
+            // Clear of the frame art: at x 230 / y 110 the footer sat on the orange corner piece and
+            // was unreadable (playtest 2026-09-22).
+            StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(300f, 150f), new Vector2(-300f, 182f));
 
             // Viewport (RectMask2D, clips) + ScrollRect wrapping a content object that's allowed to
             // grow (ContentSizeFitter) - same treatment as SettingsRouteTargetPresenter, so the
@@ -134,7 +177,7 @@ namespace Corebound.MetaProgression
             var viewportObject = new GameObject("RowsViewport", typeof(RectTransform), typeof(RectMask2D));
             viewportObject.transform.SetParent(_panelRect, false);
             var viewportRect = viewportObject.GetComponent<RectTransform>();
-            StretchToParent(viewportRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(230f, 150f), new Vector2(-230f, -410f));
+            StretchToParent(viewportRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(230f, 195f), new Vector2(-230f, -410f));
 
             var listObject = new GameObject("Rows", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             listObject.transform.SetParent(viewportRect, false);
@@ -185,7 +228,13 @@ namespace Corebound.MetaProgression
 
             _panelRect.SetAsLastSibling();
             _titleText.text = _controller.Title;
-            _currencyText.text = _controller.CurrencyLabel;
+            _currencyText.text = _controller.AlloyText;
+            _skillPointText.text = _controller.SkillPointText;
+            _ascensionText.text = _controller.AscensionText;
+            var branch = _controller.ActiveBranchIndex;
+            var emblem = branch >= 0 && branch < _branchSprites.Length ? _branchSprites[branch] : null;
+            _branchEmblem.sprite = emblem;
+            _branchEmblem.enabled = emblem != null;
             _tabText.text = _controller.TabStrip;
             _summaryText.text = _controller.Summary;
             _footerText.text = _controller.FooterHint;
@@ -336,6 +385,29 @@ namespace Corebound.MetaProgression
 
             StretchToParent(rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
             return rectTransform;
+        }
+
+        private void CreateHeaderIcon(string name, string path, float left)
+        {
+            var icon = CreateImage(name, _panelRect, Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(path), Color.white, Image.Type.Simple);
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+            var rect = icon.rectTransform;
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 0.5f);
+            rect.anchoredPosition = new Vector2(left, -297f);
+            rect.sizeDelta = new Vector2(HeaderIconSize, HeaderIconSize);
+        }
+
+        private static void PlaceHeaderText(Text text, float left, float width)
+        {
+            var rect = text.rectTransform;
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 0.5f);
+            rect.anchoredPosition = new Vector2(left, -297f);
+            rect.sizeDelta = new Vector2(width, 36f);
         }
 
         private static Image.Type ResolvePanelType(Sprite sprite)

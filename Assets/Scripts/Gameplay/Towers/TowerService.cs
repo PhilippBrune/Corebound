@@ -169,6 +169,8 @@ namespace Corebound.Gameplay.Towers
 
         public string NextTowerTypeKeyLabel => ResolveNextTowerTypeKeyLabel();
 
+        public string LoadoutKeyLabel => ResolveActionKeyLabel("System", "Loadout", "I", "SELECT");
+
         public int ResolveBuildCost(TowerData towerData)
         {
             if (towerData == null)
@@ -176,19 +178,112 @@ namespace Corebound.Gameplay.Towers
                 return 0;
             }
 
-            // Forward Foundations shows as a free build until it has been used this stage.
-            var progression = RunProgressionSnapshot.Current;
-            if (progression.Skills.HasRule(SkillEffectTarget.FreeFirstTowerPerStage) && progression.IsRuleAvailableThisStage(FreeTowerRuleKey))
+            return ApplyFirstTowerDiscount(ResolveTowerCost(ResolveDiscountedBuildCost(towerData)));
+        }
+
+        // Forward Foundations (owner, 2026-09-22: a free tower "sounds too broken"): the first
+        // tower each stage costs (1 - value) of its price - 50% as authored. The value is the
+        // discount fraction; the enum keeps its old name because it is serialized by index.
+        private int ApplyFirstTowerDiscount(int cost)
+        {
+            var discount = Mathf.Clamp01(RunProgressionSnapshot.Current.Skills[SkillEffectTarget.FreeFirstTowerPerStage]);
+
+            if (discount <= 0f || !RunProgressionSnapshot.Current.IsRuleAvailableThisStage(FreeTowerRuleKey))
             {
-                return 0;
+                return cost;
             }
 
-            return ResolveTowerCost(ResolveDiscountedBuildCost(towerData));
+            return Mathf.Max(1, Mathf.CeilToInt(cost * (1f - discount)));
         }
 
         public bool CanAffordBuild(TowerData towerData)
         {
             return towerData != null && _resourceWalletService != null && _resourceWalletService.CurrentAmount >= ResolveBuildCost(towerData);
+        }
+
+        // Pause menu Towers tab: each built tower (grouped by type and level) as its base values
+        // (+ what upgrades, cards, skills and permanent upgrades add), and the global tower
+        // modifiers even when nothing is built yet.
+        public void CollectStatLines(List<StatLine> lines)
+        {
+            lines.Clear();
+            var progression = RunProgressionSnapshot.Current;
+            var damageMultiplier = TowerDamageMultiplier * progression.Skills[SkillEffectTarget.TowerDamageMultiplier];
+            lines.Add(StatLine.Header(LocalizationService.Resolve("All towers", "Alle Türme")));
+            lines.Add(StatLine.Value(LocalizationService.Resolve("Damage", "Schaden"), 100f, damageMultiplier * 100f, "0", "%"));
+            lines.Add(StatLine.Value(LocalizationService.Resolve("Range", "Reichweite"), 100f, progression.Skills[SkillEffectTarget.TowerRangeMultiplier] * 100f, "0", "%"));
+            lines.Add(StatLine.Value(LocalizationService.Resolve("Fire interval", "Feuerintervall"), 100f, progression.Skills[SkillEffectTarget.TowerFireIntervalMultiplier] * 100f, "0", "%", true));
+
+            var seen = new List<string>();
+            var any = false;
+
+            for (var index = 0; index < _runtimeSlots.Count; index++)
+            {
+                var tower = _runtimeSlots[index].Occupant;
+
+                if (tower == null || tower.Data == null)
+                {
+                    continue;
+                }
+
+                var key = tower.Data.TowerId + "#" + tower.CurrentUpgradeLevel;
+
+                if (seen.Contains(key))
+                {
+                    continue;
+                }
+
+                seen.Add(key);
+                any = true;
+                var data = tower.Data;
+                var level = tower.CurrentUpgradeLevel;
+                var copies = 0;
+
+                for (var other = 0; other < _runtimeSlots.Count; other++)
+                {
+                    var occupant = _runtimeSlots[other].Occupant;
+                    copies += occupant != null && occupant.Data == data && occupant.CurrentUpgradeLevel == level ? 1 : 0;
+                }
+
+                var baseDamage = data.DamageProfile != null ? data.DamageProfile.BaseDamage : 0f;
+                lines.Add(StatLine.Header(data.DisplayName + "  " + LocalizationService.Resolve("Lv ", "St ") + (level + 1) + "  x" + copies));
+                lines.Add(StatLine.Value(LocalizationService.Resolve("Damage per shot", "Schaden pro Schuss"), baseDamage, tower.DamageAtLevel(level), "0.##"));
+                lines.Add(StatLine.Value(LocalizationService.Resolve("Fire interval", "Feuerintervall"), data.FireIntervalSeconds, tower.FireIntervalAtLevel(level), "0.00", "s", true));
+                lines.Add(StatLine.Value(LocalizationService.Resolve("Range", "Reichweite"), data.Range, tower.RangeAtLevel(level), "0.#"));
+                lines.Add(StatLine.Value(LocalizationService.Resolve("DPS", "SPS"), data.DamagePerSecond, tower.DpsAtLevel(level), "0.#"));
+            }
+
+            if (!any)
+            {
+                lines.Add(StatLine.Plain(LocalizationService.Resolve("No towers built yet.", "Noch keine Türme gebaut."), string.Empty));
+            }
+        }
+
+        // The tower the player is standing at during an Intermission, for the upgrade overlay
+        // (playtest 2026-09-22: "add for built towers an overlay with the upgrade information").
+        public TowerRuntimeController UpgradeCandidate
+        {
+            get
+            {
+                if (_waveManager == null || _waveManager.State != WaveState.Intermission || !CanHandleBuildInput()
+                    || _selectedSlotIndex < 0 || _selectedSlotIndex >= _runtimeSlots.Count)
+                {
+                    return null;
+                }
+
+                var slot = _runtimeSlots[_selectedSlotIndex];
+                return slot.HasTower && IsPlayerNearSlot(slot.Position) ? slot.Occupant : null;
+            }
+        }
+
+        public int ResolveUpgradeCost(TowerRuntimeController tower)
+        {
+            return tower != null && tower.CanUpgrade && _economyService != null ? _economyService.PeekCost(tower.NextUpgradeCost) : (tower != null ? tower.NextUpgradeCost : 0);
+        }
+
+        public bool CanAffordUpgrade(TowerRuntimeController tower)
+        {
+            return tower != null && tower.CanUpgrade && _resourceWalletService != null && _resourceWalletService.CurrentAmount >= ResolveUpgradeCost(tower);
         }
 
         private bool ResolveIsBuildBrowserActive()
@@ -725,21 +820,19 @@ namespace Corebound.Gameplay.Towers
                 return;
             }
 
-            // Forward Foundations: the first tower each stage is free. Checked before the purchase
-            // and consumed only once the build actually happens.
-            var progression = RunProgressionSnapshot.Current;
-            var isFree = progression.Skills.HasRule(SkillEffectTarget.FreeFirstTowerPerStage)
-                && progression.IsRuleAvailableThisStage(FreeTowerRuleKey);
+            // Forward Foundations: consumed only once the discounted build actually happens.
+            var fullCost = ResolveTowerCost(ResolveDiscountedBuildCost(towerData));
+            var cost = ApplyFirstTowerDiscount(fullCost);
 
-            if (!isFree && !TryCommitPurchase(ResolveTowerCost(ResolveDiscountedBuildCost(towerData))))
+            if (!TryCommitPurchase(cost))
             {
                 return;
             }
 
-            if (isFree)
+            if (cost < fullCost)
             {
-                progression.TryConsumeOncePerStage(FreeTowerRuleKey);
-                NotificationPresenter.Show(LocalizationService.Resolve("Forward Foundations: free tower", "Vorgeschobene Fundamente: Turm gratis"));
+                RunProgressionSnapshot.Current.TryConsumeOncePerStage(FreeTowerRuleKey);
+                NotificationPresenter.Show(LocalizationService.Resolve("Forward Foundations: tower half price", "Vorgeschobene Fundamente: Turm zum halben Preis"));
             }
 
             SpawnTowerAtSlot(_selectedSlotIndex, towerData, true, 0);

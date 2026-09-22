@@ -57,6 +57,7 @@ namespace Corebound.Gameplay.Towers
         // so the cards are refreshed on a short timer as well as on selection changes.
         private const float RefreshIntervalSeconds = 0.25f;
         private TowerData _lastSelected;
+        private TowerRuntimeController _lastUpgradeTarget;
 
         public void Bind(TowerService towerService)
         {
@@ -74,6 +75,27 @@ namespace Corebound.Gameplay.Towers
         private void LateUpdate()
         {
             var isActive = _towerService != null && _towerService.IsBuildBrowserActive;
+            var upgradeTarget = !isActive && _towerService != null ? _towerService.UpgradeCandidate : null;
+
+            // Built tower under the player: the same card, showing the upgrade instead of the roster.
+            if (upgradeTarget != null)
+            {
+                EnsureBuilt();
+                _canvasGroup.alpha = 1f;
+                _lastSelected = null;
+                _refreshTimer -= Time.unscaledDeltaTime;
+
+                if (upgradeTarget != _lastUpgradeTarget || _refreshTimer <= 0f)
+                {
+                    _lastUpgradeTarget = upgradeTarget;
+                    _refreshTimer = RefreshIntervalSeconds;
+                    RefreshUpgrade(upgradeTarget);
+                }
+
+                return;
+            }
+
+            _lastUpgradeTarget = null;
 
             if (!isActive)
             {
@@ -213,8 +235,8 @@ namespace Corebound.Gameplay.Towers
             }
 
             _hintText.text = LocalizationService.Resolve(
-                _towerService.PreviousTowerTypeKeyLabel + " / " + _towerService.NextTowerTypeKeyLabel + "  choose tower     " + _towerService.BuildInteractKeyLabel + "  build",
-                _towerService.PreviousTowerTypeKeyLabel + " / " + _towerService.NextTowerTypeKeyLabel + "  Turm wählen     " + _towerService.BuildInteractKeyLabel + "  bauen");
+                _towerService.PreviousTowerTypeKeyLabel + " / " + _towerService.NextTowerTypeKeyLabel + "  choose tower     " + _towerService.BuildInteractKeyLabel + "  build     " + _towerService.LoadoutKeyLabel + "  weapons",
+                _towerService.PreviousTowerTypeKeyLabel + " / " + _towerService.NextTowerTypeKeyLabel + "  Turm wählen     " + _towerService.BuildInteractKeyLabel + "  bauen     " + _towerService.LoadoutKeyLabel + "  Waffen");
         }
 
         private void ApplyCard(CardView card, TowerData tower, bool isSelected, bool isUnlocked, float damageFraction, float rangeFraction)
@@ -279,6 +301,81 @@ namespace Corebound.Gameplay.Towers
             card.Cost.color = canAfford ? PlateTextColor : UnaffordableColor;
             card.Strengths.text = tower.Strengths;
             card.Weaknesses.text = tower.Weaknesses;
+            card.Strengths.color = StrengthColor;
+            card.Weaknesses.color = WeaknessColor;
+            card.StrongMark.text = "+";
+            card.WeakMark.text = "-";
+        }
+
+        // One large card: current level -> next level, cost, and each stat before -> after, so
+        // the choice to upgrade is made on numbers instead of a label like "Level 2".
+        private void RefreshUpgrade(TowerRuntimeController tower)
+        {
+            for (var index = 0; index < _cards.Length; index++)
+            {
+                _cards[index].Root.gameObject.SetActive(index == 0);
+            }
+
+            var card = _cards[0];
+            var data = tower.Data;
+            card.Root.sizeDelta = new Vector2(LargeCardSize, LargeCardSize);
+            card.Root.anchoredPosition = new Vector2(0f, 0f);
+            ApplyCard(card, data, true, true, 1f, 1f);
+
+            var level = tower.CurrentUpgradeLevel;
+            var canUpgrade = tower.CanUpgrade;
+            var next = canUpgrade ? level + 1 : level;
+            var dpsNow = tower.DpsAtLevel(level);
+            var dpsNext = tower.DpsAtLevel(next);
+            var rangeNow = tower.RangeAtLevel(level);
+            var rangeNext = tower.RangeAtLevel(next);
+            var intervalNow = tower.FireIntervalAtLevel(level);
+            var intervalNext = tower.FireIntervalAtLevel(next);
+            var maxRange = Mathf.Max(rangeNext, 0.01f);
+            var maxDps = Mathf.Max(dpsNext, 0.01f);
+
+            card.Name.text = data.DisplayName + "  " + LocalizationService.Resolve("Lv ", "St ") + (level + 1) + (canUpgrade ? " → " + (next + 1) : string.Empty);
+
+            if (!canUpgrade)
+            {
+                card.Cost.text = LocalizationService.Resolve("Max level", "Maximalstufe");
+                card.Cost.color = PlateTextColor;
+                card.Strengths.text = LocalizationService.Resolve("DPS ", "SPS ") + dpsNow.ToString("0.#") + "   ·   " + LocalizationService.Resolve("Range ", "Reichweite ") + rangeNow.ToString("0.#");
+                card.Weaknesses.text = LocalizationService.Resolve("Fires every ", "Schuss alle ") + intervalNow.ToString("0.00") + "s";
+            }
+            else
+            {
+                var cost = _towerService.ResolveUpgradeCost(tower);
+                card.Cost.text = tower.UpgradeLabel + "   ·   " + LocalizationService.Resolve("Cost ", "Kosten ") + cost;
+                card.Cost.color = _towerService.CanAffordUpgrade(tower) ? PlateTextColor : UnaffordableColor;
+                card.Strengths.text = LocalizationService.Resolve("DPS ", "SPS ") + dpsNow.ToString("0.#") + " → " + dpsNext.ToString("0.#")
+                    + "  (" + FormatDelta(dpsNow, dpsNext) + ")";
+                card.Weaknesses.text = LocalizationService.Resolve("Range ", "Reichweite ") + rangeNow.ToString("0.#") + " → " + rangeNext.ToString("0.#")
+                    + "   ·   " + intervalNow.ToString("0.00") + "s → " + intervalNext.ToString("0.00") + "s";
+            }
+
+            // Both text rows are data here, not pros and cons, so both read in the neutral colour.
+            card.Strengths.color = StrengthColor;
+            card.Weaknesses.color = PlateTextColor;
+            SetBar(card.DamageFill, card.DamageValue, dpsNow / maxDps, dpsNow.ToString("0.#"), DamageBarColor);
+            SetBar(card.RangeFill, card.RangeValue, rangeNow / maxRange, rangeNow.ToString("0.#"), RangeBarColor);
+            card.StrongMark.text = "+";
+            card.WeakMark.text = "·";
+
+            _hintText.text = canUpgrade
+                ? _towerService.BuildInteractKeyLabel + LocalizationService.Resolve("  upgrade     ", "  verbessern     ") + _towerService.LoadoutKeyLabel + LocalizationService.Resolve("  weapons", "  Waffen")
+                : _towerService.LoadoutKeyLabel + LocalizationService.Resolve("  weapons", "  Waffen");
+        }
+
+        private static string FormatDelta(float before, float after)
+        {
+            if (before <= Mathf.Epsilon)
+            {
+                return "+" + after.ToString("0.#");
+            }
+
+            var percent = (after / before - 1f) * 100f;
+            return (percent >= 0f ? "+" : string.Empty) + percent.ToString("0") + "%";
         }
 
         private static void SetBar(Image fill, Text value, float fraction, string label, Color color)

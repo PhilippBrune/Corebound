@@ -32,6 +32,10 @@ namespace Corebound.SaveSystem
         [SerializeField] private string _selectedCharacterId = DefaultCharacterId;
         [SerializeField] private List<SkillNodeRank> _skillNodeRanks = new List<SkillNodeRank>();
         [SerializeField] private int _skillTreeVersion;
+
+        // Owner decision 2026-09-22: one free respec per tree version; later ones cost Alloy.
+        // Holds the tree version whose free respec has been used (0 = none yet).
+        [SerializeField] private int _freeRespecUsedTreeVersion;
         [SerializeField] private int _ascensionRank;
         [SerializeField] private List<string> _ascensionChoices = new List<string>();
         [SerializeField] private List<string> _pendingAscensionOffer = new List<string>();
@@ -69,6 +73,13 @@ namespace Corebound.SaveSystem
         public IReadOnlyList<SkillNodeRank> SkillNodeRanks => _skillNodeRanks;
 
         public int SkillTreeVersion => _skillTreeVersion;
+
+        public int FreeRespecUsedTreeVersion => _freeRespecUsedTreeVersion;
+
+        public void MarkFreeRespecUsed(int treeVersion)
+        {
+            _freeRespecUsedTreeVersion = treeVersion;
+        }
 
         public int AscensionRank => _ascensionRank;
 

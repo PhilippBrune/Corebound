@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04b43e4f37ab4f7ba068087eaf824db0, type: 3}
+  m_Name: Card_Weapon_SMG
+  m_EditorClassIdentifier:
+  _cardId: card_weapon_smg
+  _displayName: 'Twin SMG'
+  _displayNameDe: 'Zwillings-MP'
+  _description: 'Equip a Twin SMG: two barrels and a deep magazine. Copies build its Set Bonus.'
+  _descriptionDe: 'Rüste eine Zwillings-MP aus: zwei Läufe und ein tiefes Magazin. Kopien bauen ihren Setbonus auf.'
+  _rarity: 0
+  _requiredUnlockId: 
+  _tags:
+  - 0
+  _effects: []
+  _weaponModifiers: []
+  _stackable: 1
+  _grantedWeapon: {fileID: 11400000, guid: 1dd2450c6aff4d71ad36e4cc214ac74e, type: 2}

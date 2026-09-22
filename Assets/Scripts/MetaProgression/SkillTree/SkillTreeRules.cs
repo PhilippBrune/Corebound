@@ -137,6 +137,35 @@ namespace Corebound.MetaProgression
             return true;
         }
 
+        public static bool IsNextRespecFree(MetaProgressionSaveData save, SkillTreeDefinitionData tree)
+        {
+            return save != null && tree != null && save.FreeRespecUsedTreeVersion != tree.TreeVersion;
+        }
+
+        // The player-initiated respec: free once per tree version, then PaidRespecAlloyCost.
+        // Returns false (and changes nothing) when the Alloy is missing.
+        public static bool TryPlayerRespec(MetaProgressionSaveData save, SkillTreeDefinitionData tree, out int refund)
+        {
+            refund = 0;
+
+            if (save == null || tree == null || ResolveTotalTreeSpend(save, tree) <= 0)
+            {
+                return false;
+            }
+
+            if (IsNextRespecFree(save, tree))
+            {
+                save.MarkFreeRespecUsed(tree.TreeVersion);
+            }
+            else if (!save.TrySpendAlloy(tree.PaidRespecAlloyCost))
+            {
+                return false;
+            }
+
+            refund = Respec(save, tree);
+            return true;
+        }
+
         // Full respec only (SkillTree.md): refunds exactly what the tree cost, Ascension untouched.
         public static int Respec(MetaProgressionSaveData save, SkillTreeDefinitionData tree)
         {

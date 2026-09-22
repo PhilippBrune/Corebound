@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 866988846fbcee94db9b2e315b27225c, type: 3}
+  m_Name: Weapon_Nova
+  m_EditorClassIdentifier:
+  _weaponId: weapon_nova
+  _displayName: Nova Pulse
+  _shortLabel: N
+  _summary: 'Fires a ring of eight shards in every direction at once. Short reach - the answer to being surrounded.'
+  _attackPattern: {fileID: 11400000, guid: 393816b26bb34180b522aed31a74ae99, type: 2}
+  _damageProfile: {fileID: 11400000, guid: 688bc14c655447b4874389468a901bde, type: 2}
+  _projectile: {fileID: 11400000, guid: 1a6a9d62fa9c44b4a41044aa664282b4, type: 2}
+  _aimAssistProfile: 2
+  _presentation: {fileID: 11400000, guid: ee332f730e9f43bebdd8f96190187311, type: 2}
+  _rarity: 1
+  _basePurchaseCost: 20
+  _setBonuses:
+  - _requiredCopies: 2
+    _displayName: Paired
+    _displayNameDe: Gepaart
+    _description: '+15% damage.'
+    _descriptionDe: '+15 % Schaden.'
+    _effects:
+    - _target: 0
+      _value: 1.15
+  - _requiredCopies: 3
+    _displayName: Aligned
+    _displayNameDe: Ausgerichtet
+    _description: '+4 shards per ring.'
+    _descriptionDe: '+4 Splitter pro Ring.'
+    _effects:
+    - _target: 5
+      _value: 4
+  - _requiredCopies: 4
+    _displayName: Focused
+    _displayNameDe: Fokussiert
+    _description: '+30% damage, +4 shards per ring.'
+    _descriptionDe: '+30 % Schaden, +4 Splitter pro Ring.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 5
+      _value: 4
+  - _requiredCopies: 5
+    _displayName: Synchronised
+    _displayNameDe: Synchronisiert
+    _description: 'As Focused, and +30% reach.'
+    _descriptionDe: 'Wie Fokussiert, und +30 % Reichweite.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 5
+      _value: 4
+    - _target: 2
+      _value: 1.3
+  - _requiredCopies: 6
+    _displayName: Perfected
+    _displayNameDe: Perfektioniert
+    _description: 'As Synchronised, and shards that hit nothing burst at the end of their reach.'
+    _descriptionDe: 'Wie Synchronisiert, und Splitter, die nichts treffen, zerplatzen am Ende ihrer Reichweite.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 5
+      _value: 4
+    - _target: 2
+      _value: 1.3
+    - _target: 10
+      _value: 1
+  _innateEffects:
+  - _target: 9
+    _value: 1
+  _displayNameDe: Nova-Puls
+  _summaryDe: 'Feuert einen Ring aus acht Splittern in alle Richtungen zugleich. Kurze Reichweite - die Antwort, wenn man umzingelt ist.'

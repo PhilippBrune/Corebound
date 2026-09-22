@@ -220,7 +220,8 @@ Reuses the Skill Tree cues, since both are between-run purchases in the same men
 
 - **Tracks are inline in one catalog asset**, not eleven `UpgradeTrackData` assets.
 - **The Accuracy track is hidden for weapons with no spread** (Rapid, Beam): it would cost Alloy and change nothing.
-- **Unlock prices** follow the 20 / 40 / 80 curve: Support Tower 20, Spread 20, Status Cards 40, Engineer loadout 80, weapon slot 5 60, slot 6 120.
+- **Unlock prices** follow the 20 / 40 / 80 curve: Support Tower 20, Spread 20, Status Cards 40, Engineer loadout 80, weapon slot 5 60, slot 6 120. Weapon licences added 2026-09-22: Nova Pulse 35, Scatter Launcher 40, Railgun 45. They gate the weapon's card and shop offer only; unlike Spread's licence they carry no `_weaponReward`, so buying one never changes the starting weapon.
+- **Paid respec** (2026-09-22) is a third Alloy sink: 30 Alloy for every Skill Tree respec after the free one per tree version (SkillTree.md).
 - **Composition order** is base -> tier -> upgrades -> skill tree -> set bonuses and cards. Upgrades and set bonuses are multiplied rather than added; with the current values the difference is under 2% and it keeps one rule for every multiplier.
 - **Existing profiles** keep what they had: 5 Core Shards became 5 Alloy on the owner's profile, and new profiles start at 0.
 
