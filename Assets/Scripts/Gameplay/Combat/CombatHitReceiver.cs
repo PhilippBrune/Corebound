@@ -190,7 +190,32 @@ namespace Corebound.Gameplay.Combat
                     damageContext.StatusEffect);
             }
 
+            // Skill tree Executioner: the player's shots hit harder on a nearly dead enemy.
+            if (!IsCoreReceiver && damageContext.SourceType == DamageSourceType.Player)
+            {
+                var executeMultiplier = PlayerCombatController.ResolveExecuteMultiplier(CurrentHealthNormalized);
+
+                if (executeMultiplier > 1f)
+                {
+                    damageContext = new DamageContext(damageContext.SourceType, damageContext.DamageKind, damageContext.Amount * executeMultiplier, damageContext.HitPoint, damageContext.HitDirection, damageContext.StatusEffect);
+                }
+            }
+
             var remainingHealth = _healthRuntime.ApplyDamage(damageContext.Amount);
+
+            // Skill tree Last Bastion: once per stage a lethal hit leaves the Core standing.
+            if (remainingHealth <= 0f && IsCoreReceiver)
+            {
+                var fraction = Corebound.MetaProgression.RunProgressionSnapshot.Current.Skills[Corebound.MetaProgression.SkillEffectTarget.CoreContingency];
+
+                if (fraction > 0f && Corebound.MetaProgression.RunProgressionSnapshot.Current.TryConsumeOncePerStage("skill_last_bastion"))
+                {
+                    _healthRuntime.Heal(_healthRuntime.MaxHealth * Mathf.Clamp01(fraction));
+                    remainingHealth = _healthRuntime.CurrentHealth;
+                    Corebound.UI.NotificationPresenter.Show(Corebound.UI.LocalizationService.Resolve("Last Bastion holds!", "Letzte Bastion hält!"));
+                }
+            }
+
             CombatEvents.RaiseDamageTaken(new DamageEventArgs(source, gameObject, damageContext, remainingHealth));
 
             ApplyHitFlash();
@@ -211,6 +236,11 @@ namespace Corebound.Gameplay.Combat
         private void ResetState()
         {
             var maxHealth = _targetData != null ? _targetData.MaxHealth * _runtimeMaxHealthMultiplier : 10f;
+
+            if (IsCoreReceiver)
+            {
+                maxHealth *= Mathf.Max(0.1f, Corebound.MetaProgression.RunProgressionSnapshot.Current.Skills[Corebound.MetaProgression.SkillEffectTarget.CoreMaxHealthMultiplier]);
+            }
             _healthRuntime = new HealthRuntime(maxHealth);
             _activeStatuses.Clear();
 

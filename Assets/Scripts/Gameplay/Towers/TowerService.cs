@@ -22,6 +22,7 @@ namespace Corebound.Gameplay.Towers
         private const string BuildMapName = "Build";
         private const string PreviousTowerTypeActionName = "PreviousTowerType";
         private const string NextTowerTypeActionName = "NextTowerType";
+        private const string FreeTowerRuleKey = "skill_forward_foundations";
 
         [SerializeField] private TowerCatalogData _towerCatalog;
         [SerializeField] private UnityEngine.Object _saveManagerSource;
@@ -120,7 +121,7 @@ namespace Corebound.Gameplay.Towers
             }
 
             builder.Append("  ").Append(Corebound.UI.LocalizationService.Resolve("Cost ", "Kosten "));
-            builder.Append(ResolveTowerCost(towerData.BuildCost));
+            builder.Append(ResolveTowerCost(ResolveDiscountedBuildCost(towerData)));
 
             builder.Append("  ·  ").Append(Corebound.UI.LocalizationService.Resolve("DPS ", "SPS "));
             builder.Append(towerData.DamagePerSecond.ToString("0.#"));
@@ -170,7 +171,19 @@ namespace Corebound.Gameplay.Towers
 
         public int ResolveBuildCost(TowerData towerData)
         {
-            return towerData != null ? ResolveTowerCost(towerData.BuildCost) : 0;
+            if (towerData == null)
+            {
+                return 0;
+            }
+
+            // Forward Foundations shows as a free build until it has been used this stage.
+            var progression = RunProgressionSnapshot.Current;
+            if (progression.Skills.HasRule(SkillEffectTarget.FreeFirstTowerPerStage) && progression.IsRuleAvailableThisStage(FreeTowerRuleKey))
+            {
+                return 0;
+            }
+
+            return ResolveTowerCost(ResolveDiscountedBuildCost(towerData));
         }
 
         public bool CanAffordBuild(TowerData towerData)
@@ -667,7 +680,8 @@ namespace Corebound.Gameplay.Towers
                 && _waveManager != null
                 && IsBuildableWaveState(_waveManager.State)
                 && (_shopService == null || !_shopService.IsOpen)
-                && (_cardRewardController == null || !_cardRewardController.IsOpen);
+                && (_cardRewardController == null || !_cardRewardController.IsOpen)
+                && !Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.IsOpen;
         }
 
         private static bool IsBuildableWaveState(WaveState state)
@@ -706,9 +720,26 @@ namespace Corebound.Gameplay.Towers
 
             var towerData = ResolveBuildTowerData();
 
-            if (towerData == null || !TryCommitPurchase(ResolveTowerCost(towerData.BuildCost)))
+            if (towerData == null)
             {
                 return;
+            }
+
+            // Forward Foundations: the first tower each stage is free. Checked before the purchase
+            // and consumed only once the build actually happens.
+            var progression = RunProgressionSnapshot.Current;
+            var isFree = progression.Skills.HasRule(SkillEffectTarget.FreeFirstTowerPerStage)
+                && progression.IsRuleAvailableThisStage(FreeTowerRuleKey);
+
+            if (!isFree && !TryCommitPurchase(ResolveTowerCost(ResolveDiscountedBuildCost(towerData))))
+            {
+                return;
+            }
+
+            if (isFree)
+            {
+                progression.TryConsumeOncePerStage(FreeTowerRuleKey);
+                NotificationPresenter.Show(LocalizationService.Resolve("Forward Foundations: free tower", "Vorgeschobene Fundamente: Turm gratis"));
             }
 
             SpawnTowerAtSlot(_selectedSlotIndex, towerData, true, 0);
@@ -813,9 +844,17 @@ namespace Corebound.Gameplay.Towers
         // purchase-commit site must read the SAME resolved number, or a discount card could show
         // one price and charge another. Resolve once here, then pass that same value on to
         // TryCommitPurchase - never resolve twice, or a discount would silently apply twice.
+        // Upgrades.md Build Discount is per tower and only reaches build costs, so it is applied by
+        // ResolveBuildCost below; upgrades and shop prices go through here unchanged.
         private int ResolveTowerCost(int baseCost)
         {
             return _economyService != null ? _economyService.ResolveCost(baseCost) : baseCost;
+        }
+
+        private int ResolveDiscountedBuildCost(TowerData towerData)
+        {
+            var discount = RunProgressionSnapshot.Current.Upgrades.GetReductionMultiplier(towerData.TowerId, UpgradableStat.BuildDiscount);
+            return Mathf.Max(1, Mathf.RoundToInt(towerData.BuildCost * discount));
         }
 
         private bool TryCommitPurchase(int cost)
@@ -897,14 +936,14 @@ namespace Corebound.Gameplay.Towers
         private bool CanAffordSelectedTower()
         {
             var towerData = ResolveBuildTowerData();
-            return towerData != null && _resourceWalletService != null && _resourceWalletService.CurrentAmount >= ResolveTowerCost(towerData.BuildCost);
+            return towerData != null && _resourceWalletService != null && _resourceWalletService.CurrentAmount >= ResolveTowerCost(ResolveDiscountedBuildCost(towerData));
         }
 
         private bool ResolveHasAvailableIntermissionAction()
         {
             var towerData = ResolveBuildTowerData();
 
-            if (towerData != null && _resourceWalletService != null && _resourceWalletService.CurrentAmount >= ResolveTowerCost(towerData.BuildCost))
+            if (towerData != null && _resourceWalletService != null && _resourceWalletService.CurrentAmount >= ResolveTowerCost(ResolveDiscountedBuildCost(towerData)))
             {
                 for (var index = 0; index < _runtimeSlots.Count; index++)
                 {

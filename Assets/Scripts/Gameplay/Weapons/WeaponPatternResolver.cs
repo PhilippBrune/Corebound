@@ -20,8 +20,29 @@ namespace Corebound.Gameplay.Weapons
         // "Multishot" hook.
         public void ForEachShotDirection(Vector2 forwardDirection, WeaponAttackPatternData attackPattern, int additionalProjectiles, Action<Vector2> shotDirectionHandler)
         {
+            ForEachShotDirection(forwardDirection, attackPattern, additionalProjectiles, 1f, false, shotDirectionHandler);
+        }
+
+        // spreadMultiplier and fullRing are WeaponLoadout.md Set Bonus rules (Spread Aligned narrows
+        // the fan; Spread Perfected fires a full ring). The fan count is unchanged either way.
+        public void ForEachShotDirection(Vector2 forwardDirection, WeaponAttackPatternData attackPattern, int additionalProjectiles, float spreadMultiplier, bool fullRing, Action<Vector2> shotDirectionHandler)
+        {
             if (shotDirectionHandler == null)
             {
+                return;
+            }
+
+            if (fullRing)
+            {
+                var ringBase = forwardDirection.sqrMagnitude < Mathf.Epsilon ? Vector2.right : forwardDirection.normalized;
+                var ringCount = Mathf.Max(6, (attackPattern != null ? attackPattern.ProjectileCount : 1) + Mathf.Max(0, additionalProjectiles));
+
+                // Divides by count, not count - 1, so the first and last shot do not share a bearing.
+                for (var index = 0; index < ringCount; index++)
+                {
+                    shotDirectionHandler(CombatMath.Rotate(ringBase, 360f * index / ringCount));
+                }
+
                 return;
             }
 
@@ -42,7 +63,7 @@ namespace Corebound.Gameplay.Weapons
                 return;
             }
 
-            var spreadAngle = attackPattern.SpreadAngleDegrees;
+            var spreadAngle = attackPattern.SpreadAngleDegrees * Mathf.Max(0.05f, spreadMultiplier);
 
             if (spreadAngle <= Mathf.Epsilon)
             {

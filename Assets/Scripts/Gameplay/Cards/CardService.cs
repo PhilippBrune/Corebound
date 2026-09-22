@@ -34,6 +34,13 @@ namespace Corebound.Gameplay.Cards
 
         public IReadOnlyList<CardData> CurrentOffer => _currentOffer;
 
+        // Set by the loadout owner. Null in a scene without a player, where weapon cards are then
+        // simply not offered.
+        public IWeaponGrantHandler WeaponGrantHandler { get; set; }
+
+        // WeaponLoadout.md: "Boss drop, guaranteed one weapon offer after each stage boss."
+        private bool _guaranteeWeaponInNextOffer;
+
         public float WeaponDamageMultiplier => _modifierSnapshot.WeaponDamageMultiplier;
 
         public float WeaponFireIntervalMultiplier => _modifierSnapshot.WeaponFireIntervalMultiplier;
@@ -56,6 +63,21 @@ namespace Corebound.Gameplay.Cards
         public IReadOnlyList<WeaponModifierData> WeaponModifiers => _weaponModifiers;
 
         private ISaveManager SaveManager => SaveManagerResolver.Resolve(_saveManagerSource);
+
+        private void OnEnable()
+        {
+            Corebound.Gameplay.Bosses.BossEvents.OnBossDefeated += OnBossDefeated;
+        }
+
+        private void OnDisable()
+        {
+            Corebound.Gameplay.Bosses.BossEvents.OnBossDefeated -= OnBossDefeated;
+        }
+
+        private void OnBossDefeated(Corebound.Gameplay.Bosses.BossEventArgs eventArgs)
+        {
+            _guaranteeWeaponInNextOffer = true;
+        }
 
         private void Awake()
         {
@@ -96,7 +118,21 @@ namespace Corebound.Gameplay.Cards
 
             var optionCount = Mathf.Min(_cardOfferData.OptionCount, eligibleCards.Count);
 
-            for (var optionIndex = 0; optionIndex < optionCount; optionIndex++)
+            if (_guaranteeWeaponInNextOffer)
+            {
+                _guaranteeWeaponInNextOffer = false;
+                var weaponCards = eligibleCards.FindAll(card => card.IsWeaponCard);
+                var weaponPick = PickWeightedCard(weaponCards);
+
+                if (weaponPick != null)
+                {
+                    _currentOffer.Add(weaponPick);
+                    eligibleCards.Remove(weaponPick);
+                    optionCount = Mathf.Min(optionCount, eligibleCards.Count + 1);
+                }
+            }
+
+            for (var optionIndex = _currentOffer.Count; optionIndex < optionCount; optionIndex++)
             {
                 var picked = PickWeightedCard(eligibleCards);
 
@@ -149,9 +185,28 @@ namespace Corebound.Gameplay.Cards
 
         public bool TryApplyCard(CardData card)
         {
+            return TryApplyCard(card, 0);
+        }
+
+        // purchasePrice: what the shop charged (0 for a reward). Only weapon cards use it.
+        public bool TryApplyCard(CardData card, int purchasePrice)
+        {
             if (card == null)
             {
                 return false;
+            }
+
+            if (card.IsWeaponCard)
+            {
+                var granted = WeaponGrantHandler != null && WeaponGrantHandler.TryGrantWeapon(card.GrantedWeapon, (int)card.Rarity, purchasePrice);
+
+                if (granted)
+                {
+                    _currentOffer.Clear();
+                    StateChanged?.Invoke();
+                }
+
+                return granted;
             }
 
             if (!card.Stackable && ContainsSelected(card.CardId))
@@ -170,6 +225,12 @@ namespace Corebound.Gameplay.Cards
         public bool CanOfferCard(CardData card)
         {
             if (card == null || !IsCardAvailable(card))
+            {
+                return false;
+            }
+
+            // A weapon card needs a loadout to land in, and its weapon must be unlocked.
+            if (card.IsWeaponCard && WeaponGrantHandler == null)
             {
                 return false;
             }

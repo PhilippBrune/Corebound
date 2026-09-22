@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Corebound.SaveSystem;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -40,6 +41,34 @@ namespace Corebound.MetaProgression
         public int WeaponSlotCount { get; }
 
         public string CharacterId { get; }
+
+        // Several skill rules fire "once per stage" (Second Wind, Last Bastion, Forward
+        // Foundations, Field Repair). WaveManager reports the stage it is on; each rule asks here
+        // whether it may fire, which also consumes it for the rest of that stage.
+        private readonly Dictionary<string, int> _ruleConsumedOnStage = new Dictionary<string, int>();
+
+        public int StageIndex { get; private set; } = 1;
+
+        public void SetStage(int stageIndex)
+        {
+            StageIndex = Mathf.Max(1, stageIndex);
+        }
+
+        public bool IsRuleAvailableThisStage(string ruleKey)
+        {
+            return !_ruleConsumedOnStage.TryGetValue(ruleKey, out var stage) || stage != StageIndex;
+        }
+
+        public bool TryConsumeOncePerStage(string ruleKey)
+        {
+            if (!IsRuleAvailableThisStage(ruleKey))
+            {
+                return false;
+            }
+
+            _ruleConsumedOnStage[ruleKey] = StageIndex;
+            return true;
+        }
 
         // Idempotent per scene load: the first caller in a freshly loaded gameplay scene resolves
         // the snapshot, everyone after it in that scene gets the same one. A new run always loads

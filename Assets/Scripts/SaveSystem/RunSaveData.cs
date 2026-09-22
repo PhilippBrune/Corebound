@@ -7,7 +7,12 @@ namespace Corebound.SaveSystem
     [Serializable]
     public sealed class RunSaveData
     {
-        [SerializeField] private int _saveFormatVersion = 1;
+        // v2 (2026-09-22): WeaponLoadout.md replaces the single EquippedWeaponId with six slots,
+        // each carrying its weapon id, in-run tier and purchase price (the sell value's basis).
+        public const int CurrentSaveFormatVersion = 2;
+        public const int WeaponSlotCapacity = 6;
+
+        [SerializeField] private int _saveFormatVersion = CurrentSaveFormatVersion;
         [SerializeField] private bool _hasActiveRun;
         [SerializeField] private string _sceneName = string.Empty;
         [SerializeField] private int _stageIndex;
@@ -34,6 +39,16 @@ namespace Corebound.SaveSystem
         [SerializeField] private int _bossPhaseIndex;
         [SerializeField] private bool _isTutorialRun;
         [SerializeField] private long _lastUpdatedUtcTicks;
+
+        [SerializeField] private List<string> _equippedWeaponIds = new List<string>();
+        [SerializeField] private List<int> _equippedWeaponTiers = new List<int>();
+        [SerializeField] private List<int> _equippedWeaponPrices = new List<int>();
+
+        // Skill-tree starting bonuses (Starting Scrap, starting relics) are paid once per run and
+        // stage-start Scrap once per stage; both are remembered here so a resumed run is not paid
+        // a second time.
+        [SerializeField] private bool _runStartBonusesApplied;
+        [SerializeField] private int _stageStartBonusPaidStageIndex;
 
         public int SaveFormatVersion => _saveFormatVersion;
 
@@ -89,6 +104,76 @@ namespace Corebound.SaveSystem
 
         public long LastUpdatedUtcTicks => _lastUpdatedUtcTicks;
 
+        public IReadOnlyList<string> EquippedWeaponIds => _equippedWeaponIds;
+
+        public IReadOnlyList<int> EquippedWeaponTiers => _equippedWeaponTiers;
+
+        public IReadOnlyList<int> EquippedWeaponPrices => _equippedWeaponPrices;
+
+        public bool RunStartBonusesApplied => _runStartBonusesApplied;
+
+        public int StageStartBonusPaidStageIndex => _stageStartBonusPaidStageIndex;
+
+        // v1 -> v2: the old single weapon becomes slot 0 (WeaponLoadout.md acceptance criterion).
+        public bool MigrateToCurrentFormat()
+        {
+            _equippedWeaponIds ??= new List<string>();
+            _equippedWeaponTiers ??= new List<int>();
+            _equippedWeaponPrices ??= new List<int>();
+
+            if (_saveFormatVersion >= CurrentSaveFormatVersion)
+            {
+                return false;
+            }
+
+            if (_equippedWeaponIds.Count == 0 && !string.IsNullOrWhiteSpace(_equippedWeaponId))
+            {
+                _equippedWeaponIds.Add(_equippedWeaponId);
+                _equippedWeaponTiers.Add(0);
+                _equippedWeaponPrices.Add(0);
+            }
+
+            // A v1 run already had its (nonexistent) start bonuses, so do not pay them now.
+            _runStartBonusesApplied = _hasActiveRun;
+            _stageStartBonusPaidStageIndex = _hasActiveRun ? _stageIndex : 0;
+            _saveFormatVersion = CurrentSaveFormatVersion;
+            return true;
+        }
+
+        public void SetEquippedWeapons(IReadOnlyList<string> weaponIds, IReadOnlyList<int> tiers, IReadOnlyList<int> prices)
+        {
+            _equippedWeaponIds.Clear();
+            _equippedWeaponTiers.Clear();
+            _equippedWeaponPrices.Clear();
+
+            if (weaponIds != null)
+            {
+                for (var index = 0; index < weaponIds.Count && index < WeaponSlotCapacity; index++)
+                {
+                    _equippedWeaponIds.Add(weaponIds[index] ?? string.Empty);
+                    _equippedWeaponTiers.Add(tiers != null && index < tiers.Count ? tiers[index] : 0);
+                    _equippedWeaponPrices.Add(prices != null && index < prices.Count ? prices[index] : 0);
+                }
+            }
+
+            // Slot 0 mirrors into the v1 field so anything still reading the single id sees the
+            // primary weapon.
+            _equippedWeaponId = _equippedWeaponIds.Count > 0 ? _equippedWeaponIds[0] : string.Empty;
+            Touch();
+        }
+
+        public void MarkRunStartBonusesApplied()
+        {
+            _runStartBonusesApplied = true;
+            Touch();
+        }
+
+        public void MarkStageStartBonusPaid(int stageIndex)
+        {
+            _stageStartBonusPaidStageIndex = stageIndex;
+            Touch();
+        }
+
         public static RunSaveData CreateBootstrap(RunSaveBootstrapData bootstrapData)
         {
             var saveData = new RunSaveData();
@@ -107,6 +192,9 @@ namespace Corebound.SaveSystem
             saveData._coreHealthNormalized = bootstrapData.CoreHealthNormalized;
             saveData._walletAmount = bootstrapData.WalletAmount;
             saveData._equippedWeaponId = bootstrapData.EquippedWeaponId;
+            saveData._equippedWeaponIds.Add(bootstrapData.EquippedWeaponId ?? string.Empty);
+            saveData._equippedWeaponTiers.Add(0);
+            saveData._equippedWeaponPrices.Add(0);
             saveData.Touch();
             return saveData;
         }
@@ -164,9 +252,21 @@ namespace Corebound.SaveSystem
             Touch();
         }
 
+        // A new run's starting weapon: the whole loadout becomes that one weapon in slot 0.
         public void SetEquippedWeaponId(string weaponId)
         {
             _equippedWeaponId = weaponId ?? string.Empty;
+            _equippedWeaponIds.Clear();
+            _equippedWeaponTiers.Clear();
+            _equippedWeaponPrices.Clear();
+
+            if (!string.IsNullOrWhiteSpace(_equippedWeaponId))
+            {
+                _equippedWeaponIds.Add(_equippedWeaponId);
+                _equippedWeaponTiers.Add(0);
+                _equippedWeaponPrices.Add(0);
+            }
+
             Touch();
         }
 
@@ -298,6 +398,11 @@ namespace Corebound.SaveSystem
             _isBossEncounterActive = false;
             _bossPhaseIndex = 0;
             _isTutorialRun = false;
+            _equippedWeaponIds.Clear();
+            _equippedWeaponTiers.Clear();
+            _equippedWeaponPrices.Clear();
+            _runStartBonusesApplied = false;
+            _stageStartBonusPaidStageIndex = 0;
             Touch();
         }
 

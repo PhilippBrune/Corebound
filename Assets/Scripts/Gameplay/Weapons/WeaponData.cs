@@ -1,3 +1,5 @@
+using System;
+using Corebound.Gameplay.Cards;
 using Corebound.Gameplay.Combat;
 using UnityEngine;
 
@@ -18,6 +20,13 @@ namespace Corebound.Gameplay.Weapons
         // no icon, which is exactly how every weapon behaved before WeaponPresentationData existed.
         [SerializeField] private WeaponPresentationData _presentation;
 
+        // WeaponLoadout.md: shop pricing, the sell value's basis, and the Set Bonus ladder that
+        // gives this archetype its own identity when duplicated. Authored per weapon; never
+        // defined centrally in code.
+        [SerializeField] private CardRarity _rarity = CardRarity.Common;
+        [SerializeField] private int _basePurchaseCost = 14;
+        [SerializeField] private WeaponSetBonusData[] _setBonuses = Array.Empty<WeaponSetBonusData>();
+
         public string WeaponId => _weaponId;
 
         public string DisplayName => _displayName;
@@ -33,5 +42,11 @@ namespace Corebound.Gameplay.Weapons
         public WeaponAimAssistProfile AimAssistProfile => _aimAssistProfile;
 
         public WeaponPresentationData Presentation => _presentation;
+
+        public CardRarity Rarity => _rarity;
+
+        public int BasePurchaseCost => Mathf.Max(1, _basePurchaseCost);
+
+        public WeaponSetBonusData[] SetBonuses => _setBonuses;
     }
 }

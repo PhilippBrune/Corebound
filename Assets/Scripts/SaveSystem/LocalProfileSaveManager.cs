@@ -71,7 +71,13 @@ namespace Corebound.SaveSystem
 
             if (_saveStore.TryLoad(GetRunPath(), out _runSaveData))
             {
-                WarnIfVersionMismatch("run", _runSaveData.SaveFormatVersion);
+                if (_runSaveData.MigrateToCurrentFormat())
+                {
+                    Debug.Log("[Save] Migrated run save to format " + RunSaveData.CurrentSaveFormatVersion + " (single weapon -> slot 0).");
+                    _saveStore.Save(GetRunPath(), _runSaveData);
+                }
+
+                WarnIfVersionMismatch("run", _runSaveData.SaveFormatVersion, RunSaveData.CurrentSaveFormatVersion);
                 return _runSaveData;
             }
 

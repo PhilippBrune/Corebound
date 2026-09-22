@@ -49,9 +49,20 @@ namespace Corebound.Gameplay.Resources
             FlushIfDirty();
         }
 
+        // Refunds, sell value and skill-tree starting Scrap are not income and must not be scaled
+        // by Scrap-gain modifiers (Refund used to go through AddReward and was inflated by them).
+        public void AddFlat(int amount)
+        {
+            if (amount > 0)
+            {
+                SetCurrentAmount(_currentAmount + amount);
+            }
+        }
+
         public int AddReward(int baseAmount)
         {
-            var multiplier = _cardService != null ? _cardService.ResourceGainMultiplier : 1f;
+            var multiplier = (_cardService != null ? _cardService.ResourceGainMultiplier : 1f)
+                * Mathf.Max(0f, Corebound.MetaProgression.RunProgressionSnapshot.Current.Skills[Corebound.MetaProgression.SkillEffectTarget.ScrapGainMultiplier]);
             var gainedAmount = Mathf.Max(1, Mathf.RoundToInt(baseAmount * multiplier));
             SetCurrentAmount(_currentAmount + gainedAmount);
             return gainedAmount;

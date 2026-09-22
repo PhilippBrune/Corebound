@@ -605,6 +605,12 @@ namespace Corebound.Gameplay.Waves
                 return;
             }
 
+            // Escape is both UI Cancel (closes the loadout panel) and System Pause.
+            if (Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.IsOpen || Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.LastToggleFrame == Time.frameCount)
+            {
+                return;
+            }
+
             if (_cardRewardController != null && _cardRewardController.IsOpen)
             {
                 return;

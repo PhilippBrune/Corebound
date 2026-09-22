@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04b43e4f37ab4f7ba068087eaf824db0, type: 3}
+  m_Name: Card_Weapon_Spread
+  m_EditorClassIdentifier: 
+  _cardId: card_weapon_spread
+  _displayName: Spread Weapon
+  _displayNameDe: Streuwaffe
+  _description: Equip a Spread: a fan of shots for crowds. Copies build its Set Bonus.
+  _descriptionDe: Rüste eine Streuwaffe aus: ein Fächer aus Schüssen gegen Gruppen. Kopien bauen ihren Setbonus auf.
+  _rarity: 0
+  _requiredUnlockId: unlock_weapon_spread
+  _tags:
+  - 0
+  _effects: []
+  _weaponModifiers: []
+  _stackable: 1
+  _grantedWeapon: {fileID: 11400000, guid: dd8dfd6c3cc144698807a6cba3ca3b5f, type: 2}

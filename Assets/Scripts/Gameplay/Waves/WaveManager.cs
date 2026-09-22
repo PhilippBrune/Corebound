@@ -154,6 +154,10 @@ namespace Corebound.Gameplay.Waves
             // Static registry, so a Transform from the previous scene would otherwise survive
             // a scene load and buff the next run from a destroyed object.
             EnemySupportAuraRegistry.Clear();
+            BossEncounterState.SetActive(false);
+
+            // Skill tree and upgrades, frozen for this run (idempotent per scene load).
+            RunProgressionSnapshot.Capture(SaveManager, _metaProgressionDefinitionData);
 
             _shopService = GetComponent<ShopService>();
 
@@ -215,6 +219,15 @@ namespace Corebound.Gameplay.Waves
             }
 
             InitializeFromSave();
+        }
+
+        // Run- and stage-start bonuses are paid here, not in InitializeFromSave (OnEnable): every
+        // Awake and OnEnable has run by Start, so ResourceWalletService has already loaded the
+        // wallet from the save and cannot overwrite the bonus with the older amount afterwards.
+        private void Start()
+        {
+            ApplyRunStartBonuses(SaveManager != null ? SaveManager.LoadRunSaveData() : null);
+            ApplyStageStartBonus();
         }
 
         private void OnDisable()
@@ -313,6 +326,7 @@ namespace Corebound.Gameplay.Waves
 
             RestoreCoreHealthFromSave(runSaveData);
             _currentWaveIndex = runSaveData != null ? Mathf.Max(0, runSaveData.WaveIndex - 1) : 0;
+            RunProgressionSnapshot.Current.SetStage(StageIndex);
             ApplyPersistenceContext();
             RaiseStageStartedIfNeeded(WaveEncounterLabelResolver.ResolveStageStartDetail(_stageData, _currentWaveIndex, TotalWaveCount, _state, _bossRuntimeController, runSaveData));
 
@@ -449,6 +463,7 @@ namespace Corebound.Gameplay.Waves
             _currentWaveIndex = Mathf.Max(TotalWaveCount, _currentWaveIndex);
             _completeStageAfterReward = false;
             _state = WaveState.BossCombat;
+            BossEncounterState.SetActive(true);
 
             if (_bossRuntimeController == null)
             {
@@ -555,6 +570,7 @@ namespace Corebound.Gameplay.Waves
 
         private void CompleteBossEncounter()
         {
+            BossEncounterState.SetActive(false);
             _state = WaveState.Reward;
             _completeStageAfterReward = true;
 
@@ -692,6 +708,8 @@ namespace Corebound.Gameplay.Waves
 
             _stageData = nextStageData;
             _currentWaveIndex = 0;
+            RunProgressionSnapshot.Current.SetStage(StageIndex);
+            ApplyStageStartBonus();
             _remainingAliveEnemies = 0;
             _spawnGroups.Clear();
             _intermissionTimer = 0f;
@@ -707,6 +725,13 @@ namespace Corebound.Gameplay.Waves
 
         private void OnConfirmPressed()
         {
+            // The loadout panel owns Confirm while it is open, and the frame it opens or closes
+            // in (single-frame event consumption).
+            if (Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.IsOpen || Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.LastToggleFrame == Time.frameCount)
+            {
+                return;
+            }
+
             // Playtest feedback (2026-09-17): "Intermission should be ended via btn press 'Enter'
             // even if nothing was built" - the mandatory build-a-tower gate (below,
             // _requiresIntermissionTowerAction) used to block Confirm entirely until the player
@@ -831,7 +856,7 @@ namespace Corebound.Gameplay.Waves
 
                 if (helperEnemy != null)
                 {
-                    SpawnResourcePickup(helperEnemy.ResourceRewardAmount, eventArgs.Victim.transform.position);
+                    SpawnResourcePickup(ResolveKillScrap(helperEnemy), eventArgs.Victim.transform.position);
                     RecordEnemyKillStatistic();
                     GrantEliteKillReward(helperEnemy);
 
@@ -858,7 +883,7 @@ namespace Corebound.Gameplay.Waves
                 return;
             }
 
-            SpawnResourcePickup(enemy.ResourceRewardAmount, eventArgs.Victim.transform.position);
+            SpawnResourcePickup(ResolveKillScrap(enemy), eventArgs.Victim.transform.position);
             RecordEnemyKillStatistic();
             GrantEliteKillReward(enemy);
 
@@ -939,6 +964,83 @@ namespace Corebound.Gameplay.Waves
         private void RecordRunOutcomeStatistic(bool completed)
         {
             WaveStatisticsRecorder.RecordRunOutcome(SaveManager, StageIndex, completed);
+        }
+
+        // Salvage Instinct: elites drop (1 + value) times their Scrap.
+        private static int ResolveKillScrap(EnemyRuntimeController enemy)
+        {
+            var amount = enemy.ResourceRewardAmount;
+
+            if (!enemy.IsElite)
+            {
+                return amount;
+            }
+
+            var bonus = RunProgressionSnapshot.Current.Skills[SkillEffectTarget.EliteScrapMultiplier];
+            return bonus > 0f ? Mathf.RoundToInt(amount * (1f + bonus)) : amount;
+        }
+
+        // Once per run: Starting Scrap and starting relics from the skill tree. Remembered in the
+        // run save so a resumed run is not paid twice; a tutorial run gets nothing.
+        private void ApplyRunStartBonuses(RunSaveData runSaveData)
+        {
+            if (runSaveData == null || runSaveData.RunStartBonusesApplied || runSaveData.IsTutorialRun || SaveManager == null)
+            {
+                return;
+            }
+
+            var skills = RunProgressionSnapshot.Current.Skills;
+            var startingScrap = Mathf.RoundToInt(skills[SkillEffectTarget.StartingScrap]);
+
+            if (startingScrap > 0 && _resourceWalletService != null)
+            {
+                _resourceWalletService.AddFlat(startingScrap);
+            }
+
+            var relics = Mathf.RoundToInt(skills[SkillEffectTarget.StartingRelic]);
+
+            for (var index = 0; index < relics; index++)
+            {
+                _cardService?.TryGrantRandomRelic();
+            }
+
+            // Re-read: the grants above write their own changes into the run save.
+            var latest = SaveManager.LoadRunSaveData() ?? runSaveData;
+            latest.MarkRunStartBonusesApplied();
+            SaveManager.SaveRunSaveData(latest);
+
+            if (startingScrap > 0 || relics > 0)
+            {
+                Debug.Log("[Progression] Run start bonuses: +" + startingScrap + " Scrap, " + relics + " relic(s).");
+            }
+        }
+
+        // Dividend / Supply Drop: Scrap at the start of every stage, paid once per stage.
+        private void ApplyStageStartBonus()
+        {
+            if (SaveManager == null || _resourceWalletService == null)
+            {
+                return;
+            }
+
+            var runSaveData = SaveManager.LoadRunSaveData();
+
+            if (runSaveData == null || runSaveData.IsTutorialRun || runSaveData.StageStartBonusPaidStageIndex >= StageIndex)
+            {
+                return;
+            }
+
+            var amount = Mathf.RoundToInt(RunProgressionSnapshot.Current.Skills[SkillEffectTarget.StageStartScrap]);
+
+            if (amount > 0)
+            {
+                _resourceWalletService.AddFlat(amount);
+                NotificationPresenter.Show("+" + amount + LocalizationService.Resolve(" Scrap (stage start)", " Schrott (Stagebeginn)"));
+            }
+
+            runSaveData = SaveManager.LoadRunSaveData() ?? runSaveData;
+            runSaveData.MarkStageStartBonusPaid(StageIndex);
+            SaveManager.SaveRunSaveData(runSaveData);
         }
 
         private void GrantEliteKillReward(EnemyRuntimeController enemy)

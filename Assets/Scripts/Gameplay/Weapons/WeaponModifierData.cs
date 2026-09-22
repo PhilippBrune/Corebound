@@ -15,7 +15,16 @@ namespace Corebound.Gameplay.Weapons
         CriticalChance = 3,
         CriticalDamageMultiplier = 4,
         AdditionalProjectiles = 5,
-        StatusEffectChance = 6
+        StatusEffectChance = 6,
+
+        // Appended 2026-09-22 for WeaponLoadout.md's Set Bonus rule changes. Serialized by index.
+        AdditionalPierce = 7,           // Add: extra enemies each projectile passes through
+        CriticalEveryNthShot = 8,       // Add: every Nth volley is a guaranteed crit (0 = off)
+        FullRing = 9,                   // Add: > 0 fires the volley as a full 360-degree ring
+        ExplodeOnExpire = 10,           // Add: > 0 makes projectiles that hit nothing explode
+        SlowOnHit = 11,                 // Add: > 0 applies Freeze (a slow) on hit
+        HeldDamageRamp = 12,            // Add: damage gained per second of held fire (resets on release)
+        SpreadAngleMultiplier = 13      // Multiply: < 1 narrows the spread
     }
 
     // Multiplicative targets compose by multiplying, additive ones by summing. Keeping this on the
@@ -27,7 +36,8 @@ namespace Corebound.Gameplay.Weapons
             return target == WeaponModifierTarget.DamageMultiplier
                 || target == WeaponModifierTarget.FireIntervalMultiplier
                 || target == WeaponModifierTarget.ProjectileSpeedMultiplier
-                || target == WeaponModifierTarget.CriticalDamageMultiplier;
+                || target == WeaponModifierTarget.CriticalDamageMultiplier
+                || target == WeaponModifierTarget.SpreadAngleMultiplier;
         }
     }
 

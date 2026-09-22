@@ -42,7 +42,7 @@ namespace Corebound.Gameplay.Economy
 
         public int ResolveCost(int baseCost)
         {
-            var multiplier = _cardService != null ? _cardService.PurchaseCostMultiplier : 1f;
+            var multiplier = ResolveCostMultiplier();
             var finalCost = Mathf.Max(0, Mathf.RoundToInt(baseCost * multiplier));
 
             if (finalCost != baseCost)
@@ -57,7 +57,7 @@ namespace Corebound.Gameplay.Economy
         // and so must not be called from a per-frame UI check.
         public int PeekCost(int baseCost)
         {
-            var multiplier = _cardService != null ? _cardService.PurchaseCostMultiplier : 1f;
+            var multiplier = ResolveCostMultiplier();
             return Mathf.Max(0, Mathf.RoundToInt(baseCost * multiplier));
         }
 
@@ -83,7 +83,16 @@ namespace Corebound.Gameplay.Economy
 
         public void Refund(int amount)
         {
-            _resourceWalletService?.AddReward(amount);
+            _resourceWalletService?.AddFlat(amount);
+        }
+
+        // Cards (in-run) times the skill tree's Bargain Struck line (permanent), floored so no
+        // combination makes things free.
+        private float ResolveCostMultiplier()
+        {
+            var cards = _cardService != null ? _cardService.PurchaseCostMultiplier : 1f;
+            var skills = Corebound.MetaProgression.RunProgressionSnapshot.Current.Skills[Corebound.MetaProgression.SkillEffectTarget.PurchaseCostMultiplier];
+            return Mathf.Max(0.25f, cards * skills);
         }
     }
 }

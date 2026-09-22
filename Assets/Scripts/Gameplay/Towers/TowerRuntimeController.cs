@@ -122,7 +122,9 @@ namespace Corebound.Gameplay.Towers
             var projectile = _towerService.GetProjectileInstance(_projectilePrototype, _projectileParent);
             var direction = ((Vector2)target.transform.position - (Vector2)transform.position).normalized;
             FaceFireDirection(direction);
-            var damageAmount = _towerData.DamageProfile != null ? _towerData.DamageProfile.BaseDamage * _towerService.TowerDamageMultiplier * ResolveDamageMultiplier() : 1f;
+            var damageAmount = _towerData.DamageProfile != null
+                ? _towerData.DamageProfile.BaseDamage * _towerService.TowerDamageMultiplier * ResolveDamageMultiplier() * ResolveProgressionDamageMultiplier()
+                : 1f;
             var statusEffect = _towerData.DamageProfile != null && _towerData.DamageProfile.ApplyStatusEffect ? _towerData.DamageProfile.StatusEffectType : (StatusEffectType?)null;
             var damageContext = new DamageContext(
                 DamageSourceType.Tower,
@@ -180,7 +182,32 @@ namespace Corebound.Gameplay.Towers
             }
         }
 
+        // Permanent progression, frozen at run start (Upgrades.md tower tracks, per TowerId; skill
+        // tree Construction branch, for every tower).
+        private float ResolveProgressionDamageMultiplier()
+        {
+            var progression = Corebound.MetaProgression.RunProgressionSnapshot.Current;
+            var towerId = _towerData != null ? _towerData.TowerId : string.Empty;
+            return progression.Upgrades.GetIncreaseMultiplier(towerId, Corebound.MetaProgression.UpgradableStat.Damage)
+                * progression.Skills[Corebound.MetaProgression.SkillEffectTarget.TowerDamageMultiplier];
+        }
+
         private float ResolveRange()
+        {
+            var progression = Corebound.MetaProgression.RunProgressionSnapshot.Current;
+            var towerId = _towerData != null ? _towerData.TowerId : string.Empty;
+
+            // Overwatch: towers reach further while a boss is on the field.
+            var bossRange = Corebound.Gameplay.Bosses.BossEncounterState.IsActive
+                ? 1f + progression.Skills[Corebound.MetaProgression.SkillEffectTarget.BossTowerRangeMultiplier]
+                : 1f;
+            return ResolveBaseRange()
+                * progression.Upgrades.GetIncreaseMultiplier(towerId, Corebound.MetaProgression.UpgradableStat.Range)
+                * progression.Skills[Corebound.MetaProgression.SkillEffectTarget.TowerRangeMultiplier]
+                * bossRange;
+        }
+
+        private float ResolveBaseRange()
         {
             var range = _towerData != null ? _towerData.Range : 6f;
 
@@ -203,6 +230,15 @@ namespace Corebound.Gameplay.Towers
         }
 
         private float ResolveFireIntervalSeconds()
+        {
+            var progression = Corebound.MetaProgression.RunProgressionSnapshot.Current;
+            var towerId = _towerData != null ? _towerData.TowerId : string.Empty;
+            return Mathf.Max(0.05f, ResolveBaseFireIntervalSeconds()
+                * progression.Upgrades.GetReductionMultiplier(towerId, Corebound.MetaProgression.UpgradableStat.FireSpeed)
+                * progression.Skills[Corebound.MetaProgression.SkillEffectTarget.TowerFireIntervalMultiplier]);
+        }
+
+        private float ResolveBaseFireIntervalSeconds()
         {
             var fireInterval = _towerData != null ? _towerData.FireIntervalSeconds : 0.85f;
 

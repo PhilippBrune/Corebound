@@ -17,6 +17,21 @@ namespace Corebound.Gameplay.Combat
         private CircleCollider2D _circleCollider2D;
         private Rigidbody2D _rigidbody2D;
         private int _remainingPierceCount;
+        private bool _explodeOnExpire;
+        private bool _countsTowardPlayerBudget;
+
+        // WeaponLoadout.md readability rules. Player shots draw below enemy shots and below boss
+        // telegraphs (sorting -2), so a wall of friendly fire can never hide what kills you.
+        private const int PlayerProjectileSortingOrder = -3;
+        private const int HostileProjectileSortingOrder = 2;
+        private const float ExpireExplosionRadius = 1.1f;
+        private const float ExpireExplosionDamageScale = 0.75f;
+
+        private static readonly Collider2D[] ExplosionBuffer = new Collider2D[24];
+
+        // Live player projectiles, for the loadout's projectile budget. Counted on launch and
+        // uncounted on release or disable, so a scene unload cannot leave the count inflated.
+        public static int ActivePlayerProjectileCount { get; private set; }
 
         private void Awake()
         {
@@ -36,7 +51,57 @@ namespace Corebound.Gameplay.Combat
 
             if (_remainingLifetime <= 0f)
             {
+                if (_explodeOnExpire && _hitTargets.Count == 0)
+                {
+                    Explode();
+                }
+
                 Release();
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_countsTowardPlayerBudget)
+            {
+                _countsTowardPlayerBudget = false;
+                ActivePlayerProjectileCount = Mathf.Max(0, ActivePlayerProjectileCount - 1);
+            }
+        }
+
+        // Spread Synchronised: a shot that flew its whole lifetime without hitting anything bursts,
+        // so a wide spread that missed still converts into damage at the end of its reach.
+        private void Explode()
+        {
+            var count = Physics2D.OverlapCircleNonAlloc(transform.position, ExpireExplosionRadius, ExplosionBuffer);
+            var explosionContext = new DamageContext(
+                _damageContext.SourceType,
+                _damageContext.DamageKind,
+                _damageContext.Amount * ExpireExplosionDamageScale,
+                transform.position,
+                _direction,
+                _damageContext.StatusEffect);
+
+            for (var index = 0; index < count; index++)
+            {
+                var other = ExplosionBuffer[index];
+
+                if (other == null)
+                {
+                    continue;
+                }
+
+                var targetObject = other.attachedRigidbody != null ? other.attachedRigidbody.gameObject : other.gameObject;
+
+                if (targetObject == _owner || !_hitTargets.Add(targetObject))
+                {
+                    continue;
+                }
+
+                var receiver = (other.attachedRigidbody != null ? other.attachedRigidbody.GetComponent<ICombatHitReceiver>() : null)
+                    ?? other.GetComponent<ICombatHitReceiver>()
+                    ?? other.GetComponentInParent<ICombatHitReceiver>();
+                receiver?.ReceiveHit(_owner, explosionContext);
             }
         }
 
@@ -104,14 +169,30 @@ namespace Corebound.Gameplay.Combat
 
         public void Launch(GameObject owner, ProjectileData projectileData, Vector2 origin, Vector2 direction, DamageContext damageContext, float speedMultiplier = 1f)
         {
+            Launch(owner, projectileData, origin, direction, damageContext, speedMultiplier, 0, false);
+        }
+
+        public void Launch(GameObject owner, ProjectileData projectileData, Vector2 origin, Vector2 direction, DamageContext damageContext, float speedMultiplier, int extraPierce, bool explodeOnExpire)
+        {
             EnsureComponents();
             _owner = owner;
             _direction = direction.sqrMagnitude < Mathf.Epsilon ? Vector2.right : direction.normalized;
             _speed = (projectileData != null ? projectileData.Speed : 10f) * Mathf.Max(0.05f, speedMultiplier);
             _remainingLifetime = projectileData != null ? projectileData.LifetimeSeconds : 1f;
-            _remainingPierceCount = projectileData != null ? projectileData.PierceCount : 0;
+            _remainingPierceCount = (projectileData != null ? projectileData.PierceCount : 0) + Mathf.Max(0, extraPierce);
+            _explodeOnExpire = explodeOnExpire;
             _damageContext = damageContext;
             _hitTargets.Clear();
+
+            var isPlayerShot = damageContext.SourceType == DamageSourceType.Player;
+
+            if (isPlayerShot && !_countsTowardPlayerBudget)
+            {
+                _countsTowardPlayerBudget = true;
+                ActivePlayerProjectileCount++;
+            }
+
+            _spriteRenderer.sortingOrder = isPlayerShot ? PlayerProjectileSortingOrder : HostileProjectileSortingOrder;
 
             transform.position = origin;
             transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(_direction.y, _direction.x) * Mathf.Rad2Deg);

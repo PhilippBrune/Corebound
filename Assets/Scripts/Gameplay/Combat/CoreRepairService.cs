@@ -61,9 +61,23 @@ namespace Corebound.Gameplay.Combat
             && IsPlayerInRange
             && CanAfford;
 
-        public int CurrentRepairCost => Mathf.Max(
+        private const string FreeRepairRuleKey = "skill_field_repair";
+
+        // Field Repair: the first repair each stage is free, shown as a cost of 0 until used.
+        private bool IsFreeRepairAvailable
+        {
+            get
+            {
+                var progression = Corebound.MetaProgression.RunProgressionSnapshot.Current;
+                return progression.Skills.HasRule(Corebound.MetaProgression.SkillEffectTarget.FreeFirstRepairPerStage)
+                    && progression.IsRuleAvailableThisStage(FreeRepairRuleKey);
+            }
+        }
+
+        public int CurrentRepairCost => IsFreeRepairAvailable ? 0 : Mathf.Max(
             1,
-            Mathf.RoundToInt(_baseRepairCost * Mathf.Pow(_repeatCostMultiplier, _repairsThisRun)));
+            Mathf.RoundToInt(_baseRepairCost * Mathf.Pow(_repeatCostMultiplier, _repairsThisRun)
+                * Mathf.Max(0.1f, Corebound.MetaProgression.RunProgressionSnapshot.Current.Skills[Corebound.MetaProgression.SkillEffectTarget.CoreRepairCostMultiplier])));
 
         private bool CanAfford => _economyService != null && _economyService.CanAfford(CurrentRepairCost);
 
@@ -147,9 +161,10 @@ namespace Corebound.Gameplay.Combat
             // ResolveCost applies the PurchaseCostMultiplier and raises PriceModified once, which
             // is correct at the moment of an actual purchase. CurrentRepairCost is the base price;
             // TryPurchase expects the resolved one.
-            var cost = _economyService.ResolveCost(CurrentRepairCost);
+            var isFree = IsFreeRepairAvailable;
+            var cost = isFree ? 0 : _economyService.ResolveCost(CurrentRepairCost);
 
-            if (!_economyService.TryPurchase(cost))
+            if (!isFree && !_economyService.TryPurchase(cost))
             {
                 return false;
             }
@@ -162,7 +177,16 @@ namespace Corebound.Gameplay.Combat
                 return false;
             }
 
-            _repairsThisRun++;
+            if (isFree)
+            {
+                Corebound.MetaProgression.RunProgressionSnapshot.Current.TryConsumeOncePerStage(FreeRepairRuleKey);
+            }
+            else
+            {
+                // A free repair does not escalate the price of the next one.
+                _repairsThisRun++;
+            }
+
             StateChanged?.Invoke();
             return true;
         }

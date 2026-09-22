@@ -16,6 +16,7 @@ namespace Corebound.Input
         private const string PrimaryFireActionName = "PrimaryFire";
         private const string InteractActionName = "Interact";
         private const string PauseActionName = "Pause";
+        private const string LoadoutActionName = "Loadout";
         private const string NavigateActionName = "Navigate";
         private const string ConfirmActionName = "Confirm";
         private const string CancelActionName = "Cancel";
@@ -47,6 +48,7 @@ namespace Corebound.Input
         private InputAction _uiConfirmAction;
         private InputAction _uiCancelAction;
         private InputAction _systemPauseAction;
+        private InputAction _systemLoadoutAction;
 
         private bool _callbacksHooked;
         private (InputAction action, Action<InputAction.CallbackContext> handler)[] _performedBindings;
@@ -71,6 +73,10 @@ namespace Corebound.Input
         public event Action InteractPressed;
 
         public event Action PausePressed;
+
+        // WeaponLoadout.md: opens the Intermission loadout panel. Not on IInputReader: only the
+        // loadout panel listens, and it binds to this concrete reader.
+        public event Action LoadoutPressed;
 
         public event Action PreviousPressed;
 
@@ -135,6 +141,11 @@ namespace Corebound.Input
         public void DebugRaisePause()
         {
             PausePressed?.Invoke();
+        }
+
+        public void DebugRaiseLoadout()
+        {
+            LoadoutPressed?.Invoke();
         }
 
         public void DebugRaiseNextTowerType()
@@ -239,6 +250,9 @@ namespace Corebound.Input
 
             _systemPauseAction = _systemMap.FindAction(PauseActionName, true);
 
+            // Optional (false): an actions asset from before the loadout existed still loads.
+            _systemLoadoutAction = _systemMap.FindAction(LoadoutActionName, false);
+
             BuildCallbackBindings();
             return true;
         }
@@ -274,6 +288,7 @@ namespace Corebound.Input
                 (_uiConfirmAction, OnConfirmPerformed),
                 (_uiCancelAction, OnCancelPerformed),
                 (_systemPauseAction, OnPausePerformed),
+                (_systemLoadoutAction, OnLoadoutPerformed),
             };
 
             _canceledBindings = new (InputAction action, Action<InputAction.CallbackContext> handler)[]
@@ -299,7 +314,10 @@ namespace Corebound.Input
 
             for (var index = 0; index < _performedBindings.Length; index++)
             {
-                _performedBindings[index].action.performed += _performedBindings[index].handler;
+                if (_performedBindings[index].action != null)
+                {
+                    _performedBindings[index].action.performed += _performedBindings[index].handler;
+                }
             }
 
             for (var index = 0; index < _canceledBindings.Length; index++)
@@ -319,7 +337,10 @@ namespace Corebound.Input
 
             for (var index = 0; index < _performedBindings.Length; index++)
             {
-                _performedBindings[index].action.performed -= _performedBindings[index].handler;
+                if (_performedBindings[index].action != null)
+                {
+                    _performedBindings[index].action.performed -= _performedBindings[index].handler;
+                }
             }
 
             for (var index = 0; index < _canceledBindings.Length; index++)
@@ -441,6 +462,12 @@ namespace Corebound.Input
         {
             UpdateInputDevice(context);
             PausePressed?.Invoke();
+        }
+
+        private void OnLoadoutPerformed(InputAction.CallbackContext context)
+        {
+            UpdateInputDevice(context);
+            LoadoutPressed?.Invoke();
         }
 
         private void OnPreviousPerformed(InputAction.CallbackContext context)

@@ -20,3 +20,60 @@ MonoBehaviour:
   _projectile: {fileID: 11400000, guid: edbf4f0d9d044cc8a0c7f3ddc3426372, type: 2}
   _aimAssistProfile: 0
   _presentation: {fileID: 11400000, guid: b2ac0e6f7e91418286a9184ebd924025, type: 2}
+  _rarity: 0
+  _basePurchaseCost: 18
+  _setBonuses:
+  - _requiredCopies: 2
+    _displayName: Paired
+    _displayNameDe: Gepaart
+    _description: '+15% damage.'
+    _descriptionDe: '+15 % Schaden.'
+    _effects:
+    - _target: 0
+      _value: 1.15
+  - _requiredCopies: 3
+    _displayName: Aligned
+    _displayNameDe: Ausgerichtet
+    _description: '+15% damage, and the beam pierces one extra target.'
+    _descriptionDe: '+15 % Schaden, der Strahl durchdringt ein weiteres Ziel.'
+    _effects:
+    - _target: 0
+      _value: 1.15
+    - _target: 7
+      _value: 1
+  - _requiredCopies: 4
+    _displayName: Focused
+    _displayNameDe: Fokussiert
+    _description: '+30% damage, pierces one extra target.'
+    _descriptionDe: '+30 % Schaden, durchdringt ein weiteres Ziel.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 7
+      _value: 1
+  - _requiredCopies: 5
+    _displayName: Synchronised
+    _displayNameDe: Synchronisiert
+    _description: 'As Focused, and every hit slows the target.'
+    _descriptionDe: 'Wie Fokussiert, und jeder Treffer verlangsamt das Ziel.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 7
+      _value: 1
+    - _target: 11
+      _value: 1
+  - _requiredCopies: 6
+    _displayName: Perfected
+    _displayNameDe: Perfektioniert
+    _description: 'As Synchronised, and damage ramps up 25% per second of held fire, resetting on release.'
+    _descriptionDe: 'Wie Synchronisiert, und der Schaden steigt pro Sekunde Dauerfeuer um 25 %, zurückgesetzt beim Loslassen.'
+    _effects:
+    - _target: 0
+      _value: 1.3
+    - _target: 7
+      _value: 1
+    - _target: 11
+      _value: 1
+    - _target: 12
+      _value: 0.25

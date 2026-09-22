@@ -1,61 +1,62 @@
-using System.Text;
+using Corebound.Gameplay.Cards;
 using Corebound.Gameplay.Combat;
+using Corebound.Gameplay.Shared;
 using Corebound.Gameplay.Weapons;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Corebound.UI.Gameplay
 {
-    // Weapons.md, UI: "aktuelle Weapon-Identitaet", "relevante Bereitschafts- oder Cooldown-
-    // Zustaende", "aktive Weapon-Modifikatoren". Before WeaponEvents existed these three had no
-    // data source at all, which is why this presenter is new rather than an addition to
-    // WaveStatePresenter - that one is already the largest presenter in the project and is listed
-    // as a refactor candidate in Docs/10_OPEN_POINTS.md.
+    // WeaponLoadout.md, UI in combat: "a compact loadout strip, six small slots, each showing the
+    // weapon icon and a cooldown sweep. No text during combat. Active Set Bonuses are shown as small
+    // tier pips beside the strip, not as text." This replaces the single-weapon widget that
+    // Weapons.md specified (name, bar, modifier line) - with six weapons firing, a per-weapon name
+    // and modifier line would be six lines of text in the corner of a fight.
+    //
+    // Each tile also carries an ammo bar, because the reload loop (Upgrades.md option a) is only
+    // fair if the player can see a magazine running dry before it does.
+    //
+    // Assets 90 (weapon_slot_frame.png) and 91 (weapon_set_tier_pips.png) do not exist yet; the
+    // tiles are drawn procedurally and pick the art up by path once it does.
     public sealed class WeaponHudPresenter : MonoBehaviour
     {
         private const string CanvasName = "WeaponHudCanvas";
-        private const float ReadyPulseSeconds = 0.12f;
+        private const string SlotFramePath = "Assets/Art/UI/HUD/weapon_slot_frame.png";
+        private const float TileSize = 58f;
+        private const float TileGap = 8f;
+        private const float PanelPadding = 10f;
+        private const float AmmoBarHeight = 6f;
+        private const float PipSize = 10f;
+
+        private static readonly Color LockedTileColor = new Color(0.1f, 0.11f, 0.14f, 0.55f);
+        private static readonly Color EmptyTileColor = new Color(0.14f, 0.16f, 0.21f, 0.85f);
+        private static readonly Color FilledTileColor = new Color(0.18f, 0.2f, 0.27f, 0.95f);
+        private static readonly Color SweepColor = new Color(0f, 0f, 0f, 0.55f);
+        private static readonly Color ReloadSweepColor = new Color(0.9f, 0.35f, 0.2f, 0.6f);
+        private static readonly Color AmmoColor = new Color(1f, 0.82f, 0.45f, 0.95f);
+        private static readonly Color PipOffColor = new Color(0.3f, 0.32f, 0.38f, 0.8f);
+        private static readonly Color PipOnColor = new Color(1f, 0.78f, 0.3f, 1f);
 
         [SerializeField] private PlayerCombatController _playerCombatController;
 
-        private Canvas _canvas;
+        private readonly TileView[] _tiles = new TileView[WeaponLoadoutRuntime.Capacity];
         private RectTransform _canvasRoot;
         private RectTransform _panel;
-        private Image _iconImage;
-        private Text _weaponNameText;
-        private Text _modifierText;
-        private RectTransform _cooldownBarBg;
-        private RectTransform _cooldownBarFill;
-        private Image _cooldownBarFillImage;
-
-        private Font _font;
+        private RectTransform _pipRow;
+        private readonly Image[] _pips = new Image[18];
+        private Sprite _squareSprite;
+        private Sprite _frameSprite;
         private UIManagedPanel _managedPanel;
-        private readonly StringBuilder _modifierBuilder = new StringBuilder(96);
-
-        private int _renderedModifierVersion = -1;
-        private string _renderedWeaponId = null;
-        private float _readyPulseTimer;
+        private int _renderedVersion = -1;
+        private int _renderedUnlocked = -1;
 
         private void Awake()
         {
-            _font = UIFontResolver.Resolve();
             ResolveCombatController();
+            _squareSprite = DebugSpriteFactory.CreateSquare(100f);
+            _frameSprite = DebugSpriteFactory.LoadProjectSprite(SlotFramePath);
             BuildCanvas();
             _managedPanel = UIManager.RegisterPanel(_canvasRoot, "weapon_hud", UIPanelLayer.HUD, false, false);
-            SetPanelVisible(false);
-        }
-
-        private void OnEnable()
-        {
-            WeaponEvents.WeaponModified += OnWeaponModified;
-            WeaponEvents.WeaponStateChanged += OnWeaponStateChanged;
-            RefreshIdentity();
-        }
-
-        private void OnDisable()
-        {
-            WeaponEvents.WeaponModified -= OnWeaponModified;
-            WeaponEvents.WeaponStateChanged -= OnWeaponStateChanged;
         }
 
         private void OnDestroy()
@@ -65,308 +66,282 @@ namespace Corebound.UI.Gameplay
 
         private void Update()
         {
-            if (_playerCombatController == null)
+            ResolveCombatController();
+
+            if (_playerCombatController == null || _panel == null)
             {
-                ResolveCombatController();
                 return;
             }
 
-            RefreshIdentity();
-            RefreshCooldown();
-        }
+            var loadout = _playerCombatController.Loadout;
 
-        private void OnWeaponModified(WeaponModifiedEventArgs eventArgs)
-        {
-            RefreshModifierText(eventArgs.ModifierState);
-        }
-
-        private void OnWeaponStateChanged(WeaponStateChangedEventArgs eventArgs)
-        {
-            SetPanelVisible(eventArgs.CurrentState != WeaponReadinessState.Unavailable);
-
-            // A weapon at a 0.12s interval spends almost every frame Cooling, so a bar alone reads
-            // as static. The brief tint on the Cooling -> Ready edge is what actually communicates
-            // "you can fire again" at that rhythm.
-            if (eventArgs.PreviousState == WeaponReadinessState.Cooling && eventArgs.CurrentState == WeaponReadinessState.Ready)
+            if (loadout.Version != _renderedVersion || loadout.UnlockedSlotCount != _renderedUnlocked)
             {
-                _readyPulseTimer = ReadyPulseSeconds;
+                _renderedVersion = loadout.Version;
+                _renderedUnlocked = loadout.UnlockedSlotCount;
+                RefreshTiles(loadout);
+                RefreshPips(loadout);
+            }
+
+            for (var index = 0; index < _tiles.Length; index++)
+            {
+                RefreshSweep(_tiles[index], loadout.GetSlot(index));
             }
         }
 
         private void ResolveCombatController()
         {
-            if (_playerCombatController != null)
-            {
-                return;
-            }
-
-            _playerCombatController = FindAnyObjectByType<PlayerCombatController>();
-        }
-
-        private void RefreshIdentity()
-        {
             if (_playerCombatController == null)
             {
-                return;
+                _playerCombatController = FindAnyObjectByType<PlayerCombatController>();
             }
-
-            var weaponId = _playerCombatController.ActiveWeaponId;
-
-            if (string.Equals(weaponId, _renderedWeaponId, System.StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            _renderedWeaponId = weaponId;
-
-            var weapon = _playerCombatController.ActiveWeapon;
-            var presentation = weapon != null ? weapon.Presentation : null;
-
-            if (_weaponNameText != null)
-            {
-                _weaponNameText.text = weapon != null
-                    ? weapon.DisplayName
-                    : LocalizationService.Resolve("No Weapon", "Keine Waffe");
-                _weaponNameText.color = presentation != null ? presentation.AccentColor : new Color(1f, 0.82f, 0.45f, 1f);
-            }
-
-            if (_iconImage != null)
-            {
-                var iconSprite = presentation != null ? presentation.ResolveIconSprite() : null;
-                _iconImage.sprite = iconSprite;
-                _iconImage.color = presentation != null
-                    ? presentation.AccentColor
-                    : new Color(0.55f, 0.62f, 0.75f, 0.9f);
-                _iconImage.enabled = iconSprite != null;
-            }
-
-            if (_cooldownBarFillImage != null && presentation != null)
-            {
-                _cooldownBarFillImage.color = presentation.AccentColor;
-            }
-
-            SetPanelVisible(weapon != null);
-
-            // A weapon swap changes which modifiers pass AppliesTo, so the list has to be redrawn
-            // even when nothing about the build itself changed.
-            _renderedModifierVersion = -1;
-            RefreshModifierText(_playerCombatController.WeaponModifierState);
         }
 
-        private void RefreshCooldown()
+        private void RefreshTiles(WeaponLoadoutRuntime loadout)
         {
-            if (_cooldownBarFill == null || _cooldownBarBg == null)
+            for (var index = 0; index < _tiles.Length; index++)
             {
-                return;
+                var tile = _tiles[index];
+                var slot = loadout.GetSlot(index);
+                var isLocked = index >= loadout.UnlockedSlotCount;
+
+                // Locked slots are shown, dimmed, so the player can see there is more to earn.
+                tile.Background.color = isLocked ? LockedTileColor : (slot.IsEmpty ? EmptyTileColor : FilledTileColor);
+                tile.Edge.color = slot.IsEmpty ? new Color(0f, 0f, 0f, 0f) : ResolveTierColor(slot.Tier);
+
+                var presentation = slot.IsEmpty ? null : slot.Weapon.Presentation;
+                var icon = presentation != null ? presentation.ResolveIconSprite() : null;
+                tile.Icon.sprite = icon;
+                tile.Icon.enabled = icon != null;
+                tile.Icon.color = presentation != null ? presentation.AccentColor : Color.white;
+                tile.AmmoBar.gameObject.SetActive(!slot.IsEmpty);
+                tile.Letter.text = !slot.IsEmpty && icon == null ? slot.Weapon.DisplayName.Substring(0, 1) : string.Empty;
             }
-
-            // The bar fills as the weapon recovers, so a full bar means ready - the opposite
-            // reading (bar drains to nothing) looks like the weapon ran out of something.
-            var readiness = 1f - Mathf.Clamp01(_playerCombatController.FireCooldownNormalized);
-            _cooldownBarFill.sizeDelta = new Vector2(_cooldownBarBg.rect.width * readiness, _cooldownBarFill.sizeDelta.y);
-
-            if (_readyPulseTimer > 0f)
-            {
-                _readyPulseTimer -= Time.deltaTime;
-            }
-
-            if (_cooldownBarFillImage == null)
-            {
-                return;
-            }
-
-            var baseColor = _cooldownBarFillImage.color;
-            var alpha = _readyPulseTimer > 0f ? 1f : 0.72f;
-            _cooldownBarFillImage.color = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
         }
 
-        private void RefreshModifierText(WeaponModifierState modifierState)
+        // One pip row per active Set Bonus archetype: filled pips for copies held, hollow up to the
+        // next tier, so "3/4 toward Focused" reads without text.
+        private void RefreshPips(WeaponLoadoutRuntime loadout)
         {
-            if (_modifierText == null || modifierState == null)
+            for (var index = 0; index < _pips.Length; index++)
             {
-                return;
+                _pips[index].gameObject.SetActive(false);
             }
 
-            if (modifierState.Version == _renderedModifierVersion)
+            var pipIndex = 0;
+            var bonuses = loadout.ActiveSetBonuses;
+
+            for (var row = 0; row < bonuses.Count && row < 3; row++)
             {
-                return;
-            }
+                var bonus = bonuses[row];
+                var target = bonus.NextTier != null ? bonus.NextTier.RequiredCopies : bonus.Copies;
+                var accent = bonus.Weapon != null && bonus.Weapon.Presentation != null ? bonus.Weapon.Presentation.AccentColor : PipOnColor;
 
-            _renderedModifierVersion = modifierState.Version;
-            _modifierBuilder.Length = 0;
-
-            if (!modifierState.HasActiveModifiers)
-            {
-                _modifierText.text = LocalizationService.Resolve("No modifiers", "Keine Modifikatoren");
-                return;
-            }
-
-            var modifiers = modifierState.ActiveModifiers;
-
-            for (var index = 0; index < modifiers.Count; index++)
-            {
-                if (_modifierBuilder.Length > 0)
+                for (var column = 0; column < target && column < 6 && pipIndex < _pips.Length; column++)
                 {
-                    _modifierBuilder.Append("  ");
+                    var pip = _pips[pipIndex++];
+                    pip.gameObject.SetActive(true);
+                    pip.color = column < bonus.Copies ? accent : PipOffColor;
+                    pip.rectTransform.anchoredPosition = new Vector2(column * (PipSize + 3f), -row * (PipSize + 4f));
                 }
-
-                _modifierBuilder.Append(FormatModifier(modifiers[index]));
             }
-
-            _modifierText.text = _modifierBuilder.ToString();
         }
 
-        // A multiplicative 1.15 reads as "+15%"; an additive 0.05 crit chance reads as "+5%"; an
-        // additive projectile count reads as "+1". Driven off the enum's own IsMultiplicative so
-        // the label can never disagree with how WeaponModifierState actually composed the value.
-        private static string FormatModifier(WeaponModifierData modifier)
+        private static void RefreshSweep(TileView tile, WeaponSlotRuntime slot)
         {
-            if (modifier == null)
+            if (slot == null || slot.IsEmpty)
             {
-                return string.Empty;
+                tile.Sweep.fillAmount = 0f;
+                return;
             }
 
-            var label = !string.IsNullOrWhiteSpace(modifier.DisplayName) ? modifier.DisplayName : modifier.ModifierId;
-
-            if (modifier.Target == WeaponModifierTarget.AdditionalProjectiles)
+            if (slot.IsReloading)
             {
-                return label + " +" + Mathf.RoundToInt(modifier.Value);
+                tile.Sweep.color = ReloadSweepColor;
+                tile.Sweep.fillAmount = slot.ReloadNormalized;
+            }
+            else
+            {
+                tile.Sweep.color = SweepColor;
+                tile.Sweep.fillAmount = slot.CooldownNormalized;
             }
 
-            var percent = modifier.Target.IsMultiplicative()
-                ? (modifier.Value - 1f) * 100f
-                : modifier.Value * 100f;
-
-            return label + " " + (percent >= 0f ? "+" : string.Empty) + percent.ToString("0") + "%";
+            var fill = tile.AmmoFill.rectTransform;
+            fill.anchorMax = new Vector2(slot.IsReloading ? 1f - slot.ReloadNormalized : slot.AmmoNormalized, 1f);
+            tile.AmmoFill.color = slot.IsReloading ? ReloadSweepColor : AmmoColor;
         }
 
-        private void SetPanelVisible(bool visible)
+        private static Color ResolveTierColor(int tier)
         {
-            if (_panel != null && _panel.gameObject.activeSelf != visible)
+            switch ((CardRarity)tier)
             {
-                _panel.gameObject.SetActive(visible);
+                case CardRarity.Rare:
+                    return new Color(0.35f, 0.62f, 1f, 1f);
+                case CardRarity.Epic:
+                    return new Color(0.72f, 0.4f, 1f, 1f);
+                case CardRarity.Legendary:
+                    return new Color(1f, 0.72f, 0.2f, 1f);
+                default:
+                    return new Color(0.75f, 0.78f, 0.82f, 1f);
             }
         }
 
         // Same shape as BossHudPresenter.BuildCanvas, and for the same reason: this presenter can
         // share CombatRuntime with world-space services, so adding a Canvas to gameObject itself
         // would convert that Transform into a CanvasScaler-driven RectTransform and displace every
-        // sibling's world-space children. Find-existing-first guards against a duplicate Awake.
+        // sibling's world-space children. The canvas lives on its own child object.
         private void BuildCanvas()
         {
-            var existingCanvasTransform = transform.Find(CanvasName);
-            var canvasObject = existingCanvasTransform != null ? existingCanvasTransform.gameObject : new GameObject(CanvasName);
+            var existing = transform.Find(CanvasName);
 
-            if (existingCanvasTransform == null)
+            if (existing != null)
             {
-                canvasObject.transform.SetParent(transform, false);
+                // A previous build of this presenter (the single-weapon panel) - discard it
+                // rather than build on top of it. Renamed first: Destroy is deferred.
+                existing.name = CanvasName + "_Discarded";
+                existing.gameObject.SetActive(false);
+                Destroy(existing.gameObject);
             }
 
-            _canvas = canvasObject.GetComponent<Canvas>();
-
-            if (_canvas == null)
-            {
-                _canvas = canvasObject.AddComponent<Canvas>();
-            }
-
-            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-
+            var canvasObject = new GameObject(CanvasName, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+            canvasObject.transform.SetParent(transform, false);
+            var canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             var scaler = canvasObject.GetComponent<CanvasScaler>();
-
-            if (scaler == null)
-            {
-                scaler = canvasObject.AddComponent<CanvasScaler>();
-            }
-
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
 
-            if (canvasObject.GetComponent<GraphicRaycaster>() == null)
-            {
-                canvasObject.AddComponent<GraphicRaycaster>();
-            }
-
             _canvasRoot = canvasObject.GetComponent<RectTransform>();
-            _canvasRoot.anchorMin = Vector2.zero;
-            _canvasRoot.anchorMax = Vector2.one;
-            _canvasRoot.offsetMin = Vector2.zero;
-            _canvasRoot.offsetMax = Vector2.zero;
 
-            var existingPanel = _canvasRoot.Find("WeaponPanel");
-            var panelObject = existingPanel != null ? existingPanel.gameObject : new GameObject("WeaponPanel", typeof(RectTransform), typeof(Image));
-            _panel = panelObject.GetComponent<RectTransform>();
-            _panel.SetParent(_canvasRoot, false);
-
-            // Bottom-left: the boss bar owns bottom-centre and the status box owns top-right, so
-            // this is the only free HUD corner that does not overlap an existing widget.
+            // Bottom-left: the boss bar owns bottom-centre and the status box owns top-right.
+            var panelWidth = PanelPadding * 2f + WeaponLoadoutRuntime.Capacity * TileSize + (WeaponLoadoutRuntime.Capacity - 1) * TileGap;
+            var panelHeight = PanelPadding * 2f + TileSize + AmmoBarHeight + 4f;
+            var panelImage = ProceduralUIFactory.CreateImage("LoadoutStrip", _canvasRoot, _squareSprite, new Color(0.06f, 0.07f, 0.1f, 0.78f), Image.Type.Simple);
+            panelImage.raycastTarget = false;
+            _panel = panelImage.rectTransform;
             _panel.anchorMin = Vector2.zero;
             _panel.anchorMax = Vector2.zero;
             _panel.pivot = Vector2.zero;
             _panel.anchoredPosition = new Vector2(26f, 26f);
-            _panel.sizeDelta = new Vector2(360f, 96f);
+            _panel.sizeDelta = new Vector2(panelWidth, panelHeight);
 
-            var panelImage = panelObject.GetComponent<Image>();
-            panelImage.color = new Color(0.07f, 0.08f, 0.12f, 0.8f);
-            panelImage.raycastTarget = false;
+            var font = UIFontResolver.Resolve();
 
-            var existingIcon = _panel.Find("WeaponIcon");
-            var iconObject = existingIcon != null ? existingIcon.gameObject : new GameObject("WeaponIcon", typeof(RectTransform), typeof(Image));
-            var iconRect = iconObject.GetComponent<RectTransform>();
-            iconRect.SetParent(_panel, false);
-            iconRect.anchorMin = new Vector2(0f, 1f);
-            iconRect.anchorMax = new Vector2(0f, 1f);
-            iconRect.pivot = new Vector2(0f, 1f);
-            iconRect.anchoredPosition = new Vector2(12f, -12f);
-            iconRect.sizeDelta = new Vector2(34f, 34f);
-            _iconImage = iconObject.GetComponent<Image>();
-            _iconImage.raycastTarget = false;
-            _iconImage.preserveAspect = true;
-            _iconImage.enabled = false;
+            for (var index = 0; index < _tiles.Length; index++)
+            {
+                _tiles[index] = CreateTile(index, font);
+            }
 
-            _weaponNameText = ProceduralUIFactory.CreateText("WeaponNameText", _panel, _font, 22, FontStyle.Bold, new Color(1f, 0.82f, 0.45f, 1f), TextAnchor.MiddleLeft);
-            _weaponNameText.rectTransform.anchorMin = new Vector2(0f, 1f);
-            _weaponNameText.rectTransform.anchorMax = new Vector2(1f, 1f);
-            _weaponNameText.rectTransform.pivot = new Vector2(0f, 1f);
-            _weaponNameText.rectTransform.anchoredPosition = new Vector2(54f, -12f);
-            _weaponNameText.rectTransform.sizeDelta = new Vector2(-66f, 34f);
-            _weaponNameText.text = LocalizationService.Resolve("No Weapon", "Keine Waffe");
+            var pipObject = new GameObject("SetPips", typeof(RectTransform));
+            _pipRow = pipObject.GetComponent<RectTransform>();
+            _pipRow.SetParent(_panel, false);
+            _pipRow.anchorMin = new Vector2(1f, 1f);
+            _pipRow.anchorMax = new Vector2(1f, 1f);
+            _pipRow.pivot = new Vector2(0f, 1f);
+            _pipRow.anchoredPosition = new Vector2(10f, -PanelPadding);
+            _pipRow.sizeDelta = new Vector2(90f, 50f);
 
-            var existingBarBg = _panel.Find("CooldownBarBg");
-            var barBgObject = existingBarBg != null ? existingBarBg.gameObject : new GameObject("CooldownBarBg", typeof(RectTransform), typeof(Image));
-            _cooldownBarBg = barBgObject.GetComponent<RectTransform>();
-            _cooldownBarBg.SetParent(_panel, false);
-            _cooldownBarBg.anchorMin = new Vector2(0f, 1f);
-            _cooldownBarBg.anchorMax = new Vector2(1f, 1f);
-            _cooldownBarBg.pivot = new Vector2(0f, 1f);
-            _cooldownBarBg.anchoredPosition = new Vector2(12f, -52f);
-            _cooldownBarBg.sizeDelta = new Vector2(-24f, 10f);
+            for (var index = 0; index < _pips.Length; index++)
+            {
+                var pip = ProceduralUIFactory.CreateImage("Pip" + index, _pipRow, _squareSprite, PipOffColor, Image.Type.Simple);
+                pip.raycastTarget = false;
+                pip.rectTransform.anchorMin = new Vector2(0f, 1f);
+                pip.rectTransform.anchorMax = new Vector2(0f, 1f);
+                pip.rectTransform.pivot = new Vector2(0f, 1f);
+                pip.rectTransform.sizeDelta = new Vector2(PipSize, PipSize);
+                pip.gameObject.SetActive(false);
+                _pips[index] = pip;
+            }
+        }
 
-            var barBgImage = barBgObject.GetComponent<Image>();
-            barBgImage.color = new Color(0.16f, 0.17f, 0.22f, 0.9f);
-            barBgImage.raycastTarget = false;
+        private TileView CreateTile(int index, Font font)
+        {
+            var x = PanelPadding + index * (TileSize + TileGap);
+            var edge = ProceduralUIFactory.CreateImage("Slot" + index, _panel, _frameSprite != null ? _frameSprite : _squareSprite, Color.clear, Image.Type.Simple);
+            edge.raycastTarget = false;
+            var edgeRect = edge.rectTransform;
+            edgeRect.anchorMin = Vector2.zero;
+            edgeRect.anchorMax = Vector2.zero;
+            edgeRect.pivot = Vector2.zero;
+            edgeRect.anchoredPosition = new Vector2(x, PanelPadding + AmmoBarHeight + 4f);
+            edgeRect.sizeDelta = new Vector2(TileSize, TileSize);
 
-            var existingBarFill = _cooldownBarBg.Find("CooldownBarFill");
-            var barFillObject = existingBarFill != null ? existingBarFill.gameObject : new GameObject("CooldownBarFill", typeof(RectTransform), typeof(Image));
-            _cooldownBarFill = barFillObject.GetComponent<RectTransform>();
-            _cooldownBarFill.SetParent(_cooldownBarBg, false);
-            _cooldownBarFill.anchorMin = new Vector2(0f, 0f);
-            _cooldownBarFill.anchorMax = new Vector2(0f, 1f);
-            _cooldownBarFill.pivot = new Vector2(0f, 0.5f);
-            _cooldownBarFill.anchoredPosition = Vector2.zero;
-            _cooldownBarFill.sizeDelta = new Vector2(_cooldownBarBg.rect.width, 0f);
+            var background = ProceduralUIFactory.CreateImage("Background", edgeRect, _squareSprite, EmptyTileColor, Image.Type.Simple);
+            background.raycastTarget = false;
+            Stretch(background.rectTransform, 3f);
 
-            _cooldownBarFillImage = barFillObject.GetComponent<Image>();
-            _cooldownBarFillImage.color = new Color(1f, 0.72f, 0.35f, 0.72f);
-            _cooldownBarFillImage.raycastTarget = false;
+            var icon = ProceduralUIFactory.CreateImage("Icon", edgeRect, null, Color.white, Image.Type.Simple);
+            icon.raycastTarget = false;
+            icon.preserveAspect = true;
+            icon.enabled = false;
+            Stretch(icon.rectTransform, 8f);
 
-            _modifierText = ProceduralUIFactory.CreateText("WeaponModifierText", _panel, _font, 15, FontStyle.Normal, new Color(0.74f, 0.82f, 0.95f, 1f), TextAnchor.UpperLeft);
-            _modifierText.rectTransform.anchorMin = new Vector2(0f, 0f);
-            _modifierText.rectTransform.anchorMax = new Vector2(1f, 0f);
-            _modifierText.rectTransform.pivot = new Vector2(0f, 0f);
-            _modifierText.rectTransform.anchoredPosition = new Vector2(12f, 8f);
-            _modifierText.rectTransform.sizeDelta = new Vector2(-24f, 28f);
-            _modifierText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            _modifierText.text = LocalizationService.Resolve("No modifiers", "Keine Modifikatoren");
+            var letter = ProceduralUIFactory.CreateText("Letter", edgeRect, font, 26, FontStyle.Bold, new Color(0.9f, 0.92f, 0.96f, 1f), TextAnchor.MiddleCenter);
+            letter.raycastTarget = false;
+            Stretch(letter.rectTransform, 0f);
+
+            // Radial sweep over the icon: cooldown between volleys, reload in a warm colour.
+            var sweep = ProceduralUIFactory.CreateImage("Sweep", edgeRect, _squareSprite, SweepColor, Image.Type.Filled);
+            sweep.raycastTarget = false;
+            sweep.fillMethod = Image.FillMethod.Radial360;
+            sweep.fillOrigin = (int)Image.Origin360.Top;
+            sweep.fillClockwise = false;
+            sweep.fillAmount = 0f;
+            Stretch(sweep.rectTransform, 3f);
+
+            var ammoBar = ProceduralUIFactory.CreateImage("AmmoBar" + index, _panel, _squareSprite, new Color(0.12f, 0.13f, 0.17f, 0.9f), Image.Type.Simple);
+            ammoBar.raycastTarget = false;
+            var ammoRect = ammoBar.rectTransform;
+            ammoRect.anchorMin = Vector2.zero;
+            ammoRect.anchorMax = Vector2.zero;
+            ammoRect.pivot = Vector2.zero;
+            ammoRect.anchoredPosition = new Vector2(x, PanelPadding);
+            ammoRect.sizeDelta = new Vector2(TileSize, AmmoBarHeight);
+
+            var ammoFill = ProceduralUIFactory.CreateImage("AmmoFill", ammoRect, _squareSprite, AmmoColor, Image.Type.Simple);
+            ammoFill.raycastTarget = false;
+            ammoFill.rectTransform.anchorMin = Vector2.zero;
+            ammoFill.rectTransform.anchorMax = Vector2.one;
+            ammoFill.rectTransform.offsetMin = Vector2.zero;
+            ammoFill.rectTransform.offsetMax = Vector2.zero;
+
+            return new TileView(edge, background, icon, letter, sweep, ammoRect, ammoFill);
+        }
+
+        private static void Stretch(RectTransform rect, float inset)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(inset, inset);
+            rect.offsetMax = new Vector2(-inset, -inset);
+        }
+
+        private sealed class TileView
+        {
+            public TileView(Image edge, Image background, Image icon, Text letter, Image sweep, RectTransform ammoBar, Image ammoFill)
+            {
+                Edge = edge;
+                Background = background;
+                Icon = icon;
+                Letter = letter;
+                Sweep = sweep;
+                AmmoBar = ammoBar;
+                AmmoFill = ammoFill;
+            }
+
+            public Image Edge { get; }
+
+            public Image Background { get; }
+
+            public Image Icon { get; }
+
+            public Text Letter { get; }
+
+            public Image Sweep { get; }
+
+            public RectTransform AmmoBar { get; }
+
+            public Image AmmoFill { get; }
         }
     }
 }

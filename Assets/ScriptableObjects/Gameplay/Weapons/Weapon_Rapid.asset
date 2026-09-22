@@ -20,3 +20,58 @@ MonoBehaviour:
   _projectile: {fileID: 11400000, guid: d15088a6b81b4927b674572c54fdd0c8, type: 2}
   _aimAssistProfile: 1
   _presentation: {fileID: 11400000, guid: 3a0fd77da33a4d4a8913f7007a26c297, type: 2}
+  _rarity: 0
+  _basePurchaseCost: 12
+  _setBonuses:
+  - _requiredCopies: 2
+    _displayName: Paired
+    _displayNameDe: Gepaart
+    _description: '+10% fire rate.'
+    _descriptionDe: '+10 % Feuerrate.'
+    _effects:
+    - _target: 1
+      _value: 0.909
+  - _requiredCopies: 3
+    _displayName: Aligned
+    _displayNameDe: Ausgerichtet
+    _description: '+10% fire rate, and shots pierce one extra enemy.'
+    _descriptionDe: '+10 % Feuerrate, Schüsse durchdringen einen weiteren Gegner.'
+    _effects:
+    - _target: 1
+      _value: 0.909
+    - _target: 7
+      _value: 1
+  - _requiredCopies: 4
+    _displayName: Focused
+    _displayNameDe: Fokussiert
+    _description: '+20% fire rate, shots pierce one extra enemy.'
+    _descriptionDe: '+20 % Feuerrate, Schüsse durchdringen einen weiteren Gegner.'
+    _effects:
+    - _target: 1
+      _value: 0.833
+    - _target: 7
+      _value: 1
+  - _requiredCopies: 5
+    _displayName: Synchronised
+    _displayNameDe: Synchronisiert
+    _description: 'As Focused, and every sixth volley is a guaranteed critical.'
+    _descriptionDe: 'Wie Fokussiert, und jede sechste Salve ist garantiert kritisch.'
+    _effects:
+    - _target: 1
+      _value: 0.833
+    - _target: 7
+      _value: 1
+    - _target: 8
+      _value: 6
+  - _requiredCopies: 6
+    _displayName: Perfected
+    _displayNameDe: Perfektioniert
+    _description: 'A continuous stream: fire interval halved, piercing, every sixth volley critical.'
+    _descriptionDe: 'Dauerfeuer: Feuerintervall halbiert, durchdringend, jede sechste Salve kritisch.'
+    _effects:
+    - _target: 1
+      _value: 0.5
+    - _target: 7
+      _value: 1
+    - _target: 8
+      _value: 6

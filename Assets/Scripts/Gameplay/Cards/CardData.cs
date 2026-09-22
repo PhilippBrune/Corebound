@@ -23,6 +23,11 @@ namespace Corebound.Gameplay.Cards
         [SerializeField] private WeaponModifierData[] _weaponModifiers;
         [SerializeField] private bool _stackable;
 
+        // WeaponLoadout.md, Acquisition: weapons are offered the same ways cards are. A card with a
+        // weapon here is not a passive - picking it equips the weapon (at this card's rarity as its
+        // tier) instead of joining the selected cards.
+        [SerializeField] private WeaponData _grantedWeapon;
+
         public string CardId => _cardId;
 
         public string DisplayName => LocalizationService.Resolve(_displayName, _displayNameDe);
@@ -30,6 +35,10 @@ namespace Corebound.Gameplay.Cards
         public string Description => LocalizationService.Resolve(_description, _descriptionDe);
 
         public CardRarity Rarity => _rarity;
+
+        public WeaponData GrantedWeapon => _grantedWeapon;
+
+        public bool IsWeaponCard => _grantedWeapon != null;
 
         public string RequiredUnlockId => _requiredUnlockId;
 

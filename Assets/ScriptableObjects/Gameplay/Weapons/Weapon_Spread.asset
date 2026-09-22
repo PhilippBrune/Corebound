@@ -20,3 +20,58 @@ MonoBehaviour:
   _projectile: {fileID: 11400000, guid: 6ef0cf92ba224f8d8d9318a587f6a11b, type: 2}
   _aimAssistProfile: 2
   _presentation: {fileID: 11400000, guid: 04ca5814fc44403eaebb3a604f078e19, type: 2}
+  _rarity: 0
+  _basePurchaseCost: 16
+  _setBonuses:
+  - _requiredCopies: 2
+    _displayName: Paired
+    _displayNameDe: Gepaart
+    _description: '+1 projectile per volley.'
+    _descriptionDe: '+1 Projektil pro Salve.'
+    _effects:
+    - _target: 5
+      _value: 1
+  - _requiredCopies: 3
+    _displayName: Aligned
+    _displayNameDe: Ausgerichtet
+    _description: '+1 projectile, and the spread narrows by 15%.'
+    _descriptionDe: '+1 Projektil, die Streuung wird 15 % enger.'
+    _effects:
+    - _target: 5
+      _value: 1
+    - _target: 13
+      _value: 0.85
+  - _requiredCopies: 4
+    _displayName: Focused
+    _displayNameDe: Fokussiert
+    _description: '+2 projectiles, spread 15% narrower.'
+    _descriptionDe: '+2 Projektile, Streuung 15 % enger.'
+    _effects:
+    - _target: 5
+      _value: 2
+    - _target: 13
+      _value: 0.85
+  - _requiredCopies: 5
+    _displayName: Synchronised
+    _displayNameDe: Synchronisiert
+    _description: 'As Focused, and shots that hit nothing explode at the end of their flight.'
+    _descriptionDe: 'Wie Fokussiert, und Schüsse ohne Treffer explodieren am Ende ihres Flugs.'
+    _effects:
+    - _target: 5
+      _value: 2
+    - _target: 13
+      _value: 0.85
+    - _target: 10
+      _value: 1
+  - _requiredCopies: 6
+    _displayName: Perfected
+    _displayNameDe: Perfektioniert
+    _description: 'Fires a full 360-degree ring; misses still explode.'
+    _descriptionDe: 'Feuert einen vollen 360-Grad-Ring; Fehlschüsse explodieren weiterhin.'
+    _effects:
+    - _target: 5
+      _value: 2
+    - _target: 9
+      _value: 1
+    - _target: 10
+      _value: 1

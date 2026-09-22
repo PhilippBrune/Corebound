@@ -342,7 +342,7 @@ namespace Corebound.Gameplay.Shop
             switch (offer.OfferType)
             {
                 case ShopOfferType.Card:
-                    purchased = _cardService != null && _cardService.TryApplyCard(offer.CardData);
+                    purchased = _cardService != null && _cardService.TryApplyCard(offer.CardData, cost);
                     break;
                 case ShopOfferType.TowerUpgrade:
                     purchased = _towerService != null && _towerService.TryApplyUpgradeFromShop();

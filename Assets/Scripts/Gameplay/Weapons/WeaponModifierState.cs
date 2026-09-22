@@ -31,6 +31,28 @@ namespace Corebound.Gameplay.Weapons
         // status to a weapon that has none is a DamageProfile change, not a modifier.
         public float StatusEffectChance { get; private set; } = 1f;
 
+        // WeaponLoadout.md Set Bonus rule changes (2026-09-22).
+        public int AdditionalPierce { get; private set; }
+
+        public int CriticalEveryNthShot { get; private set; }
+
+        public bool FullRing { get; private set; }
+
+        public bool ExplodeOnExpire { get; private set; }
+
+        public bool SlowOnHit { get; private set; }
+
+        public float HeldDamageRampPerSecond { get; private set; }
+
+        public float SpreadAngleMultiplier { get; private set; } = 1f;
+
+        // The share of DamageMultiplier / FireIntervalMultiplier that came from the loadout's Set
+        // Bonuses, kept apart so the HUD can say "from your loadout" separately from "from your
+        // cards" (WeaponLoadout.md Runtime).
+        public float LoadoutDamageMultiplier { get; private set; } = 1f;
+
+        public float LoadoutFireIntervalMultiplier { get; private set; } = 1f;
+
         public IReadOnlyList<WeaponModifierData> ActiveModifiers => _activeModifiers;
 
         public bool HasActiveModifiers => _activeModifiers.Count > 0;
@@ -49,6 +71,23 @@ namespace Corebound.Gameplay.Weapons
             float baseProjectileSpeedMultiplier,
             IReadOnlyList<WeaponModifierData> modifiers)
         {
+            return Rebuild(weaponId, baseDamageMultiplier, baseFireIntervalMultiplier, baseProjectileSpeedMultiplier, modifiers, null);
+        }
+
+        // loadoutEffects are the equipped weapon's active Set Bonus (and Arsenal) effects. They
+        // compose multiplicatively with the card modifiers like any other modifier - the order of
+        // a product does not matter - but are also accumulated on their own for display.
+        public bool Rebuild(
+            string weaponId,
+            float baseDamageMultiplier,
+            float baseFireIntervalMultiplier,
+            float baseProjectileSpeedMultiplier,
+            IReadOnlyList<WeaponModifierData> modifiers,
+            IReadOnlyList<WeaponBonusEffect> loadoutEffects)
+        {
+            var previousLoadoutDamage = LoadoutDamageMultiplier;
+            var previousLoadoutInterval = LoadoutFireIntervalMultiplier;
+            var previousRuleSignature = RuleSignature();
             var previousDamage = DamageMultiplier;
             var previousFireInterval = FireIntervalMultiplier;
             var previousProjectileSpeed = ProjectileSpeedMultiplier;
@@ -65,6 +104,15 @@ namespace Corebound.Gameplay.Weapons
             CriticalDamageMultiplier = 2f;
             AdditionalProjectiles = 0;
             StatusEffectChance = 1f;
+            AdditionalPierce = 0;
+            CriticalEveryNthShot = 0;
+            FullRing = false;
+            ExplodeOnExpire = false;
+            SlowOnHit = false;
+            HeldDamageRampPerSecond = 0f;
+            SpreadAngleMultiplier = 1f;
+            LoadoutDamageMultiplier = 1f;
+            LoadoutFireIntervalMultiplier = 1f;
 
             var modifiersChanged = false;
             var appliedCount = 0;
@@ -102,6 +150,25 @@ namespace Corebound.Gameplay.Weapons
                 modifiersChanged = true;
             }
 
+            if (loadoutEffects != null)
+            {
+                for (var index = 0; index < loadoutEffects.Count; index++)
+                {
+                    var effect = loadoutEffects[index];
+
+                    if (effect.Target == WeaponModifierTarget.DamageMultiplier)
+                    {
+                        LoadoutDamageMultiplier *= effect.Value;
+                    }
+                    else if (effect.Target == WeaponModifierTarget.FireIntervalMultiplier)
+                    {
+                        LoadoutFireIntervalMultiplier *= effect.Value;
+                    }
+
+                    Apply(effect.Target, effect.Value);
+                }
+            }
+
             CriticalChance = Mathf.Clamp01(CriticalChance);
             CriticalDamageMultiplier = Mathf.Max(1f, CriticalDamageMultiplier);
             AdditionalProjectiles = Mathf.Max(0, AdditionalProjectiles);
@@ -115,7 +182,10 @@ namespace Corebound.Gameplay.Weapons
                 || !Mathf.Approximately(previousCriticalChance, CriticalChance)
                 || !Mathf.Approximately(previousCriticalDamage, CriticalDamageMultiplier)
                 || previousAdditionalProjectiles != AdditionalProjectiles
-                || !Mathf.Approximately(previousStatusChance, StatusEffectChance);
+                || !Mathf.Approximately(previousStatusChance, StatusEffectChance)
+                || !Mathf.Approximately(previousLoadoutDamage, LoadoutDamageMultiplier)
+                || !Mathf.Approximately(previousLoadoutInterval, LoadoutFireIntervalMultiplier)
+                || previousRuleSignature != RuleSignature();
 
             if (changed)
             {
@@ -142,11 +212,25 @@ namespace Corebound.Gameplay.Weapons
             return isCritical ? DamageMultiplier * CriticalDamageMultiplier : DamageMultiplier;
         }
 
+        private int RuleSignature()
+        {
+            return AdditionalPierce
+                + CriticalEveryNthShot * 16
+                + (FullRing ? 1 << 10 : 0)
+                + (ExplodeOnExpire ? 1 << 11 : 0)
+                + (SlowOnHit ? 1 << 12 : 0)
+                + Mathf.RoundToInt(HeldDamageRampPerSecond * 100f) * (1 << 13)
+                + Mathf.RoundToInt(SpreadAngleMultiplier * 100f) * 7;
+        }
+
         private void Apply(WeaponModifierData modifier)
         {
-            var value = modifier.Value;
+            Apply(modifier.Target, modifier.Value);
+        }
 
-            switch (modifier.Target)
+        private void Apply(WeaponModifierTarget target, float value)
+        {
+            switch (target)
             {
                 case WeaponModifierTarget.DamageMultiplier:
                     DamageMultiplier *= value;
@@ -168,6 +252,29 @@ namespace Corebound.Gameplay.Weapons
                     return;
                 case WeaponModifierTarget.StatusEffectChance:
                     StatusEffectChance += value;
+                    return;
+                case WeaponModifierTarget.AdditionalPierce:
+                    AdditionalPierce += Mathf.RoundToInt(value);
+                    return;
+                case WeaponModifierTarget.CriticalEveryNthShot:
+                    // The strongest (smallest N) wins; two sources never make it rarer.
+                    var every = Mathf.RoundToInt(value);
+                    CriticalEveryNthShot = CriticalEveryNthShot <= 0 ? every : Mathf.Min(CriticalEveryNthShot, every);
+                    return;
+                case WeaponModifierTarget.FullRing:
+                    FullRing |= value > 0f;
+                    return;
+                case WeaponModifierTarget.ExplodeOnExpire:
+                    ExplodeOnExpire |= value > 0f;
+                    return;
+                case WeaponModifierTarget.SlowOnHit:
+                    SlowOnHit |= value > 0f;
+                    return;
+                case WeaponModifierTarget.HeldDamageRamp:
+                    HeldDamageRampPerSecond += value;
+                    return;
+                case WeaponModifierTarget.SpreadAngleMultiplier:
+                    SpreadAngleMultiplier *= value;
                     return;
             }
         }

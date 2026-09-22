@@ -16,3 +16,5 @@ MonoBehaviour:
   _projectileCount: 3
   _spreadAngleDegrees: 24
   _projectileSpawnDistance: 0.48
+  _magazineSize: 8
+  _reloadSeconds: 1.4

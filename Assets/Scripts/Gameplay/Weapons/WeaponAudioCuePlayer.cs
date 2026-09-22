@@ -22,7 +22,17 @@ namespace Corebound.Gameplay.Weapons
         private readonly Dictionary<WeaponPresentationData, AudioClip> _criticalClips = new Dictionary<WeaponPresentationData, AudioClip>();
 
         private AudioSource _audioSource;
-        private float _fireCueCooldownTimer;
+        // WeaponLoadout.md audio rule: "six identical weapons must sound like a heavier version of
+        // one weapon, never like six." De-duplicated per presentation, so six Rapids share one
+        // cue per interval while a Rapid and a Spread still both speak. Crits are limited too, on
+        // a short window: one crit landing is the payoff, six copies critting on one frame is noise.
+        private const float CriticalCueWindowSeconds = 0.08f;
+        private readonly Dictionary<WeaponPresentationData, float> _nextFireCueTime = new Dictionary<WeaponPresentationData, float>();
+        private readonly Dictionary<WeaponPresentationData, float> _nextCriticalCueTime = new Dictionary<WeaponPresentationData, float>();
+        private int _suppressedCueCount;
+
+        // For the autopilot's log: how many cues de-duplication swallowed, since agents cannot hear.
+        public int SuppressedCueCount => _suppressedCueCount;
 
         private void Awake()
         {
@@ -45,14 +55,6 @@ namespace Corebound.Gameplay.Weapons
             DestroyProceduralClips(_criticalClips);
         }
 
-        private void Update()
-        {
-            if (_fireCueCooldownTimer > 0f)
-            {
-                _fireCueCooldownTimer -= Time.deltaTime;
-            }
-        }
-
         private void OnWeaponFired(WeaponFiredEventArgs eventArgs)
         {
             var presentation = eventArgs.Weapon != null ? eventArgs.Weapon.Presentation : null;
@@ -62,21 +64,30 @@ namespace Corebound.Gameplay.Weapons
                 return;
             }
 
-            // The critical cue is the whole point of a crit landing, so it is never rate-limited -
-            // it also replaces the fire cue for that shot rather than layering on top of it.
+            var now = Time.unscaledTime;
+
+            // The critical cue replaces the fire cue for that shot rather than layering on top.
             if (eventArgs.IsCritical)
             {
+                if (_nextCriticalCueTime.TryGetValue(presentation, out var nextCritical) && now < nextCritical)
+                {
+                    _suppressedCueCount++;
+                    return;
+                }
+
+                _nextCriticalCueTime[presentation] = now + CriticalCueWindowSeconds;
+                _nextFireCueTime[presentation] = now + presentation.MinFireCueIntervalSeconds;
                 PlayCue(ResolveClip(presentation, true), presentation.CriticalVolume);
-                _fireCueCooldownTimer = presentation.MinFireCueIntervalSeconds;
                 return;
             }
 
-            if (_fireCueCooldownTimer > 0f)
+            if (_nextFireCueTime.TryGetValue(presentation, out var nextFire) && now < nextFire)
             {
+                _suppressedCueCount++;
                 return;
             }
 
-            _fireCueCooldownTimer = presentation.MinFireCueIntervalSeconds;
+            _nextFireCueTime[presentation] = now + presentation.MinFireCueIntervalSeconds;
             PlayCue(ResolveClip(presentation, false), presentation.FireVolume);
         }
 

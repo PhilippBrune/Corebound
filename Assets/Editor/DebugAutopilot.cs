@@ -244,6 +244,17 @@ namespace Corebound.EditorTools
                 }
             }
 
+            // "loadout3": stage 3 with all six slots filled (3 Rapid, 2 Spread, 1 Beam), so Set
+            // Bonuses, the projectile budget and the loadout HUD can be exercised without first
+            // earning slot unlocks.
+            var loadoutTest = contents.StartsWith("loadout", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(LoadoutTestSessionKey, loadoutTest);
+
+            if (loadoutTest)
+            {
+                contents = contents.Substring("loadout".Length).Trim();
+            }
+
             if (!int.TryParse(contents, out var requestedStage))
             {
                 Debug.LogWarning(LogPrefix + " did not understand '" + contents + "' in " + RequestFilePath
@@ -267,6 +278,8 @@ namespace Corebound.EditorTools
         // Accepts either a bare command on its own line (so "1" in an otherwise empty file still
         // works) or the "command: x" form the generated file uses. Lines starting with # are help
         // text, not input.
+        public const string LoadoutTestSessionKey = "Corebound.Autopilot.LoadoutTest";
+
         private static string ReadCommand()
         {
             string[] lines;
@@ -314,7 +327,7 @@ namespace Corebound.EditorTools
 
             var host = new GameObject("DebugAutopilotRuntime");
             Object.DontDestroyOnLoad(host);
-            host.AddComponent<DebugAutopilotRuntime>().Configure(TargetStage, MaxRunSeconds);
+            host.AddComponent<DebugAutopilotRuntime>().Configure(TargetStage, MaxRunSeconds, SessionState.GetBool(LoadoutTestSessionKey, false));
         }
     }
 
@@ -442,10 +455,22 @@ namespace Corebound.EditorTools
         private readonly StringBuilder _reportBuilder = new StringBuilder(384);
         private readonly StringBuilder _stallBuilder = new StringBuilder(192);
 
-        public void Configure(int targetStageIndex, float maxRunSeconds)
+        private bool _loadoutTest;
+        private bool _loadoutTestApplied;
+        private int _loadoutProbeStage = -1;
+        private float _loadoutProbeTimer = -1f;
+
+        public void Configure(int targetStageIndex, float maxRunSeconds, bool loadoutTest = false)
         {
             _targetStageIndex = Mathf.Max(1, targetStageIndex);
             _maxRunSeconds = maxRunSeconds;
+            _loadoutTest = loadoutTest;
+
+            if (loadoutTest)
+            {
+                Debug.Log(DebugAutopilot.LogPrefix + " loadout test requested: six slots, 3 Rapid + 2 Spread + 1 Beam");
+            }
+
             Debug.Log(DebugAutopilot.LogPrefix + " started, target stage " + _targetStageIndex);
         }
 
@@ -583,6 +608,7 @@ namespace Corebound.EditorTools
             }
 
             ResolveRuntimeReferences();
+            ApplyLoadoutTestOnce();
             NoteShopVisibility();
             NoteStateTransition();
             TickVisualProbes();
@@ -1007,6 +1033,38 @@ namespace Corebound.EditorTools
                 return true;
             }
 
+            // Once per stage: open the loadout panel, photograph it, close it.
+            if (_loadoutProbeTimer >= 0f)
+            {
+                _loadoutProbeTimer -= Time.unscaledDeltaTime;
+
+                if (_loadoutProbeTimer < 0.4f && _loadoutProbeTimer + Time.unscaledDeltaTime >= 0.4f)
+                {
+                    Shot("stage" + _waveManager.StageIndex + "_loadout_panel");
+                }
+
+                if (_loadoutProbeTimer < 0f)
+                {
+                    if (Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.IsOpen)
+                    {
+                        _inputReader.DebugRaiseLoadout();
+                    }
+
+                    Debug.Log(DebugAutopilot.LogPrefix + " LOADOUT PANEL closed");
+                }
+
+                return true;
+            }
+
+            if (_loadoutProbeStage != _waveManager.StageIndex && !Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.IsOpen)
+            {
+                _loadoutProbeStage = _waveManager.StageIndex;
+                _inputReader.DebugRaiseLoadout();
+                _loadoutProbeTimer = 1.2f;
+                Debug.Log(DebugAutopilot.LogPrefix + " LOADOUT PANEL opened=" + Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter.IsOpen);
+                return true;
+            }
+
             if (_browserProbed)
             {
                 return false;
@@ -1066,6 +1124,78 @@ namespace Corebound.EditorTools
             var offset = (Vector2)_towerService.GetSlotPosition(target) - (Vector2)_playerTransform.position;
             _inputReader.DebugSetMove(offset.sqrMagnitude > 0.04f ? offset.normalized : Vector2.zero);
             return true;
+        }
+
+        private void ApplyLoadoutTestOnce()
+        {
+            if (!_loadoutTest || _loadoutTestApplied || _playerCombat == null)
+            {
+                return;
+            }
+
+            _loadoutTestApplied = true;
+            _playerCombat.DebugConfigureLoadout("weapon_rapid", "weapon_rapid", "weapon_rapid", "weapon_spread", "weapon_spread", "weapon_beam");
+            Debug.Log(DebugAutopilot.LogPrefix + " loadout test applied: " + DescribeLoadout());
+        }
+
+        private string DescribeLoadout()
+        {
+            if (_playerCombat == null)
+            {
+                return "no player";
+            }
+
+            var loadout = _playerCombat.Loadout;
+            var builder = new StringBuilder(160);
+            builder.Append("slots=").Append(loadout.UnlockedSlotCount).Append(" [");
+
+            for (var index = 0; index < loadout.UnlockedSlotCount; index++)
+            {
+                var slot = loadout.GetSlot(index);
+
+                if (index > 0)
+                {
+                    builder.Append(' ');
+                }
+
+                if (slot.IsEmpty)
+                {
+                    builder.Append("-");
+                    continue;
+                }
+
+                builder.Append(slot.Weapon.WeaponId.Replace("weapon_", string.Empty)).Append(":t").Append(slot.Tier)
+                    .Append(":a").Append(slot.Ammo == int.MaxValue ? -1 : slot.Ammo).Append('/').Append(slot.MagazineSize);
+
+                if (slot.IsReloading)
+                {
+                    builder.Append("R");
+                }
+            }
+
+            builder.Append("] live=").Append(_playerCombat.LiveProjectileCount).Append('/').Append(_playerCombat.ProjectileBudget);
+            builder.Append(" sets=");
+
+            for (var index = 0; index < loadout.ActiveSetBonuses.Count; index++)
+            {
+                var bonus = loadout.ActiveSetBonuses[index];
+                builder.Append(bonus.Weapon.WeaponId.Replace("weapon_", string.Empty)).Append('x').Append(bonus.Copies)
+                    .Append('=').Append(bonus.Tier != null ? bonus.Tier.DisplayName : "none").Append(' ');
+            }
+
+            if (loadout.HasPendingWeapon)
+            {
+                builder.Append(" pending=").Append(loadout.PendingWeapon.WeaponId);
+            }
+
+            var audio = FindFirstObjectByType<Corebound.Gameplay.Weapons.WeaponAudioCuePlayer>();
+
+            if (audio != null)
+            {
+                builder.Append(" cuesSuppressed=").Append(audio.SuppressedCueCount);
+            }
+
+            return builder.ToString();
         }
 
         private static bool TickShotTimer(ref float timer)
@@ -1182,6 +1312,7 @@ namespace Corebound.EditorTools
             _reportBuilder.Append(" gates[shop=").Append(_waveManager.RequiresIntermissionShopAction);
             _reportBuilder.Append(" tower=").Append(_waveManager.RequiresIntermissionTowerAction).Append(']');
 
+            _reportBuilder.Append(" loadout[").Append(DescribeLoadout()).Append(']');
             _reportBuilder.Append(" shopOpen=").Append(_shopService != null && _shopService.IsOpen);
             _reportBuilder.Append(" shopOffers=").Append(_shopService != null ? _shopService.CurrentOffers.Count : -1);
             _reportBuilder.Append(" shopCanvas=").Append(DescribePanel("ShopCanvas", "ShopScreen"));

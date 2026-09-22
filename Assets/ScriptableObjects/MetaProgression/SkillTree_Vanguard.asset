@@ -1,0 +1,1018 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f772643a4667aa41a2cb14b271798a0, type: 3}
+  m_Name: SkillTree_Vanguard
+  m_EditorClassIdentifier: 
+  _characterId: vanguard
+  _characterName: Vanguard
+  _characterNameDe: Vorhut
+  _treeVersion: 1
+  _branches:
+  - _branchId: combat
+    _displayName: Combat
+    _displayNameDe: Kampf
+    _accentColor: {r: 1.0, g: 0.55, b: 0.25, a: 1}
+    _keyNodes:
+    - _nodeId: combat_opening_volley
+      _displayName: 'Opening Volley'
+      _displayNameDe: 'Eröffnungssalve'
+      _description: 'The first volley of every wave is a guaranteed critical hit.'
+      _descriptionDe: 'Die erste Salve jeder Welle ist ein garantierter kritischer Treffer.'
+      _cost: 3
+      _prerequisiteNodeId: 
+      _branchSpendRequirement: 0
+      _effects:
+      - _target: 20
+        _operation: 0
+        _value: 1
+      _subNodes:
+      - _nodeId: combat_hardened_rounds
+        _displayName: 'Hardened Rounds'
+        _displayNameDe: 'Gehärtete Munition'
+        _description: '+3% weapon damage per rank.'
+        _descriptionDe: '+3 % Waffenschaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 0
+          _operation: 0
+          _value: 0.03
+      - _nodeId: combat_keen_eye
+        _displayName: 'Keen Eye'
+        _displayNameDe: 'Scharfes Auge'
+        _description: '+1% critical chance per rank.'
+        _descriptionDe: '+1 % kritische Chance pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 2
+          _operation: 0
+          _value: 0.01
+      - _nodeId: combat_deep_wounds
+        _displayName: 'Deep Wounds'
+        _displayNameDe: 'Tiefe Wunden'
+        _description: '+6% critical damage per rank.'
+        _descriptionDe: '+6 % kritischer Schaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 3
+          _operation: 0
+          _value: 0.06
+      - _nodeId: combat_muzzle_brake
+        _displayName: 'Muzzle Brake'
+        _displayNameDe: 'Mündungsbremse'
+        _description: '+5% projectile speed per rank.'
+        _descriptionDe: '+5 % Projektilgeschwindigkeit pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 17
+          _operation: 0
+          _value: 0.05
+      _iconSpritePath: 
+    - _nodeId: combat_armory
+      _displayName: 'Armory'
+      _displayNameDe: 'Waffenkammer'
+      _description: 'Unlocks a third weapon slot.'
+      _descriptionDe: 'Schaltet einen dritten Waffenplatz frei.'
+      _cost: 3
+      _prerequisiteNodeId: combat_opening_volley
+      _branchSpendRequirement: 4
+      _effects:
+      - _target: 12
+        _operation: 0
+        _value: 1
+      _subNodes:
+      - _nodeId: combat_extended_mags
+        _displayName: 'Extended Mags'
+        _displayNameDe: 'Erweiterte Magazine'
+        _description: '+1 round per magazine per rank.'
+        _descriptionDe: '+1 Schuss pro Magazin pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 15
+          _operation: 0
+          _value: 1
+      - _nodeId: combat_quick_hands
+        _displayName: 'Quick Hands'
+        _displayNameDe: 'Flinke Hände'
+        _description: '5% faster reloads per rank.'
+        _descriptionDe: '5 % schnelleres Nachladen pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 16
+          _operation: 0
+          _value: -0.05
+      - _nodeId: combat_trigger_discipline
+        _displayName: 'Trigger Discipline'
+        _displayNameDe: 'Abzugsdisziplin'
+        _description: '2% faster firing per rank.'
+        _descriptionDe: '2 % schnelleres Feuern pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 1
+          _operation: 0
+          _value: -0.02
+      - _nodeId: combat_light_frame
+        _displayName: 'Light Frame'
+        _displayNameDe: 'Leichter Rahmen'
+        _description: '+2% move speed per rank.'
+        _descriptionDe: '+2 % Bewegungstempo pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 5
+          _operation: 0
+          _value: 0.02
+      _iconSpritePath: 
+    - _nodeId: combat_second_wind
+      _displayName: 'Second Wind'
+      _displayNameDe: 'Zweiter Atem'
+      _description: 'Once per stage, a lethal hit leaves you at 30% health instead.'
+      _descriptionDe: 'Einmal pro Stage lässt dich ein tödlicher Treffer stattdessen mit 30 % Leben zurück.'
+      _cost: 3
+      _prerequisiteNodeId: combat_armory
+      _branchSpendRequirement: 10
+      _effects:
+      - _target: 21
+        _operation: 0
+        _value: 0.3
+      _subNodes:
+      - _nodeId: combat_plated_suit
+        _displayName: 'Plated Suit'
+        _displayNameDe: 'Plattenanzug'
+        _description: '+6% max health per rank.'
+        _descriptionDe: '+6 % maximales Leben pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 4
+          _operation: 0
+          _value: 0.06
+      - _nodeId: combat_shock_padding
+        _displayName: 'Shock Padding'
+        _displayNameDe: 'Stoßpolster'
+        _description: '3% less damage taken per rank.'
+        _descriptionDe: '3 % weniger erlittener Schaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 18
+          _operation: 0
+          _value: -0.03
+      - _nodeId: combat_executioner
+        _displayName: 'Executioner'
+        _displayNameDe: 'Scharfrichter'
+        _description: '+8% damage to enemies below 30% health per rank.'
+        _descriptionDe: '+8 % Schaden gegen Gegner unter 30 % Leben pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 28
+          _operation: 0
+          _value: 0.08
+      - _nodeId: combat_adrenal_kick
+        _displayName: 'Adrenal Kick'
+        _displayNameDe: 'Adrenalinschub'
+        _description: '+3% move speed per rank.'
+        _descriptionDe: '+3 % Bewegungstempo pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 5
+          _operation: 0
+          _value: 0.03
+      _iconSpritePath: 
+    - _nodeId: combat_full_arsenal
+      _displayName: 'Full Arsenal'
+      _displayNameDe: 'Volles Arsenal'
+      _description: 'Unlocks a fourth weapon slot.'
+      _descriptionDe: 'Schaltet einen vierten Waffenplatz frei.'
+      _cost: 3
+      _prerequisiteNodeId: combat_second_wind
+      _branchSpendRequirement: 18
+      _effects:
+      - _target: 12
+        _operation: 0
+        _value: 1
+      _subNodes:
+      - _nodeId: combat_overpressure
+        _displayName: 'Overpressure'
+        _displayNameDe: 'Überdruck'
+        _description: '+4% weapon damage per rank.'
+        _descriptionDe: '+4 % Waffenschaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 0
+          _operation: 0
+          _value: 0.04
+      - _nodeId: combat_marksman
+        _displayName: 'Marksman'
+        _displayNameDe: 'Scharfschütze'
+        _description: '+1.5% critical chance per rank.'
+        _descriptionDe: '+1,5 % kritische Chance pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 2
+          _operation: 0
+          _value: 0.015
+      - _nodeId: combat_cycle_tuning
+        _displayName: 'Cycle Tuning'
+        _displayNameDe: 'Taktabstimmung'
+        _description: '3% faster firing per rank.'
+        _descriptionDe: '3 % schnelleres Feuern pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 1
+          _operation: 0
+          _value: -0.03
+      - _nodeId: combat_drum_feed
+        _displayName: 'Drum Feed'
+        _displayNameDe: 'Trommelmagazin'
+        _description: '+2 rounds per magazine per rank.'
+        _descriptionDe: '+2 Schuss pro Magazin pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 15
+          _operation: 0
+          _value: 2
+      _iconSpritePath: 
+  - _branchId: construction
+    _displayName: Construction
+    _displayNameDe: Bau
+    _accentColor: {r: 0.3, g: 0.85, b: 0.8, a: 1}
+    _keyNodes:
+    - _nodeId: construction_forward_foundations
+      _displayName: 'Forward Foundations'
+      _displayNameDe: 'Vorgeschobene Fundamente'
+      _description: 'The first tower you build each stage costs no Scrap.'
+      _descriptionDe: 'Der erste Turm, den du pro Stage baust, kostet keinen Schrott.'
+      _cost: 3
+      _prerequisiteNodeId: 
+      _branchSpendRequirement: 0
+      _effects:
+      - _target: 23
+        _operation: 0
+        _value: 1
+      _subNodes:
+      - _nodeId: construction_calibrated_barrels
+        _displayName: 'Calibrated Barrels'
+        _displayNameDe: 'Kalibrierte Läufe'
+        _description: '+4% tower damage per rank.'
+        _descriptionDe: '+4 % Turmschaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 6
+          _operation: 0
+          _value: 0.04
+      - _nodeId: construction_long_sights
+        _displayName: 'Long Sights'
+        _displayNameDe: 'Weite Visiere'
+        _description: '+3% tower range per rank.'
+        _descriptionDe: '+3 % Turmreichweite pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 7
+          _operation: 0
+          _value: 0.03
+      - _nodeId: construction_servo_loaders
+        _displayName: 'Servo Loaders'
+        _displayNameDe: 'Servolader'
+        _description: 'Towers fire 3% faster per rank.'
+        _descriptionDe: 'Türme feuern 3 % schneller pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 8
+          _operation: 0
+          _value: -0.03
+      - _nodeId: construction_core_bracing
+        _displayName: 'Core Bracing'
+        _displayNameDe: 'Kernverstrebung'
+        _description: '+5% Core max health per rank.'
+        _descriptionDe: '+5 % maximales Kernleben pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 9
+          _operation: 0
+          _value: 0.05
+      _iconSpritePath: 
+    - _nodeId: construction_field_repair
+      _displayName: 'Field Repair'
+      _displayNameDe: 'Feldreparatur'
+      _description: 'The first Core repair each stage costs no Scrap.'
+      _descriptionDe: 'Die erste Kernreparatur pro Stage kostet keinen Schrott.'
+      _cost: 3
+      _prerequisiteNodeId: construction_forward_foundations
+      _branchSpendRequirement: 4
+      _effects:
+      - _target: 24
+        _operation: 0
+        _value: 1
+      _subNodes:
+      - _nodeId: construction_spare_parts
+        _displayName: 'Spare Parts'
+        _displayNameDe: 'Ersatzteile'
+        _description: 'Core repairs cost 10% less per rank.'
+        _descriptionDe: 'Kernreparaturen kosten 10 % weniger pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 14
+          _operation: 0
+          _value: -0.1
+      - _nodeId: construction_layered_hull
+        _displayName: 'Layered Hull'
+        _displayNameDe: 'Mehrschichtige Hülle'
+        _description: '+5% Core max health per rank.'
+        _descriptionDe: '+5 % maximales Kernleben pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 9
+          _operation: 0
+          _value: 0.05
+      - _nodeId: construction_hot_rounds
+        _displayName: 'Hot Rounds'
+        _displayNameDe: 'Heiße Geschosse'
+        _description: '+4% tower damage per rank.'
+        _descriptionDe: '+4 % Turmschaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 6
+          _operation: 0
+          _value: 0.04
+      - _nodeId: construction_spotters
+        _displayName: 'Spotters'
+        _displayNameDe: 'Späher'
+        _description: '+3% tower range per rank.'
+        _descriptionDe: '+3 % Turmreichweite pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 7
+          _operation: 0
+          _value: 0.03
+      _iconSpritePath: 
+    - _nodeId: construction_overwatch
+      _displayName: 'Overwatch'
+      _displayNameDe: 'Überwachung'
+      _description: 'Towers reach 30% further during boss encounters.'
+      _descriptionDe: 'Türme reichen während Bosskämpfen 30 % weiter.'
+      _cost: 3
+      _prerequisiteNodeId: construction_field_repair
+      _branchSpendRequirement: 10
+      _effects:
+      - _target: 27
+        _operation: 0
+        _value: 0.3
+      _subNodes:
+      - _nodeId: construction_rapid_cycling
+        _displayName: 'Rapid Cycling'
+        _displayNameDe: 'Schneller Zyklus'
+        _description: 'Towers fire 3% faster per rank.'
+        _descriptionDe: 'Türme feuern 3 % schneller pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 8
+          _operation: 0
+          _value: -0.03
+      - _nodeId: construction_shaped_charges
+        _displayName: 'Shaped Charges'
+        _displayNameDe: 'Hohlladungen'
+        _description: '+5% tower damage per rank.'
+        _descriptionDe: '+5 % Turmschaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 6
+          _operation: 0
+          _value: 0.05
+      - _nodeId: construction_rangefinders
+        _displayName: 'Rangefinders'
+        _displayNameDe: 'Entfernungsmesser'
+        _description: '+4% tower range per rank.'
+        _descriptionDe: '+4 % Turmreichweite pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 7
+          _operation: 0
+          _value: 0.04
+      - _nodeId: construction_bulwark
+        _displayName: 'Bulwark'
+        _displayNameDe: 'Bollwerk'
+        _description: '+6% Core max health per rank.'
+        _descriptionDe: '+6 % maximales Kernleben pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 9
+          _operation: 0
+          _value: 0.06
+      _iconSpritePath: 
+    - _nodeId: construction_last_bastion
+      _displayName: 'Last Bastion'
+      _displayNameDe: 'Letzte Bastion'
+      _description: 'Once per stage, a lethal hit leaves the Core at 25% health instead.'
+      _descriptionDe: 'Einmal pro Stage lässt ein tödlicher Treffer den Kern stattdessen mit 25 % Leben zurück.'
+      _cost: 3
+      _prerequisiteNodeId: construction_overwatch
+      _branchSpendRequirement: 18
+      _effects:
+      - _target: 22
+        _operation: 0
+        _value: 0.25
+      _subNodes:
+      - _nodeId: construction_siege_rounds
+        _displayName: 'Siege Rounds'
+        _displayNameDe: 'Belagerungsmunition'
+        _description: '+6% tower damage per rank.'
+        _descriptionDe: '+6 % Turmschaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 6
+          _operation: 0
+          _value: 0.06
+      - _nodeId: construction_auto_feed
+        _displayName: 'Auto Feed'
+        _displayNameDe: 'Automatische Zufuhr'
+        _description: 'Towers fire 4% faster per rank.'
+        _descriptionDe: 'Türme feuern 4 % schneller pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 8
+          _operation: 0
+          _value: -0.04
+      - _nodeId: construction_reactor_shell
+        _displayName: 'Reactor Shell'
+        _displayNameDe: 'Reaktorhülle'
+        _description: '+8% Core max health per rank.'
+        _descriptionDe: '+8 % maximales Kernleben pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 9
+          _operation: 0
+          _value: 0.08
+      - _nodeId: construction_quick_welds
+        _displayName: 'Quick Welds'
+        _displayNameDe: 'Schnelle Schweißnähte'
+        _description: 'Core repairs cost 10% less per rank.'
+        _descriptionDe: 'Kernreparaturen kosten 10 % weniger pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 14
+          _operation: 0
+          _value: -0.1
+      _iconSpritePath: 
+  - _branchId: industry
+    _displayName: Industry
+    _displayNameDe: Industrie
+    _accentColor: {r: 0.95, g: 0.8, b: 0.3, a: 1}
+    _keyNodes:
+    - _nodeId: industry_salvage_instinct
+      _displayName: 'Salvage Instinct'
+      _displayNameDe: 'Bergungsinstinkt'
+      _description: 'Elite enemies drop twice as much Scrap.'
+      _descriptionDe: 'Elite-Gegner lassen doppelt so viel Schrott fallen.'
+      _cost: 3
+      _prerequisiteNodeId: 
+      _branchSpendRequirement: 0
+      _effects:
+      - _target: 25
+        _operation: 0
+        _value: 1
+      _subNodes:
+      - _nodeId: industry_sorting_line
+        _displayName: 'Sorting Line'
+        _displayNameDe: 'Sortierband'
+        _description: '+4% Scrap from all sources per rank.'
+        _descriptionDe: '+4 % Schrott aus allen Quellen pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 10
+          _operation: 0
+          _value: 0.04
+      - _nodeId: industry_seed_capital
+        _displayName: 'Seed Capital'
+        _displayNameDe: 'Startkapital'
+        _description: 'Start every run with +5 Scrap per rank.'
+        _descriptionDe: 'Starte jeden Run mit +5 Schrott pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 11
+          _operation: 0
+          _value: 5
+      - _nodeId: industry_supply_drop
+        _displayName: 'Supply Drop'
+        _displayNameDe: 'Nachschub'
+        _description: '+3 Scrap at the start of each stage per rank.'
+        _descriptionDe: '+3 Schrott zu Beginn jeder Stage pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 19
+          _operation: 0
+          _value: 3
+      - _nodeId: industry_haggler
+        _displayName: 'Haggler'
+        _displayNameDe: 'Feilscher'
+        _description: 'Purchases cost 2% less per rank.'
+        _descriptionDe: 'Käufe kosten 2 % weniger pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 13
+          _operation: 0
+          _value: -0.02
+      _iconSpritePath: 
+    - _nodeId: industry_dividend
+      _displayName: 'Dividend'
+      _displayNameDe: 'Dividende'
+      _description: 'Start every stage with +15 Scrap.'
+      _descriptionDe: 'Starte jede Stage mit +15 Schrott.'
+      _cost: 3
+      _prerequisiteNodeId: industry_salvage_instinct
+      _branchSpendRequirement: 4
+      _effects:
+      - _target: 19
+        _operation: 0
+        _value: 15
+      _subNodes:
+      - _nodeId: industry_reclaimers
+        _displayName: 'Reclaimers'
+        _displayNameDe: 'Rückgewinner'
+        _description: '+4% Scrap from all sources per rank.'
+        _descriptionDe: '+4 % Schrott aus allen Quellen pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 10
+          _operation: 0
+          _value: 0.04
+      - _nodeId: industry_bulk_orders
+        _displayName: 'Bulk Orders'
+        _displayNameDe: 'Großbestellungen'
+        _description: 'Purchases cost 2% less per rank.'
+        _descriptionDe: 'Käufe kosten 2 % weniger pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 13
+          _operation: 0
+          _value: -0.02
+      - _nodeId: industry_nest_egg
+        _displayName: 'Nest Egg'
+        _displayNameDe: 'Notgroschen'
+        _description: 'Start every run with +5 Scrap per rank.'
+        _descriptionDe: 'Starte jeden Run mit +5 Schrott pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 11
+          _operation: 0
+          _value: 5
+      - _nodeId: industry_maintenance_plan
+        _displayName: 'Maintenance Plan'
+        _displayNameDe: 'Wartungsplan'
+        _description: 'Core repairs cost 8% less per rank.'
+        _descriptionDe: 'Kernreparaturen kosten 8 % weniger pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 14
+          _operation: 0
+          _value: -0.08
+      _iconSpritePath: 
+    - _nodeId: industry_scrap_surge
+      _displayName: 'Scrap Surge'
+      _displayNameDe: 'Schrottflut'
+      _description: '+15% Scrap from all sources.'
+      _descriptionDe: '+15 % Schrott aus allen Quellen.'
+      _cost: 3
+      _prerequisiteNodeId: industry_dividend
+      _branchSpendRequirement: 10
+      _effects:
+      - _target: 10
+        _operation: 0
+        _value: 0.15
+      _subNodes:
+      - _nodeId: industry_smelters
+        _displayName: 'Smelters'
+        _displayNameDe: 'Schmelzöfen'
+        _description: '+3% Scrap from all sources per rank.'
+        _descriptionDe: '+3 % Schrott aus allen Quellen pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 10
+          _operation: 0
+          _value: 0.03
+      - _nodeId: industry_stockpile
+        _displayName: 'Stockpile'
+        _displayNameDe: 'Vorrat'
+        _description: '+4 Scrap at the start of each stage per rank.'
+        _descriptionDe: '+4 Schrott zu Beginn jeder Stage pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 19
+          _operation: 0
+          _value: 4
+      - _nodeId: industry_wholesale
+        _displayName: 'Wholesale'
+        _displayNameDe: 'Großhandel'
+        _description: 'Purchases cost 3% less per rank.'
+        _descriptionDe: 'Käufe kosten 3 % weniger pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 13
+          _operation: 0
+          _value: -0.03
+      - _nodeId: industry_venture
+        _displayName: 'Venture'
+        _displayNameDe: 'Unternehmung'
+        _description: 'Start every run with +8 Scrap per rank.'
+        _descriptionDe: 'Starte jeden Run mit +8 Schrott pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 11
+          _operation: 0
+          _value: 8
+      _iconSpritePath: 
+    - _nodeId: industry_deep_reserves
+      _displayName: 'Deep Reserves'
+      _displayNameDe: 'Tiefe Reserven'
+      _description: 'Start every stage with +25 Scrap.'
+      _descriptionDe: 'Starte jede Stage mit +25 Schrott.'
+      _cost: 3
+      _prerequisiteNodeId: industry_scrap_surge
+      _branchSpendRequirement: 18
+      _effects:
+      - _target: 19
+        _operation: 0
+        _value: 25
+      _subNodes:
+      - _nodeId: industry_refinery
+        _displayName: 'Refinery'
+        _displayNameDe: 'Raffinerie'
+        _description: '+4% Scrap from all sources per rank.'
+        _descriptionDe: '+4 % Schrott aus allen Quellen pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 10
+          _operation: 0
+          _value: 0.04
+      - _nodeId: industry_trade_network
+        _displayName: 'Trade Network'
+        _displayNameDe: 'Handelsnetz'
+        _description: 'Purchases cost 3% less per rank.'
+        _descriptionDe: 'Käufe kosten 3 % weniger pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 13
+          _operation: 0
+          _value: -0.03
+      - _nodeId: industry_foreman
+        _displayName: 'Foreman'
+        _displayNameDe: 'Vorarbeiter'
+        _description: 'Core repairs cost 10% less per rank.'
+        _descriptionDe: 'Kernreparaturen kosten 10 % weniger pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 14
+          _operation: 0
+          _value: -0.1
+      - _nodeId: industry_windfall
+        _displayName: 'Windfall'
+        _displayNameDe: 'Glücksfall'
+        _description: '+5 Scrap at the start of each stage per rank.'
+        _descriptionDe: '+5 Schrott zu Beginn jeder Stage pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 19
+          _operation: 0
+          _value: 5
+      _iconSpritePath: 
+  - _branchId: command
+    _displayName: Command
+    _displayNameDe: Kommando
+    _accentColor: {r: 0.7, g: 0.5, b: 1.0, a: 1}
+    _keyNodes:
+    - _nodeId: command_bargain_struck
+      _displayName: 'Bargain Struck'
+      _displayNameDe: 'Guter Handel'
+      _description: 'Every purchase costs 10% less.'
+      _descriptionDe: 'Jeder Kauf kostet 10 % weniger.'
+      _cost: 3
+      _prerequisiteNodeId: 
+      _branchSpendRequirement: 0
+      _effects:
+      - _target: 13
+        _operation: 0
+        _value: -0.1
+      _subNodes:
+      - _nodeId: command_field_rations
+        _displayName: 'Field Rations'
+        _displayNameDe: 'Feldrationen'
+        _description: '+4% max health per rank.'
+        _descriptionDe: '+4 % maximales Leben pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 4
+          _operation: 0
+          _value: 0.04
+      - _nodeId: command_quartermaster
+        _displayName: 'Quartermaster'
+        _displayNameDe: 'Quartiermeister'
+        _description: 'Start every run with +5 Scrap per rank.'
+        _descriptionDe: 'Starte jeden Run mit +5 Schrott pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 11
+          _operation: 0
+          _value: 5
+      - _nodeId: command_briefing
+        _displayName: 'Briefing'
+        _displayNameDe: 'Einsatzbesprechung'
+        _description: '+2% weapon and tower damage per rank.'
+        _descriptionDe: '+2 % Waffen- und Turmschaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 0
+          _operation: 0
+          _value: 0.02
+        - _target: 6
+          _operation: 0
+          _value: 0.02
+      - _nodeId: command_logistics
+        _displayName: 'Logistics'
+        _displayNameDe: 'Logistik'
+        _description: 'Purchases cost 2% less per rank.'
+        _descriptionDe: 'Käufe kosten 2 % weniger pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 13
+          _operation: 0
+          _value: -0.02
+      _iconSpritePath: 
+    - _nodeId: command_veterans_cache
+      _displayName: 'Veteran''s Cache'
+      _displayNameDe: 'Veteranenvorrat'
+      _description: 'Start every run with a random relic.'
+      _descriptionDe: 'Starte jeden Run mit einem zufälligen Relikt.'
+      _cost: 3
+      _prerequisiteNodeId: command_bargain_struck
+      _branchSpendRequirement: 4
+      _effects:
+      - _target: 26
+        _operation: 0
+        _value: 1
+      _subNodes:
+      - _nodeId: command_drill
+        _displayName: 'Drill'
+        _displayNameDe: 'Drill'
+        _description: '+2% move speed per rank.'
+        _descriptionDe: '+2 % Bewegungstempo pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 5
+          _operation: 0
+          _value: 0.02
+      - _nodeId: command_morale
+        _displayName: 'Morale'
+        _displayNameDe: 'Moral'
+        _description: '3% less damage taken per rank.'
+        _descriptionDe: '3 % weniger erlittener Schaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 18
+          _operation: 0
+          _value: -0.03
+      - _nodeId: command_war_bonds
+        _displayName: 'War Bonds'
+        _displayNameDe: 'Kriegsanleihen'
+        _description: '+3% Scrap from all sources per rank.'
+        _descriptionDe: '+3 % Schrott aus allen Quellen pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 10
+          _operation: 0
+          _value: 0.03
+      - _nodeId: command_signal_corps
+        _displayName: 'Signal Corps'
+        _displayNameDe: 'Fernmeldetruppe'
+        _description: '+3% tower range per rank.'
+        _descriptionDe: '+3 % Turmreichweite pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 7
+          _operation: 0
+          _value: 0.03
+      _iconSpritePath: 
+    - _nodeId: command_war_chest
+      _displayName: 'War Chest'
+      _displayNameDe: 'Kriegskasse'
+      _description: 'Start every run with +40 Scrap.'
+      _descriptionDe: 'Starte jeden Run mit +40 Schrott.'
+      _cost: 3
+      _prerequisiteNodeId: command_veterans_cache
+      _branchSpendRequirement: 10
+      _effects:
+      - _target: 11
+        _operation: 0
+        _value: 40
+      _subNodes:
+      - _nodeId: command_tactics
+        _displayName: 'Tactics'
+        _displayNameDe: 'Taktik'
+        _description: '+3% weapon damage per rank.'
+        _descriptionDe: '+3 % Waffenschaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 0
+          _operation: 0
+          _value: 0.03
+      - _nodeId: command_fortify
+        _displayName: 'Fortify'
+        _displayNameDe: 'Befestigen'
+        _description: '+5% Core max health per rank.'
+        _descriptionDe: '+5 % maximales Kernleben pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 9
+          _operation: 0
+          _value: 0.05
+      - _nodeId: command_procurement
+        _displayName: 'Procurement'
+        _displayNameDe: 'Beschaffung'
+        _description: 'Purchases cost 3% less per rank.'
+        _descriptionDe: 'Käufe kosten 3 % weniger pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 13
+          _operation: 0
+          _value: -0.03
+      - _nodeId: command_endurance
+        _displayName: 'Endurance'
+        _displayNameDe: 'Ausdauer'
+        _description: '+5% max health per rank.'
+        _descriptionDe: '+5 % maximales Leben pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 4
+          _operation: 0
+          _value: 0.05
+      _iconSpritePath: 
+    - _nodeId: command_relic_hunter
+      _displayName: 'Relic Hunter'
+      _displayNameDe: 'Reliktjäger'
+      _description: 'Start every run with a second random relic.'
+      _descriptionDe: 'Starte jeden Run mit einem zweiten zufälligen Relikt.'
+      _cost: 3
+      _prerequisiteNodeId: command_war_chest
+      _branchSpendRequirement: 18
+      _effects:
+      - _target: 26
+        _operation: 0
+        _value: 1
+      _subNodes:
+      - _nodeId: command_command_net
+        _displayName: 'Command Net'
+        _displayNameDe: 'Führungsnetz'
+        _description: '+3% weapon and tower damage per rank.'
+        _descriptionDe: '+3 % Waffen- und Turmschaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 0
+          _operation: 0
+          _value: 0.03
+        - _target: 6
+          _operation: 0
+          _value: 0.03
+      - _nodeId: command_resilience
+        _displayName: 'Resilience'
+        _displayNameDe: 'Widerstandskraft'
+        _description: '4% less damage taken per rank.'
+        _descriptionDe: '4 % weniger erlittener Schaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 18
+          _operation: 0
+          _value: -0.04
+      - _nodeId: command_patronage
+        _displayName: 'Patronage'
+        _displayNameDe: 'Förderung'
+        _description: 'Start every run with +10 Scrap per rank.'
+        _descriptionDe: 'Starte jeden Run mit +10 Schrott pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 11
+          _operation: 0
+          _value: 10
+      - _nodeId: command_precision
+        _displayName: 'Precision'
+        _displayNameDe: 'Präzision'
+        _description: '+1% critical chance per rank.'
+        _descriptionDe: '+1 % kritische Chance pro Rang.'
+        _costPerRank: 1
+        _maxRank: 2
+        _effects:
+        - _target: 2
+          _operation: 0
+          _value: 0.01
+      _iconSpritePath: 
+  _ascensionPool:
+  - _bonusId: asc_weapon_damage
+    _displayName: '+2% weapon damage'
+    _displayNameDe: '+2 % Waffenschaden'
+    _effect:
+      _target: 0
+      _operation: 0
+      _value: 0.02
+  - _bonusId: asc_tower_damage
+    _displayName: '+2% tower damage'
+    _displayNameDe: '+2 % Turmschaden'
+    _effect:
+      _target: 6
+      _operation: 0
+      _value: 0.02
+  - _bonusId: asc_scrap
+    _displayName: '+2% Scrap from all sources'
+    _displayNameDe: '+2 % Schrott aus allen Quellen'
+    _effect:
+      _target: 10
+      _operation: 0
+      _value: 0.02
+  - _bonusId: asc_move_speed
+    _displayName: '+1% move speed'
+    _displayNameDe: '+1 % Bewegungstempo'
+    _effect:
+      _target: 5
+      _operation: 0
+      _value: 0.01
+  - _bonusId: asc_core_health
+    _displayName: '+1% Core max health'
+    _displayNameDe: '+1 % maximales Kernleben'
+    _effect:
+      _target: 9
+      _operation: 0
+      _value: 0.01
+  - _bonusId: asc_crit_chance
+    _displayName: '+0.5% critical chance'
+    _displayNameDe: '+0,5 % kritische Chance'
+    _effect:
+      _target: 2
+      _operation: 0
+      _value: 0.005
+  _ascensionBaseCost: 5
+  _ascensionOfferCount: 3
