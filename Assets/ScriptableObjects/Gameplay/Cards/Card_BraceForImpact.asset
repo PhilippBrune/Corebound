@@ -19,6 +19,7 @@ MonoBehaviour:
   _descriptionDe: Eine kleine, zuverlässige Reduzierung des Schadens, den Spieler und Core erleiden.
   _rarity: 0
   _requiredUnlockId:
+  _tags: []
   _effects:
   - {fileID: 11400000, guid: 53bc97f748844a088a55ff1b978fa9f2, type: 2}
   _stackable: 1

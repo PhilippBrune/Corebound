@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Erhöht den Turmschaden, damit Unterstützungsfeuer härter trifft.
   _rarity: 1
   _requiredUnlockId:
+  _tags:
+  - 2
   _effects:
   - {fileID: 11400000, guid: 91ab93ea66b5467e94438811373aa92e, type: 2}
   _stackable: 1

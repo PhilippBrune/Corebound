@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Ein großer Schub für den Turmschaden - für einen unterstützungslastigen Build.
   _rarity: 2
   _requiredUnlockId:
+  _tags:
+  - 2
   _effects:
   - {fileID: 11400000, guid: d6bf8d6721a0404ea7de020796b822f3, type: 2}
   _stackable: 0

@@ -1,4 +1,5 @@
-﻿using Corebound.Gameplay.Cards;
+﻿using System.Collections.Generic;
+using Corebound.Gameplay.Cards;
 using Corebound.Gameplay.Combat;
 using Corebound.Gameplay.Resources;
 using Corebound.Gameplay.Shop;
@@ -640,39 +641,176 @@ namespace Corebound.Gameplay.Waves
         // Playtest feedback: "pause menu should show all current active effects" - the selected
         // cards ARE the run's active effects (each is a permanent passive upgrade for the rest of
         // the run, applied once via CardService.TryApplyCard and never re-shown anywhere after the
-        // reward screen closes), so listing CardService.SelectedCards here is the direct answer
-        // rather than a new tracked-effects system.
+        // reward screen closes). They are listed by LayoutPauseOverlay as a grid with each card's
+        // tag icons to its left (playtest 2026-09-21: "use them as well in the pause menu left to
+        // the current active perks"); the body text is only the instructions now.
         private string ResolvePauseBodyText()
         {
-            var baseText = LocalizationService.Resolve(
+            return LocalizationService.Resolve(
                 "Press Confirm to return to the Main Menu.\nPress Pause or Cancel to resume.",
                 "Bestätigen kehrt zum Hauptmenü zurück.\nPause oder Abbrechen zum Fortsetzen.");
+        }
 
-            if (_cardService == null || _cardService.SelectedCards == null || _cardService.SelectedCards.Count == 0)
+        private const int PauseEffectColumns = 3;
+        private const float PauseEffectRowHeight = 34f;
+        private const float PauseEffectIconSize = 26f;
+        private const int PauseEffectMaxIcons = 2;
+        private const float PauseEffectsWidePanelWidth = 1240f;
+        private const float PauseInstructionBandHeight = 56f;
+        private const float PauseTitleBandHeight = 60f;
+
+        private readonly List<PauseEffectEntry> _pauseEffectEntries = new List<PauseEffectEntry>();
+        private RectTransform _pauseEffectsGrid;
+
+        // The pause panel's 9-slice border is large (230/165/140 px), which leaves a 540x100 band -
+        // room for one line of text, not a list. With effects to show, the panel grows to fit them
+        // and the three bands (title, effects, instructions) are laid out from the top and bottom
+        // edges instead of the fixed offsets that assumed a 500 px panel.
+        private void LayoutPauseOverlay(bool showEffects)
+        {
+            if (_pausePanel == null || _pauseTitleText == null || _pauseBodyText == null)
             {
-                return baseText;
+                return;
             }
 
-            var effectsList = LocalizationService.Resolve("Active Effects: ", "Aktive Effekte: ");
+            var cards = showEffects && _cardService != null ? _cardService.SelectedCards : null;
+            var cardCount = cards != null ? cards.Count : 0;
+            var rows = cardCount > 0 ? Mathf.CeilToInt(cardCount / (float)PauseEffectColumns) : 0;
+            var panelRect = _pausePanel.rectTransform;
 
-            for (var index = 0; index < _cardService.SelectedCards.Count; index++)
+            if (rows == 0)
             {
-                var card = _cardService.SelectedCards[index];
+                panelRect.sizeDelta = new Vector2(PausePanelWidth, PausePanelHeight);
+                StretchToParent(_pauseTitleText.rectTransform, Vector2.zero, Vector2.one, new Vector2(FrameBorderHorizontal, 255f), new Vector2(-FrameBorderHorizontal, -FrameBorderTop));
+                StretchToParent(_pauseBodyText.rectTransform, Vector2.zero, Vector2.one, new Vector2(FrameBorderHorizontal, FrameBorderBottom), new Vector2(-FrameBorderHorizontal, -260f));
+
+                if (_pauseEffectsGrid != null)
+                {
+                    _pauseEffectsGrid.gameObject.SetActive(false);
+                }
+
+                return;
+            }
+
+            var gridHeight = rows * PauseEffectRowHeight + 16f;
+            var height = FrameBorderTop + PauseTitleBandHeight + gridHeight + PauseInstructionBandHeight + FrameBorderBottom;
+            panelRect.sizeDelta = new Vector2(PauseEffectsWidePanelWidth, Mathf.Max(PausePanelHeight, height));
+
+            StretchToParent(_pauseTitleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                new Vector2(FrameBorderHorizontal, -FrameBorderTop - PauseTitleBandHeight), new Vector2(-FrameBorderHorizontal, -FrameBorderTop + 20f));
+            StretchToParent(_pauseBodyText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
+                new Vector2(FrameBorderHorizontal, FrameBorderBottom - 20f), new Vector2(-FrameBorderHorizontal, FrameBorderBottom + PauseInstructionBandHeight - 20f));
+
+            if (_pauseEffectsGrid == null)
+            {
+                var gridObject = new GameObject("PauseEffectsGrid", typeof(RectTransform));
+                _pauseEffectsGrid = gridObject.GetComponent<RectTransform>();
+                _pauseEffectsGrid.SetParent(panelRect, false);
+            }
+
+            _pauseEffectsGrid.gameObject.SetActive(true);
+            var gridInset = FrameBorderHorizontal - 60f;
+            StretchToParent(_pauseEffectsGrid, new Vector2(0f, 1f), new Vector2(1f, 1f),
+                new Vector2(gridInset, -FrameBorderTop - PauseTitleBandHeight - gridHeight),
+                new Vector2(-gridInset, -FrameBorderTop - PauseTitleBandHeight));
+
+            var columnWidth = (PauseEffectsWidePanelWidth - 2f * gridInset) / PauseEffectColumns;
+
+            while (_pauseEffectEntries.Count < cardCount)
+            {
+                _pauseEffectEntries.Add(CreatePauseEffectEntry(_pauseEffectsGrid, _pauseEffectEntries.Count));
+            }
+
+            for (var index = 0; index < _pauseEffectEntries.Count; index++)
+            {
+                var entry = _pauseEffectEntries[index];
+                var card = index < cardCount ? cards[index] : null;
+                entry.Root.gameObject.SetActive(card != null);
 
                 if (card == null)
                 {
                     continue;
                 }
 
-                if (index > 0)
+                var column = index % PauseEffectColumns;
+                var row = index / PauseEffectColumns;
+                entry.Root.anchorMin = new Vector2(0f, 1f);
+                entry.Root.anchorMax = new Vector2(0f, 1f);
+                entry.Root.pivot = new Vector2(0f, 1f);
+                entry.Root.sizeDelta = new Vector2(columnWidth - 8f, PauseEffectRowHeight);
+                entry.Root.anchoredPosition = new Vector2(column * columnWidth, -8f - row * PauseEffectRowHeight);
+
+                var tags = card.Tags;
+                var iconCount = 0;
+
+                for (var iconIndex = 0; iconIndex < entry.Icons.Length; iconIndex++)
                 {
-                    effectsList += ", ";
+                    var sprite = tags != null && iconIndex < tags.Length ? CardTagIconAtlas.ResolveIcon(tags[iconIndex]) : null;
+                    entry.Icons[iconIndex].sprite = sprite;
+                    entry.Icons[iconIndex].gameObject.SetActive(sprite != null);
+
+                    if (sprite != null)
+                    {
+                        entry.Icons[iconIndex].rectTransform.anchoredPosition = new Vector2(iconCount * (PauseEffectIconSize + 2f), 0f);
+                        iconCount++;
+                    }
                 }
 
-                effectsList += card.DisplayName;
+                // The name always starts at the same x so a column of names stays aligned no
+                // matter how many icons each card has.
+                var textLeft = PauseEffectMaxIcons * (PauseEffectIconSize + 2f) + 6f;
+                entry.Label.rectTransform.offsetMin = new Vector2(textLeft, 0f);
+                entry.Label.rectTransform.offsetMax = Vector2.zero;
+                entry.Label.text = card.DisplayName;
+            }
+        }
+
+        private PauseEffectEntry CreatePauseEffectEntry(RectTransform parent, int index)
+        {
+            var rootObject = new GameObject("PauseEffect" + index, typeof(RectTransform));
+            var root = rootObject.GetComponent<RectTransform>();
+            root.SetParent(parent, false);
+
+            var icons = new Image[PauseEffectMaxIcons];
+
+            for (var iconIndex = 0; iconIndex < icons.Length; iconIndex++)
+            {
+                var icon = CreateImage("TagIcon" + iconIndex, root, null, Color.white, Image.Type.Simple);
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+                var iconRect = icon.rectTransform;
+                iconRect.anchorMin = new Vector2(0f, 0.5f);
+                iconRect.anchorMax = new Vector2(0f, 0.5f);
+                iconRect.pivot = new Vector2(0f, 0.5f);
+                iconRect.sizeDelta = new Vector2(PauseEffectIconSize, PauseEffectIconSize);
+                icon.gameObject.SetActive(false);
+                icons[iconIndex] = icon;
             }
 
-            return effectsList + "\n" + baseText;
+            var label = CreateText("Name", root, 18, TextAnchor.MiddleLeft, new Color(0.1f, 0.12f, 0.16f, 0.96f));
+            label.rectTransform.anchorMin = Vector2.zero;
+            label.rectTransform.anchorMax = Vector2.one;
+            label.horizontalOverflow = HorizontalWrapMode.Wrap;
+            label.verticalOverflow = VerticalWrapMode.Truncate;
+            ConfigureResponsiveHudText(label, 12, 18);
+
+            return new PauseEffectEntry(root, icons, label);
+        }
+
+        private sealed class PauseEffectEntry
+        {
+            public PauseEffectEntry(RectTransform root, Image[] icons, Text label)
+            {
+                Root = root;
+                Icons = icons;
+                Label = label;
+            }
+
+            public RectTransform Root { get; }
+
+            public Image[] Icons { get; }
+
+            public Text Label { get; }
         }
 
         private void OnConfirmPressed()
@@ -1251,6 +1389,7 @@ namespace Corebound.Gameplay.Waves
         {
             _overlayMode = overlayMode;
             Time.timeScale = 0f;
+            LayoutPauseOverlay(overlayMode == OverlayMode.Pause);
 
             if (_pausePanel != null)
             {

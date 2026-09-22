@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Ein echter Tausch, keine bloße Zahl - eine solide Waffenschadenssteigerung, aber Spieler und Core erleiden für den Rest des Runs 8% mehr Schaden.
   _rarity: 1
   _requiredUnlockId:
+  _tags:
+  - 0
   _effects:
   - {fileID: 11400000, guid: 903c3c7d3e1b400ea372e60a20ee0c7e, type: 2}
   - {fileID: 11400000, guid: 57d2d70163574f8f8d53d50197c66c45, type: 2}

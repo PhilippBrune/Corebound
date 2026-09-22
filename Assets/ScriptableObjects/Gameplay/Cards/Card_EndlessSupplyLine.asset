@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Ein großer, unbegrenzter Schub für den Ressourcengewinn - für einen Wirtschafts-Build.
   _rarity: 2
   _requiredUnlockId:
+  _tags:
+  - 3
   _effects:
   - {fileID: 11400000, guid: 8d855210171b4d5ebfbe296edfd65ebf, type: 2}
   _stackable: 0

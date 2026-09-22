@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Ein großer Schub für die primäre Run-Ressource aus Combat-Belohnungen.
   _rarity: 2
   _requiredUnlockId:
+  _tags:
+  - 3
   _effects:
   - {fileID: 11400000, guid: 1d8f224818994ba58825aec4dcc25c87, type: 2}
   _stackable: 0

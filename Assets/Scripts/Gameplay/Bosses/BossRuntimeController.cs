@@ -40,6 +40,22 @@ namespace Corebound.Gameplay.Bosses
         private CombatHitReceiver _hitReceiver;
         private Rigidbody2D _rigidbody2D;
         private SpriteRenderer _spriteRenderer;
+
+        // Shape-specific wind-up art (Assets 96-98, 2026-09-21). Before these existed the only tell
+        // was the boss sprite tinting toward BossAttackWarningColor, which says "an attack is
+        // coming" but not which one - and since 2026-09-21 each boss fires a different shape.
+        // A sibling, not a child: the boss transform is scale-fitted to its sprite, so a child
+        // would inherit that scale and every telegraph would be sized per boss by accident.
+        private const string RingTelegraphPath = "Assets/Art/Combat/VFX/vfx_boss_telegraph_ring.png";
+        private const string LanceTelegraphPath = "Assets/Art/Combat/VFX/vfx_boss_telegraph_lance.png";
+        private const string VolleyTelegraphPath = "Assets/Art/Combat/VFX/vfx_boss_telegraph_volley.png";
+        private const float RingTelegraphDiameter = 6.5f;
+        private const float LanceTelegraphLength = 9f;
+        private const float VolleyTelegraphDepth = 5.5f;
+        private SpriteRenderer _shapeTelegraphRenderer;
+        private Sprite _ringTelegraphSprite;
+        private Sprite _lanceTelegraphSprite;
+        private Sprite _volleyTelegraphSprite;
         private ProjectilePool _projectilePool;
         private bool[] _helperPhaseTriggered;
         private float _attackCooldownTimer;
@@ -103,6 +119,15 @@ namespace Corebound.Gameplay.Bosses
         {
             CombatEvents.DamageTaken -= OnDamageTaken;
             CombatEvents.CombatantDied -= OnCombatantDied;
+            HideShapeTelegraph();
+        }
+
+        private void OnDestroy()
+        {
+            if (_shapeTelegraphRenderer != null)
+            {
+                Destroy(_shapeTelegraphRenderer.gameObject);
+            }
         }
 
         private void FixedUpdate()
@@ -254,7 +279,9 @@ namespace Corebound.Gameplay.Bosses
             {
                 var windupSeconds = attackPattern.WindupSeconds;
                 _attackWindupTimer = Mathf.Max(0f, _attackWindupTimer - Time.fixedDeltaTime);
-                ApplyAttackTelegraphColor(windupSeconds > Mathf.Epsilon ? 1f - (_attackWindupTimer / windupSeconds) : 1f);
+                var windupProgress = windupSeconds > Mathf.Epsilon ? 1f - (_attackWindupTimer / windupSeconds) : 1f;
+                ApplyAttackTelegraphColor(windupProgress);
+                UpdateShapeTelegraph(attackPattern, primaryTarget, windupProgress);
 
                 if (_attackWindupTimer > 0f)
                 {
@@ -263,6 +290,7 @@ namespace Corebound.Gameplay.Bosses
 
                 FireLockedBurst(primaryTarget, secondaryTarget, attackPattern);
                 ResetTelegraphColor();
+                HideShapeTelegraph();
                 return;
             }
 
@@ -318,6 +346,109 @@ namespace Corebound.Gameplay.Bosses
             }
 
             _spriteRenderer.color = Color.Lerp(ResolveIdleColor(), BossAttackWarningColor, Mathf.Clamp01(progress));
+        }
+
+        private void UpdateShapeTelegraph(BossAttackPatternData attackPattern, Transform primaryTarget, float progress)
+        {
+            var shape = attackPattern != null ? attackPattern.AttackShape : BossAttackShape.Fan;
+            var sprite = ResolveShapeTelegraphSprite(shape);
+
+            if (sprite == null)
+            {
+                HideShapeTelegraph();
+                return;
+            }
+
+            var renderer = EnsureShapeTelegraphRenderer();
+            renderer.sprite = sprite;
+            renderer.gameObject.SetActive(true);
+
+            var origin = (Vector2)transform.position;
+            var direction = primaryTarget != null ? (Vector2)primaryTarget.position - origin : Vector2.down;
+            direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector2.down;
+            var angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            var spriteSize = sprite.bounds.size;
+            var telegraphTransform = renderer.transform;
+
+            // Fades in and, for the ring, grows over the wind-up, so the moment of firing is
+            // readable from the art alone.
+            var alpha = Mathf.Lerp(0.25f, 0.85f, Mathf.Clamp01(progress));
+            renderer.color = new Color(1f, 1f, 1f, alpha);
+
+            switch (shape)
+            {
+                case BossAttackShape.Lance:
+                {
+                    // The lance art runs corner to corner at 45 degrees, base bottom-left.
+                    var diagonal = Mathf.Sqrt(spriteSize.x * spriteSize.x + spriteSize.y * spriteSize.y);
+                    var scale = diagonal > Mathf.Epsilon ? LanceTelegraphLength / diagonal : 1f;
+                    telegraphTransform.position = origin + direction * (LanceTelegraphLength * 0.5f);
+                    telegraphTransform.rotation = Quaternion.Euler(0f, 0f, angle - 45f);
+                    telegraphTransform.localScale = new Vector3(scale, scale, 1f);
+                    break;
+                }
+                case BossAttackShape.Volley:
+                {
+                    // Lanes run along the art's x axis, which is the firing direction.
+                    var scale = spriteSize.x > Mathf.Epsilon ? VolleyTelegraphDepth / spriteSize.x : 1f;
+                    telegraphTransform.position = origin + direction * (VolleyTelegraphDepth * 0.5f);
+                    telegraphTransform.rotation = Quaternion.Euler(0f, 0f, angle);
+                    telegraphTransform.localScale = new Vector3(scale, scale, 1f);
+                    break;
+                }
+                default:
+                {
+                    var diameter = RingTelegraphDiameter * Mathf.Lerp(0.55f, 1f, Mathf.Clamp01(progress));
+                    var scale = spriteSize.x > Mathf.Epsilon ? diameter / spriteSize.x : 1f;
+                    telegraphTransform.position = origin;
+                    telegraphTransform.rotation = Quaternion.Euler(0f, 0f, shape == BossAttackShape.Spiral ? _spiralOffsetDegrees : 0f);
+                    telegraphTransform.localScale = new Vector3(scale, scale, 1f);
+                    break;
+                }
+            }
+        }
+
+        // Fan has no dedicated art: its cone is already legible from the boss facing the player,
+        // and a wrong-shaped telegraph is worse than none.
+        private Sprite ResolveShapeTelegraphSprite(BossAttackShape shape)
+        {
+            switch (shape)
+            {
+                case BossAttackShape.Ring:
+                case BossAttackShape.Spiral:
+                    return _ringTelegraphSprite != null ? _ringTelegraphSprite : (_ringTelegraphSprite = DebugSpriteFactory.LoadProjectSprite(RingTelegraphPath));
+                case BossAttackShape.Lance:
+                    return _lanceTelegraphSprite != null ? _lanceTelegraphSprite : (_lanceTelegraphSprite = DebugSpriteFactory.LoadProjectSprite(LanceTelegraphPath));
+                case BossAttackShape.Volley:
+                    return _volleyTelegraphSprite != null ? _volleyTelegraphSprite : (_volleyTelegraphSprite = DebugSpriteFactory.LoadProjectSprite(VolleyTelegraphPath));
+                default:
+                    return null;
+            }
+        }
+
+        private SpriteRenderer EnsureShapeTelegraphRenderer()
+        {
+            if (_shapeTelegraphRenderer != null)
+            {
+                return _shapeTelegraphRenderer;
+            }
+
+            var telegraphObject = new GameObject("BossShapeTelegraph");
+            telegraphObject.transform.SetParent(transform.parent, false);
+            _shapeTelegraphRenderer = telegraphObject.AddComponent<SpriteRenderer>();
+
+            // Under the boss, over the arena floor and props (-10..-6), and never under the
+            // player's own projectiles (WeaponLoadout.md: telegraphs are never hidden by friendly fire).
+            _shapeTelegraphRenderer.sortingOrder = (_spriteRenderer != null ? _spriteRenderer.sortingOrder : 0) - 1;
+            return _shapeTelegraphRenderer;
+        }
+
+        private void HideShapeTelegraph()
+        {
+            if (_shapeTelegraphRenderer != null)
+            {
+                _shapeTelegraphRenderer.gameObject.SetActive(false);
+            }
         }
 
         private void ResetTelegraphColor()

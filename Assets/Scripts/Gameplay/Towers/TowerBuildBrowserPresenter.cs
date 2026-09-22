@@ -1,0 +1,427 @@
+using Corebound.Gameplay.Shared;
+using Corebound.UI;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace Corebound.Gameplay.Towers
+{
+    // UI proposal 2 (playtest 2026-09-21): "i dont like the current selection how to chose to build a
+    // tower. I miss e.g. information what the towers are able of and what are there pro/cons."
+    //
+    // The comparison line answered "what can it do"; this answers "which one", by showing the whole
+    // roster at once whenever the player stands on an empty slot during an Intermission. The
+    // selected tower is drawn on the large card of tower_info_card_frame.png with its strengths and
+    // weaknesses; the others on the small card. Previous/Next Tower Type moves the selection and
+    // Interact builds - no new input.
+    //
+    // It owns its own screen-space canvas rather than living in HUDCanvas.unity, because it is a
+    // transient overlay with no authored layout to respect, and it must not be parented onto
+    // CombatRuntime itself (see the shared-GameObject Canvas gotcha).
+    public sealed class TowerBuildBrowserPresenter : MonoBehaviour
+    {
+        private const string CardSheetPath = "Assets/Art/UI/HUD/tower_info_card_frame.png";
+
+        // Pixel rects in tower_info_card_frame.png (911x911), measured by connected-component
+        // analysis on 2026-09-22. Unity rects are bottom-left origin: y = 911 - (top + height).
+        private static readonly Rect LargeCardRect = new Rect(44f, 342f, 525f, 525f);
+        private static readonly Rect SmallCardRect = new Rect(626f, 601f, 242f, 255f);
+
+        private const float LargeCardSize = 300f;
+        private static readonly Vector2 SmallCardSize = new Vector2(170f, 179f);
+        private const float CardGap = 14f;
+        private const float BottomOffset = 150f;
+        private const int MaxCards = 6;
+
+        private static readonly Color LockedTint = new Color(0.42f, 0.44f, 0.48f, 1f);
+        private static readonly Color PlateTextColor = new Color(0.93f, 0.95f, 0.98f, 1f);
+        private static readonly Color StrengthColor = new Color(0.62f, 0.95f, 0.62f, 1f);
+        private static readonly Color WeaknessColor = new Color(1f, 0.62f, 0.55f, 1f);
+        private static readonly Color UnaffordableColor = new Color(1f, 0.45f, 0.4f, 1f);
+        private static readonly Color DamageBarColor = new Color(1f, 0.62f, 0.25f, 0.95f);
+        private static readonly Color RangeBarColor = new Color(0.35f, 0.78f, 1f, 0.95f);
+
+        [SerializeField] private TowerService _towerService;
+
+        private readonly CardView[] _cards = new CardView[MaxCards];
+        private CanvasGroup _canvasGroup;
+        private RectTransform _row;
+        private Text _hintText;
+        private Sprite _largeCardSprite;
+        private Sprite _smallCardSprite;
+        private Sprite _barSprite;
+        private Font _font;
+        private bool _built;
+        private float _refreshTimer;
+
+        // Affordability changes while the browser is open (pickups land during an Intermission),
+        // so the cards are refreshed on a short timer as well as on selection changes.
+        private const float RefreshIntervalSeconds = 0.25f;
+        private TowerData _lastSelected;
+
+        public void Bind(TowerService towerService)
+        {
+            _towerService = towerService;
+        }
+
+        private void Start()
+        {
+            if (_towerService == null)
+            {
+                _towerService = GetComponent<TowerService>();
+            }
+        }
+
+        private void LateUpdate()
+        {
+            var isActive = _towerService != null && _towerService.IsBuildBrowserActive;
+
+            if (!isActive)
+            {
+                if (_canvasGroup != null && _canvasGroup.alpha > 0f)
+                {
+                    _canvasGroup.alpha = 0f;
+                    _lastSelected = null;
+                }
+
+                return;
+            }
+
+            EnsureBuilt();
+            _canvasGroup.alpha = 1f;
+
+            var selected = _towerService.SelectedBuildTower;
+            _refreshTimer -= Time.unscaledDeltaTime;
+
+            if (selected != _lastSelected || _refreshTimer <= 0f)
+            {
+                _lastSelected = selected;
+                _refreshTimer = RefreshIntervalSeconds;
+                Refresh(selected);
+            }
+        }
+
+        private void EnsureBuilt()
+        {
+            if (_built)
+            {
+                return;
+            }
+
+            _built = true;
+            _font = UIFontResolver.Resolve();
+            _largeCardSprite = DebugSpriteFactory.LoadProjectSpriteRect(CardSheetPath, LargeCardRect);
+            _smallCardSprite = DebugSpriteFactory.LoadProjectSpriteRect(CardSheetPath, SmallCardRect);
+            _barSprite = DebugSpriteFactory.CreateSquare(100f);
+
+            var canvasObject = new GameObject("TowerBuildBrowserCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+            canvasObject.transform.SetParent(transform, false);
+            var canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            // Above the HUD, below the relic callout (450) and the modal overlays.
+            canvas.sortingOrder = 300;
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            var rootObject = new GameObject("TowerBuildBrowser", typeof(RectTransform), typeof(CanvasGroup));
+            rootObject.transform.SetParent(canvasObject.transform, false);
+            var root = rootObject.GetComponent<RectTransform>();
+            root.anchorMin = new Vector2(0.5f, 0f);
+            root.anchorMax = new Vector2(0.5f, 0f);
+            root.pivot = new Vector2(0.5f, 0f);
+            root.anchoredPosition = new Vector2(0f, BottomOffset);
+            root.sizeDelta = new Vector2(1200f, LargeCardSize + 40f);
+            _canvasGroup = rootObject.GetComponent<CanvasGroup>();
+            _canvasGroup.alpha = 0f;
+            _canvasGroup.blocksRaycasts = false;
+            _canvasGroup.interactable = false;
+
+            var rowObject = new GameObject("Cards", typeof(RectTransform));
+            rowObject.transform.SetParent(root, false);
+            _row = rowObject.GetComponent<RectTransform>();
+            _row.anchorMin = new Vector2(0.5f, 0f);
+            _row.anchorMax = new Vector2(0.5f, 0f);
+            _row.pivot = new Vector2(0.5f, 0f);
+            _row.anchoredPosition = new Vector2(0f, 34f);
+            _row.sizeDelta = new Vector2(1200f, LargeCardSize);
+
+            _hintText = CreateText("Hint", root, 20, TextAnchor.MiddleCenter, PlateTextColor);
+            var hintRect = _hintText.rectTransform;
+            hintRect.anchorMin = new Vector2(0f, 0f);
+            hintRect.anchorMax = new Vector2(1f, 0f);
+            hintRect.pivot = new Vector2(0.5f, 0f);
+            hintRect.anchoredPosition = Vector2.zero;
+            hintRect.sizeDelta = new Vector2(0f, 30f);
+            var hintShadow = _hintText.gameObject.AddComponent<Shadow>();
+            hintShadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            hintShadow.effectDistance = new Vector2(2f, -2f);
+
+            for (var index = 0; index < MaxCards; index++)
+            {
+                _cards[index] = CreateCard(index);
+            }
+        }
+
+        private void Refresh(TowerData selected)
+        {
+            var towers = _towerService.CatalogTowers;
+            var count = towers != null ? Mathf.Min(towers.Length, MaxCards) : 0;
+            var maxDps = 0.01f;
+            var maxRange = 0.01f;
+
+            for (var index = 0; index < count; index++)
+            {
+                if (towers[index] == null)
+                {
+                    continue;
+                }
+
+                maxDps = Mathf.Max(maxDps, towers[index].DamagePerSecond);
+                maxRange = Mathf.Max(maxRange, towers[index].Range);
+            }
+
+            var totalWidth = 0f;
+
+            for (var index = 0; index < count; index++)
+            {
+                totalWidth += (towers[index] == selected ? LargeCardSize : SmallCardSize.x) + (index > 0 ? CardGap : 0f);
+            }
+
+            var cursor = -totalWidth * 0.5f;
+
+            for (var index = 0; index < _cards.Length; index++)
+            {
+                var card = _cards[index];
+                var tower = index < count ? towers[index] : null;
+                card.Root.gameObject.SetActive(tower != null);
+
+                if (tower == null)
+                {
+                    continue;
+                }
+
+                var isSelected = tower == selected;
+                var isUnlocked = _towerService.IsTowerUnlocked(tower);
+                var size = isSelected ? new Vector2(LargeCardSize, LargeCardSize) : SmallCardSize;
+                card.Root.sizeDelta = size;
+                card.Root.anchoredPosition = new Vector2(cursor + size.x * 0.5f, 0f);
+                cursor += size.x + CardGap;
+
+                ApplyCard(card, tower, isSelected, isUnlocked, tower.DamagePerSecond / maxDps, tower.Range / maxRange);
+            }
+
+            _hintText.text = LocalizationService.Resolve(
+                _towerService.PreviousTowerTypeKeyLabel + " / " + _towerService.NextTowerTypeKeyLabel + "  choose tower     " + _towerService.BuildInteractKeyLabel + "  build",
+                _towerService.PreviousTowerTypeKeyLabel + " / " + _towerService.NextTowerTypeKeyLabel + "  Turm wählen     " + _towerService.BuildInteractKeyLabel + "  bauen");
+        }
+
+        private void ApplyCard(CardView card, TowerData tower, bool isSelected, bool isUnlocked, float damageFraction, float rangeFraction)
+        {
+            card.Frame.sprite = isSelected ? _largeCardSprite : _smallCardSprite;
+            card.Frame.color = isUnlocked ? Color.white : LockedTint;
+
+            // Region coordinates are fractions of the card art, so the same layout works on both
+            // card sizes. Large card (525 px): plate y 45-130, stat band y 165-285 with three
+            // squares, text rows y 300-400, labelled boxes y 415-470. Small card (242x255): plate
+            // y 12-62, stat band y 75-125, lower panel y 135-240.
+            if (isSelected)
+            {
+                Place(card.Name.rectTransform, 525f, 525f, 80f, 50f, 445f, 98f);
+                Place(card.Cost.rectTransform, 525f, 525f, 80f, 94f, 445f, 128f);
+                Place(card.Icon.rectTransform, 525f, 525f, 93f, 190f, 165f, 262f);
+                Place(card.DamageSlot, 525f, 525f, 230f, 190f, 302f, 262f);
+                Place(card.RangeSlot, 525f, 525f, 366f, 190f, 438f, 262f);
+                Place(card.Strengths.rectTransform, 525f, 525f, 80f, 304f, 450f, 352f);
+                Place(card.Weaknesses.rectTransform, 525f, 525f, 80f, 356f, 450f, 402f);
+                Place(card.StrongMark.rectTransform, 525f, 525f, 72f, 415f, 128f, 470f);
+                Place(card.WeakMark.rectTransform, 525f, 525f, 282f, 415f, 338f, 470f);
+            }
+            else
+            {
+                Place(card.Name.rectTransform, 242f, 255f, 22f, 14f, 220f, 60f);
+                Place(card.Cost.rectTransform, 242f, 255f, 22f, 140f, 220f, 186f);
+                Place(card.Icon.rectTransform, 242f, 255f, 40f, 83f, 72f, 117f);
+                Place(card.DamageSlot, 242f, 255f, 105f, 83f, 137f, 117f);
+                Place(card.RangeSlot, 242f, 255f, 170f, 83f, 202f, 117f);
+            }
+
+            card.Strengths.gameObject.SetActive(isSelected);
+            card.Weaknesses.gameObject.SetActive(isSelected);
+            card.StrongMark.gameObject.SetActive(isSelected);
+            card.WeakMark.gameObject.SetActive(isSelected);
+            card.DamageValue.gameObject.SetActive(isSelected);
+            card.RangeValue.gameObject.SetActive(isSelected);
+
+            card.Name.fontSize = isSelected ? 26 : 16;
+            card.Name.text = tower.DisplayName;
+
+            var icon = TowerRuntimeController.ResolveSprite(tower);
+            card.Icon.sprite = icon;
+            card.Icon.enabled = icon != null;
+            card.Icon.color = isUnlocked ? Color.white : LockedTint;
+
+            SetBar(card.DamageFill, card.DamageValue, damageFraction, tower.DamagePerSecond.ToString("0.#"), isUnlocked ? DamageBarColor : LockedTint);
+            SetBar(card.RangeFill, card.RangeValue, rangeFraction, tower.Range.ToString("0.#"), isUnlocked ? RangeBarColor : LockedTint);
+
+            if (!isUnlocked)
+            {
+                card.Cost.text = LocalizationService.Resolve("Locked - unlock in Progression", "Gesperrt - in Fortschritt freischalten");
+                card.Cost.color = LockedTint;
+                return;
+            }
+
+            var cost = _towerService.ResolveBuildCost(tower);
+            var canAfford = _towerService.CanAffordBuild(tower);
+            card.Cost.text = LocalizationService.Resolve("Cost ", "Kosten ") + cost
+                + (isSelected ? "   ·   " + LocalizationService.Resolve("DPS ", "SPS ") + tower.DamagePerSecond.ToString("0.#") + "   ·   " + LocalizationService.Resolve("Range ", "Reichweite ") + tower.Range.ToString("0.#") : string.Empty);
+            card.Cost.color = canAfford ? PlateTextColor : UnaffordableColor;
+            card.Strengths.text = tower.Strengths;
+            card.Weaknesses.text = tower.Weaknesses;
+        }
+
+        private static void SetBar(Image fill, Text value, float fraction, string label, Color color)
+        {
+            fraction = Mathf.Clamp01(fraction);
+            var rect = fill.rectTransform;
+            rect.anchorMin = new Vector2(0.12f, 0.1f);
+            rect.anchorMax = new Vector2(0.88f, 0.1f + 0.8f * Mathf.Max(0.06f, fraction));
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            fill.color = color;
+            value.text = label;
+        }
+
+        // Places a child by the source-pixel box it should cover in the card art (top-left origin).
+        private static void Place(RectTransform rect, float artWidth, float artHeight, float left, float top, float right, float bottom)
+        {
+            rect.anchorMin = new Vector2(left / artWidth, 1f - bottom / artHeight);
+            rect.anchorMax = new Vector2(right / artWidth, 1f - top / artHeight);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+        }
+
+        private CardView CreateCard(int index)
+        {
+            var rootObject = new GameObject("TowerCard" + index, typeof(RectTransform));
+            rootObject.transform.SetParent(_row, false);
+            var root = rootObject.GetComponent<RectTransform>();
+            root.anchorMin = new Vector2(0.5f, 0f);
+            root.anchorMax = new Vector2(0.5f, 0f);
+            root.pivot = new Vector2(0.5f, 0f);
+
+            var frame = ProceduralUIFactory.CreateImage("Frame", root, _largeCardSprite, Color.white, Image.Type.Simple);
+            frame.raycastTarget = false;
+            frame.rectTransform.anchorMin = Vector2.zero;
+            frame.rectTransform.anchorMax = Vector2.one;
+            frame.rectTransform.offsetMin = Vector2.zero;
+            frame.rectTransform.offsetMax = Vector2.zero;
+
+            var name = CreateText("Name", root, 26, TextAnchor.MiddleCenter, PlateTextColor);
+            name.fontStyle = FontStyle.Bold;
+            var cost = CreateText("Cost", root, 16, TextAnchor.MiddleCenter, PlateTextColor);
+
+            var icon = ProceduralUIFactory.CreateImage("Icon", root, null, Color.white, Image.Type.Simple);
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+
+            var damageSlot = CreateSlot("DamageSlot", root, DamageBarColor, out var damageFill, out var damageValue);
+            var rangeSlot = CreateSlot("RangeSlot", root, RangeBarColor, out var rangeFill, out var rangeValue);
+
+            var strengths = CreateText("Strengths", root, 16, TextAnchor.MiddleLeft, StrengthColor);
+            var weaknesses = CreateText("Weaknesses", root, 16, TextAnchor.MiddleLeft, WeaknessColor);
+            var strongMark = CreateText("StrongMark", root, 30, TextAnchor.MiddleCenter, StrengthColor);
+            strongMark.text = "+";
+            strongMark.fontStyle = FontStyle.Bold;
+            var weakMark = CreateText("WeakMark", root, 30, TextAnchor.MiddleCenter, WeaknessColor);
+            weakMark.text = "-";
+            weakMark.fontStyle = FontStyle.Bold;
+
+            return new CardView(root, frame, name, cost, icon, damageSlot, damageFill, damageValue, rangeSlot, rangeFill, rangeValue, strengths, weaknesses, strongMark, weakMark);
+        }
+
+        // One of the card's three square wells: a vertical fill for the stat, its number on top.
+        private RectTransform CreateSlot(string name, RectTransform parent, Color color, out Image fill, out Text value)
+        {
+            var slotObject = new GameObject(name, typeof(RectTransform));
+            slotObject.transform.SetParent(parent, false);
+            var slot = slotObject.GetComponent<RectTransform>();
+            fill = ProceduralUIFactory.CreateImage("Fill", slot, _barSprite, color, Image.Type.Simple);
+            fill.raycastTarget = false;
+            value = CreateText("Value", slot, 18, TextAnchor.MiddleCenter, PlateTextColor);
+            value.fontStyle = FontStyle.Bold;
+            value.rectTransform.anchorMin = Vector2.zero;
+            value.rectTransform.anchorMax = Vector2.one;
+            value.rectTransform.offsetMin = Vector2.zero;
+            value.rectTransform.offsetMax = Vector2.zero;
+            var shadow = value.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            return slot;
+        }
+
+        private Text CreateText(string name, RectTransform parent, int fontSize, TextAnchor anchor, Color color)
+        {
+            var text = ProceduralUIFactory.CreateText(name, parent, _font, fontSize, FontStyle.Normal, color, anchor);
+            text.raycastTarget = false;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.resizeTextForBestFit = true;
+            text.resizeTextMinSize = 10;
+            text.resizeTextMaxSize = fontSize;
+            return text;
+        }
+
+        private sealed class CardView
+        {
+            public CardView(RectTransform root, Image frame, Text name, Text cost, Image icon, RectTransform damageSlot, Image damageFill, Text damageValue, RectTransform rangeSlot, Image rangeFill, Text rangeValue, Text strengths, Text weaknesses, Text strongMark, Text weakMark)
+            {
+                Root = root;
+                Frame = frame;
+                Name = name;
+                Cost = cost;
+                Icon = icon;
+                DamageSlot = damageSlot;
+                DamageFill = damageFill;
+                DamageValue = damageValue;
+                RangeSlot = rangeSlot;
+                RangeFill = rangeFill;
+                RangeValue = rangeValue;
+                Strengths = strengths;
+                Weaknesses = weaknesses;
+                StrongMark = strongMark;
+                WeakMark = weakMark;
+            }
+
+            public RectTransform Root { get; }
+
+            public Image Frame { get; }
+
+            public Text Name { get; }
+
+            public Text Cost { get; }
+
+            public Image Icon { get; }
+
+            public RectTransform DamageSlot { get; }
+
+            public Image DamageFill { get; }
+
+            public Text DamageValue { get; }
+
+            public RectTransform RangeSlot { get; }
+
+            public Image RangeFill { get; }
+
+            public Text RangeValue { get; }
+
+            public Text Strengths { get; }
+
+            public Text Weaknesses { get; }
+
+            public Text StrongMark { get; }
+
+            public Text WeakMark { get; }
+        }
+    }
+}

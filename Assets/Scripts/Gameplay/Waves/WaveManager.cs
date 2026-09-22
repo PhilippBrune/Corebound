@@ -68,6 +68,7 @@ namespace Corebound.Gameplay.Waves
         // Where things are placed now lives in WaveSpawnPlacement. Extracted 2026-09-20: it is
         // pure geometry with no wave state, and it is where the worst bug of the week hid.
         private readonly WaveSpawnPlacement _spawnPlacement = new WaveSpawnPlacement();
+        private readonly List<int> _upcomingGateIndices = new List<int>();
 
 
         private EnemyPool _enemyPool;
@@ -409,9 +410,32 @@ namespace Corebound.Gameplay.Waves
                 }
             }
 
+            PulseUpcomingSpawnGates();
             ApplyPersistenceContext();
             WaveEvents.RaiseWaveStarted(CreateEventArgs(CurrentWaveNumber, WaveEncounterLabelResolver.ResolveCurrentEncounterLabel(_stageData, _currentWaveIndex, _state, _bossRuntimeController), WaveEncounterLabelResolver.ResolveCurrentEncounterIsElite(_stageData, _currentWaveIndex, _state)));
             StateChanged?.Invoke();
+        }
+
+        // UI proposal 3: the gates the wave is about to come out of pulse for the wave-start spawn
+        // delay, so the rotating spawn fan finally has a visible tell instead of reading as noise.
+        private void PulseUpcomingSpawnGates()
+        {
+            var arena = ArenaArtPresenter;
+
+            if (arena == null)
+            {
+                return;
+            }
+
+            var enemyCount = 0;
+
+            for (var index = 0; index < _spawnGroups.Count; index++)
+            {
+                enemyCount += _spawnGroups[index].RemainingCount;
+            }
+
+            _spawnPlacement.CollectUpcomingGateIndices(_stageData, enemyCount, _upcomingGateIndices);
+            arena.PulseSpawnGates(_upcomingGateIndices, WaveStartSpawnDelaySeconds);
         }
 
         private void StartBossEncounter(int restoredPhaseIndex)
@@ -548,6 +572,11 @@ namespace Corebound.Gameplay.Waves
 
             BossEvents.RaiseBossDefeated(CreateBossEventArgs());
             GrantBossDefeatRelic();
+            AnnounceMetaReward(MetaRewardLedger.GrantBossDefeat(
+                SaveManager,
+                _metaProgressionDefinitionData,
+                StageIndex,
+                _stageData != null && _stageData.BossData != null ? _stageData.BossData.BossId : string.Empty));
             WaveEvents.RaiseRewardPending(CreateEventArgs(CurrentWaveNumber, WaveEncounterLabelResolver.ResolveCurrentEncounterLabel(_stageData, _currentWaveIndex, _state, _bossRuntimeController), false));
             StateChanged?.Invoke();
         }
@@ -625,10 +654,11 @@ namespace Corebound.Gameplay.Waves
             StageEvents.RaiseStageCompleted(CreateStageEventArgs(WaveEncounterLabelResolver.ResolveStageCompletionLabel(_stageData)));
             StageEvents.RaiseStageTransitioned(CreateStageEventArgs(WaveEncounterLabelResolver.ResolveStageTransitionLabel(_stageData)));
 
+            MetaRewardLedger.RecordStageCleared(SaveManager, _metaProgressionDefinitionData, ShouldEndRunOnCompletion());
+
             if (ShouldEndRunOnCompletion())
             {
                 RecordRunOutcomeStatistic(true);
-                GrantMetaCurrencyReward(_metaProgressionDefinitionData != null ? _metaProgressionDefinitionData.RunCompletionCurrencyReward : 0);
 
                 if (SaveManager != null)
                 {
@@ -783,7 +813,6 @@ namespace Corebound.Gameplay.Waves
                 _wasCoreDestroyedOnFailure = _coreTarget != null && eventArgs.Victim == _coreTarget.gameObject;
                 _state = WaveState.Failed;
                 RecordRunOutcomeStatistic(false);
-                GrantMetaCurrencyReward(_metaProgressionDefinitionData != null ? _metaProgressionDefinitionData.RunFailureCurrencyReward : 0);
                 StateChanged?.Invoke();
                 return;
             }
@@ -804,6 +833,7 @@ namespace Corebound.Gameplay.Waves
                 {
                     SpawnResourcePickup(helperEnemy.ResourceRewardAmount, eventArgs.Victim.transform.position);
                     RecordEnemyKillStatistic();
+                    GrantEliteKillReward(helperEnemy);
 
                     if (helperEnemy.IsRangedPressureRole)
                     {
@@ -830,6 +860,7 @@ namespace Corebound.Gameplay.Waves
 
             SpawnResourcePickup(enemy.ResourceRewardAmount, eventArgs.Victim.transform.position);
             RecordEnemyKillStatistic();
+            GrantEliteKillReward(enemy);
 
             if (enemy.IsRangedPressureRole)
             {
@@ -910,9 +941,39 @@ namespace Corebound.Gameplay.Waves
             WaveStatisticsRecorder.RecordRunOutcome(SaveManager, StageIndex, completed);
         }
 
-        private void GrantMetaCurrencyReward(int amount)
+        private void GrantEliteKillReward(EnemyRuntimeController enemy)
         {
-            WaveStatisticsRecorder.GrantMetaCurrencyReward(SaveManager, amount);
+            if (enemy != null && enemy.IsElite)
+            {
+                AnnounceMetaReward(MetaRewardLedger.GrantEliteKill(SaveManager, _metaProgressionDefinitionData));
+            }
+        }
+
+        private static void AnnounceMetaReward(MetaRewardGrant grant)
+        {
+            if (grant.IsEmpty)
+            {
+                return;
+            }
+
+            var parts = string.Empty;
+
+            if (grant.SkillPoints > 0)
+            {
+                parts += "+" + grant.SkillPoints + LocalizationService.Resolve(" Skill Points", " Fertigkeitspunkte");
+            }
+
+            if (grant.Alloy > 0)
+            {
+                parts += (parts.Length > 0 ? "  ·  " : string.Empty) + "+" + grant.Alloy + LocalizationService.Resolve(" Alloy", " Legierung");
+            }
+
+            if (grant.IsFirstKill)
+            {
+                parts += LocalizationService.Resolve("  (first kill)", "  (Erstbesiegung)");
+            }
+
+            NotificationPresenter.Show(parts);
         }
 
         private void EnsureCoreTarget()
@@ -1120,6 +1181,8 @@ namespace Corebound.Gameplay.Waves
             public EnemyEliteModifierData EliteModifierData => Source != null ? Source.EliteModifierData : null;
 
             public bool HasRemaining => _remainingCount > 0;
+
+            public int RemainingCount => _remainingCount;
 
             public bool ShouldSpawn => _remainingCount > 0 && _timer <= 0f;
 

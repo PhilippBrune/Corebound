@@ -1,0 +1,90 @@
+using System;
+using Corebound.SaveSystem;
+
+namespace Corebound.MetaProgression
+{
+    public readonly struct MetaRewardGrant
+    {
+        public MetaRewardGrant(int skillPoints, int alloy, bool isFirstKill)
+        {
+            SkillPoints = skillPoints;
+            Alloy = alloy;
+            IsFirstKill = isFirstKill;
+        }
+
+        public int SkillPoints { get; }
+
+        public int Alloy { get; }
+
+        public bool IsFirstKill { get; }
+
+        public bool IsEmpty => SkillPoints <= 0 && Alloy <= 0;
+    }
+
+    // The single place Skill Points and Alloy are paid (owner decision 2026-09-22: both come from
+    // bosses and elites, SP from bosses only, on a curve that grows with stage depth).
+    //
+    // Written straight to the save at the moment of the kill rather than at run end, so a run that
+    // beats the Stage 2 boss and then dies keeps what it earned - that is what makes going deeper
+    // worth it even when the run fails. MetaProgressionService only exists in the MainMenu scene,
+    // so this goes through the save manager exactly like the unlock checks do.
+    public static class MetaRewardLedger
+    {
+        public static event Action<MetaRewardGrant> RewardGranted;
+
+        public static MetaRewardGrant GrantBossDefeat(ISaveManager saveManager, MetaProgressionDefinitionData definition, int stageIndex, string bossId)
+        {
+            if (saveManager == null || definition == null)
+            {
+                return default;
+            }
+
+            var saveData = saveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
+            var isFirstKill = saveData.RecordBossDefeated(bossId);
+            var skillPoints = definition.ResolveBossSkillPoints(stageIndex) + (isFirstKill ? definition.BossFirstKillSkillPoints : 0);
+            var alloy = definition.ResolveBossAlloy(stageIndex) + (isFirstKill ? definition.BossFirstKillAlloy : 0);
+            saveData.GrantSkillPoints(skillPoints);
+            saveData.GrantAlloy(alloy);
+            saveManager.SaveMetaProgressionSaveData(saveData);
+
+            var grant = new MetaRewardGrant(skillPoints, alloy, isFirstKill);
+            RewardGranted?.Invoke(grant);
+            return grant;
+        }
+
+        public static MetaRewardGrant GrantEliteKill(ISaveManager saveManager, MetaProgressionDefinitionData definition)
+        {
+            if (saveManager == null || definition == null || definition.EliteKillAlloy <= 0)
+            {
+                return default;
+            }
+
+            var saveData = saveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
+            saveData.GrantAlloy(definition.EliteKillAlloy);
+            saveManager.SaveMetaProgressionSaveData(saveData);
+
+            var grant = new MetaRewardGrant(0, definition.EliteKillAlloy, false);
+            RewardGranted?.Invoke(grant);
+            return grant;
+        }
+
+        // WeaponLoadout.md: weapon slot 2 unlocks permanently on the first stage cleared in any run.
+        public static void RecordStageCleared(ISaveManager saveManager, MetaProgressionDefinitionData definition, bool completedFullRun)
+        {
+            if (saveManager == null)
+            {
+                return;
+            }
+
+            var saveData = saveManager.LoadMetaProgressionSaveData(definition != null ? definition.CreateDefaultSaveData() : new MetaProgressionSaveData());
+            saveData.MarkStageCleared();
+
+            if (completedFullRun)
+            {
+                saveData.MarkFullRunCompleted();
+            }
+
+            saveManager.SaveMetaProgressionSaveData(saveData);
+        }
+    }
+}

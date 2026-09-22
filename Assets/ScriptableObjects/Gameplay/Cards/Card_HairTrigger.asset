@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Verringert das Feuerintervall der Waffe leicht. Stapelt sich sauber mit anderen Builds.
   _rarity: 0
   _requiredUnlockId:
+  _tags:
+  - 0
   _effects:
   - {fileID: 11400000, guid: 2590369de7ef428693428bd0e53944ce, type: 2}
   _stackable: 1

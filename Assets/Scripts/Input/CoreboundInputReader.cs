@@ -132,6 +132,16 @@ namespace Corebound.Input
             InteractPressed?.Invoke();
         }
 
+        public void DebugRaisePause()
+        {
+            PausePressed?.Invoke();
+        }
+
+        public void DebugRaiseNextTowerType()
+        {
+            NextTowerTypePressed?.Invoke();
+        }
+
         public void DebugRaiseNavigate(Vector2 direction)
         {
             NavigatePerformed?.Invoke(direction);

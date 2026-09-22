@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Ein build-prägender Tausch von Feuerintervall gegen deutlich höheren Waffenschaden.
   _rarity: 2
   _requiredUnlockId:
+  _tags:
+  - 0
   _effects:
   - {fileID: 11400000, guid: 7f1eae3379a44787be0f9558f1d4745d, type: 2}
   - {fileID: 11400000, guid: 754ad7f93d9f4b07809f08bed064561e, type: 2}

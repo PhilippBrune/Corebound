@@ -282,17 +282,23 @@ namespace Corebound.Gameplay.Towers
 
         private Sprite ResolveSprite()
         {
-            if (_towerData != null && _towerData.Sprite != null)
+            return ResolveSprite(_towerData);
+        }
+
+        // Static so the build browser shows exactly the art the built tower will use.
+        public static Sprite ResolveSprite(TowerData towerData)
+        {
+            if (towerData != null && towerData.Sprite != null)
             {
-                return _towerData.Sprite;
+                return towerData.Sprite;
             }
 
-            if (_towerData == null)
+            if (towerData == null)
             {
                 return null;
             }
 
-            switch (_towerData.TowerId)
+            switch (towerData.TowerId)
             {
                 case "tower_ballista":
                     return DebugSpriteFactory.LoadProjectSprite(BallistaSpritePath);

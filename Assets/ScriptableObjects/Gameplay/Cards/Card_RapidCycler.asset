@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Verkürzt das Waffen-Feuerintervall spürbar für einen temporeicheren Build.
   _rarity: 1
   _requiredUnlockId:
+  _tags:
+  - 0
   _effects:
   - {fileID: 11400000, guid: 565d9167d02c4bda80010cabbae279dd, type: 2}
   _stackable: 1

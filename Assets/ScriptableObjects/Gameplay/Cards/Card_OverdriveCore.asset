@@ -19,7 +19,8 @@ MonoBehaviour:
   _descriptionDe: Ein build-prägender Schub, der den Waffenschaden weit über die üblichen Grenzen treibt.
   _rarity: 3
   _requiredUnlockId:
-  _tags: 00000000
+  _tags:
+  - 0
   _effects:
   - {fileID: 11400000, guid: e7739d664ce04022aa397a758deb617c, type: 2}
   _stackable: 0

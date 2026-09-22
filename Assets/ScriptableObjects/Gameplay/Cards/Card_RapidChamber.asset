@@ -19,7 +19,8 @@ MonoBehaviour:
   _descriptionDe: Erhöht den Waffenschaden für dichteren Salvendruck.
   _rarity: 0
   _requiredUnlockId: 
-  _tags: 00000000
+  _tags:
+  - 0
   _effects:
   - {fileID: 11400000, guid: 2d14d0f4f8204a9b9eed0228a19d5c0d, type: 2}
   _stackable: 1

@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Erhöht den Waffenschaden zu einem kleinen Preis beim Feuerintervall. Stapelt sich für einen Heavy-Hitter-Build.
   _rarity: 1
   _requiredUnlockId:
+  _tags:
+  - 0
   _effects:
   - {fileID: 11400000, guid: 15b1eee3adb149059512a3ae88696329, type: 2}
   - {fileID: 11400000, guid: f42673bd643845de905aed8b0af1b846, type: 2}

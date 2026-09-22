@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Schärft die Waffenoptik für eine solide, zuverlässige Schadenssteigerung.
   _rarity: 1
   _requiredUnlockId:
+  _tags:
+  - 0
   _effects:
   - {fileID: 11400000, guid: 1a4dc9ee7f33476aa86b45cbe4954c4c, type: 2}
   _stackable: 1

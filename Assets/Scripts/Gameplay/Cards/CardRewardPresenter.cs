@@ -32,6 +32,13 @@ namespace Corebound.Gameplay.Cards
         private const float SlotCenterY = -8f;
 
         private const int MaxTagIconsPerSlot = 4;
+        private const float AuthoredTagIconSize = 34f;
+        private const float AuthoredTagIconSpacing = 40f;
+        private const float AuthoredTagIconBottom = 18f;
+
+        // Tag icons this presenter created itself on the authored path. Only these are laid out in
+        // code; an icon the scene authored keeps the scene's position.
+        private readonly System.Collections.Generic.HashSet<Image> _runtimeTagIcons = new System.Collections.Generic.HashSet<Image>();
 
         private readonly RectTransform[] _slotRoots = new RectTransform[3];
         private readonly Text[] _slotTitleTexts = new Text[3];
@@ -496,6 +503,13 @@ namespace Corebound.Gameplay.Cards
                 var sprite = CardTagIconAtlas.ResolveIcon(tags[iconIndex]);
                 icon.sprite = sprite;
                 icon.gameObject.SetActive(sprite != null);
+
+                if (_runtimeTagIcons.Contains(icon))
+                {
+                    var visibleCount = Mathf.Min(tags.Length, icons.Length);
+                    var offset = (iconIndex - (visibleCount - 1) * 0.5f) * AuthoredTagIconSpacing;
+                    icon.rectTransform.anchoredPosition = new Vector2(offset, AuthoredTagIconBottom);
+                }
             }
         }
 
@@ -767,7 +781,7 @@ namespace Corebound.Gameplay.Cards
             return true;
         }
 
-        private static Image[] ResolveAuthoredTagIcons(RectTransform slotTransform)
+        private Image[] ResolveAuthoredTagIcons(RectTransform slotTransform)
         {
             var icons = new Image[MaxTagIconsPerSlot];
             var foundAny = false;
@@ -779,7 +793,38 @@ namespace Corebound.Gameplay.Cards
                 foundAny |= icons[iconIndex] != null;
             }
 
-            return foundAny ? icons : null;
+            if (foundAny)
+            {
+                return icons;
+            }
+
+            // [ExecuteAlways]: creating children in Edit Mode would silently dirty RewardCanvas.unity.
+            if (!Application.isPlaying)
+            {
+                return null;
+            }
+
+            // UI proposal 4 (2026-09-22): the authored RewardSlot hierarchy has no TagIcon children,
+            // so on the path the game actually uses the tag row never existed and every card
+            // showed no icons even once its tags were populated. The icons are added here as a
+            // missing element rather than a re-layout: they are new children centred along the
+            // slot's bottom edge, and nothing the scene authored is moved or resized.
+            for (var iconIndex = 0; iconIndex < MaxTagIconsPerSlot; iconIndex++)
+            {
+                var iconImage = CreateImage("TagIcon" + iconIndex, slotTransform, null, Color.white, Image.Type.Simple);
+                iconImage.preserveAspect = true;
+                iconImage.raycastTarget = false;
+                var iconRect = iconImage.rectTransform;
+                iconRect.anchorMin = new Vector2(0.5f, 0f);
+                iconRect.anchorMax = new Vector2(0.5f, 0f);
+                iconRect.pivot = new Vector2(0.5f, 0f);
+                iconRect.sizeDelta = new Vector2(AuthoredTagIconSize, AuthoredTagIconSize);
+                iconImage.gameObject.SetActive(false);
+                icons[iconIndex] = iconImage;
+                _runtimeTagIcons.Add(iconImage);
+            }
+
+            return icons;
         }
 
         private static Font ResolveFont()

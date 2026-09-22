@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Corebound.Gameplay.Shared;
 using UnityEngine;
 
@@ -41,6 +42,30 @@ namespace Corebound.Gameplay.Waves
         public int NextSpawnIndex()
         {
             return _spawnCounter++;
+        }
+
+        // The spawn-point (gate) indices the next enemyCount spawns will round-robin through, in
+        // the order they will be used. Same wrap as ResolveEnemySpawnPosition, so the lit gates are
+        // exactly the ones the wave then comes out of. A stage with no authored spawn points has a
+        // single gate at index 0.
+        public void CollectUpcomingGateIndices(StageData stageData, int enemyCount, List<int> result)
+        {
+            result.Clear();
+            var spawnPoints = stageData != null ? stageData.SpawnPoints : null;
+            var gateCount = spawnPoints != null && spawnPoints.Length > 0 ? spawnPoints.Length : 1;
+            var count = Mathf.Min(Mathf.Max(1, enemyCount), gateCount);
+
+            for (var index = 0; index < count; index++)
+            {
+                var wrappedIndex = gateCount == 1
+                    ? 0
+                    : ((((_spawnCounter + index + _spawnPointOffset) % gateCount) + gateCount) % gateCount);
+
+                if (!result.Contains(wrappedIndex))
+                {
+                    result.Add(wrappedIndex);
+                }
+            }
         }
 
         public Vector3 ResolveEnemySpawnPosition(StageData stageData, StageArenaArtPresenter arena, int spawnIndex, float angleJitter)

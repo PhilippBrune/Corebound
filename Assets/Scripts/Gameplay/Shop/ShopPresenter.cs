@@ -21,10 +21,25 @@ namespace Corebound.Gameplay.Shop
         private const string EpicFramePath = "Assets/Art/Cards/Frames/card_frame_epic.png";
         private const string LegendaryFramePath = "Assets/Art/Cards/Frames/card_frame_legendary.png";
         private const string TowerUpgradeIconPath = "Assets/Art/UI/HUD/shop_tower_upgrade_icon.png";
-        private const float SlotWidth = 282f;
-        private const float SlotHeight = 414f;
-        private const float SlotSpacing = 332f;
-        private const float SlotCenterY = -18f;
+        // UI proposal 1 (playtest 2026-09-21: "make it similar to the Reward screen"): the reward
+        // screen's slot geometry exactly (CardRewardPresenter / RewardCanvas.unity), so a player
+        // does not re-learn a layout between the two panels. ShopCanvas.unity carries the same
+        // values; these only matter for the procedural fallback and the editor bake below.
+        private const float SlotWidth = 264f;
+        private const float SlotHeight = 336f;
+        private const float SlotSpacing = 291f;
+        private const float SlotCenterY = -17f;
+        private static readonly Vector2 SlotTitlePosition = new Vector2(0f, 114f);
+        private static readonly Vector2 SlotTitleSize = new Vector2(165f, 44f);
+        private static readonly Vector2 SlotDescriptionPosition = new Vector2(0f, -26f);
+        private static readonly Vector2 SlotDescriptionSize = new Vector2(158f, 212f);
+
+        // The reward screen's bottom band only holds a hidden rarity line, so the price chip sits
+        // there: the one place in the shared geometry with room for information the reward screen
+        // has no equivalent of.
+        private static readonly Vector2 SlotCostPosition = new Vector2(0f, -148f);
+        private static readonly Vector2 SlotCostChipSize = new Vector2(126f, 34f);
+        private static readonly Vector2 SlotCostTextSize = new Vector2(110f, 30f);
         private const float TypeBadgeSize = 40f;
 
         private readonly RectTransform[] _slotRoots = new RectTransform[3];
@@ -301,8 +316,8 @@ namespace Corebound.Gameplay.Shop
                 StretchToParent(frameImage.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
                 _slotFrameImages[index] = frameImage;
 
-                var titleText = CreateText("SlotTitle", slotRect, 18, FontStyle.Bold, new Color(0.14f, 0.12f, 0.1f, 0.98f), TextAnchor.UpperLeft);
-                StretchToParent(titleText.rectTransform, Vector2.zero, Vector2.one, new Vector2(22f, 26f), new Vector2(-22f, -320f));
+                var titleText = CreateText("SlotTitle", slotRect, 18, FontStyle.Bold, new Color(0.14f, 0.12f, 0.1f, 0.98f), TextAnchor.UpperCenter);
+                SetAnchoredBox(titleText.rectTransform, new Vector2(0.5f, 0.5f), SlotTitlePosition, SlotTitleSize);
                 _slotTitleTexts[index] = titleText;
 
                 var priceChip = CreateImage("SlotCostChip", slotRect, _priceChipSprite, Color.white, Image.Type.Simple);
@@ -310,16 +325,15 @@ namespace Corebound.Gameplay.Shop
                 // 126x34 UI box - preserveAspect scales it down uniformly and letterboxes instead of
                 // stretching it, which was the other half of the distorted-chip look.
                 priceChip.preserveAspect = true;
-                // Top-middle of the slot per playtest feedback (was top-left).
-                SetAnchoredBox(priceChip.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -62f), new Vector2(126f, 34f));
+                SetAnchoredBox(priceChip.rectTransform, new Vector2(0.5f, 0.5f), SlotCostPosition, SlotCostChipSize);
                 _slotCostChipImages[index] = priceChip;
 
                 var costText = CreateText("SlotCostText", slotRect, 16, FontStyle.Bold, new Color(0.16f, 0.14f, 0.12f, 0.98f), TextAnchor.MiddleCenter);
-                StretchToParent(costText.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(-55f, -88f), new Vector2(55f, -58f));
+                SetAnchoredBox(costText.rectTransform, new Vector2(0.5f, 0.5f), SlotCostPosition, SlotCostTextSize);
                 _slotCostTexts[index] = costText;
 
-                var descriptionText = CreateText("SlotDescription", slotRect, 14, FontStyle.Normal, new Color(0.14f, 0.12f, 0.1f, 0.96f), TextAnchor.UpperLeft);
-                StretchToParent(descriptionText.rectTransform, Vector2.zero, Vector2.one, new Vector2(22f, 112f), new Vector2(-22f, -24f));
+                var descriptionText = CreateText("SlotDescription", slotRect, 14, FontStyle.Normal, new Color(0.14f, 0.12f, 0.1f, 0.96f), TextAnchor.UpperCenter);
+                SetAnchoredBox(descriptionText.rectTransform, new Vector2(0.5f, 0.5f), SlotDescriptionPosition, SlotDescriptionSize);
                 _slotDescriptionTexts[index] = descriptionText;
 
                 var typeBadge = CreateImage("SlotTypeBadge", slotRect, _towerUpgradeIconSprite, Color.white, Image.Type.Simple);
@@ -755,10 +769,10 @@ namespace Corebound.Gameplay.Shop
                 slotImage.color = Color.clear;
                 slotImage.raycastTarget = false;
                 EnsureEditorImage(slotRect, "SlotFrame", CommonFramePath, null, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-                EnsureEditorText(slotRect, "SlotTitle", Vector2.zero, Vector2.one, new Vector2(0f, 1f), new Vector2(22f, 26f), new Vector2(-22f, -320f), TextAnchor.UpperLeft, 18, new Color(0.14f, 0.12f, 0.1f, 0.98f));
-                EnsureEditorImage(slotRect, "SlotCostChip", PriceChipTexturePath, null, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -62f), new Vector2(126f, 34f));
-                EnsureEditorText(slotRect, "SlotCostText", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(-55f, -88f), new Vector2(55f, -58f), TextAnchor.MiddleCenter, 16, new Color(0.16f, 0.14f, 0.12f, 0.98f));
-                EnsureEditorText(slotRect, "SlotDescription", Vector2.zero, Vector2.one, new Vector2(0f, 1f), new Vector2(22f, 112f), new Vector2(-22f, -24f), TextAnchor.UpperLeft, 14, new Color(0.14f, 0.12f, 0.1f, 0.96f));
+                EnsureEditorText(slotRect, "SlotTitle", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), SlotTitlePosition - SlotTitleSize * 0.5f, SlotTitlePosition + SlotTitleSize * 0.5f, TextAnchor.UpperCenter, 18, new Color(0.14f, 0.12f, 0.1f, 0.98f));
+                EnsureEditorImage(slotRect, "SlotCostChip", PriceChipTexturePath, null, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), SlotCostPosition, SlotCostChipSize);
+                EnsureEditorText(slotRect, "SlotCostText", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), SlotCostPosition - SlotCostTextSize * 0.5f, SlotCostPosition + SlotCostTextSize * 0.5f, TextAnchor.MiddleCenter, 16, new Color(0.16f, 0.14f, 0.12f, 0.98f));
+                EnsureEditorText(slotRect, "SlotDescription", new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), SlotDescriptionPosition - SlotDescriptionSize * 0.5f, SlotDescriptionPosition + SlotDescriptionSize * 0.5f, TextAnchor.UpperCenter, 14, new Color(0.14f, 0.12f, 0.1f, 0.96f));
                 var typeBadge = EnsureEditorImage(slotRect, "SlotTypeBadge", TowerUpgradeIconPath, null, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-8f, -8f), new Vector2(TypeBadgeSize, TypeBadgeSize));
                 typeBadge.gameObject.SetActive(false);
             }

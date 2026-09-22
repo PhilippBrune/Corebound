@@ -19,6 +19,9 @@ MonoBehaviour:
   _descriptionDe: Schnellere Projektile, schnellerer Abzug - ein Hit-and-Run-Paket für einen mobilen Fernkampf-Build.
   _rarity: 1
   _requiredUnlockId:
+  _tags:
+  - 1
+  - 0
   _effects:
   - {fileID: 11400000, guid: 101c605076ae4de0bf9c110f781aee1b, type: 2}
   - {fileID: 11400000, guid: 84aba5e87357492bb7145b49c6e33608, type: 2}

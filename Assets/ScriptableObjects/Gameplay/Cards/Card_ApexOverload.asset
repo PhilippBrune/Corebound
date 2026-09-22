@@ -19,6 +19,9 @@ MonoBehaviour:
   _descriptionDe: Legendärer Doppelschub, der gleichzeitig Waffen- und Turmschaden erhöht.
   _rarity: 3
   _requiredUnlockId:
+  _tags:
+  - 2
+  - 0
   _effects:
   - {fileID: 11400000, guid: 05f8ab5d2edd496696b72df07985ad0f, type: 2}
   - {fileID: 11400000, guid: ff51a25cf81a4497b354ec6bb553a526, type: 2}

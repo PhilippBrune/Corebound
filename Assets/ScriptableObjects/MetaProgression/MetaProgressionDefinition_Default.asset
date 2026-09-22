@@ -12,14 +12,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11dfc418ab7e00e41ab7c5eae2878777, type: 3}
   m_Name: MetaProgressionDefinition_Default
   m_EditorClassIdentifier: 
-  _metaCurrencyLabel: Core Shards
-  _startingCurrencyAmount: 8
+  _metaCurrencyLabel: Alloy
+  _metaCurrencyLabelDe: Legierung
+  _startingCurrencyAmount: 0
   _startingTutorialSeen: 0
+  _bossSkillPointsByStage:
+  - 1
+  - 1
+  - 2
+  - 2
+  - 3
+  _bossFirstKillSkillPoints: 2
+  _bossAlloyByStage:
+  - 6
+  - 8
+  - 10
+  - 12
+  - 14
+  _bossFirstKillAlloy: 10
+  _eliteKillAlloy: 1
   _unlocks:
   - _unlockId: unlock_weapon_spread
     _title: Spread Weapon License
     _summary: Unlocks the third starter Weapon path for wider crowd control builds.
-    _cost: 3
+    _cost: 20
     _targetSystem: Weapons
     _weaponReward: {fileID: 11400000, guid: dd8dfd6c3cc144698807a6cba3ca3b5f, type: 2}
     _towerReward: {fileID: 0}
@@ -28,7 +44,7 @@ MonoBehaviour:
   - _unlockId: unlock_tower_support
     _title: Support Tower Blueprint
     _summary: Expands the Tower roster with a supportive automation option for later slices.
-    _cost: 5
+    _cost: 20
     _targetSystem: Towers
     _weaponReward: {fileID: 0}
     _towerReward: {fileID: 11400000, guid: 2d70c0b8d10e4b34904ff1c282c1b646, type: 2}
@@ -37,7 +53,7 @@ MonoBehaviour:
   - _unlockId: unlock_card_status
     _title: Status Card Archive
     _summary: Grants access to future Burn and Freeze leaning Card pools.
-    _cost: 7
+    _cost: 40
     _targetSystem: Cards
     _weaponReward: {fileID: 0}
     _towerReward: {fileID: 0}
@@ -46,9 +62,29 @@ MonoBehaviour:
   - _unlockId: unlock_loadout_engineer
     _title: Engineer Start Package
     _summary: Grants a future Start Loadout focused on Spread Weapon, support infrastructure and early economy.
-    _cost: 9
+    _cost: 80
     _targetSystem: Start Loadout
     _weaponReward: {fileID: 0}
     _towerReward: {fileID: 0}
     _cardReward: {fileID: 0}
     _startLoadoutReward: {fileID: 11400000, guid: 8120ba8cae284dba8b9462c0c20fe8d9, type: 2}
+  - _unlockId: unlock_weapon_slot_5
+    _title: Fifth Weapon Mount
+    _summary: Adds a fifth weapon slot to every run.
+    _cost: 60
+    _targetSystem: Weapons
+    _weaponReward: {fileID: 0}
+    _towerReward: {fileID: 0}
+    _cardReward: {fileID: 0}
+    _startLoadoutReward: {fileID: 0}
+    _weaponSlotReward: 1
+  - _unlockId: unlock_weapon_slot_6
+    _title: Sixth Weapon Mount
+    _summary: Adds a sixth weapon slot to every run.
+    _cost: 120
+    _targetSystem: Weapons
+    _weaponReward: {fileID: 0}
+    _towerReward: {fileID: 0}
+    _cardReward: {fileID: 0}
+    _startLoadoutReward: {fileID: 0}
+    _weaponSlotReward: 1

@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Eine solide Turmschadenssteigerung für unterstützungslastige Builds.
   _rarity: 1
   _requiredUnlockId:
+  _tags:
+  - 2
   _effects:
   - {fileID: 11400000, guid: 77ecadcedff841ae80adde0ee1f8992c, type: 2}
   _stackable: 1

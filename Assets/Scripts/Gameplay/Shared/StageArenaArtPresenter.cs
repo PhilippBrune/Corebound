@@ -156,6 +156,13 @@ namespace Corebound.Gameplay.Shared
         private Texture2D _runtimeCoreTexture;
         private Texture2D _runtimeSpawnGateTexture;
 
+        private const float SpawnGatePulseBeatsPerSecond = 1.5f;
+        private const float SpawnGatePulseScale = 0.12f;
+        private const float SpawnGateIdleBrightness = 0.72f;
+        private static readonly Color SpawnGatePulseColor = new Color(1f, 0.55f, 0.25f, 1f);
+        private readonly List<SpawnGateVisual> _spawnGates = new List<SpawnGateVisual>();
+        private Sprite _spawnGateGlowSprite;
+
         // Set by BuildArenaVisuals() from whichever source (StageThemeData override or the
         // _arenaSize field) actually decided the built arena's extents, so CameraFollowController
         // can clamp to the real playable bounds instead of duplicating this resolution logic (and
@@ -525,8 +532,15 @@ namespace Corebound.Gameplay.Shared
             }
         }
 
+        // UI proposal 3 (2026-09-21): "stage1_spawn_gate.png is placed but not in use." It was drawn
+        // once, at StageThemeData.SpawnGateLocalPosition, while enemies actually came from
+        // StageData.SpawnPoints - so the art said "enemies come from here" and they did not. One
+        // gate is now drawn per spawn point (or at EnemySpawnOrigin for a stage with none), which
+        // makes the gate true, and PulseSpawnGates makes it early.
         private void CreateSpawnGateVisual(Transform parent, StageThemeData stageThemeData)
         {
+            _spawnGates.Clear();
+
             var spawnGateTexture = ResolveTexture(
                 null,
                 stageThemeData != null ? stageThemeData.SpawnGateTexture : null,
@@ -539,10 +553,245 @@ namespace Corebound.Gameplay.Shared
                 return;
             }
 
-            var localPosition = stageThemeData != null ? stageThemeData.SpawnGateLocalPosition : new Vector2(0f, -5f);
             var worldSize = stageThemeData != null ? stageThemeData.SpawnGateWorldSize : new Vector2(3.2f, 1.8f);
             var tint = stageThemeData != null ? stageThemeData.SpawnGateTint : Color.white;
-            CreateAnchoredSprite(parent, "StageSpawnGate", spawnGateTexture, localPosition, worldSize, -9, tint);
+            var stageData = ResolveStageData();
+            var spawnPoints = stageData != null ? stageData.SpawnPoints : null;
+            var positions = new List<Vector2>();
+
+            if (spawnPoints != null && spawnPoints.Length > 0)
+            {
+                for (var index = 0; index < spawnPoints.Length; index++)
+                {
+                    positions.Add(spawnPoints[index] != null ? spawnPoints[index].Position : Vector2.zero);
+                }
+            }
+            else
+            {
+                positions.Add(stageData != null
+                    ? stageData.EnemySpawnOrigin
+                    : (stageThemeData != null ? stageThemeData.SpawnGateLocalPosition : new Vector2(0f, -5f)));
+            }
+
+            var sprite = TrackSprite(DebugSpriteFactory.CreateSprite(spawnGateTexture, 100f));
+
+            for (var index = 0; index < positions.Count; index++)
+            {
+                var position = positions[index];
+
+                // The gate art is drawn as a bottom-edge gate opening upward. Turning each gate so
+                // it opens toward the arena centre keeps a side or top spawn point reading as a
+                // door into the arena rather than a door lying on its side.
+                var inward = position.sqrMagnitude > 0.0001f ? -position.normalized : Vector2.up;
+                var rotation = Mathf.Atan2(inward.y, inward.x) * Mathf.Rad2Deg - 90f;
+                var childName = "StageSpawnGate_" + index;
+                CreateSpriteVisual(parent, childName, sprite, position, worldSize, -9, tint, rotation);
+                var child = parent.Find(childName);
+
+                if (child != null)
+                {
+                    var glow = CreateSpawnGateGlow(parent, "StageSpawnGateGlow_" + index, position, worldSize);
+                    _spawnGates.Add(new SpawnGateVisual(child, child.GetComponent<SpriteRenderer>(), tint, child.localScale, glow));
+                }
+            }
+
+            ApplySpawnGateIdleState();
+        }
+
+        public int SpawnGateCount => _spawnGates.Count;
+
+        // Playtest check 2026-09-22: tinting the gate itself toward orange barely shows, because the
+        // gate art is dark and a multiply tint on dark pixels stays dark. A soft light pool behind
+        // the gate is what actually reads as "this door is about to open".
+        private SpriteRenderer CreateSpawnGateGlow(Transform parent, string childName, Vector2 position, Vector2 gateSize)
+        {
+            if (_spawnGateGlowSprite == null)
+            {
+                _spawnGateGlowSprite = TrackSprite(CreateRadialGlowSprite(64));
+            }
+
+            var child = EnsureChild(childName, parent);
+            child.localPosition = position;
+            child.localRotation = Quaternion.identity;
+            var renderer = child.GetComponent<SpriteRenderer>();
+
+            if (renderer == null)
+            {
+                renderer = child.gameObject.AddComponent<SpriteRenderer>();
+            }
+
+            renderer.sprite = _spawnGateGlowSprite;
+            renderer.sortingOrder = -8;
+            renderer.color = new Color(SpawnGatePulseColor.r, SpawnGatePulseColor.g, SpawnGatePulseColor.b, 0f);
+            var diameter = Mathf.Max(gateSize.x, gateSize.y) * 1.5f;
+            var bounds = _spawnGateGlowSprite.bounds.size;
+            child.localScale = new Vector3(diameter / Mathf.Max(0.01f, bounds.x), diameter / Mathf.Max(0.01f, bounds.y), 1f);
+            return renderer;
+        }
+
+        private static Sprite CreateRadialGlowSprite(int size)
+        {
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            texture.wrapMode = TextureWrapMode.Clamp;
+            var center = (size - 1) * 0.5f;
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var distance = Mathf.Sqrt((x - center) * (x - center) + (y - center) * (y - center)) / center;
+                    var alpha = Mathf.Clamp01(1f - distance);
+                    texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha * alpha));
+                }
+            }
+
+            texture.Apply();
+            texture.hideFlags = HideFlags.DontSave;
+            return Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
+        }
+
+        // Lights the gates the coming wave will use. WaveManager calls this at wave start with the
+        // spawn-point indices WaveSpawnPlacement will actually round-robin through, for the length
+        // of the wave-start spawn delay - so the tell always comes before the enemies, never with
+        // them.
+        public void PulseSpawnGates(IReadOnlyList<int> gateIndices, float durationSeconds)
+        {
+            for (var index = 0; index < _spawnGates.Count; index++)
+            {
+                _spawnGates[index].PulseRemaining = 0f;
+                _spawnGates[index].Reset();
+            }
+
+            if (gateIndices == null)
+            {
+                return;
+            }
+
+            var duration = Mathf.Max(0.1f, durationSeconds);
+
+            for (var index = 0; index < gateIndices.Count; index++)
+            {
+                var gateIndex = gateIndices[index];
+
+                if (gateIndex >= 0 && gateIndex < _spawnGates.Count)
+                {
+                    _spawnGates[gateIndex].PulseRemaining = duration;
+                    _spawnGates[gateIndex].PulseDuration = duration;
+                }
+            }
+        }
+
+        private void Update()
+        {
+            var deltaTime = Time.deltaTime;
+
+            for (var index = 0; index < _spawnGates.Count; index++)
+            {
+                var gate = _spawnGates[index];
+
+                if (gate.Transform == null || gate.Renderer == null || gate.PulseRemaining <= 0f)
+                {
+                    continue;
+                }
+
+                gate.PulseRemaining = Mathf.Max(0f, gate.PulseRemaining - deltaTime);
+
+                if (gate.PulseRemaining <= 0f)
+                {
+                    gate.Reset();
+                    continue;
+                }
+
+                // A few beats over the delay, strongest at the start and fading into the idle
+                // state by the time the first enemy appears.
+                var elapsed = gate.PulseDuration - gate.PulseRemaining;
+                var envelope = gate.PulseRemaining / gate.PulseDuration;
+                var beat = 0.5f + 0.5f * Mathf.Sin(elapsed * Mathf.PI * 2f * SpawnGatePulseBeatsPerSecond);
+                var strength = Mathf.Lerp(0.35f, 1f, beat) * envelope;
+                gate.Renderer.color = Color.Lerp(gate.IdleColor, Color.white, strength * 0.6f);
+                gate.Transform.localScale = gate.BaseScale * (1f + SpawnGatePulseScale * strength);
+
+                if (gate.Glow != null)
+                {
+                    gate.Glow.color = new Color(SpawnGatePulseColor.r, SpawnGatePulseColor.g, SpawnGatePulseColor.b, 0.9f * strength);
+                }
+            }
+        }
+
+        // Idle gates are slightly dimmed so a lit gate reads as lit, not merely as the same gate.
+        private void ApplySpawnGateIdleState()
+        {
+            for (var index = 0; index < _spawnGates.Count; index++)
+            {
+                var gate = _spawnGates[index];
+                var idle = gate.BaseColor;
+                idle.r *= SpawnGateIdleBrightness;
+                idle.g *= SpawnGateIdleBrightness;
+                idle.b *= SpawnGateIdleBrightness;
+                gate.IdleColor = idle;
+                gate.Reset();
+            }
+        }
+
+        private StageData ResolveStageData()
+        {
+            var waveManager = FindFirstObjectByType<WaveManager>();
+
+            if (waveManager != null && waveManager.StageDataAsset != null)
+            {
+                return waveManager.StageDataAsset;
+            }
+
+            return _stageData;
+        }
+
+        private sealed class SpawnGateVisual
+        {
+            public SpawnGateVisual(Transform transform, SpriteRenderer renderer, Color baseColor, Vector3 baseScale, SpriteRenderer glow)
+            {
+                Transform = transform;
+                Renderer = renderer;
+                Glow = glow;
+                BaseColor = baseColor;
+                IdleColor = baseColor;
+                BaseScale = baseScale;
+            }
+
+            public Transform Transform { get; }
+
+            public SpriteRenderer Renderer { get; }
+
+            public SpriteRenderer Glow { get; }
+
+            public Color BaseColor { get; }
+
+            public Color IdleColor { get; set; }
+
+            public Vector3 BaseScale { get; }
+
+            public float PulseRemaining { get; set; }
+
+            public float PulseDuration { get; set; } = 1f;
+
+            public void Reset()
+            {
+                if (Renderer != null)
+                {
+                    Renderer.color = IdleColor;
+                }
+
+                if (Transform != null)
+                {
+                    Transform.localScale = BaseScale;
+                }
+
+                if (Glow != null)
+                {
+                    var color = Glow.color;
+                    color.a = 0f;
+                    Glow.color = color;
+                }
+            }
         }
 
         private void CreateAnchoredSprite(Transform parent, string childName, Texture2D texture, Vector2 localPosition, Vector2 targetSize, int sortingOrder, Color color)

@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Ein großer, instabiler Schub für den Waffenschaden - für einen aggressiven Build.
   _rarity: 2
   _requiredUnlockId:
+  _tags:
+  - 0
   _effects:
   - {fileID: 11400000, guid: 55374d40a61e4e01ab380c98efdefb18, type: 2}
   _stackable: 0

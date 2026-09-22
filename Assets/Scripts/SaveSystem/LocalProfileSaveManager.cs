@@ -133,7 +133,15 @@ namespace Corebound.SaveSystem
 
             if (_saveStore.TryLoad(GetMetaPath(), out _metaProgressionSaveData))
             {
-                WarnIfVersionMismatch("meta", _metaProgressionSaveData.SaveFormatVersion);
+                // v1 -> v2 (Alloy, Skill Points, upgrades). Written back at once so every later
+                // reader - including the gameplay scene's direct save reads - sees one format.
+                if (_metaProgressionSaveData.MigrateToCurrentFormat())
+                {
+                    Debug.Log("[Save] Migrated meta progression save to format " + MetaProgressionSaveData.CurrentSaveFormatVersion + ".");
+                    _saveStore.Save(GetMetaPath(), _metaProgressionSaveData);
+                }
+
+                WarnIfVersionMismatch("meta", _metaProgressionSaveData.SaveFormatVersion, MetaProgressionSaveData.CurrentSaveFormatVersion);
                 return _metaProgressionSaveData;
             }
 
@@ -172,12 +180,12 @@ namespace Corebound.SaveSystem
             _saveStore.Save(GetStatisticsPath(), _statisticsSaveData);
         }
 
-        private static void WarnIfVersionMismatch(string saveName, int loadedVersion)
+        private static void WarnIfVersionMismatch(string saveName, int loadedVersion, int expectedVersion = CurrentSaveFormatVersion)
         {
-            if (loadedVersion != CurrentSaveFormatVersion)
+            if (loadedVersion != expectedVersion)
             {
                 Debug.LogWarning("Corebound: '" + saveName + "' save data has format version " + loadedVersion
-                    + " but the game expects " + CurrentSaveFormatVersion + ". Loaded fields not present in the old format used their C# defaults with no migration applied.");
+                    + " but the game expects " + expectedVersion + ". Loaded fields not present in the old format used their C# defaults with no migration applied.");
             }
         }
 

@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Erhöht den Waffenschaden für eine gleichmäßig stärkere Ausbeute.
   _rarity: 0
   _requiredUnlockId:
+  _tags:
+  - 0
   _effects:
   - {fileID: 11400000, guid: a5d8a298af454a0ba1101e862ddb4291, type: 2}
   _stackable: 1

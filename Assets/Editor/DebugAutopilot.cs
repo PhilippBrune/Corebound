@@ -417,6 +417,28 @@ namespace Corebound.EditorTools
         private bool _sawShopOpen;
         private WaveState _lastLoggedState = (WaveState)(-1);
 
+        // Visual probes (2026-09-22). Several features are only verifiable by looking at them -
+        // lit spawn gates, the build browser, tag icons, the shop layout, boss telegraphs - and the
+        // states they live in are too short for a manual PrintWindow. Game-view screenshots are
+        // written to <project>/Temp/AutopilotShots at the moment each state is reached.
+        private int _lastWaveShot = -1;
+        private float _waveShotTimer = -1f;
+        private bool _rewardShotTaken;
+        private float _rewardShotTimer = -1f;
+        private bool _shopShotTaken;
+        private float _shopShotTimer = -1f;
+        private int _telegraphShots;
+        private int _telegraphStage = -1;
+        private bool _browserProbed;
+        private float _browserTimer;
+        private float _browserHoldTimer;
+        private bool _pauseProbed;
+        private int _pauseProbeStage;
+        private float _pauseUnscaledTimer = -1f;
+        private bool _pauseShotTaken;
+        private int _shopUnchangedConfirms;
+        private int _lastShopOfferCount = -1;
+
         private readonly StringBuilder _reportBuilder = new StringBuilder(384);
         private readonly StringBuilder _stallBuilder = new StringBuilder(192);
 
@@ -563,6 +585,7 @@ namespace Corebound.EditorTools
             ResolveRuntimeReferences();
             NoteShopVisibility();
             NoteStateTransition();
+            TickVisualProbes();
 
             _reportTimer += Time.deltaTime;
 
@@ -776,18 +799,54 @@ namespace Corebound.EditorTools
             _inputReader.DebugSetPrimaryFireHeld(false);
             _inputReader.DebugSetMove(Vector2.zero);
 
-            if (_confirmTimer < 1.25f)
+            if (TickIntermissionProbes())
             {
+                return;
+            }
+
+            // Hold Confirm while a screenshot of the open panel is pending, or it photographs
+            // whatever replaced the panel.
+            if (_confirmTimer < 1.25f || _rewardShotTimer >= 0f || _shopShotTimer >= 0f)
+            {
+                if (_rewardShotTimer >= 0f || _shopShotTimer >= 0f)
+                {
+                    _confirmTimer = 0f;
+                }
+
                 return;
             }
 
             _confirmTimer = 0f;
 
+            // A shop with nothing affordable can only be left with Cancel (skip). Confirm on an
+            // unaffordable offer is declined, so pressing only Confirm wedged every such shop.
+            // An offer can also be affordable yet declined (a tower upgrade with no tower built),
+            // so two Confirms that change nothing count as "nothing buyable" too.
+            if (_shopService != null && _shopService.IsOpen)
+            {
+                var offerCount = _shopService.CurrentOffers.Count;
+                _shopUnchangedConfirms = offerCount == _lastShopOfferCount ? _shopUnchangedConfirms + 1 : 0;
+                _lastShopOfferCount = offerCount;
+            }
+            else
+            {
+                _shopUnchangedConfirms = 0;
+                _lastShopOfferCount = -1;
+            }
+
+            if (_shopService != null && _shopService.IsOpen && (!CanAffordAnyShopOffer() || _shopUnchangedConfirms >= 2))
+            {
+                _inputReader.DebugRaiseCancel();
+                Debug.Log(DebugAutopilot.LogPrefix + " SHOP skipped (nothing affordable)");
+                return;
+            }
+
             // Build a tower when the intermission is gating on one, otherwise Confirm alone can
             // never clear the gate and the run sits in Intermission until the time cap.
             if (_waveManager.State == WaveState.Intermission
                 && _waveManager.RequiresIntermissionTowerAction
-                && _towerService != null)
+                && _towerService != null
+                && (_shopService == null || !_shopService.IsOpen))
             {
                 // Alternate Interact and Confirm: Interact satisfies the mandatory build gate, and
                 // Confirm is what actually ends the intermission once the gate is clear.
@@ -797,6 +856,236 @@ namespace Corebound.EditorTools
             }
 
             _inputReader.DebugRaiseConfirm();
+        }
+
+        private bool CanAffordAnyShopOffer()
+        {
+            var offers = _shopService.CurrentOffers;
+
+            for (var index = 0; index < offers.Count; index++)
+            {
+                if (offers[index] != null && _shopService.CanAffordOffer(offers[index]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void TickVisualProbes()
+        {
+            var state = _waveManager.State;
+            var wave = _waveManager.CurrentWaveNumber;
+
+            if (state != WaveState.Intermission)
+            {
+                _browserProbed = false;
+                _browserTimer = 0f;
+                _browserHoldTimer = 0f;
+            }
+
+            // Spawn gates pulse during the wave-start delay, so the shot is taken inside it.
+            if ((state == WaveState.Combat || state == WaveState.BossCombat) && wave != _lastWaveShot)
+            {
+                _lastWaveShot = wave;
+                _waveShotTimer = 0.8f;
+                var arena = FindFirstObjectByType<StageArenaArtPresenter>();
+                Debug.Log(DebugAutopilot.LogPrefix + " GATES wave " + wave + ": " + (arena != null ? arena.SpawnGateCount : -1) + " gate(s)");
+            }
+
+            if (TickShotTimer(ref _waveShotTimer))
+            {
+                Shot("stage" + _waveManager.StageIndex + "_wave" + wave + "_gates");
+            }
+
+            // Keyed on the Reward state, not IsOpen: the confirm that closes the screen can land in
+            // the same frame IsOpen first reports true.
+            var rewardOpen = state == WaveState.Reward;
+
+            if (rewardOpen && !_rewardShotTaken)
+            {
+                _rewardShotTaken = true;
+                _rewardShotTimer = 0.6f;
+            }
+            else if (!rewardOpen)
+            {
+                _rewardShotTaken = false;
+            }
+
+            if (TickShotTimer(ref _rewardShotTimer))
+            {
+                Shot("stage" + _waveManager.StageIndex + "_wave" + wave + "_reward");
+            }
+
+            var shopOpen = _shopService != null && _shopService.IsOpen;
+
+            if (shopOpen && !_shopShotTaken)
+            {
+                _shopShotTaken = true;
+                _shopShotTimer = 0.6f;
+            }
+            else if (!shopOpen)
+            {
+                _shopShotTaken = false;
+            }
+
+            if (TickShotTimer(ref _shopShotTimer))
+            {
+                Shot("stage" + _waveManager.StageIndex + "_wave" + wave + "_shop");
+            }
+
+            if (_telegraphStage != _waveManager.StageIndex)
+            {
+                _telegraphStage = _waveManager.StageIndex;
+                _telegraphShots = 0;
+            }
+
+            if (state == WaveState.BossCombat && _telegraphShots < 2)
+            {
+                var telegraph = GameObject.Find("BossShapeTelegraph");
+
+                if (telegraph != null && telegraph.activeInHierarchy)
+                {
+                    var renderer = telegraph.GetComponent<SpriteRenderer>();
+
+                    // Late in the wind-up, so the art is at full size and opacity.
+                    if (renderer != null && renderer.color.a > 0.7f)
+                    {
+                        _telegraphShots++;
+                        Debug.Log(DebugAutopilot.LogPrefix + " BOSS TELEGRAPH " + (renderer.sprite != null ? renderer.sprite.name : "null") + " scale=" + telegraph.transform.localScale.x.ToString("0.00"));
+                        Shot("stage" + _waveManager.StageIndex + "_boss_telegraph" + _telegraphShots);
+                    }
+                }
+            }
+        }
+
+        // Once per Intermission: walk to the nearest empty tower slot, hold still while the build
+        // browser is up, photograph it, build. Once per stage: open and photograph the pause menu.
+        // Returns true while a probe owns the input.
+        private bool TickIntermissionProbes()
+        {
+            if (_waveManager.State != WaveState.Intermission || _towerService == null || _playerTransform == null)
+            {
+                return false;
+            }
+
+            if (_shopService != null && _shopService.IsOpen)
+            {
+                return false;
+            }
+
+            if (_pauseUnscaledTimer >= 0f)
+            {
+                _pauseUnscaledTimer -= Time.unscaledDeltaTime;
+
+                // CaptureScreenshot renders at the end of the frame, so closing the menu in the
+                // same frame photographs it already closed. Shoot first, close a beat later.
+                if (_pauseUnscaledTimer < 0.4f && !_pauseShotTaken)
+                {
+                    _pauseShotTaken = true;
+                    Shot("stage" + _waveManager.StageIndex + "_pause");
+                }
+
+                if (_pauseUnscaledTimer < 0f)
+                {
+                    _inputReader.DebugRaisePause();
+                    Debug.Log(DebugAutopilot.LogPrefix + " PAUSE closed");
+                }
+
+                return true;
+            }
+
+            if (!_pauseProbed || _pauseProbeStage != _waveManager.StageIndex)
+            {
+                _pauseProbed = true;
+                _pauseProbeStage = _waveManager.StageIndex;
+                _inputReader.DebugRaisePause();
+                _pauseUnscaledTimer = 1f;
+                _pauseShotTaken = false;
+                Debug.Log(DebugAutopilot.LogPrefix + " PAUSE opened, timeScale=" + Time.timeScale);
+                return true;
+            }
+
+            if (_browserProbed)
+            {
+                return false;
+            }
+
+            _browserTimer += Time.deltaTime;
+
+            if (_browserTimer > 7f)
+            {
+                _browserProbed = true;
+                Debug.LogWarning(DebugAutopilot.LogPrefix + " BUILD BROWSER never became active this intermission");
+                return false;
+            }
+
+            if (_towerService.IsBuildBrowserActive)
+            {
+                _inputReader.DebugSetMove(Vector2.zero);
+                _browserHoldTimer += Time.deltaTime;
+
+                if (_browserHoldTimer > 1f)
+                {
+                    _browserProbed = true;
+                    var selected = _towerService.SelectedBuildTower;
+                    Debug.Log(DebugAutopilot.LogPrefix + " BUILD BROWSER active, selected=" + (selected != null ? selected.TowerId : "none"));
+                    Shot("stage" + _waveManager.StageIndex + "_wave" + _waveManager.CurrentWaveNumber + "_browser");
+                    _inputReader.DebugRaiseInteract();
+                }
+
+                return true;
+            }
+
+            var target = -1;
+            var bestDistance = float.MaxValue;
+
+            for (var index = 0; index < _towerService.SlotCount; index++)
+            {
+                if (_towerService.IsSlotOccupied(index))
+                {
+                    continue;
+                }
+
+                var distance = ((Vector2)_towerService.GetSlotPosition(index) - (Vector2)_playerTransform.position).sqrMagnitude;
+
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    target = index;
+                }
+            }
+
+            if (target < 0)
+            {
+                _browserProbed = true;
+                return false;
+            }
+
+            var offset = (Vector2)_towerService.GetSlotPosition(target) - (Vector2)_playerTransform.position;
+            _inputReader.DebugSetMove(offset.sqrMagnitude > 0.04f ? offset.normalized : Vector2.zero);
+            return true;
+        }
+
+        private static bool TickShotTimer(ref float timer)
+        {
+            if (timer < 0f)
+            {
+                return false;
+            }
+
+            timer -= Time.unscaledDeltaTime;
+            return timer < 0f;
+        }
+
+        private static void Shot(string name)
+        {
+            var directory = System.IO.Path.Combine(Application.dataPath, "..", "Temp", "AutopilotShots");
+            System.IO.Directory.CreateDirectory(directory);
+            var path = System.IO.Path.GetFullPath(System.IO.Path.Combine(directory, name + ".png"));
+            ScreenCapture.CaptureScreenshot(path);
+            Debug.Log(DebugAutopilot.LogPrefix + " SHOT " + path);
         }
 
         private Transform FindNearestEnemy()

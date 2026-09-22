@@ -19,7 +19,8 @@ MonoBehaviour:
   _descriptionDe: Verkürzt das Feuerintervall der Waffe für schnelleren Dauerausstoß.
   _rarity: 1
   _requiredUnlockId: 
-  _tags: 00000000
+  _tags:
+  - 0
   _effects:
   - {fileID: 11400000, guid: 48f17cb0e6b44d588e2f3b645d9433f5, type: 2}
   _stackable: 1

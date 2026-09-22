@@ -19,6 +19,8 @@ MonoBehaviour:
   _descriptionDe: Ein zuverlässiger Schub für den Ressourcengewinn aus allen Ressourcenquellen.
   _rarity: 1
   _requiredUnlockId:
+  _tags:
+  - 3
   _effects:
   - {fileID: 11400000, guid: b7b516e5b02a4c6c914d2a1c3efa56ed, type: 2}
   _stackable: 1

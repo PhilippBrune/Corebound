@@ -19,6 +19,7 @@ MonoBehaviour:
   _descriptionDe: Etwas schneller auf den Beinen. Ein kleiner, zuverlässiger Vorteil, um Gefahren auszuweichen.
   _rarity: 0
   _requiredUnlockId:
+  _tags: []
   _effects:
   - {fileID: 11400000, guid: 136b8f4f324f4af0a6fd951d3098d2e8, type: 2}
   _stackable: 1

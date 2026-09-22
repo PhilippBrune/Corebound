@@ -19,7 +19,8 @@ MonoBehaviour:
   _descriptionDe: Erhöht den Turmschaden, damit Unterstützungsfeuer auch in späteren Waves relevant bleibt.
   _rarity: 1
   _requiredUnlockId: 
-  _tags: 02000000
+  _tags:
+  - 2
   _effects:
   - {fileID: 11400000, guid: 9d2f2f8d4f304f23af8fbd1d86c0e77a, type: 2}
   _stackable: 1

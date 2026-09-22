@@ -146,6 +146,54 @@ namespace Corebound.Gameplay.Towers
 
         public string BuildInteractKeyLabel => ResolveBuildInteractKeyLabel();
 
+        // ---- Build browser (UI proposal 2, 2026-09-22) -----------------------------------------
+        // "I miss e.g. information what the towers are able of" was answered by the comparison
+        // line; the browser answers the other half - cycling one tower at a time is still "remember
+        // four towers". TowerBuildBrowserPresenter draws the whole roster from these, so the
+        // presenter never decides anything about towers itself.
+
+        public bool IsBuildBrowserActive => ResolveIsBuildBrowserActive();
+
+        public int SlotCount => _runtimeSlots.Count;
+
+        public Vector3 GetSlotPosition(int slotIndex) => slotIndex >= 0 && slotIndex < _runtimeSlots.Count ? _runtimeSlots[slotIndex].Position : Vector3.zero;
+
+        public bool IsSlotOccupied(int slotIndex) => slotIndex >= 0 && slotIndex < _runtimeSlots.Count && _runtimeSlots[slotIndex].HasTower;
+
+        public TowerData[] CatalogTowers => _towerCatalog != null ? _towerCatalog.Towers : null;
+
+        public TowerData SelectedBuildTower => ResolveBuildTowerData();
+
+        public string PreviousTowerTypeKeyLabel => ResolvePreviousTowerTypeKeyLabel();
+
+        public string NextTowerTypeKeyLabel => ResolveNextTowerTypeKeyLabel();
+
+        public int ResolveBuildCost(TowerData towerData)
+        {
+            return towerData != null ? ResolveTowerCost(towerData.BuildCost) : 0;
+        }
+
+        public bool CanAffordBuild(TowerData towerData)
+        {
+            return towerData != null && _resourceWalletService != null && _resourceWalletService.CurrentAmount >= ResolveBuildCost(towerData);
+        }
+
+        private bool ResolveIsBuildBrowserActive()
+        {
+            if (_waveManager == null || _waveManager.State != WaveState.Intermission || !CanHandleBuildInput())
+            {
+                return false;
+            }
+
+            if (_selectedSlotIndex < 0 || _selectedSlotIndex >= _runtimeSlots.Count)
+            {
+                return false;
+            }
+
+            var slot = _runtimeSlots[_selectedSlotIndex];
+            return !slot.HasTower && IsPlayerNearSlot(slot.Position);
+        }
+
         private ISaveManager SaveManager => SaveManagerResolver.Resolve(_saveManagerSource);
 
         private IInputReader InputReader => _inputReaderSource as IInputReader;
@@ -163,6 +211,11 @@ namespace Corebound.Gameplay.Towers
             EnsureBuiltTowerSeed();
             SpawnRuntimeTowers();
             UpdateSlotVisuals();
+
+            if (GetComponent<TowerBuildBrowserPresenter>() == null)
+            {
+                gameObject.AddComponent<TowerBuildBrowserPresenter>().Bind(this);
+            }
         }
 
         private void OnEnable()
