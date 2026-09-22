@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 1.8 · Created 2026-09-20 · Last updated 2026-09-21 · Status: Active
+Version: 1.9 · Created 2026-09-20 · Last updated 2026-09-22 · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is the *punch list*. Every entry states what is missing, why it matters, and what "done" looks like, so none of them has to be re-derived next session.
 
@@ -10,57 +10,58 @@ Priority: **P1** blocks playable quality · **P2** needed for the Early Access t
 
 ## P1 — Blocks playable quality
 
-### 0. Art gaps that now affect correctness, not just polish (2026-09-21)
+### 0. Tune the new progression and loadout systems by playing them (2026-09-22)
 
-**Boss telegraphs are the urgent one.** Boss attack shapes now differ per stage, which is what makes
-the five bosses play differently. But the existing telegraph is a single ghost projectile flying
-toward the target, which only describes a **Fan**. Ring, Volley and Lance are all warned by a
-telegraph that shows a direction they do not have, so three of the five bosses currently telegraph a
-lie. That is worse than no warning. Assets 96-98 cover it.
+Skill tree, Ascension, Upgrades, the six-slot loadout and the reload loop all shipped on
+2026-09-22 (Slice 16, `Docs/Slices/16_PROGRESSION_AND_LOADOUT_SLICE.md`). They are verified by
+autopilot for *function*, not for *feel*, and several numbers are first guesses that only a human
+playing can judge:
 
-**Eleven assets remain uncreated**, including all ten Zone Denier and Relay Warden sprites, so both
-new enemy roles still borrow other sheets separated only by tint. Full status per asset is marked
-in `Docs/AI/GRAPHICS_ASSET_PROMPTS.md`.
+- **Reload loop.** Magazines of 24 / 8 / 12 rounds and 1.2-1.4 s reloads change the rhythm of every
+  weapon. The owner chose a real reload (Upgrades.md option a); whether these sizes feel right is
+  the first thing to check.
+- **SP and Alloy pace.** 9 SP and ~50 Alloy per full run, first-kill bonuses on top; 212 SP fills the
+  tree. Watch whether the first full run "visibly changes the second" (SkillTree.md balancing).
+- **Weapon prices and tier costs** (12 / 16 / 18 Scrap, tier upgrade 0.75 x price x (tier + 1)).
+- **Projectile budget** 60: not yet reached by any autopilot loadout (30/60 seen).
 
-**Three assets have file problems:** two carry a doubled `.png.png` extension and load only because
-the code keeps an explicit fallback path for the wrong name, and one exists solely in the
-StreamingAssets mirror with no source copy under `Assets/Art`.
+**Not verified in any run yet:** Second Wind, Last Bastion, Overwatch, Executioner and Field Repair
+firing in combat; Spread explode/ring and Beam slow/ramp tiers (need 5-6 copies); a tower upgrade
+track's effect; Build Discount. Arsenal cannot trigger: it needs six distinct weapons and there are
+three.
 
-### 0b. Four UI items need a design decision (2026-09-21)
+**Open decision:** respec is free every time; the spec only says the first respec per tree version is
+free (SkillTree.md, Open Questions).
 
-Written up with concrete proposals in
-[`Docs/Specs/DIY/UI_PROPOSALS_2026-09-21.md`](Specs/DIY/UI_PROPOSALS_2026-09-21.md). None implemented.
+### 0a. Art still missing or defective (2026-09-22)
 
-- **Shop screen should match the Reward screen.** This directly contradicts `Shop.md`, which asks
-  the shop to *differ*. The playtest wins; the spec note is the thing that should change.
-- **`stage1_spawn_gate.png` lies to the player.** It is drawn, at one fixed authored position, while
-  enemies spawn from a rotated and jittered fan somewhere else entirely. Proposal: one gate per
-  authored spawn point, lit just before the wave that uses it.
-- **Card tag icons have nothing to draw.** The sheet is correctly sliced and `CardRewardPresenter`
-  already draws up to four per slot - but most `CardData` assets have an empty `_tags` array. The
-  earlier note that tags were "read by nothing" was half wrong: they are read, there is just nothing
-  in them.
-- **Tower build browser.** The information half shipped 2026-09-21 (cost, DPS, range, strengths and
-  weaknesses on the selection line); the remaining gap is comparing all four at once instead of
-  cycling blind.
+Assets 96-100 were delivered on 2026-09-21 and 96-99 are wired. Still missing: **Assets 85-95**
+(skill node frames, link segment, Ascension badge, branch icons, weapon slot frame, set tier pips,
+Alloy and SP icons, Core repair icon, factory tier indicator) - every one has a procedural stand-in
+and is picked up by path once it exists - and all ten Zone Denier / Relay Warden sprites (75-84).
 
+**Defects in delivered art:** `vfx_boss_telegraph_lance.png` has a baked-in checkerboard at the tip
+and `character_portrait_frame.png` a baked-in checkerboard centre (fake transparency); the portrait
+frame also lives in `Assets/Art/UI/Skilltree/` while the prompt targets `SkillTree/`.
+`tower_info_card_frame.png` bakes English "Strong against / Weak against" into the art. Older: two
+files still carry a doubled `.png.png` extension.
 
-### 0. Three new systems are specified but not built (2026-09-21)
+### 0b. The four UI proposals - DONE (2026-09-22)
 
-The owner answered every remaining vision question on 2026-09-21. Three of those answers are whole
-systems, written as gapless requirements and **not yet implemented**:
+Spawn gates per spawn point with a lit tell, card tags populated and drawn (reward slots and a pause
+menu grid), the shop on the reward screen's geometry, and the tower build browser. Details and
+screenshots in [`Docs/Specs/DIY/UI_PROPOSALS_2026-09-21.md`](Specs/DIY/UI_PROPOSALS_2026-09-21.md).
+Boss telegraphs now show the attack's shape (Ring, Spiral, Lance, Volley art); verified for the
+shapes the autopilot reached (see the session report).
 
-- [`Docs/Specs/SkillTree.md`](Specs/SkillTree.md) - second currency (Skill Points), a Diablo-4-style
-  tree of key nodes and sub nodes, and an endless Ascension track past completion.
-- [`Docs/Specs/WeaponLoadout.md`](Specs/WeaponLoadout.md) - up to six carried weapons firing at once,
-  with set bonuses for duplicates. This **replaces** the single-weapon model in `Weapons.md` and
-  changes `RunSaveData`, so it needs a save-format migration.
-- [`Docs/Specs/Upgrades.md`](Specs/Upgrades.md) - third currency (Alloy) funding both unlocks and
-  permanent per-weapon and per-tower stat upgrades.
+### 0c. Possible latent bug in three menu presenters (2026-09-22)
 
-**Read the Open Questions in each before starting.** Two are load-bearing: `Upgrades.md`'s Magazine
-and Reload Speed stats assume an ammo and reload mechanic that does not exist anywhere in the
-codebase today, and `WeaponLoadout.md` needs a projectile budget that has never been tuned.
+The Progression screen rendered no rows at all after a purchase: its presenter destroyed its rows
+and recreated them under the same names in the same frame, and `ProceduralUIFactory` reuses a child
+it finds by name, so the new rows were attached to the doomed ones (the deferred-Destroy gotcha in
+CLAUDE.md). Fixed there. `SettingsRouteTargetPresenter`, `MainMenuCanvasPresenter` and
+`MainMenuRoutePanelPresenter` use the same destroy-and-recreate pattern and may show the same
+symptom when they refresh twice in one frame. Not reproduced; not changed.
 
 ### 0z. Shipped with those decisions (2026-09-21)
 

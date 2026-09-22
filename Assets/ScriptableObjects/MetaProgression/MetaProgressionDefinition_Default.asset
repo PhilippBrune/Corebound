@@ -91,3 +91,5 @@ MonoBehaviour:
   _upgradeCatalog: {fileID: 11400000, guid: 1b87e39867bc42c294a53dccb05c52aa, type: 2}
   _skillTrees:
   - {fileID: 11400000, guid: ae28bec699fe45c88110ac01cd48bc22, type: 2}
+  _upgradeWeapons: {fileID: 11400000, guid: 5485f6f1b2aa44bfad2dc967f8ec8fb4, type: 2}
+  _upgradeTowers: {fileID: 11400000, guid: f00e66737b3d4134b5f58af5e91cf548, type: 2}

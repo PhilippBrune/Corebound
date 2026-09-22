@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Card_Weapon_Spread
   m_EditorClassIdentifier: 
   _cardId: card_weapon_spread
-  _displayName: Spread Weapon
-  _displayNameDe: Streuwaffe
-  _description: Equip a Spread: a fan of shots for crowds. Copies build its Set Bonus.
-  _descriptionDe: Rüste eine Streuwaffe aus: ein Fächer aus Schüssen gegen Gruppen. Kopien bauen ihren Setbonus auf.
+  _displayName: 'Spread Weapon'
+  _displayNameDe: 'Streuwaffe'
+  _description: 'Equip a Spread: a fan of shots for crowds. Copies build its Set Bonus.'
+  _descriptionDe: 'Rüste eine Streuwaffe aus: ein Fächer aus Schüssen gegen Gruppen. Kopien bauen ihren Setbonus auf.'
   _rarity: 0
   _requiredUnlockId: unlock_weapon_spread
   _tags:

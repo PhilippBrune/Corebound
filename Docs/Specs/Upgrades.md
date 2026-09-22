@@ -1,6 +1,6 @@
 # Upgrades and Unlocks Specification
 
-Status: Requirements — not implemented. Written 2026-09-21 from the owner decision that a third currency should fund both unlocks and permanent weapon/tower stat upgrades.
+Status: **Implemented 2026-09-22** (Slice 16). Written 2026-09-21 from the owner decision that a third currency should fund both unlocks and permanent weapon/tower stat upgrades. The "Implementation" section at the end records what shipped and where it differs.
 
 Depends On: MetaProgression, Weapons, WeaponLoadout, Towers, Economy, SaveSystem, UI
 
@@ -14,7 +14,7 @@ The project now has three currencies with three jobs. This spec defines the thir
 | --- | --- | --- | --- | --- |
 | **Scrap** | one run | enemies, waves, Factory | towers, shop offers, weapons | `Economy.md` |
 | **Skill Points** | permanent | run outcomes | the skill tree | `SkillTree.md` |
-| **Alloy** | permanent | run outcomes and milestones | unlocks, and weapon/tower stat upgrades | this document |
+| **Alloy** | permanent | bosses and elites | unlocks, and weapon/tower stat upgrades | this document |
 
 Skill Points shape *the character*. Alloy improves *the equipment*. Keeping them separate is what stops one pool being obviously better spent on the other.
 
@@ -35,7 +35,7 @@ Skill Points shape *the character*. Alloy improves *the equipment*. Keeping them
 | Property | Value |
 | --- | --- |
 | Starting balance | 0 |
-| Earned by | boss kills, run completion, first-time milestones |
+| Earned by | **boss kills and elite kills** (owner decision 2026-09-22); nothing for finishing or failing a run |
 | Spent on | unlocks (weapons, towers, starting loadouts) and stat upgrades |
 | Refundable | no |
 | Persisted in | `MetaProgressionSaveData.AlloyBalance` |
@@ -44,12 +44,12 @@ Skill Points shape *the character*. Alloy improves *the equipment*. Keeping them
 
 | Event | Alloy |
 | --- | --- |
-| Defeat a stage boss | 10 |
-| Complete a full run | 40 |
-| Fail a run, per stage cleared | 4 |
-| First-time boss kill (once per boss) | 25 |
+| Defeat the Stage 1 / 2 / 3 / 4 / 5 boss | 6 / 8 / 10 / 12 / 14 |
+| First-time kill of a boss (once per boss id) | +10 |
+| Kill an elite enemy | 1 |
+| Complete or fail a run | 0 |
 
-Alloy is scarcer than Skill Points on purpose. SP is the steady drip that always gives the player something; Alloy is the reward for going deep.
+A full run pays 50 Alloy plus its elites (the first full run about 100), inside the 60-90 target once a typical run's 10-20 elites are counted. Values live on `MetaProgressionDefinitionData`.
 
 ### Relationship to the existing meta currency
 
@@ -86,7 +86,7 @@ Each stat upgrades independently, per `WeaponId`.
 | Critical Chance | `WeaponModifierTarget.CriticalChance` | +1.5pp | 10 | +15pp |
 | Critical Damage | `WeaponModifierTarget.CriticalDamageMultiplier` | +8% | 10 | +80% |
 
-**Magazine and Reload Speed require a mechanic that does not exist yet.** There is currently no ammo or reload anywhere in the codebase; weapons fire on a cooldown only. Adding these two stats means adding a reload loop to `PlayerCombatController`, which is a real gameplay change, not a numbers change. See Open Questions.
+**Magazine and Reload Speed use a real reload loop** (owner decision 2026-09-22, option a). Every weapon copy has a magazine: a volley spends one round, an empty magazine reloads for the pattern's `_reloadSeconds`, and releasing the trigger tops a partial magazine up after 0.9 s (`PlayerCombatData._idleReloadDelaySeconds`), so fighting in bursts is rarely punished and holding forever is. Base values: Rapid 24 rounds / 1.2 s, Spread 8 / 1.4 s, Beam 12 / 1.3 s - two and a half to four seconds of held fire per magazine. The HUD shows each copy's ammo and reload.
 
 ### Tower stats
 
@@ -181,9 +181,9 @@ Reuses the Skill Tree cues, since both are between-run purchases in the same men
 
 ## Open Questions
 
-- **Magazine and Reload Speed need an ammo mechanic that does not exist.** Three options: (a) add a real reload loop to `PlayerCombatController`, which changes the feel of every weapon and needs its own spec; (b) reinterpret the two stats as "burst length" and "burst recovery" on the existing cooldown model, which needs no new mechanic; (c) drop them. Recommend (b) for the first pass — it delivers the same two decisions the owner asked for without a combat-feel change that would need to be re-tuned from scratch.
-- Should Alloy and Skill Points both drop from the same events, or should Alloy come only from bosses? Currently both, weighted differently. If the two pools feel interchangeable in playtest, separating their sources entirely is the fix.
-- Should there be a respec for upgrades as there is for the skill tree? Recommend no: the tree is about shape and deserves reconsideration, upgrades are about accumulation and should be permanent.
+- ~~Magazine and Reload Speed need an ammo mechanic.~~ **Answered 2026-09-22: (a), a real reload loop** - see Weapon stats. This changes the feel of every weapon; the magazine sizes above are the first tuning and should be revisited after the owner has played it.
+- ~~Should Alloy and Skill Points drop from the same events?~~ **Answered 2026-09-22: from bosses and elites.** Alloy comes from bosses and elites, Skill Points from bosses only (the SkillTree.md answer), so the two pools have different sources.
+- ~~Should there be a respec for upgrades?~~ **Answered 2026-09-22: no, upgrades are permanent.** There is no refund path in `UpgradeRules` at all, and the Upgrades tab says so on every track.
 
 ---
 
@@ -198,3 +198,35 @@ Reuses the Skill Tree cues, since both are between-run purchases in the same men
 - Upgrading an unowned or locked item is refused with a clear reason.
 - The upgrade UI shows resulting values, not only percentages, and is fully controller-operable.
 - Upgrade state survives a save/load cycle and cannot be observed changing mid-run.
+
+---
+
+## Implementation (2026-09-22)
+
+### Code
+
+| Piece | Where |
+| --- | --- |
+| Tracks | `UpgradeCatalog_Default.asset` - eleven `UpgradeTrackData` entries (seven weapon, four tower), inline |
+| Rules | `UpgradeRules` - locked, max rank, cost `BaseCost x rank`, no refunds |
+| Snapshot | `UpgradeSnapshot` - per item id and stat, clamped to max rank, frozen into `RunProgressionSnapshot` |
+| Currency | `MetaProgressionSaveData` v2 `AlloyEarned` / `AlloySpent`; the v1 `_metaCurrencyAmount` migrates into `AlloyEarned` |
+| Payout | `MetaRewardLedger` (boss and elite kills), written at the kill |
+| Weapons | `PlayerCombatController`: damage, fire interval, magazine, reload, spread, crit chance and damage per `WeaponId`, per copy |
+| Towers | `TowerRuntimeController` damage, fire interval, range per `TowerId`; `TowerService` applies Build Discount to build costs only |
+| UI | the Progression route's Unlocks and Upgrades tabs |
+
+### Deviations
+
+- **Tracks are inline in one catalog asset**, not eleven `UpgradeTrackData` assets.
+- **The Accuracy track is hidden for weapons with no spread** (Rapid, Beam): it would cost Alloy and change nothing.
+- **Unlock prices** follow the 20 / 40 / 80 curve: Support Tower 20, Spread 20, Status Cards 40, Engineer loadout 80, weapon slot 5 60, slot 6 120.
+- **Composition order** is base -> tier -> upgrades -> skill tree -> set bonuses and cards. Upgrades and set bonuses are multiplied rather than added; with the current values the difference is under 2% and it keeps one rule for every multiplier.
+- **Existing profiles** keep what they had: 5 Core Shards became 5 Alloy on the owner's profile, and new profiles start at 0.
+
+### Verification (autopilot, 2026-09-22)
+
+- The meta save migrated v1 -> v2 on first load (5 Core Shards -> 5 Alloy, purchases kept).
+- A failed run paid nothing (previously +1).
+- `progression1`: Rapid Damage bought to rank 2 through the Upgrades tab (5 + 10 Alloy), shown as "2.2 -> 2.4" with the next price 15; the fifth weapon slot unlock bought (60) and present in the next run (2 slots).
+- Not yet verified in a run: a tower track's effect in combat, and Build Discount.

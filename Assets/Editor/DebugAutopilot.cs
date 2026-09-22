@@ -255,6 +255,37 @@ namespace Corebound.EditorTools
                 contents = contents.Substring("loadout".Length).Trim();
             }
 
+            // "progression1": grant test currency in the main menu, buy a scripted set of skill
+            // nodes, upgrades and a slot unlock through the Progression screen, photograph every
+            // tab, then start the run. Writes to the real profile save - back it up first.
+            var progressionTest = contents.StartsWith("progression", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(ProgressionTestSessionKey, progressionTest);
+
+            if (progressionTest)
+            {
+                contents = contents.Substring("progression".Length).Trim();
+            }
+
+            // "ascension1": fill the whole tree through SkillTreeRules, buy one Ascension rank on
+            // the Progression screen, photograph it and the main-menu badge, then start the run.
+            // "god3": stage 3 with the debug god mode on, so the run reaches the boss (boss
+            // rewards, telegraph art, the guaranteed boss weapon offer).
+            var godMode = contents.StartsWith("god", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(GodModeSessionKey, godMode);
+
+            if (godMode)
+            {
+                contents = contents.Substring("god".Length).Trim();
+            }
+
+            var ascensionTest = contents.StartsWith("ascension", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(AscensionTestSessionKey, ascensionTest);
+
+            if (ascensionTest)
+            {
+                contents = contents.Substring("ascension".Length).Trim();
+            }
+
             if (!int.TryParse(contents, out var requestedStage))
             {
                 Debug.LogWarning(LogPrefix + " did not understand '" + contents + "' in " + RequestFilePath
@@ -279,6 +310,9 @@ namespace Corebound.EditorTools
         // works) or the "command: x" form the generated file uses. Lines starting with # are help
         // text, not input.
         public const string LoadoutTestSessionKey = "Corebound.Autopilot.LoadoutTest";
+        public const string ProgressionTestSessionKey = "Corebound.Autopilot.ProgressionTest";
+        public const string AscensionTestSessionKey = "Corebound.Autopilot.AscensionTest";
+        public const string GodModeSessionKey = "Corebound.Autopilot.GodMode";
 
         private static string ReadCommand()
         {
@@ -327,7 +361,15 @@ namespace Corebound.EditorTools
 
             var host = new GameObject("DebugAutopilotRuntime");
             Object.DontDestroyOnLoad(host);
-            host.AddComponent<DebugAutopilotRuntime>().Configure(TargetStage, MaxRunSeconds, SessionState.GetBool(LoadoutTestSessionKey, false));
+            var runtime = host.AddComponent<DebugAutopilotRuntime>();
+            runtime.Configure(TargetStage, MaxRunSeconds, SessionState.GetBool(LoadoutTestSessionKey, false));
+            runtime.ConfigureProgressionTest(SessionState.GetBool(ProgressionTestSessionKey, false), SessionState.GetBool(AscensionTestSessionKey, false));
+
+            if (SessionState.GetBool(GodModeSessionKey, false))
+            {
+                Corebound.Gameplay.Combat.DebugGodMode.SetEnabled(true);
+                Debug.Log(LogPrefix + " god mode on for this run");
+            }
         }
     }
 
@@ -504,11 +546,159 @@ namespace Corebound.EditorTools
             }
         }
 
+        private bool _progressionTest;
+        private int _progressionStep = -1;
+        private float _progressionTimer;
+        private Corebound.MetaProgression.MetaProgressionRouteTargetController _progressionRoute;
+
+        private bool _ascensionTest;
+
+        public void ConfigureProgressionTest(bool enabled, bool ascension = false)
+        {
+            _progressionTest = enabled || ascension;
+            _ascensionTest = ascension;
+
+            if (enabled)
+            {
+                Debug.Log(DebugAutopilot.LogPrefix + " progression test requested");
+            }
+        }
+
+        // One scripted action per beat, so each purchase and each tab gets its own frame and its
+        // own screenshot. Returns true while the script is still running.
+        private bool TickProgressionTest()
+        {
+            if (!_progressionTest || _progressionStep >= ProgressionScript.Length)
+            {
+                return false;
+            }
+
+            if (!_ascensionTest && _progressionStep > 0 && ProgressionScript[_progressionStep - 1] == "X")
+            {
+                _progressionStep = ProgressionScript.Length;
+                return false;
+            }
+
+            _progressionTimer += Time.unscaledDeltaTime;
+
+            if (_progressionTimer < 0.35f)
+            {
+                return true;
+            }
+
+            _progressionTimer = 0f;
+
+            if (_progressionStep < 0)
+            {
+                var service = FindFirstObjectByType<Corebound.MetaProgression.MetaProgressionService>();
+                _progressionRoute = FindFirstObjectByType<Corebound.MetaProgression.MetaProgressionRouteTargetController>();
+
+                if (service == null || _progressionRoute == null)
+                {
+                    Debug.LogWarning(DebugAutopilot.LogPrefix + " progression test: no MetaProgressionService/route in the main menu");
+                    _progressionStep = ProgressionScript.Length;
+                    return false;
+                }
+
+                if (_ascensionTest)
+                {
+                    service.DebugGrant(260, 0);
+                    var tree = service.ActiveSkillTree;
+                    var save = service.SaveData;
+                    var bought = 0;
+
+                    // Buy everything, repeatedly, until nothing more can be bought - the rules
+                    // themselves enforce prerequisites and branch spend, so this also exercises them.
+                    for (var pass = 0; pass < 12; pass++)
+                    {
+                        foreach (var branch in tree.Branches)
+                        {
+                            foreach (var keyNode in branch.KeyNodes)
+                            {
+                                bought += Corebound.MetaProgression.SkillTreeRules.TryPurchaseKeyNode(save, tree, branch, keyNode) ? 1 : 0;
+
+                                foreach (var subNode in keyNode.SubNodes)
+                                {
+                                    while (Corebound.MetaProgression.SkillTreeRules.TryPurchaseSubNode(save, tree, keyNode, subNode))
+                                    {
+                                        bought++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    service.Commit();
+                    Debug.Log(DebugAutopilot.LogPrefix + " ASCENSION tree filled: " + bought + " purchases, complete="
+                        + Corebound.MetaProgression.SkillTreeRules.IsTreeComplete(save, tree) + " SP left=" + save.SkillPointsAvailable);
+                    _progressionRoute.Open();
+                    _progressionStep = System.Array.IndexOf(ProgressionScript, "ASC");
+                    return true;
+                }
+
+                service.DebugGrant(60, 400);
+                _progressionRoute.Open();
+                Debug.Log(DebugAutopilot.LogPrefix + " PROGRESSION granted 60 SP + 400 Alloy, route open=" + _progressionRoute.IsOpen + " " + _progressionRoute.CurrencyLabel);
+                _progressionStep = 0;
+                return true;
+            }
+
+            var action = ProgressionScript[_progressionStep++];
+
+            switch (action[0])
+            {
+                case 'R':
+                    _progressionRoute.TryHandleNavigation(Vector2.right);
+                    break;
+                case 'D':
+                    _progressionRoute.TryHandleNavigation(Vector2.down);
+                    break;
+                case 'C':
+                    var bought = _progressionRoute.TryHandleConfirm();
+                    Debug.Log(DebugAutopilot.LogPrefix + " PROGRESSION confirm bought=" + bought + " " + _progressionRoute.CurrencyLabel);
+                    break;
+                case 'S':
+                    Shot("progression_" + action.Substring(1));
+                    break;
+                case 'X':
+                    _progressionRoute.Close();
+                    Debug.Log(DebugAutopilot.LogPrefix + " PROGRESSION done: " + _progressionRoute.CurrencyLabel);
+                    break;
+                case 'A':
+                    // "ASC" is a marker, not an action.
+                    break;
+            }
+
+            return true;
+        }
+
+        // Tab order: Unlocks, Upgrades, Combat, Construction, Industry, Command, Ascension.
+        // Unlocks: down to "Fifth Weapon Mount" (row 4) and buy it. Upgrades: row 0 is the Rapid
+        // header, so the cursor starts on Rapid Damage - buy two ranks. Each branch: the root key
+        // node, three ranks of its first sub node, one of its second.
+        private static readonly string[] ProgressionScript =
+        {
+            "Sunlocks_before", "D", "D", "D", "D", "C", "Sunlocks_after",
+            "R", "Supgrades_before", "C", "C", "Supgrades_after",
+            "R", "C", "D", "C", "C", "C", "D", "C", "Scombat",
+            "R", "C", "D", "C", "C", "C", "D", "C", "Sconstruction",
+            "R", "C", "D", "C", "C", "C", "D", "C", "Sindustry",
+            "R", "C", "D", "C", "C", "C", "D", "C", "Scommand",
+            "R", "Sascension",
+            "X",
+            "ASC", "R", "R", "R", "R", "R", "R", "Sascension_before", "D", "C", "Sascension_after", "X", "Smenu_badge",
+        };
+
         private void TickWaitForMainMenu()
         {
             _inputReader = FindFirstObjectByType<CoreboundInputReader>();
 
             if (_inputReader == null || _stepTimer < 1.5f)
+            {
+                return;
+            }
+
+            if (TickProgressionTest())
             {
                 return;
             }

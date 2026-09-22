@@ -1,6 +1,6 @@
 # Weapon Loadout Specification
 
-Status: Requirements — not implemented. Written 2026-09-21 from the owner decision that the player should carry up to six weapons, Brotato-style, with synergy bonuses for carrying duplicates.
+Status: **Implemented 2026-09-22** (Slice 16). Written 2026-09-21 from the owner decision that the player should carry up to six weapons, Brotato-style, with synergy bonuses for carrying duplicates. The "Implementation" section at the end records what shipped and where it differs.
 
 Depends On: Weapons, Combat, Cards, Economy, Shop, UI, Input, SaveSystem, MetaProgression
 
@@ -230,9 +230,9 @@ A full loadout panel:
 
 ## Open Questions
 
-- Should an empty slot give a small bonus (e.g. +3% move speed per empty slot), so "travel light" is a deliberate strategy? Recommend no for the first pass: it adds a strategy that competes with the whole feature before the feature has been tuned.
-- Do weapons carry their own upgrade levels, or is upgrading handled entirely by `Upgrades.md`'s third currency? Recommend the latter, so there is exactly one upgrade system.
-- Should duplicate weapons of *different rarities* count toward the same Set Bonus? Recommend yes; counting by `WeaponId` alone keeps the rule explainable in one sentence.
+- ~~Should an empty slot give a small bonus?~~ **Answered 2026-09-22: no.** Kept as a possible future *character passive* ("travels light"), which is where a playstyle rule like that belongs.
+- ~~Do weapons carry their own upgrade levels?~~ **Answered 2026-09-22: yes, each weapon is upgraded separately.** Every equipped copy has its own in-run tier (Common, Rare, Epic, Legendary), raised for Scrap in the Intermission loadout panel. The permanent Alloy tracks of `Upgrades.md` stay on top of that, per `WeaponId`.
+- ~~Should duplicates of different rarities count toward the same Set Bonus?~~ **Answered 2026-09-22: yes**, counted by `WeaponId`.
 
 ---
 
@@ -247,3 +247,51 @@ A full loadout panel:
 - Live player projectiles never exceed the configured budget.
 - A run saved with six equipped weapons restores all six, and a save written under the old single-weapon format loads with that weapon in slot 0.
 - The Intermission loadout panel is fully operable with a controller.
+
+---
+
+## Implementation (2026-09-22)
+
+### Code
+
+| Piece | Where |
+| --- | --- |
+| Slots and derived state | `WeaponLoadoutRuntime` / `WeaponSlotRuntime` (per-copy weapon, tier, price, cooldown, magazine, reload) |
+| Set Bonus resolution | `WeaponSetBonusResolver` - pure; highest tier at or below the copy count, per `WeaponId`; Arsenal for six distinct |
+| Set Bonus data | `WeaponData._setBonuses` (`WeaponSetBonusData`, inline) |
+| Firing | `PlayerCombatController` ticks every unlocked slot; one Primary Fire input drives all |
+| Budget | `PlayerCombatData._projectileBudget` = 60, `_arsenalProjectileBudgetBonus` = 8; `CombatProjectile.ActivePlayerProjectileCount` |
+| Audio | `WeaponAudioCuePlayer` de-duplicates per `WeaponPresentationData` (fire cues by `MinFireCueIntervalSeconds`, crits within 0.08 s) |
+| Tiers | `WeaponTierRules`: damage x1 / 1.2 / 1.45 / 1.75, fire interval x1 / 0.95 / 0.9 / 0.85, upgrade cost 0.75 x price x (tier + 1) |
+| Acquisition | weapon cards (`CardData._grantedWeapon`) in the reward pool and as shop offers; the reward after every boss guarantees one |
+| Loadout panel | `WeaponLoadoutPanelPresenter` - Select / I during an Intermission, or automatically when a weapon arrives with every slot full |
+| HUD | `WeaponHudPresenter` - six tiles with cooldown and reload sweeps, ammo bars, Set Bonus pips |
+| Save | `RunSaveData` v2: `EquippedWeaponIds` / `Tiers` / `Prices`; a v1 save's single id migrates into slot 0 |
+| Slot count | `RunProgressionSnapshot.WeaponSlotCount` = 1 + first stage ever cleared + Combat key nodes + Alloy unlocks |
+
+### Deviations
+
+- **Set Bonus effects are inline `(target, value)` pairs**, not references to `WeaponModifierData` assets. A bonus belongs to exactly one tier of one weapon; fifteen one-number assets per weapon would be noise. The targets and their stacking rules are `WeaponModifierTarget`'s.
+- **Every tier carries its full effect set.** Only the highest tier applies, so tier 5 repeats tier 4's effects plus its own.
+- **`MetaProgressionSaveData.UnlockedWeaponSlotCount` is not stored.** The count is derived from its sources every run, so it can never disagree with them.
+- **Arsenal "+1 projectile budget headroom" became +8.** One projectile of headroom would be invisible; eight is a real reward and still below what a specialised build reaches.
+- **Replacing a slot sells the old copy** for its usual 50%, so a swap is never a pure loss.
+- **Declining refunds only what was paid** (a shop purchase), nothing for a reward.
+- **The last weapon cannot be sold.**
+- **A weapon's tier upgrade cost joins its sell basis**, so selling returns half of everything the copy cost.
+- **Arsenal cannot trigger yet**: it needs six distinct weapons and the game has three (Rapid, Spread, Beam).
+
+### Readability rules, as built
+
+1. Audio de-dup per weapon: verified by count (the autopilot logs `cuesSuppressed`; 77+ suppressed in two waves with six weapons). Not verified by ear - agents cannot hear.
+2. Staggered cooldowns: duplicates are spread across their interval on every loadout change.
+3. Projectile budget: the shot that would exceed it is skipped. Seen at 30/60 live with six weapons on Stage 1.
+4. Player projectiles draw at sorting order -3, below boss telegraphs (-1) and enemy projectiles (2).
+
+### Controls (Intermission loadout panel)
+
+Left/Right picks a slot, Up/Down an action, Confirm runs it, Cancel closes. Actions: Upgrade tier, Sell, Move left, Move right, Close; with a weapon pending: Place / Replace here, Decline. While open, the input context is UI + System only, so the player cannot walk or fire and Build's Confirm cannot also end the Intermission.
+
+### Verification (autopilot `loadout1`, 2026-09-22)
+
+Six slots firing on independent magazines, draining and reloading; Set Bonuses Paired, then Rapid x3 Aligned after a reward Rapid replaced a slot; a tier upgrade bought in the panel; the reward weapon arriving with a full loadout went pending, auto-opened the panel and was placed. Not verified in a run: Spread explode and ring, Beam slow and ramp (need 5-6 copies of one weapon), and the Arsenal (impossible with three weapons).

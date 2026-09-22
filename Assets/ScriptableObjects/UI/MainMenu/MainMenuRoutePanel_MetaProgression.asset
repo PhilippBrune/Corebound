@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: MainMenuRoutePanel_MetaProgression
   m_EditorClassIdentifier: 
   _route: 4
-  _title: Meta Progression
-  _titleDe: Meta-Progression
-  _subtitle: Persistent unlock overview
-  _subtitleDe: Übersicht dauerhafter Freischaltungen
-  _summary: Review long-term unlock tracks, Meta Currency goals and broadening options for Cards, Weapons, Towers and future Start Loadouts.
-  _summaryDe: Überblick über langfristige Freischaltungspfade, Meta-Währungsziele und Erweiterungsoptionen für Cards, Weapons, Towers und künftige Start-Loadouts.
+  _title: Progression
+  _titleDe: Fortschritt
+  _subtitle: Unlocks, upgrades and the skill tree
+  _subtitleDe: Freischaltungen, Verbesserungen und Fertigkeitsbaum
+  _summary: Spend Alloy on unlocks and permanent weapon and tower upgrades, and Skill Points on the skill tree. Both are earned by defeating bosses; Alloy also drops from elites.
+  _summaryDe: Gib Legierung für Freischaltungen und dauerhafte Waffen- und Turmverbesserungen aus und Fertigkeitspunkte im Fertigkeitsbaum. Beides gibt es für besiegte Bosse; Legierung auch von Elite-Gegnern.
   _detailLines:
   - Persistent progress remains separated from the current Run state.
   - Unlocks widen choice space instead of replacing Run decisions.

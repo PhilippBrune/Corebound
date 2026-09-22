@@ -1,6 +1,6 @@
 # Skill Tree Specification
 
-Status: Requirements — not implemented. Written 2026-09-21 from the owner decision that a second currency and a Diablo-4-style skill tree should exist.
+Status: **Implemented 2026-09-22** (Slice 16, `Docs/Slices/16_PROGRESSION_AND_LOADOUT_SLICE.md`). Written 2026-09-21 from the owner decision that a second currency and a Diablo-4-style skill tree should exist. Where the build differs from the text below, the "Implementation" section at the end is authoritative.
 
 Depends On: MetaProgression, Economy, Resources, SaveSystem, UI, Input
 
@@ -31,26 +31,24 @@ The Skill Tree is the between-run growth spine. It answers "what did I get out o
 | Property | Value |
 | --- | --- |
 | Starting balance | 0 |
-| Earned by | completing a stage, defeating a boss, completing a run, first-time milestones |
+| Earned by | **defeating a boss, only** (owner decision 2026-09-22), on a curve that grows with stage depth |
 | Spent on | skill tree nodes |
 | Refundable | yes, full respec (see Respec) |
+| Paid | at the moment the boss dies, straight into the save - a run that beats the Stage 2 boss and then fails keeps those points |
 | Persisted in | `MetaProgressionSaveData` |
 | Cap | none; see Ascension for what happens past the tree's own maximum |
 
 ### Earning rates
 
-These are the starting values for balancing, not final.
+**Owner decision 2026-09-22:** a Stage 1 failure pays 0; Skill Points come only from defeating a boss, and deeper bosses pay more. Values live on `MetaProgressionDefinitionData` (`_bossSkillPointsByStage`, `_bossFirstKillSkillPoints`), not in code.
 
 | Event | SP |
 | --- | --- |
-| Clear a stage | 1 |
-| Defeat a stage boss | 2 |
-| Complete a full run (all 5 stages) | 5 |
-| Fail a run, per stage cleared | 1 |
-| First-time boss kill (once per boss) | 3 |
-| First-time full-run clear (once) | 10 |
+| Defeat the Stage 1 / 2 / 3 / 4 / 5 boss | 1 / 1 / 2 / 2 / 3 |
+| First-time kill of a boss (once per boss id) | +2 |
+| Anything else (clearing a wave, finishing or failing a run) | 0 |
 
-A failed run must still pay something, or a player who is stuck stops progressing entirely and the tree becomes a wall rather than a ramp.
+A full run pays 9 SP, the very first full run 19. The earlier "a failed run must still pay something" rule is withdrawn: a failed run still pays for every boss it beat before failing, which is the ramp the rule was protecting.
 
 ### Rule: SP never buys power the run itself can buy
 
@@ -272,8 +270,9 @@ A dedicated Skill Tree route from the main menu, alongside Meta Progression.
   than inheriting the first character's progress. This makes the tree a characterisation tool
   rather than a shared account-wide power meter, and it means a new character is a new
   progression arc rather than an instantly-maxed one.
-- Should failing a run on Stage 1 pay 0 SP or 1? Currently specified as 1 per stage *cleared*, so a Stage 1 failure pays 0. Worth revisiting if early-run failure feels punishing in playtest.
-- Does Ascension need a visible prestige marker (a rank badge in the main menu)? Recommend yes, but after the tree itself ships.
+- ~~Should failing a run on Stage 1 pay 0 SP or 1?~~ **Answered 2026-09-22: 0.** SP is paid only for defeating a boss, on a curve that grows with depth (see Earning rates).
+- ~~Does Ascension need a visible prestige marker?~~ **Answered 2026-09-22: yes.** A rank badge sits in the main menu's top-right corner from Ascension rank 1 (`AscensionRankBadgePresenter`).
+- **Open:** is respec free every time? The spec says "free the first time per tree version" without saying what later ones cost. The build makes every respec free; a price is easy to add if respec turns out to be used to dodge decisions.
 
 ---
 
@@ -287,3 +286,45 @@ A dedicated Skill Tree route from the main menu, alongside Meta Progression.
 - Purchases survive a save/load cycle and apply to the next run started.
 - With the tree fully purchased, further SP can be spent on Ascension ranks indefinitely, with a cost that grows on the specified curve.
 - No skill effect can be observed changing mid-run.
+
+---
+
+## Implementation (2026-09-22)
+
+What shipped, and where it differs from the sections above.
+
+### Code
+
+| Piece | Where |
+| --- | --- |
+| Data | `SkillTreeDefinitionData` (one asset per character; branches, key nodes, sub nodes and the Ascension pool are `[Serializable]` classes inside it) |
+| Rules | `SkillTreeRules` - purchase validation, branch spend, respec, tree-version free respec, Ascension offer and purchase, snapshot building. Pure functions over save + asset. |
+| Snapshot | `SkillModifierSnapshot`, frozen into `RunProgressionSnapshot` when the run's scene loads |
+| Currency | `MetaProgressionSaveData` v2: `SkillPointsEarned` / `SkillPointsSpent`, per-character `SkillNodeRank` list, `AscensionRank`, `AscensionChoices`, the pending offer |
+| Payout | `MetaRewardLedger.GrantBossDefeat`, called by `WaveManager` when the boss dies |
+| UI | the main menu's **Progression** route: tabs Unlocks, Upgrades, Combat, Construction, Industry, Command, Ascension |
+
+### Deviations
+
+- **Nodes are inline, not separate assets.** Eighty node assets would be unreviewable and nothing else references a node.
+- **The tree is a tab strip, not a spatial layout.** Each branch is one tab, key nodes are bold rows, their sub nodes indented under them. This keeps the one-branch-per-screen, no-panning rule; a drawn spine with node frames waits for Assets 85-87.
+- **`SkillPointsEarned` / `Spent` are the only SP fields**, as specified; `AscensionChoices` doubles as the rank history.
+
+### Content: the Vanguard tree
+
+Four branches, four key nodes each (3 SP), four sub nodes per key node. **212 SP fills the tree**, which is about 24 full clears at 9 SP each - inside the 25-35 run target once failed runs are counted. That is more than the "~112 SP" estimate above, because sub nodes average 2.6 ranks rather than 1.
+
+| Branch | Key nodes (spend requirement 0 / 4 / 10 / 18) |
+| --- | --- |
+| Combat | Opening Volley (first volley of every wave crits) · Armory (+1 weapon slot) · Second Wind (once per stage, a lethal hit leaves 30% health) · Full Arsenal (+1 weapon slot) |
+| Construction | Forward Foundations (first tower each stage is free) · Field Repair (first Core repair each stage is free) · Overwatch (+30% tower range during boss fights) · Last Bastion (once per stage, the Core survives a lethal hit at 25%) |
+| Industry | Salvage Instinct (elites drop double Scrap) · Dividend (+15 Scrap each stage) · Scrap Surge (+15% Scrap) · Deep Reserves (+25 Scrap each stage) |
+| Command | Bargain Struck (-10% prices) · Veteran's Cache (start with a random relic) · War Chest (+40 starting Scrap) · Relic Hunter (a second starting relic) |
+
+Industry and Command key nodes 3-4 are strong numerics rather than rule changes; four more distinct rules would have needed systems that do not exist yet (a pickup magnet, reward rerolls).
+
+### Verification (autopilot, 2026-09-22)
+
+- `progression1`: 28 SP and 75 Alloy spent through the Progression screen; the next run's snapshot showed the purchases; Seed Capital + Quartermaster paid exactly +10 starting Scrap; Forward Foundations built a Ballista for 0 Scrap.
+- `ascension1`: the whole tree bought through `SkillTreeRules` (212 SP, prerequisites and branch spend enforced), one Ascension rank bought on screen, the badge shown in the main menu; the next run had 3 weapon slots, +116 starting Scrap (the sum of every Starting Scrap node) and 2 relics.
+- Not verified by a run: Second Wind, Last Bastion, Overwatch, Executioner and Field Repair firing in combat. The code paths exist; the autopilot rarely reaches a lethal hit or a boss with those nodes bought.

@@ -30,6 +30,11 @@ namespace Corebound.MetaProgression
         private void Awake()
         {
             EnsureLoaded();
+
+            if (GetComponent<AscensionRankBadgePresenter>() == null)
+            {
+                gameObject.AddComponent<AscensionRankBadgePresenter>().Bind(this);
+            }
         }
 
         public bool IsUnlocked(string unlockId)
@@ -140,6 +145,44 @@ namespace Corebound.MetaProgression
             return true;
         }
 
+        // ---- Skill tree, Ascension and Upgrades (2026-09-22) -------------------------------------
+        // The Progression screen mutates the save through SkillTreeRules / UpgradeRules and then
+        // calls Commit, so every rule lives in one place and this service only persists and
+        // notifies.
+
+        public MetaProgressionSaveData SaveData => EnsureLoaded();
+
+        public int AlloyBalance => EnsureLoaded().AlloyBalance;
+
+        public int SkillPointsAvailable => EnsureLoaded().SkillPointsAvailable;
+
+        public int AscensionRank => EnsureLoaded().AscensionRank;
+
+        public SkillTreeDefinitionData ActiveSkillTree => _definitionData != null ? _definitionData.FindSkillTree(EnsureLoaded().SelectedCharacterId) : null;
+
+        public void Commit()
+        {
+            var saveData = EnsureLoaded();
+
+            if (SaveManager != null)
+            {
+                SaveManager.SaveMetaProgressionSaveData(saveData);
+            }
+
+            ProgressionChanged?.Invoke();
+        }
+
+#if UNITY_EDITOR
+        // Editor-only: lets an agent verify purchases without playing runs to earn the currency.
+        public void DebugGrant(int skillPoints, int alloy)
+        {
+            var saveData = EnsureLoaded();
+            saveData.GrantSkillPoints(skillPoints);
+            saveData.GrantAlloy(alloy);
+            Commit();
+        }
+#endif
+
         public void SetHasSeenTutorial(bool hasSeenTutorial)
         {
             var saveData = EnsureLoaded();
@@ -168,6 +211,13 @@ namespace Corebound.MetaProgression
 
             var defaults = _definitionData != null ? _definitionData.CreateDefaultSaveData() : new MetaProgressionSaveData();
             _saveData = SaveManager != null ? SaveManager.LoadMetaProgressionSaveData(defaults) : defaults;
+
+            // SkillTree.md: a content update that changes the tree grants a free respec.
+            if (_definitionData != null && SkillTreeRules.ApplyTreeVersion(_saveData, _definitionData.FindSkillTree(_saveData.SelectedCharacterId)) && SaveManager != null)
+            {
+                SaveManager.SaveMetaProgressionSaveData(_saveData);
+            }
+
             return _saveData;
         }
     }

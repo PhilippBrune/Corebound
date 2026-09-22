@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 68709f5540e10a84798685ac55a66a4c, type: 3}
   m_Name: MenuEntry_MetaProgression
   m_EditorClassIdentifier: 
-  _label: Meta Progression
+  _label: Progression
   _route: 4
   _availability: 0

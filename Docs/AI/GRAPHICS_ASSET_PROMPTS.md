@@ -1230,7 +1230,7 @@ what it was designed for, and Spiral is a Fan that rotates.
 
 Target: Assets/Art/Combat/VFX/vfx_boss_telegraph_ring.png
 
-**Status:** NOT CREATED YET.
+**Status:** CREATED 2026-09-21 and wired 2026-09-22 - `BossRuntimeController` draws it for the Ring and Spiral wind-ups (scales up over the wind-up). Mirrored to StreamingAssets.
 
 Needed because:
 
@@ -1244,7 +1244,7 @@ Prompt:
 
 Target: Assets/Art/Combat/VFX/vfx_boss_telegraph_lance.png
 
-**Status:** NOT CREATED YET.
+**Status:** CREATED 2026-09-21 and wired 2026-09-22 for the Lance wind-up. **Defect:** the far end of the lance has a baked-in grey checkerboard (fake transparency) where it should be transparent - regenerate or erase that tip. Mirrored to StreamingAssets.
 
 Needed because:
 
@@ -1258,7 +1258,7 @@ Create a 2D attack telegraph for a top-down sci-fantasy defense roguelite, warni
 
 Target: Assets/Art/Combat/VFX/vfx_boss_telegraph_volley.png
 
-**Status:** NOT CREATED YET.
+**Status:** CREATED 2026-09-21 and wired 2026-09-22 for the Volley wind-up, oriented along the firing direction. Mirrored to StreamingAssets.
 
 Needed because:
 
@@ -1272,7 +1272,7 @@ Create a 2D attack telegraph for a top-down sci-fantasy defense roguelite, warni
 
 Target: Assets/Art/UI/HUD/tower_info_card_frame.png
 
-**Status:** NOT CREATED YET.
+**Status:** CREATED 2026-09-21 and wired 2026-09-22 in the tower build browser. Delivered as a sheet (one large card at x44 y44 525x525, three small cards at x626-868), sliced by pixel rect in `TowerBuildBrowserPresenter`. The art bakes in the words "Strong against" / "Weak against" in English, so they will not localise. Mirrored to StreamingAssets.
 
 Needed because:
 
@@ -1286,7 +1286,7 @@ Create a compact 2D UI info card frame for a top-down sci-fantasy defense roguel
 
 Target: Assets/Art/UI/SkillTree/character_portrait_frame.png
 
-**Status:** NOT CREATED YET.
+**Status:** CREATED 2026-09-21 in `Assets/Art/UI/Skilltree/` (lower-case t; the target path above says `SkillTree`). Not used yet - there is no character select. **Defect:** the centre, which should be transparent for the portrait, is a baked-in checkerboard.
 
 Needed because:
 

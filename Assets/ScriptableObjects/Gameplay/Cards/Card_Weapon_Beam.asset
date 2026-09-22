@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Card_Weapon_Beam
   m_EditorClassIdentifier: 
   _cardId: card_weapon_beam
-  _displayName: Beam Weapon
-  _displayNameDe: Strahlwaffe
-  _description: Equip a Beam: heavy piercing shots. Copies build its Set Bonus.
-  _descriptionDe: Rüste eine Strahlwaffe aus: schwere, durchdringende Schüsse. Kopien bauen ihren Setbonus auf.
+  _displayName: 'Beam Weapon'
+  _displayNameDe: 'Strahlwaffe'
+  _description: 'Equip a Beam: heavy piercing shots. Copies build its Set Bonus.'
+  _descriptionDe: 'Rüste eine Strahlwaffe aus: schwere, durchdringende Schüsse. Kopien bauen ihren Setbonus auf.'
   _rarity: 0
   _requiredUnlockId: 
   _tags:

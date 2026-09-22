@@ -32,7 +32,10 @@ namespace Corebound.MetaProgression
 
         // Falls back to an empty snapshot, never null: an isolated test scene without a save
         // manager simply plays with no permanent progression.
-        public static RunProgressionSnapshot Current => _current ?? Empty;
+        // A snapshot from the previous run's scene is never handed out: until this scene captures
+        // its own, readers get Empty.
+        public static RunProgressionSnapshot Current =>
+            _current != null && _capturedSceneHandle == SceneManager.GetActiveScene().handle ? _current : Empty;
 
         public SkillModifierSnapshot Skills { get; }
 
@@ -82,13 +85,16 @@ namespace Corebound.MetaProgression
                 return _current;
             }
 
-            _capturedSceneHandle = sceneHandle;
-
+            // Without a save or a definition there is nothing to capture - and caching Empty here
+            // would freeze the whole scene on it, so a caller that does have the definition (the
+            // player, WaveManager) and runs later would be ignored. Which Awake runs first is not
+            // something this may depend on.
             if (saveManager == null || definition == null)
             {
-                _current = Empty;
-                return _current;
+                return Empty;
             }
+
+            _capturedSceneHandle = sceneHandle;
 
             var save = saveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
             var tree = definition.FindSkillTree(save.SelectedCharacterId);

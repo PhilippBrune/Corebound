@@ -397,6 +397,8 @@ The player carries **up to six weapons at once**, all firing automatically at th
 
 Carrying several weapons of the same kind grants escalating **set bonuses**, so specialising into one archetype and diversifying across six are both real strategies with different shapes. Full requirements in [WeaponLoadout.md](Specs/WeaponLoadout.md).
 
+Each carried copy is **upgraded separately** during a run (Common to Legendary, for Scrap), and every weapon has a **magazine and a reload**: holding the trigger forever empties it, fighting in bursts rarely does (owner decisions 2026-09-22).
+
 Possible weapon design directions include:
 
 * A rapid-fire projectile weapon.
@@ -512,10 +514,10 @@ The game runs on three currencies, each with one job:
 | Currency | Scope | Earned by | Spent on |
 | --- | --- | --- | --- |
 | **Scrap** | one run | enemies, waves, the Factory | towers, shop offers, weapons, Core repair |
-| **Skill Points** | permanent | run outcomes | the skill tree |
-| **Alloy** | permanent | bosses, run completion | unlocks, and weapon/tower stat upgrades |
+| **Skill Points** | permanent | defeating bosses (more for deeper bosses) | the skill tree |
+| **Alloy** | permanent | bosses and elites | unlocks, and weapon/tower stat upgrades |
 
-Skill Points shape the character; Alloy improves the equipment. Scrap never crosses between runs, and neither permanent currency can buy anything a run itself can buy.
+Skill Points shape the character; Alloy improves the equipment. Neither is paid for simply finishing or failing a run: a run earns what its boss and elite kills earned, paid at the moment of the kill, so going deeper is what progresses the player (owner decision 2026-09-22). Scrap never crosses between runs, and neither permanent currency can buy anything a run itself can buy.
 
 ## Meta Progression
 

@@ -28,8 +28,10 @@ namespace Corebound.UI.Gameplay
         private const float AmmoBarHeight = 6f;
         private const float PipSize = 10f;
 
-        private static readonly Color LockedTileColor = new Color(0.1f, 0.11f, 0.14f, 0.55f);
-        private static readonly Color EmptyTileColor = new Color(0.14f, 0.16f, 0.21f, 0.85f);
+        // Locked tiles were invisible against the strip in the first screenshots (the strip read as
+        // one slot), so locked is a visible grey and empty a brighter, bluer "open" tile.
+        private static readonly Color LockedTileColor = new Color(0.24f, 0.25f, 0.28f, 0.55f);
+        private static readonly Color EmptyTileColor = new Color(0.2f, 0.27f, 0.38f, 0.95f);
         private static readonly Color FilledTileColor = new Color(0.18f, 0.2f, 0.27f, 0.95f);
         private static readonly Color SweepColor = new Color(0f, 0f, 0f, 0.55f);
         private static readonly Color ReloadSweepColor = new Color(0.9f, 0.35f, 0.2f, 0.6f);

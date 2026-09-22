@@ -26,6 +26,14 @@ COREBOUND — a singleplayer Windows/Steam action roguelite combining direct com
   that stage within a second; `disable` turns it back off. Progress goes to `Editor.log` behind
   `[Autopilot]`, including a `->` line for every wave-state transition, a stall report when nothing
   changes for 12s, and per-sample HUD, shop, arena and enemy-position state.
+- **Autopilot variants** (write into `AutopilotRequest.txt`): `loadoutN` fills all six weapon slots
+  (3 Rapid, 2 Spread, 1 Beam); `progressionN` grants test currency in the main menu and buys a
+  scripted set of skill nodes, upgrades and a slot unlock through the Progression screen;
+  `ascensionN` fills the whole tree and buys an Ascension rank; `godN` turns on god mode so the run
+  reaches the boss. Each starts stage N afterwards. The progression variants **write to the real
+  profile save** - back up `%USERPROFILE%/AppData/LocalLow/DefaultCompany/Corebound/Profile_01/meta.json`
+  first and restore it after. Screenshots of gates, reward, shop, build browser, loadout panel, pause
+  and boss telegraphs are written to `Temp/AutopilotShots/` at the moment each state is reached.
 - **Three rules the autopilot had to learn the hard way.** It must call `DebugSetUsingGamepad(true)`,
   because `PlayerAimResolver` reads `Aim` as a *screen position* in mouse mode, so a world direction
   aims every shot at a screen corner and looks exactly like "projectiles do no damage". It must bind

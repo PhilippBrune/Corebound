@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Card_Weapon_Rapid
   m_EditorClassIdentifier: 
   _cardId: card_weapon_rapid
-  _displayName: Rapid Weapon
-  _displayNameDe: Schnellfeuerwaffe
-  _description: Equip another Rapid: fast single shots. Copies build its Set Bonus.
-  _descriptionDe: Rüste eine weitere Schnellfeuerwaffe aus: schnelle Einzelschüsse. Kopien bauen ihren Setbonus auf.
+  _displayName: 'Rapid Weapon'
+  _displayNameDe: 'Schnellfeuerwaffe'
+  _description: 'Equip another Rapid: fast single shots. Copies build its Set Bonus.'
+  _descriptionDe: 'Rüste eine weitere Schnellfeuerwaffe aus: schnelle Einzelschüsse. Kopien bauen ihren Setbonus auf.'
   _rarity: 0
   _requiredUnlockId: 
   _tags:

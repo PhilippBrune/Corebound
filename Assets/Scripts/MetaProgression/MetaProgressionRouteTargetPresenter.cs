@@ -8,8 +8,15 @@ namespace Corebound.MetaProgression
 {
     public sealed class MetaProgressionRouteTargetPresenter : MonoBehaviour
     {
-        private const float PanelWidth = 1080f;
-        private const float PanelHeight = 720f;
+        // Widened 2026-09-22 for the tabbed Progression screen: seven tab names and an upgrade
+        // row with a ten-pip track and a "12.0 -> 12.7" value have to fit on one line.
+        private const float PanelWidth = 1500f;
+        private const float PanelHeight = 900f;
+        private const int TabFontSize = 22;
+
+        private static readonly Color UnaffordableRowColor = new Color(0.95f, 0.55f, 0.45f, 1f);
+        private static readonly Color LockedRowColor = new Color(0.5f, 0.52f, 0.57f, 1f);
+        private static readonly Color HeaderRowColor = new Color(1f, 0.82f, 0.45f, 1f);
         private const int TitleFontSize = 42;
         private const int CurrencyFontSize = 26;
         private const int SummaryFontSize = 22;
@@ -29,6 +36,8 @@ namespace Corebound.MetaProgression
         private Text _titleText;
         private Text _currencyText;
         private Text _summaryText;
+        private Text _tabText;
+        private Text _footerText;
         private Font _font;
         private Sprite _frameSprite;
         private UIManagedPanel _managedPanel;
@@ -104,11 +113,19 @@ namespace Corebound.MetaProgression
             // rendering across it, which is what the previous much-smaller insets did.
             StretchToParent(_titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -235f), new Vector2(-230f, -165f));
 
+            _tabText = CreateText("Tabs", _panelRect, TabFontSize, FontStyle.Bold, _skinData != null ? _skinData.IdleLabelColor : Color.white, TextAnchor.UpperLeft);
+            _tabText.supportRichText = true;
+            StretchToParent(_tabText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -275f), new Vector2(-230f, -240f));
+
             _currencyText = CreateText("Currency", _panelRect, CurrencyFontSize, FontStyle.Bold, _skinData != null ? _skinData.PromptLabelColor : Color.white, TextAnchor.UpperLeft);
-            StretchToParent(_currencyText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -290f), new Vector2(-230f, -245f));
+            StretchToParent(_currencyText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -315f), new Vector2(-230f, -280f));
 
             _summaryText = CreateText("Summary", _panelRect, SummaryFontSize, FontStyle.Normal, _skinData != null ? _skinData.StatusLabelColor : Color.white, TextAnchor.UpperLeft);
-            StretchToParent(_summaryText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -370f), new Vector2(-230f, -305f));
+            _summaryText.supportRichText = true;
+            StretchToParent(_summaryText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -400f), new Vector2(-230f, -320f));
+
+            _footerText = CreateText("Footer", _panelRect, 18, FontStyle.Normal, _skinData != null ? _skinData.StatusLabelColor : Color.white, TextAnchor.LowerLeft);
+            StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(230f, 110f), new Vector2(-230f, 140f));
 
             // Viewport (RectMask2D, clips) + ScrollRect wrapping a content object that's allowed to
             // grow (ContentSizeFitter) - same treatment as SettingsRouteTargetPresenter, so the
@@ -117,7 +134,7 @@ namespace Corebound.MetaProgression
             var viewportObject = new GameObject("RowsViewport", typeof(RectTransform), typeof(RectMask2D));
             viewportObject.transform.SetParent(_panelRect, false);
             var viewportRect = viewportObject.GetComponent<RectTransform>();
-            StretchToParent(viewportRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(230f, 140f), new Vector2(-230f, -390f));
+            StretchToParent(viewportRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(230f, 150f), new Vector2(-230f, -410f));
 
             var listObject = new GameObject("Rows", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             listObject.transform.SetParent(viewportRect, false);
@@ -169,7 +186,9 @@ namespace Corebound.MetaProgression
             _panelRect.SetAsLastSibling();
             _titleText.text = _controller.Title;
             _currencyText.text = _controller.CurrencyLabel;
-            _summaryText.text = _controller.Summary + " Confirm purchases the selected unlock. Cancel returns.";
+            _tabText.text = _controller.TabStrip;
+            _summaryText.text = _controller.Summary;
+            _footerText.text = _controller.FooterHint;
             RebuildRows();
             UIManager.NotifyPanelChanged(_managedPanel);
         }
@@ -184,6 +203,12 @@ namespace Corebound.MetaProgression
 
                 if (Application.isPlaying)
                 {
+                    // Destroy is deferred to the end of the frame, and ProceduralUIFactory reuses a
+                    // child it finds by name - so without this the rebuilt rows attach to the doomed
+                    // ones and vanish with them (the Progression screen rendered no rows at all).
+                    child.name = child.name + "_Discarded";
+                    child.gameObject.SetActive(false);
+                    child.SetParent(null, false);
                     Destroy(child.gameObject);
                 }
                 else
@@ -198,9 +223,16 @@ namespace Corebound.MetaProgression
             for (var index = 0; index < rows.Count; index++)
             {
                 var row = rows[index];
-                var rowText = CreateText("Unlock" + index, _rowLayout.transform as RectTransform, RowFontSize, row.IsUnlocked ? FontStyle.Italic : FontStyle.Normal, ResolveRowColor(row), TextAnchor.MiddleLeft);
-                rowText.text = row.Label + "    " + row.StatusLabel;
-                rowText.gameObject.AddComponent<LayoutElement>().preferredHeight = 48f;
+                var rowText = CreateText("Row" + index, _rowLayout.transform as RectTransform, RowFontSize, row.IsUnlocked ? FontStyle.Italic : FontStyle.Normal, ResolveRowColor(row), TextAnchor.MiddleLeft);
+                rowText.supportRichText = true;
+                rowText.text = (row.IsSelected ? "> " : "   ") + row.Label;
+                rowText.gameObject.AddComponent<LayoutElement>().preferredHeight = 40f;
+
+                // Status (price, rank, Locked/Owned) in its own right-aligned column, so prices
+                // line up and a long label can never push the price off the row.
+                var statusText = CreateText("Status", rowText.rectTransform, RowFontSize, FontStyle.Bold, ResolveRowColor(row), TextAnchor.MiddleRight);
+                StretchToParent(statusText.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+                statusText.text = row.StatusLabel;
                 _rowTexts.Add(rowText);
 
                 if (row.IsSelected)
@@ -241,6 +273,17 @@ namespace Corebound.MetaProgression
 
         private Color ResolveRowColor(MetaProgressionRouteTargetController.DisplayRow row)
         {
+            // SkillTree.md UI: "Unaffordable nodes are visibly distinct from locked ones."
+            switch (row.State)
+            {
+                case MetaProgressionRouteTargetController.RowState.Header:
+                    return HeaderRowColor;
+                case MetaProgressionRouteTargetController.RowState.Locked:
+                    return LockedRowColor;
+                case MetaProgressionRouteTargetController.RowState.Unaffordable:
+                    return row.IsSelected ? Color.Lerp(UnaffordableRowColor, Color.white, 0.35f) : UnaffordableRowColor;
+            }
+
             if (row.IsUnlocked)
             {
                 return _skinData != null ? _skinData.StatusLabelColor : Color.white;

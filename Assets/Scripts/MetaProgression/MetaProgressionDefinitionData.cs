@@ -38,6 +38,10 @@ namespace Corebound.MetaProgression
         [SerializeField] private UpgradeCatalogData _upgradeCatalog;
         [SerializeField] private SkillTreeDefinitionData[] _skillTrees = Array.Empty<SkillTreeDefinitionData>();
 
+        // The items the Upgrades tab lists (Upgrades.md: "weapons then towers").
+        [SerializeField] private WeaponCatalogData _upgradeWeapons;
+        [SerializeField] private TowerCatalogData _upgradeTowers;
+
         public string MetaCurrencyLabel => Corebound.UI.LocalizationService.Resolve(_metaCurrencyLabel, _metaCurrencyLabelDe);
 
         public int BossFirstKillSkillPoints => Mathf.Max(0, _bossFirstKillSkillPoints);
@@ -51,6 +55,51 @@ namespace Corebound.MetaProgression
         public UpgradeCatalogData UpgradeCatalog => _upgradeCatalog;
 
         public SkillTreeDefinitionData[] SkillTrees => _skillTrees;
+
+        public WeaponCatalogData UpgradeWeapons => _upgradeWeapons;
+
+        public TowerCatalogData UpgradeTowers => _upgradeTowers;
+
+        // A weapon is locked only if some unlock grants it and that unlock is not bought.
+        public bool IsWeaponUnlocked(MetaProgressionSaveData saveData, WeaponData weapon)
+        {
+            if (weapon == null || _unlocks == null)
+            {
+                return weapon != null;
+            }
+
+            for (var index = 0; index < _unlocks.Length; index++)
+            {
+                var unlock = _unlocks[index];
+
+                if (unlock != null && unlock.WeaponReward == weapon)
+                {
+                    return saveData != null && saveData.HasPurchased(unlock.UnlockId);
+                }
+            }
+
+            return true;
+        }
+
+        public UnlockDefinition FindUnlockFor(WeaponData weapon, TowerData tower)
+        {
+            if (_unlocks == null)
+            {
+                return null;
+            }
+
+            for (var index = 0; index < _unlocks.Length; index++)
+            {
+                var unlock = _unlocks[index];
+
+                if (unlock != null && ((weapon != null && unlock.WeaponReward == weapon) || (tower != null && unlock.TowerReward == tower)))
+                {
+                    return unlock;
+                }
+            }
+
+            return null;
+        }
 
         public SkillTreeDefinitionData FindSkillTree(string characterId)
         {

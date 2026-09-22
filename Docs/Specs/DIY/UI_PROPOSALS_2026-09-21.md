@@ -1,6 +1,8 @@
 # UI Proposals — 2026-09-21
 
-Four playtest items that need a design decision before code. Each has a concrete proposal and a reason. None of them is implemented.
+Four playtest items that need a design decision before code. Each has a concrete proposal and a reason.
+
+**All four implemented 2026-09-22** (Slice 16). Each section ends with what shipped; autopilot screenshots confirmed every one.
 
 ---
 
@@ -23,6 +25,8 @@ This is the opposite of the note in `Shop.md`, which asks the shop to *differ* f
 
 **Effort:** a layout pass on `ShopCanvas.unity` plus matching constants in `ShopPresenter`. No new art.
 
+**Shipped 2026-09-22.** `ShopCanvas.unity`'s slots now use the reward screen's geometry exactly (264x336 at x -291 / 0 / 291, y -17, title and description centre-anchored the same way). The price chip sits in the reward screen's otherwise empty bottom band. `shop_offer_panel.png`, the tower-upgrade badge and the amber wash are unchanged.
+
 ---
 
 ## 2. Tower build selection
@@ -44,6 +48,8 @@ This keeps every existing input and adds no new verb. It replaces "remember four
 
 Needs Asset 99 (tower info card frame).
 
+**Shipped 2026-09-22.** `TowerBuildBrowserPresenter` shows every tower as a card from `tower_info_card_frame.png` whenever the player stands on an empty slot during an Intermission: the selected tower on the large card with name, cost, DPS and range bars, strengths and weaknesses; the others on the small card; locked towers greyed with "unlock in Progression"; an unaffordable cost in red. Previous/Next Tower Type and Interact, as proposed. The browser appears only in Intermission; during combat the one-line summary remains.
+
 ---
 
 ## 3. `stage1_spawn_gate.png` is placed but unused
@@ -63,6 +69,8 @@ That converts a decorative asset into the clearest possible answer to vision Sec
 
 **Effort:** small. Move the gate creation into the spawn-point loop, and add a pulse driven by the existing wave-start delay timer.
 
+**Shipped 2026-09-22.** One gate per `StageData.SpawnPoints` entry (or `EnemySpawnOrigin`), turned to open toward the arena. The gates the coming wave will use pulse for the 2 s wave-start delay. The first version only tinted the gate, which barely showed on the dark art in the first screenshots; a soft orange light pool now glows behind each lit gate.
+
 ---
 
 ## 4. Card tag icons on cards and in the pause menu
@@ -79,6 +87,8 @@ That converts a decorative asset into the clearest possible answer to vision Sec
 2. **Draw them in the pause menu**, left of each active perk, reusing `CardTagIconAtlas` exactly as the reward screen does.
 
 Part 2 is small once part 1 exists. Doing part 2 first would ship an empty column.
+
+**Shipped 2026-09-22.** 32 of 34 cards carry tags from a reviewed script (effects and weapon modifiers mapped to tags; hand-authored tags kept); Brace For Impact and Sure Footing have none, because the sheet has no survivability or mobility icon. The authored reward slots never had TagIcon children, so icons were never drawn on the path the game uses - they are now created at runtime (Play Mode only). The pause menu lists active cards as a three-column grid with each card's icons to its left, and the panel grows to fit.
 
 ---
 

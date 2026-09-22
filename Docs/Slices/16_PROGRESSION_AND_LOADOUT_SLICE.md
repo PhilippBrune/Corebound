@@ -1,6 +1,6 @@
 # Slice 16 — Progression, Loadout and UI Proposals
 
-Status: In progress — started 2026-09-22.
+Status: **Done 2026-09-22** — all phases implemented and autopilot-verified for function; feel and several rules still need a human playtest (see `Docs/10_OPEN_POINTS.md` item 0).
 
 Implements: `Docs/Specs/SkillTree.md`, `Docs/Specs/WeaponLoadout.md`, `Docs/Specs/Upgrades.md`,
 `Docs/Specs/DIY/UI_PROPOSALS_2026-09-21.md`.
