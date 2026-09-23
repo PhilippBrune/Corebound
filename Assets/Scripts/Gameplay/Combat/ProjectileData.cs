@@ -16,6 +16,11 @@ namespace Corebound.Gameplay.Combat
         [SerializeField] private int _atlasColumns = 1;
         [SerializeField] private int _atlasRows = 1;
 
+        // Asset 101 (projectile_sheet_weapons_02.png) is not a uniform grid: its six rows hold four
+        // or six frames of different widths, so each weapon names its own pixel rect instead.
+        // Takes precedence over the atlas cell when width and height are set.
+        [SerializeField] private Rect _spriteRect = new Rect(0f, 0f, 0f, 0f);
+
         [SerializeField] private float _speed = 10f;
         [SerializeField] private float _lifetimeSeconds = 1.4f;
         [SerializeField] private float _radius = 0.14f;
@@ -50,8 +55,13 @@ namespace Corebound.Gameplay.Combat
                 return DebugSpriteFactory.LoadProjectSprite(_projectSpritePath);
             }
 
-            return string.IsNullOrWhiteSpace(_atlasSheetPath)
-                ? null
+            if (string.IsNullOrWhiteSpace(_atlasSheetPath))
+            {
+                return null;
+            }
+
+            return _spriteRect.width > 0f && _spriteRect.height > 0f
+                ? DebugSpriteFactory.LoadProjectSpriteRect(_atlasSheetPath, _spriteRect)
                 : DebugSpriteFactory.LoadProjectAtlasCellSprite(_atlasSheetPath, _atlasColumn, _atlasRow, _atlasColumns, _atlasRows);
         }
     }

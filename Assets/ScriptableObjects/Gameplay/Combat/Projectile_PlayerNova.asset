@@ -14,13 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _sprite: {fileID: 0}
   _projectSpritePath: 
-  _atlasSheetPath: Assets/Art/Combat/Projectiles/projectile_sheet_core.png
+  _atlasSheetPath: Assets/Art/Combat/Projectiles/projectile_sheet_weapons_02.png
   _atlasColumn: 0
   _atlasRow: 2
   _atlasColumns: 4
   _atlasRows: 4
+  _spriteRect:
+    serializedVersion: 2
+    x: 132
+    y: 272
+    width: 77
+    height: 64
   _speed: 7
   _lifetimeSeconds: 0.5
   _radius: 0.18
   _pierceCount: 0
-  _debugColor: {r: 1, g: 0.7, b: 1, a: 1}
+  _debugColor: {r: 1, g: 1, b: 1, a: 1}

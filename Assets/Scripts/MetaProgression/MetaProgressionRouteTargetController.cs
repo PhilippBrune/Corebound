@@ -96,6 +96,29 @@ namespace Corebound.MetaProgression
             : LocalizationService.Resolve("Ascension ", "Aufstieg ") + _metaProgressionService.AscensionRank;
 
         // 0-3 while a skill branch tab is shown (the branch icon sheet's order), otherwise -1.
+        // Every tab shows an emblem, not only the four branches (playtest 2026-09-22). Unlocks,
+        // Upgrades and Ascension borrow icons that already exist rather than waiting for new art.
+        public string ActiveTabIconPath
+        {
+            get
+            {
+                switch (ResolveTab(out _))
+                {
+                    case Tab.Unlocks:
+                        return "Assets/Art/Resources/resource_alloy_icon.png";
+                    case Tab.Upgrades:
+                        return "Assets/Art/UI/HUD/weapon_icon_sheet.png";
+                    case Tab.Ascension:
+                        return "Assets/Art/UI/Skilltree/ascension_rank_badge.png";
+                    default:
+                        return string.Empty;
+                }
+            }
+        }
+
+        // The Upgrades icon is one cell of the weapon sheet; everything else is a whole file.
+        public bool ActiveTabIconIsWeaponSheet => ResolveTab(out _) == Tab.Upgrades;
+
         public int ActiveBranchIndex
         {
             get
@@ -234,6 +257,24 @@ namespace Corebound.MetaProgression
         {
             var tree = _metaProgressionService != null ? _metaProgressionService.ActiveSkillTree : null;
             return 3 + (tree != null && tree.Branches != null ? tree.Branches.Length : 0);
+        }
+
+        // Same shoulder-button switch as every other tabbed screen; Left/Right still works too.
+        public void SwitchTab(int direction)
+        {
+            if (!_isOpen)
+            {
+                return;
+            }
+
+            var tabCount = Mathf.Max(1, ResolveTabCount());
+            _tabIndex = (_tabIndex + direction + tabCount) % tabCount;
+            _selectedRow = 0;
+            _respecArmed = false;
+            _statusMessage = string.Empty;
+            RebuildRows();
+            SkipToSelectableRow(1);
+            TargetChanged?.Invoke();
         }
 
         private Tab ResolveTab(out SkillBranchData branch)

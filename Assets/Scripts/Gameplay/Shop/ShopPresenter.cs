@@ -197,6 +197,49 @@ namespace Corebound.Gameplay.Shop
             Refresh();
         }
 
+        // Mouse: hovering a slot selects it, clicking buys it. Ignored for the first half second
+        // after the shop opens, so the click that ended the last wave cannot buy something.
+        private const float ClickGuardSeconds = 0.5f;
+        private Vector2 _lastPointer;
+
+        private void Update()
+        {
+            if (_service == null || !_service.IsOpen || UnityEngine.InputSystem.Mouse.current == null)
+            {
+                return;
+            }
+
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            var pointer = mouse.position.ReadValue();
+            var moved = (pointer - _lastPointer).sqrMagnitude > 4f;
+            _lastPointer = pointer;
+            var clicked = mouse.leftButton.wasPressedThisFrame && Time.unscaledTime - _service.OpenedAtUnscaledTime > ClickGuardSeconds;
+
+            if (!moved && !clicked)
+            {
+                return;
+            }
+
+            for (var index = 0; index < _slotRoots.Length; index++)
+            {
+                var slot = _slotRoots[index];
+
+                if (slot == null || !slot.gameObject.activeInHierarchy || !RectTransformUtility.RectangleContainsScreenPoint(slot, pointer, null))
+                {
+                    continue;
+                }
+
+                _service.SelectIndex(index);
+
+                if (clicked)
+                {
+                    _service.TryPurchaseSelectedOffer();
+                }
+
+                return;
+            }
+        }
+
         private void OnDisable()
         {
             AdditiveCanvasSceneLoader.CanvasSceneReady -= OnCanvasSceneReady;
@@ -401,9 +444,17 @@ namespace Corebound.Gameplay.Shop
                     ? new Color(0.16f, 0.14f, 0.12f, 0.98f)
                     : new Color(0.62f, 0.12f, 0.1f, 1f);
                 _slotFrameImages[index].color = canAfford ? Color.white : new Color(0.62f, 0.62f, 0.66f, 0.85f);
+                // Epic and Legendary frames have a dark header plaque; dark-on-dark made those
+                // titles invisible on the reward screen and here alike (playtest 2026-09-22).
+                var rarity = _service.ResolveOfferRarity(offer);
+                var darkPlaque = rarity == Cards.CardRarity.Epic || rarity == Cards.CardRarity.Legendary;
                 _slotTitleTexts[index].color = canAfford
-                    ? new Color(0.14f, 0.12f, 0.1f, 0.98f)
-                    : new Color(0.42f, 0.4f, 0.38f, 0.85f);
+                    ? (darkPlaque ? new Color(0.95f, 0.91f, 0.82f, 1f) : new Color(0.14f, 0.12f, 0.1f, 0.98f))
+                    : (darkPlaque ? new Color(0.7f, 0.67f, 0.6f, 0.85f) : new Color(0.42f, 0.4f, 0.38f, 0.85f));
+                _slotTitleTexts[index].resizeTextForBestFit = true;
+                _slotTitleTexts[index].resizeTextMinSize = 10;
+                _slotTitleTexts[index].resizeTextMaxSize = Mathf.Max(11, _slotTitleTexts[index].fontSize);
+                _slotTitleTexts[index].verticalOverflow = VerticalWrapMode.Truncate;
 
                 if (_slotTypeBadgeImages[index] != null)
                 {

@@ -51,6 +51,14 @@ namespace Corebound.Gameplay.Factory
 
         private void Update()
         {
+            // Playtest 2026-09-22: "I get random Scrap in the intermission. Why do I get this?"
+            // Tower pulses ran on a wall clock, so standing in an Intermission ticked Scrap in with
+            // no visible cause. Production is part of fighting: pulses only run while a wave does.
+            if (!IsProductionActive)
+            {
+                return;
+            }
+
             for (var index = 0; index < _pulseStates.Count; index++)
             {
                 var pulseState = _pulseStates[index];
@@ -65,6 +73,22 @@ namespace Corebound.Gameplay.Factory
                 TriggerTowerPulse(pulseState.Chain, pulseState.Node);
             }
         }
+
+        private bool IsProductionActive
+        {
+            get
+            {
+                if (_waveManager == null)
+                {
+                    _waveManager = FindFirstObjectByType<Corebound.Gameplay.Waves.WaveManager>();
+                }
+
+                var state = _waveManager != null ? _waveManager.State : Corebound.Gameplay.Waves.WaveState.Combat;
+                return state == Corebound.Gameplay.Waves.WaveState.Combat || state == Corebound.Gameplay.Waves.WaveState.BossCombat;
+            }
+        }
+
+        private Corebound.Gameplay.Waves.WaveManager _waveManager;
 
         private void EvaluateAllChainTiers()
         {

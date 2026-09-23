@@ -102,13 +102,15 @@ namespace Corebound.Gameplay.Combat
                 return;
             }
 
-            // Playtest 2026-09-22 (fullscreen): "a blue frame around the arena". Framing only the
-            // height left the sides past the walls on any screen wider than the arena. The view now
-            // covers: it fits inside arena + walls on BOTH axes, and the camera pans with the player
-            // along whichever axis the screen is longer on.
+            // Two playtests pulled this in opposite directions. 2026-09-22 morning: a "blue frame
+            // around the arena" in fullscreen, fixed by covering (Mathf.Min - crop to the walls).
+            // 2026-09-22 evening: "in fullscreen not all of the arena can be seen, so I cannot see
+            // all enemies". Seeing every enemy wins - an unseen enemy is unfair, an edge of backdrop
+            // is only cosmetic - so the view *contains* the arena again (Mathf.Max), and the
+            // darkened backdrop tiles outside the walls are what fills the leftover screen.
             var heightFit = arenaSize.y * 0.5f + Mathf.Min(_framingMargin, _wallAllowance);
             var widthFit = (arenaSize.x * 0.5f + _wallAllowance) / Mathf.Max(0.1f, _camera.aspect);
-            var requiredSize = Mathf.Min(heightFit, widthFit);
+            var requiredSize = Mathf.Max(heightFit, widthFit);
             var targetSize = Mathf.Clamp(requiredSize, _minOrthographicSize, _maxOrthographicSize);
 
             _camera.orthographicSize = Mathf.Approximately(_camera.orthographicSize, targetSize)

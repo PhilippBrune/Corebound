@@ -139,9 +139,11 @@ Bildschirm, und um die Arena lag ein blauer Rahmen.
   Mindestgrößen liegen nicht unter 10.
 - **Listen, die wachsen können** (Hauptmenü, Progression, Loadout) definieren eine Mindesthöhe pro
   Eintrag und ein Verhalten, wenn die Summe nicht passt. Sie dürfen nie stillschweigend überlaufen.
-- **Die Kamera füllt die Arena immer aus** (Cover, nicht Fit): sie skaliert auf das Maximum aus
-  Höhen- und Breitenbedarf und wird an den Arenagrenzen plus Wandzuschlag geklemmt. Außerhalb der
-  Wände liegen abgedunkelte Backdrop-Kacheln, damit in keinem Seitenverhältnis die leere
-  Hintergrundfarbe zu sehen ist.
+- **Die Kamera zeigt immer die ganze Arena** (Contain, nicht Cover): sie wählt das Maximum aus
+  Höhen- und Breitenbedarf, sodass in jedem Seitenverhältnis das gesamte Spielfeld sichtbar ist.
+  Den Rest des Bildschirms füllen abgedunkelte Backdrop-Kacheln außerhalb der Wände. "Im Vollbild
+  sind nicht alle Gegner zu sehen" wiegt schwerer als ein sichtbarer Rand (Playtest 2026-09-22
+  abends; vormittags war es genau umgekehrt entschieden worden - der damalige "blaue Rahmen" ist
+  jetzt Backdrop statt leerer Fläche).
 - Autopilot-Screenshots entstehen in der aktuellen Editor-Auflösung; eine Prüfung im echten Vollbild
   bleibt ein manueller Schritt.

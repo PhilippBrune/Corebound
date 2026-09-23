@@ -61,24 +61,14 @@ namespace Corebound.MetaProgression
         public TowerCatalogData UpgradeTowers => _upgradeTowers;
 
         // A weapon is locked only if some unlock grants it and that unlock is not bought.
+        // One definition of "owned", shared with the New Run panel: a weapon is available when
+        // nothing gates it, or when its licence has been bought. Licences added 2026-09-22 carry no
+        // WeaponReward reference and are matched by id convention instead, which the old
+        // reward-only lookup here missed - it reported Railgun, Nova and Launcher as unlocked and
+        // offered their upgrade tracks before the weapon could appear in a run.
         public bool IsWeaponUnlocked(MetaProgressionSaveData saveData, WeaponData weapon)
         {
-            if (weapon == null || _unlocks == null)
-            {
-                return weapon != null;
-            }
-
-            for (var index = 0; index < _unlocks.Length; index++)
-            {
-                var unlock = _unlocks[index];
-
-                if (unlock != null && unlock.WeaponReward == weapon)
-                {
-                    return saveData != null && saveData.HasPurchased(unlock.UnlockId);
-                }
-            }
-
-            return true;
+            return StartWeaponOptions.IsAvailable(weapon, saveData, this);
         }
 
         public UnlockDefinition FindUnlockFor(WeaponData weapon, TowerData tower)
@@ -92,7 +82,9 @@ namespace Corebound.MetaProgression
             {
                 var unlock = _unlocks[index];
 
-                if (unlock != null && ((weapon != null && unlock.WeaponReward == weapon) || (tower != null && unlock.TowerReward == tower)))
+                var weaponByConvention = weapon != null && unlock != null && unlock.UnlockId == "unlock_" + weapon.WeaponId;
+
+                if (unlock != null && ((weapon != null && unlock.WeaponReward == weapon) || weaponByConvention || (tower != null && unlock.TowerReward == tower)))
                 {
                     return unlock;
                 }

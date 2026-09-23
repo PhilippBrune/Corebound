@@ -88,6 +88,33 @@ namespace Corebound.SaveSystem
             public int RunStageIndex { get; }
         }
 
+        // Wipes a profile's four save files. The folder is kept so the next run writes into a
+        // clean profile rather than recreating a half-state; the active profile can be deleted too,
+        // and simply comes back empty.
+        public static void DeleteProfile(int index)
+        {
+            var folder = Path.Combine(Application.persistentDataPath, FolderName(index));
+
+            try
+            {
+                if (Directory.Exists(folder))
+                {
+                    foreach (var file in Directory.GetFiles(folder, "*.json"))
+                    {
+                        File.Delete(file);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[ProfileSelection] could not delete profile " + index + ": " + exception.Message);
+                return;
+            }
+
+            // Anything holding cached data for this profile has to drop it, exactly as on a switch.
+            ActiveProfileChanged?.Invoke();
+        }
+
         public static ProfileSummary Summarize(int index)
         {
             var folder = Path.Combine(Application.persistentDataPath, FolderName(index));

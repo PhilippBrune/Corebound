@@ -27,6 +27,26 @@ namespace Corebound.MetaProgression
 
         private ISaveManager SaveManager => SaveManagerResolver.Resolve(_saveManagerSource);
 
+        private void OnEnable()
+        {
+            // Playtest 2026-09-22: switching to an empty profile still showed the old profile's
+            // progression. The service cached the save data from whichever profile was active when
+            // it first loaded and never dropped it.
+            Corebound.SaveSystem.ProfileSelection.ActiveProfileChanged += OnActiveProfileChanged;
+        }
+
+        private void OnDisable()
+        {
+            Corebound.SaveSystem.ProfileSelection.ActiveProfileChanged -= OnActiveProfileChanged;
+        }
+
+        private void OnActiveProfileChanged()
+        {
+            _saveData = null;
+            EnsureLoaded();
+            ProgressionChanged?.Invoke();
+        }
+
         private void Awake()
         {
             EnsureLoaded();

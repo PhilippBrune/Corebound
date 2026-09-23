@@ -101,6 +101,10 @@ namespace Corebound.Gameplay.Bosses
             if (_hitReceiver != null && _bossData != null)
             {
                 _hitReceiver.InitializeRuntime(_bossData.CombatTargetData, _bossData.HitReactionData, _bossData.StatusDefinitions, 1f, true, _bossData.Sprite != null ? Color.white : _bossData.DebugColor);
+
+                // Owner 2026-09-22: a boss takes 90 % less damage from towers, so beating it is
+                // the player's own build being checked rather than a tower line grinding it down.
+                _hitReceiver.SetTowerDamageMultiplier(0.1f);
             }
 
             _projectilePool = _projectileParent != null ? new ProjectilePool(_projectileParent) : null;

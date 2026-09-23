@@ -43,6 +43,21 @@ namespace Corebound.Gameplay.Shop
 
         public int SelectedIndex => _selectedIndex;
 
+        // Mouse support, as on the reward screen: the presenter hit-tests the slots (no EventSystem
+        // in the gameplay scene) and drives selection and purchase through these.
+        public void SelectIndex(int index)
+        {
+            if (!IsOpen || index == _selectedIndex || index < 0 || index >= _currentOffers.Count)
+            {
+                return;
+            }
+
+            _selectedIndex = index;
+            StateChanged?.Invoke();
+        }
+
+        public float OpenedAtUnscaledTime { get; private set; }
+
         public string Title => _activeShopData != null && _activeShopData.PresentationData != null && !string.IsNullOrWhiteSpace(_activeShopData.PresentationData.Title)
             ? _activeShopData.PresentationData.Title
             : (_activeShopData != null ? _activeShopData.DisplayName : LocalizationService.Resolve("Foundry Exchange", "Schmiedebörse"));
@@ -66,7 +81,15 @@ namespace Corebound.Gameplay.Shop
                     return string.Empty;
                 }
 
-                return ResolveOfferDescription(_currentOffers[_selectedIndex]) + LocalizationService.Resolve("  Cost ", "  Kosten ") + ResolveOfferCost(_currentOffers[_selectedIndex]);
+                // Same rule as the reward screen (Reward_Screen.md): the card body carries the
+                // prose, this line carries the numbers.
+                var offer = _currentOffers[_selectedIndex];
+                var effects = offer != null && offer.CardData != null
+                    ? Corebound.Gameplay.Cards.CardEffectDescriber.Describe(offer.CardData)
+                    : string.Empty;
+
+                return (string.IsNullOrWhiteSpace(effects) ? ResolveOfferDescription(offer) : effects)
+                    + LocalizationService.Resolve("   Cost ", "   Kosten ") + ResolveOfferCost(offer);
             }
         }
 
@@ -167,6 +190,7 @@ namespace Corebound.Gameplay.Shop
             _activeShopData = shopData;
             _selectedIndex = Mathf.Clamp(_selectedIndex, 0, _currentOffers.Count - 1);
             IsOpen = true;
+            OpenedAtUnscaledTime = Time.unscaledTime;
             _openedFrame = Time.frameCount;
 
             if (SaveManager != null)
@@ -295,6 +319,12 @@ namespace Corebound.Gameplay.Shop
 
             ShopEvents.RaiseShopOfferSelected(CreateEventArgs(_selectedIndex, false));
             StateChanged?.Invoke();
+        }
+
+        // Mouse click on a slot (the presenter hit-tests, there is no EventSystem in this scene).
+        public void TryPurchaseSelectedOffer()
+        {
+            OnConfirmPressed();
         }
 
         private void OnConfirmPressed()

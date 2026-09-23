@@ -21,10 +21,10 @@ MonoBehaviour:
   _spritePath: Assets/Art/Towers/tower_sentinel_topdown.png
   _spriteRect:
     serializedVersion: 2
-    x: 304
+    x: 305
     y: 138
-    width: 302
-    height: 659
+    width: 301
+    height: 658
   _buildCost: 16
   _range: 6.5
   _fireIntervalSeconds: 0.6
@@ -32,6 +32,10 @@ MonoBehaviour:
   _upgradeLevels:
   - {fileID: 11400000, guid: 96c6403bb8934a4aaaff35080cc5c0c0, type: 2}
   - {fileID: 11400000, guid: 42ca498717634c009dad6c34d282a785, type: 2}
+  - {fileID: 11400000, guid: 158282021b934cb1833ea8ace1060a7f, type: 2}
+  - {fileID: 11400000, guid: c7af3d57fbc043f0b11de7169df71de5, type: 2}
+  - {fileID: 11400000, guid: c125e076f1a846ffbd4ff1b1d8ab4990, type: 2}
+  - {fileID: 11400000, guid: 04dd6c0285e743ad8afc3d731be325d0, type: 2}
   _damageProfile: {fileID: 11400000, guid: e86b620b5ec7475d825388753edb17e6, type: 2}
   _projectile: {fileID: 11400000, guid: 27b38e9489e541ca8f89ab7c56c3388d, type: 2}
   _strengths: Fast swarms. High rate of fire shreds Chasers.

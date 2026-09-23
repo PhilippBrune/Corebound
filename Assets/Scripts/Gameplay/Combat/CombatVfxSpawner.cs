@@ -87,6 +87,27 @@ namespace Corebound.Gameplay.Combat
         // Callable directly by TowerRuntimeController (a pure runtime-constructed object with no
         // scene reference to a live CombatVfxSpawner instance) so tower fire feedback doesn't need
         // its own duplicate sprite-loading/burst-spawning path.
+        // Asset 105: Nova Pulse fires a ring in every direction; without a pulse at the player the
+        // volley reads as scattered shards rather than one deliberate ring.
+        private const string NovaRingSpritePath = "Assets/Art/Combat/VFX/vfx_nova_ring_pulse.png";
+        private static Sprite _novaRingSprite;
+        private static readonly Color NovaRingColor = new Color(0.85f, 0.55f, 1f, 0.85f);
+
+        public static void SpawnNovaRing(Vector2 position)
+        {
+            if (_novaRingSprite == null)
+            {
+                _novaRingSprite = Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(NovaRingSpritePath);
+            }
+
+            if (_novaRingSprite == null)
+            {
+                return;
+            }
+
+            SpawnBurst(position, _novaRingSprite, NovaRingColor, 3.4f, 0.28f, 44, 1f);
+        }
+
         public static void SpawnTowerActivationPulse(Vector2 position)
         {
             EnsureSpritesLoaded();

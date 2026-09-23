@@ -30,6 +30,13 @@ namespace Corebound.Gameplay.Combat
         private bool _hasAliveColorOverride;
         private Color _aliveColorOverride;
         private bool _rejectPlayerAndTowerDamage;
+        private float _towerDamageMultiplier = 1f;
+
+        // Bosses set this to 0.1; nothing else changes it.
+        public void SetTowerDamageMultiplier(float value)
+        {
+            _towerDamageMultiplier = Mathf.Clamp01(value);
+        }
 
         // Optional and unset for enemy/boss receivers - only WaveManager wires this, onto the
         // Core's receiver, via SetIncomingDamageMultiplierSource(). Read live (not cached) so a
@@ -185,6 +192,20 @@ namespace Corebound.Gameplay.Combat
                     damageContext.SourceType,
                     damageContext.DamageKind,
                     damageContext.Amount * incomingMultiplier,
+                    damageContext.HitPoint,
+                    damageContext.HitDirection,
+                    damageContext.StatusEffect, damageContext.IsCritical);
+            }
+
+            // Owner 2026-09-22: "let bosses take 90% less damage from the towers". A boss is a
+            // build check for the player's own weapons; towers should chip at it, not kill it while
+            // the player dodges. Set on the boss receiver only, so normal enemies are unaffected.
+            if (_towerDamageMultiplier < 1f && damageContext.SourceType == DamageSourceType.Tower)
+            {
+                damageContext = new DamageContext(
+                    damageContext.SourceType,
+                    damageContext.DamageKind,
+                    damageContext.Amount * _towerDamageMultiplier,
                     damageContext.HitPoint,
                     damageContext.HitDirection,
                     damageContext.StatusEffect, damageContext.IsCritical);

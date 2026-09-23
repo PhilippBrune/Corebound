@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 527165d7f314774489f69e2354895197, type: 3}
   m_Name: CombatTarget_BossStage2
   m_EditorClassIdentifier:
-  _maxHealth: 65
+  _maxHealth: 162
   _aliveColor: {r: 0.55, g: 0.3, b: 0.9, a: 1}
   _deadColor: {r: 0.2, g: 0.18, b: 0.24, a: 0.85}
   _size: {x: 1.7, y: 1.7}

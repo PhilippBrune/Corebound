@@ -52,9 +52,18 @@ namespace Corebound.MetaProgression
             RewardGranted?.Invoke(grant);
         }
 
+        // Owner 2026-09-22: "Tutorial should not give any Alloy or SP". The guided first run uses
+        // the same systems as a real run, so the payouts have to be refused here rather than in
+        // each caller.
+        private static bool IsTutorialRun(ISaveManager saveManager)
+        {
+            var runSaveData = saveManager != null ? saveManager.LoadRunSaveData() : null;
+            return runSaveData != null && runSaveData.IsTutorialRun;
+        }
+
         public static MetaRewardGrant GrantBossDefeat(ISaveManager saveManager, MetaProgressionDefinitionData definition, int stageIndex, string bossId)
         {
-            if (saveManager == null || definition == null)
+            if (saveManager == null || definition == null || IsTutorialRun(saveManager))
             {
                 return default;
             }
@@ -74,7 +83,7 @@ namespace Corebound.MetaProgression
 
         public static MetaRewardGrant GrantEliteKill(ISaveManager saveManager, MetaProgressionDefinitionData definition)
         {
-            if (saveManager == null || definition == null || definition.EliteKillAlloy <= 0)
+            if (saveManager == null || definition == null || definition.EliteKillAlloy <= 0 || IsTutorialRun(saveManager))
             {
                 return default;
             }

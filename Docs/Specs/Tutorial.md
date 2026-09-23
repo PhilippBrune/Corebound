@@ -128,3 +128,7 @@ Das Tutorial stammt aus der Zeit vor Loadout, Nachladen und Core-Reparatur. Owne
 
 Beide benutzen dieselbe `TutorialStepData`-Struktur wie die bestehenden sechs Schritte und beobachten
 vorhandene Events; Tutorial-Code greift weiterhin nicht in Combat, Player oder Tower ein.
+
+**Keine Meta-Belohnung (2026-09-22).** Ein Tutorial-Run zahlt weder Skill Points noch Legierung.
+`MetaRewardLedger` lehnt jede Auszahlung ab, solange `RunSaveData.IsTutorialRun` gesetzt ist - die
+Prüfung liegt dort und nicht bei den Aufrufern, damit keine Quelle sie vergisst.

@@ -69,6 +69,7 @@ namespace Corebound.UI.MainMenu
                 }
 
                 _profileRowIndex = nextProfile;
+                _profileDeleteArmedIndex = -1;
                 RouteTargetChanged?.Invoke();
                 return true;
             }
@@ -91,6 +92,74 @@ namespace Corebound.UI.MainMenu
         }
 
         private int _profileRowIndex;
+        private int _profileDeleteArmedIndex = -1;
+
+        public int ActivePanelSelectedIndex
+        {
+            get
+            {
+                if (_activePanelData == null)
+                {
+                    return -1;
+                }
+
+                if (_pendingPanelRoute == MainMenuRoute.Profile)
+                {
+                    return _profileRowIndex;
+                }
+
+                return _pendingPanelRoute == MainMenuRoute.NewRun && _startWeaponOptions.Count > 0 ? _startWeaponRowIndex : -1;
+            }
+        }
+
+        // Deleting a profile is two presses on purpose: the first arms it, the second does it, and
+        // moving the selection disarms it again.
+        public bool TryHandleTabSwitch(int direction)
+        {
+            // On the profile panel the same key is "delete", because there is nothing to switch.
+            if (_activePanelData != null && _pendingPanelRoute == MainMenuRoute.Profile)
+            {
+                if (direction < 0)
+                {
+                    OnProfileDeletePressed();
+                }
+
+                return true;
+            }
+
+            if (_activeTarget is Corebound.Settings.SettingsRouteTargetController settings && settings.IsOpen)
+            {
+                settings.SwitchTab(direction);
+                return true;
+            }
+
+            if (_activeTarget is MetaProgression.MetaProgressionRouteTargetController progression && progression.IsOpen)
+            {
+                progression.SwitchTab(direction);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void OnProfileDeletePressed()
+        {
+            if (_activePanelData == null || _pendingPanelRoute != MainMenuRoute.Profile)
+            {
+                return;
+            }
+
+            if (_profileDeleteArmedIndex != _profileRowIndex)
+            {
+                _profileDeleteArmedIndex = _profileRowIndex;
+                RouteTargetChanged?.Invoke();
+                return;
+            }
+
+            ProfileSelection.DeleteProfile(_profileRowIndex + 1);
+            _profileDeleteArmedIndex = -1;
+            RouteTargetChanged?.Invoke();
+        }
 
         // B11: the starting-weapon list, plus the overwrite warning when there is a run to lose.
         private string[] BuildStartWeaponLines()
@@ -106,9 +175,10 @@ namespace Corebound.UI.MainMenu
             for (var index = 0; index < _startWeaponOptions.Count; index++)
             {
                 var weapon = _startWeaponOptions[index];
-                var marker = index == _startWeaponRowIndex ? "> " : "   ";
-                lines[index] = marker + (weapon != null ? weapon.DisplayName : "?")
-                    + (weapon != null && !string.IsNullOrWhiteSpace(weapon.Summary) ? "  -  " + weapon.Summary : string.Empty);
+                // Name plus one short stat line: the full summary wrapped into three lines per
+                // weapon and the rows ran into each other (playtest 2026-09-22, "New Run window not
+                // readable").
+                lines[index] = weapon != null ? weapon.DisplayName + "   " + DescribeStartWeapon(weapon) : "?";
             }
 
             if (warning > 0)
@@ -147,7 +217,7 @@ namespace Corebound.UI.MainMenu
                 for (var index = 0; index < lines.Length; index++)
                 {
                     var summary = ProfileSelection.Summarize(index + 1);
-                    var marker = index == _profileRowIndex ? "> " : "   ";
+    
                     var active = index + 1 == ProfileSelection.ActiveIndex
                         ? LocalizationService.Resolve("  (active)", "  (aktiv)")
                         : string.Empty;
@@ -161,7 +231,10 @@ namespace Corebound.UI.MainMenu
                                 ? LocalizationService.Resolve("  ·  run in stage ", "  ·  Run in Stage ") + summary.RunStageIndex
                                 : string.Empty);
 
-                    lines[index] = marker + LocalizationService.Resolve("Profile ", "Profil ") + (index + 1) + active + "  -  " + detail;
+                    var armed = index == _profileDeleteArmedIndex
+                        ? LocalizationService.Resolve("   [Q again to delete]", "   [Q erneut zum Löschen]")
+                        : string.Empty;
+                    lines[index] = LocalizationService.Resolve("Profile ", "Profil ") + (index + 1) + active + "  -  " + detail + armed;
                 }
 
                 return lines;
@@ -371,6 +444,22 @@ namespace Corebound.UI.MainMenu
                 ? SaveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData())
                 : null;
             StartWeaponOptions.Collect(catalog, saveData, definition, _startWeaponOptions);
+        }
+
+        // "3.4 dmg · 0.85 s · 4 rounds" - enough to compare, short enough for one line.
+        private static string DescribeStartWeapon(Corebound.Gameplay.Weapons.WeaponData weapon)
+        {
+            var damage = weapon.DamageProfile != null ? weapon.DamageProfile.BaseDamage : 0f;
+            var pattern = weapon.AttackPattern;
+
+            if (pattern == null)
+            {
+                return damage.ToString("0.##") + LocalizationService.Resolve(" dmg", " Sch");
+            }
+
+            return damage.ToString("0.##") + LocalizationService.Resolve(" dmg  ·  every ", " Sch  ·  alle ")
+                + pattern.FireIntervalSeconds.ToString("0.##") + "s  ·  "
+                + pattern.MagazineSize + LocalizationService.Resolve(" rounds", " Schuss");
         }
 
         private int ResolvePreferredStartWeaponRow()

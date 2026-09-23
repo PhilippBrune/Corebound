@@ -1313,7 +1313,7 @@ für geliefertes Artwork").
 
 Target: Assets/Art/Combat/Projectiles/projectile_sheet_weapons_02.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22 and wired. Six rows of frames; each weapon takes the first frame of its row by pixel rect, because the rows do not share one cell size. Animating the remaining frames is still open.
 
 Needed because:
 
@@ -1330,7 +1330,7 @@ Create a 2D top-down projectile sprite sheet on a 6-row by 4-column grid, every 
 
 Target: Assets/Art/UI/HUD/weapon_icon_sheet.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22 and wired (3 x 3 grid, one cell per weapon, HUD slot tiles and the loadout panel).
 
 Needed because:
 
@@ -1346,7 +1346,7 @@ Create a 2D icon sheet on a 3-row by 3-column grid, every cell exactly the same 
 
 Target: Assets/Art/Combat/VFX/vfx_impact_flame_frost.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22, DEFECTIVE - the whole image is opaque: the transparency checkerboard is painted into the pixels (0 % transparent, corner alpha 255). Not wired; Burn and Freeze keep the old effects. Needs a re-render with a real alpha channel.
 
 Needed because:
 
@@ -1361,7 +1361,7 @@ Create a 2D effect sprite sheet on a 2-row by 4-column grid, every cell exactly 
 
 Target: Assets/Art/Combat/VFX/vfx_impact_splash_burst.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22, DEFECTIVE - same problem: fully opaque, checkerboard baked in. Not wired; the Launcher burst still uses the generic death burst.
 
 Needed because:
 
@@ -1376,7 +1376,7 @@ Create a 2D top-down explosion sprite sheet on a single row of five frames, ever
 
 Target: Assets/Art/Combat/VFX/vfx_nova_ring_pulse.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED 2026-09-22 and wired (Nova Pulse ring on fire).
 
 Needed because:
 

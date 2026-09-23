@@ -69,7 +69,9 @@ namespace Corebound.UI.MainMenu
                 {
                     var route = VisibleEntries[index] != null ? VisibleEntries[index].Route : MainMenuRoute.Quit;
 
-                    if (route != MainMenuRoute.Continue && route != MainMenuRoute.NewRun)
+                    // Owner 2026-09-22: Tutorial gets its own line again, beside Continue and New
+                    // Run, instead of sitting in the row of global routes.
+                    if (route != MainMenuRoute.Continue && route != MainMenuRoute.NewRun && route != MainMenuRoute.Tutorial)
                     {
                         break;
                     }

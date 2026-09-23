@@ -186,3 +186,15 @@ den Boss besiegt und danach scheitert, seine Punkte behält.
 **Hinweis (2026-09-22):** Kommt die garantierte Weapon-Card bei vollem Loadout an, wartet sie als
 *pending*. Die nächste Stage beginnt ohne Intermission, die Waffe kann also erst nach deren erster
 Welle platziert werden. Solange eine Waffe wartet, werden keine weiteren Weapon-Cards angeboten.
+
+---
+
+## Boss-Widerstand gegen Tower (2026-09-22)
+
+Owner-Entscheidung: Ein Boss hat **2.5x so viel Health** wie zuvor (Stage 1-5: 100 / 162 / 225 /
+300 / 400) und nimmt **90 % weniger Schaden von Towers**
+(`CombatHitReceiver.SetTowerDamageMultiplier(0.1f)`, nur auf dem Boss-Receiver).
+
+Begründung: Der Boss ist laut diesem Dokument ein Build-Check. Solange eine Turmlinie mitschießt,
+prüft er vor allem, wie viele Türme stehen. Mit dem Widerstand entscheidet die Waffenwahl des
+Spielers, während Türme weiterhin die Helfer-Enemies abräumen.

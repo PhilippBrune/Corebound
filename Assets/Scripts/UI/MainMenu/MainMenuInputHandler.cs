@@ -36,6 +36,8 @@ namespace Corebound.UI.MainMenu
             InputReader.ApplyContext(_inputContext);
             InputReader.ResetInputState();
             InputReader.NavigatePerformed += OnNavigatePerformed;
+            InputReader.PreviousPressed += OnPreviousPressed;
+            InputReader.NextPressed += OnNextPressed;
             InputReader.ConfirmPressed += OnConfirmPressed;
             InputReader.CancelPressed += OnCancelPressed;
         }
@@ -48,8 +50,27 @@ namespace Corebound.UI.MainMenu
             }
 
             InputReader.NavigatePerformed -= OnNavigatePerformed;
+            InputReader.PreviousPressed -= OnPreviousPressed;
+            InputReader.NextPressed -= OnNextPressed;
             InputReader.ConfirmPressed -= OnConfirmPressed;
             InputReader.CancelPressed -= OnCancelPressed;
+        }
+
+        // Q / LB: the profile panel's secondary action (delete). Every other panel ignores it.
+        private void OnPreviousPressed()
+        {
+            if (RouteTargetController != null && RouteTargetController.IsRouteTargetOpen)
+            {
+                RouteTargetController.TryHandleTabSwitch(-1);
+            }
+        }
+
+        private void OnNextPressed()
+        {
+            if (RouteTargetController != null && RouteTargetController.IsRouteTargetOpen)
+            {
+                RouteTargetController.TryHandleTabSwitch(1);
+            }
         }
 
         private void OnNavigatePerformed(Vector2 navigationInput)

@@ -17,18 +17,25 @@ MonoBehaviour:
   _displayNameDe: Unterstützungsturm
   _description: Future support-focused tower unlocked through Meta Progression.
   _descriptionDe: Zukünftiger, auf Unterstützung ausgerichteter Turm, freigeschaltet über Meta Progression.
-  _sprite: {fileID: 21300000, guid: 88f496efad7915545a45dd11ea56bcb1, type: 3}
+  _sprite: {fileID: 0}
   _spritePath: Assets/Art/Towers/tower_support_topdown.png
   _spriteRect:
     serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
+    x: 398
+    y: 31
+    width: 318
+    height: 507
   _buildCost: 18
   _range: 6.5
   _fireIntervalSeconds: 1.2
   _requiredUnlockId: unlock_tower_support
+  _upgradeLevels:
+  - {fileID: 11400000, guid: eabb76e05d4e4fa7bcbefca78a987512, type: 2}
+  - {fileID: 11400000, guid: 7f32492b4776408fa114ef6abc7c589f, type: 2}
+  - {fileID: 11400000, guid: a66bcaf2dda043038969396a89f12e8f, type: 2}
+  - {fileID: 11400000, guid: 05ab2cd20c2b410b8b3fcf8146be87c1, type: 2}
+  - {fileID: 11400000, guid: 77989fb4feb34b57b91aa3d2c58219ee, type: 2}
+  - {fileID: 11400000, guid: 8eb71396d29f442298ab70c6e22643d0, type: 2}
   _damageProfile: {fileID: 11400000, guid: 0d9ee73df45c4a719b2cf0a3c8744dcf, type: 2}
   _projectile: {fileID: 11400000, guid: edbf4f0d9d044cc8a0c7f3ddc3426372, type: 2}
   _strengths: Everything else. Pulses resources and boosts the network.

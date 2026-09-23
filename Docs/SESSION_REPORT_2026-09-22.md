@@ -239,3 +239,61 @@ the player's own weapons do about three quarters of the damage.
   wired and compile, but no autopilot path exercises them yet.
 - Magnetise and Wider Draft need a profile that has bought those nodes.
 - Assets 101-105 (weapon projectiles, icons, impacts) are specified, not created.
+
+---
+
+# Fourth pass — playtest 2026-09-23
+
+## Delivered art, 101-105
+
+101 (projectile sheet) and 102 (weapon icons) are wired: each new weapon draws its own projectile by
+pixel rect (the sheet's rows do not share a cell size) and every weapon takes its cell of the 3x3
+icon sheet. 105 (nova ring) plays when a ring-firing weapon shoots.
+
+**103 and 104 are defective and not wired:** `vfx_impact_flame_frost.png` and
+`vfx_impact_splash_burst.png` are fully opaque - the transparency checkerboard is painted into the
+pixels (0 % transparent, corner alpha 255). This is the fourth and fifth time this has happened, and
+it is exactly what the new validator check exists for. Both need a re-render.
+
+## Playtest items
+
+| Item | Cause / change |
+| --- | --- |
+| Settings and Profile show an empty list on the first press | The known deferred-Destroy trap: rows were destroyed and recreated under the same names in one frame, so the new rows attached to the doomed ones. The first press *did* move the selection, which is why the second press looked like it moved two. Fixed in both presenters (the Progression screen already had the fix). |
+| Active profile not visible | A profile badge sits in the main menu's top-right corner with the profile number and its Ascension rank, or "empty". |
+| Empty profile still showed progression | `MetaProgressionService` cached the save data of whichever profile loaded first. It now drops its cache and reloads when the active profile changes. |
+| No way to delete a profile | Q / LB on the Profile screen arms the delete, a second press does it, moving the selection disarms it. |
+| Selection not highlighted | The selected row is bold, in the skin's selected colour, with a `>` marker. |
+| Settings not tabbed | Settings is one tab per category now, switched with Q / Tab or LB / RB like every other tabbed screen. |
+| New Run window unreadable | Rows had a fixed 44 px height while their text wrapped to three lines, so they overlapped. Rows size themselves now, and a weapon row is name plus one stat line instead of its full summary. |
+| Fullscreen hides part of the arena | The camera contains the arena again instead of cropping to it. The morning's "blue frame" fix had made it crop; the frame is now filled by backdrop tiles. |
+| Shop missing the reward screen's changes | Foundry Exchange got all three: real numbers in the footer line, mouse hover and click, and light titles on the dark Epic/Legendary plaques. |
+| Tower sizes uneven | Every tower now carries a cropped sprite rect, so the shared fit size produces the Mortar's on-screen size for all of them. |
+| Random Scrap in the Intermission | Factory tower-pulse nodes ran on a wall clock. Production is limited to Combat and BossCombat. |
+| Tower level cap 3 | Towers go to level 7. New levels cost 4x to 22x the build cost. |
+| Progression not scrollable with the wheel | The ScrollRect never received pointer events (no raycaster on that canvas), so the presenter drives it directly from the mouse wheel when the pointer is over the list. |
+| Only branch tabs had icons | Unlocks, Upgrades and Ascension show emblems too (Alloy icon, weapon icon, Ascension badge). |
+| Upgrades offered locked weapons | `IsWeaponUnlocked` only matched licences that carry a weapon reference, so Railgun, Nova and Launcher counted as owned. It now shares one rule with the New Run panel. |
+| Tutorial back as its own entry | Tutorial is a primary menu line again, beside Continue and New Run. |
+| Bosses too easy | Boss health x2.5 (100 / 162 / 225 / 300 / 400) and bosses take 90 % less damage from towers. |
+| Tutorial paid meta currency | `MetaRewardLedger` refuses every payout during a tutorial run. |
+
+## Verified
+
+One full autopilot run on profile 1, no exceptions: the shop opens once per stage after wave 3, the
+pause menu shows four tabs including Settings, the run summary prints, and the boss survived the
+autopilot for the first time (`damage[weapons=301 (84%) towers=56 (16%)]` - the tower share dropped
+as intended).
+
+The autopilot needed two fixes of its own: it now dismisses blocking tutorial beats (it sat in front
+of the first one until the time cap), and the run summary counts damage by source.
+
+**Found while testing:** the active profile was still Profile 3 from the owner's session, and an
+empty profile has not seen the tutorial, so New Run correctly routed into the guided run. That is
+the profile system working, not a bug. The owner's profile choice was restored afterwards.
+
+## Not verified
+
+Profile delete, the start-weapon choice, the reward reroll, wheel scrolling and the pause settings
+tab all compile and render but have no autopilot path. Tower levels 4-7 and the new stage 2-5 wave
+sets are unplayed.

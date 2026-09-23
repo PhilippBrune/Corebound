@@ -186,6 +186,14 @@ namespace Corebound.Settings
 
                 if (Application.isPlaying)
                 {
+                    // Destroy is deferred and ProceduralUIFactory reuses a child it finds by name,
+                    // so a row rebuilt in the same frame attaches to the doomed one and vanishes
+                    // with it. Playtest 2026-09-22: "pressing down once the content of the menus is
+                    // empty; pressing it again shows all and moves two slots" - the first press did
+                    // move the selection, the screen just rendered nothing.
+                    child.name = child.name + "_Discarded";
+                    child.gameObject.SetActive(false);
+                    child.SetParent(null, false);
                     Destroy(child.gameObject);
                 }
                 else

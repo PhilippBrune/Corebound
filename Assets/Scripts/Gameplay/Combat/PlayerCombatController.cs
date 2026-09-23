@@ -298,6 +298,11 @@ namespace Corebound.Gameplay.Combat
             var spreadMultiplier = modifiers.SpreadAngleMultiplier * upgrades.GetReductionMultiplier(weapon.WeaponId, UpgradableStat.Accuracy);
             var shotIndex = 0;
 
+            if (modifiers.FullRing)
+            {
+                CombatVfxSpawner.SpawnNovaRing(transform.position);
+            }
+
             _weaponPatternResolver.ForEachShotDirection(direction, pattern, modifiers.AdditionalProjectiles, spreadMultiplier, modifiers.FullRing, shotDirection =>
             {
                 if (CombatProjectile.ActivePlayerProjectileCount >= budget)

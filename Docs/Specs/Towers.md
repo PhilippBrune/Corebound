@@ -128,7 +128,10 @@ Keine offenen Fragen. Die frühere Frage ("reicht die Textzeile, oder braucht di
 Festgelegte Entscheidungen:
 
 - Towers werden **nur während einer Intermission** gebaut und verbessert (Owner-Entscheidung 2026-09-22; vorher stand hier "auch während aktiver Waves", was der Code nie so umgesetzt hat). Begründung wie bei der Core-Reparatur: Bauen mitten in der Welle macht aus jeder Bedrohung ein Anhalten-und-Bezahlen statt einer Positionierungsentscheidung.
-- Jeder Tower besitzt im ersten Scope drei Stufen: Basiszustand plus zwei Upgrades.
+- Jeder Tower besitzt **sieben Stufen**: Basiszustand plus sechs Upgrades (Owner 2026-09-22; vorher
+  drei). Die Kosten steigen steil - Stufe 4 kostet das Vierfache der Baukosten, Stufe 7 das
+  Zweiundzwanzigfache -, damit späte Stufen eine echte Investitionsentscheidung gegen Waffen,
+  Karten und Core-Reparatur sind.
 - Ein kontrollierter Rückbau oder Refund für Towers ist nicht Teil des ersten spielbaren Umfangs.
 - Sobald mehr als ein Tower-Typ freigeschaltet ist, braucht der Build-Flow eine explizite Typ-Auswahl (siehe „Tower-Typ-Auswahl" oben) — das ist jetzt mit dem dritten Tower-Typ (Mortar) real geworden und kein rein theoretischer Fall mehr.
 
@@ -163,3 +166,13 @@ the first upgrade and 2.2x for the second.
 **Permanent per-tower stat upgrades** are a separate, between-runs system funded by Alloy. See
 [Upgrades.md](Upgrades.md). In-run upgrade levels and permanent upgrades compose in the order
 base -> permanent upgrades -> in-run level -> card modifiers.
+
+---
+
+## Darstellungsgröße (2026-09-22)
+
+Jeder Tower wird über `DebugSpriteFactory.FitTransformToSprite` auf dieselbe Weltgröße gebracht.
+Damit das auch sichtbar stimmt, trägt jeder Tower in seinen Daten einen zugeschnittenen
+`_spriteRect`: die Quelltexturen haben unterschiedlich viel transparenten Rand, und ohne Zuschnitt
+skaliert dieser Rand mit - der Grund, warum der Mortar deutlich größer wirkte als Ballista und
+Support. Ein neuer Tower braucht deshalb ein randloses Sprite oder seinen eigenen Rect.

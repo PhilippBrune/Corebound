@@ -20,6 +20,7 @@ namespace Corebound.Settings
 
         private bool _isOpen;
         private int _selectedOptionIndex;
+        private int _tabIndex;
         private SettingsSaveData _openingSnapshot;
         private SettingsSaveData _workingCopy;
 
@@ -150,27 +151,61 @@ namespace Corebound.Settings
 
             var categories = _settingsManager.DefinitionData.Categories;
 
-            for (var categoryIndex = 0; categoryIndex < categories.Length; categoryIndex++)
+            if (categories == null || categories.Length == 0)
             {
-                _rows.Add(DisplayRow.CreateCategory(categories[categoryIndex].Label));
-
-                var options = categories[categoryIndex].Options;
-
-                if (options == null)
-                {
-                    continue;
-                }
-
-                for (var optionIndex = 0; optionIndex < options.Length; optionIndex++)
-                {
-                    var flatIndex = _optionLocations.Count;
-                    _optionLocations.Add(new OptionLocation(categoryIndex, optionIndex));
-                    _rows.Add(DisplayRow.CreateOption(
-                        options[optionIndex].Label,
-                        _settingsManager.GetDisplayValue(_workingCopy, options[optionIndex]),
-                        flatIndex == _selectedOptionIndex));
-                }
+                return;
             }
+
+            _tabIndex = Mathf.Clamp(_tabIndex, 0, categories.Length - 1);
+            _rows.Add(DisplayRow.CreateCategory(BuildTabStrip(categories)));
+
+            var activeOptions = categories[_tabIndex].Options;
+
+            if (activeOptions == null)
+            {
+                return;
+            }
+
+            for (var optionIndex = 0; optionIndex < activeOptions.Length; optionIndex++)
+            {
+                var flatIndex = _optionLocations.Count;
+                _optionLocations.Add(new OptionLocation(_tabIndex, optionIndex));
+                _rows.Add(DisplayRow.CreateOption(
+                    activeOptions[optionIndex].Label,
+                    _settingsManager.GetDisplayValue(_workingCopy, activeOptions[optionIndex]),
+                    flatIndex == _selectedOptionIndex));
+            }
+        }
+
+        private string BuildTabStrip(SettingsDefinitionData.CategoryDefinition[] categories)
+        {
+            var builder = new System.Text.StringBuilder(96);
+
+            for (var index = 0; index < categories.Length; index++)
+            {
+                builder.Append(index > 0 ? "      " : string.Empty);
+                builder.Append(index == _tabIndex ? "[" + categories[index].Label + "]" : categories[index].Label);
+            }
+
+            return builder.ToString();
+        }
+
+        // Q / Tab and LB / RB, the same switch as the pause menu and the Progression screen.
+        public void SwitchTab(int direction)
+        {
+            var categories = _settingsManager != null && _settingsManager.DefinitionData != null
+                ? _settingsManager.DefinitionData.Categories
+                : null;
+
+            if (!_isOpen || categories == null || categories.Length == 0)
+            {
+                return;
+            }
+
+            _tabIndex = (_tabIndex + direction + categories.Length) % categories.Length;
+            _selectedOptionIndex = 0;
+            RebuildRows();
+            TargetChanged?.Invoke();
         }
 
         private bool TryGetSelectedOption(out SettingsDefinitionData.OptionDefinition optionDefinition)

@@ -533,6 +533,22 @@ namespace Corebound.EditorTools
         {
             _elapsed += Time.deltaTime;
             TickRunSummary();
+
+            // A tutorial beat blocks everything until it is confirmed. It can appear in Combat,
+            // where DriveNonCombat never runs, so it is handled before the step machine - without
+            // this the run sat in front of the first beat until the time cap (2026-09-23).
+            if (Corebound.Gameplay.Tutorial.TutorialService.IsBeatShowing && _inputReader != null)
+            {
+                _confirmTimer += Time.deltaTime;
+
+                if (_confirmTimer >= 0.6f)
+                {
+                    _confirmTimer = 0f;
+                    _inputReader.DebugRaiseConfirm();
+                }
+
+                return;
+            }
             _stepTimer += Time.deltaTime;
             _confirmTimer += Time.deltaTime;
 

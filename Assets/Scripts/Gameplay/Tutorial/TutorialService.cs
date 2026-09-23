@@ -47,6 +47,10 @@ namespace Corebound.Gameplay.Tutorial
         private readonly HashSet<int> _shownBeatStepIndices = new HashSet<int>();
         private bool _isBeatShowing;
 
+        // A blocking beat swallows Confirm until it is dismissed; the autopilot needs to see that
+        // to get past it (it otherwise waits out the whole run cap in front of the first beat).
+        public static bool IsBeatShowing { get; private set; }
+
         private void Awake()
         {
             var runSaveData = SaveManager != null ? SaveManager.LoadRunSaveData() : null;
@@ -128,6 +132,7 @@ namespace Corebound.Gameplay.Tutorial
             }
 
             _isBeatShowing = _waveStatePresenter.TryShowTutorialBeat(step.BeatTitle, step.BeatBody, OnTutorialBeatDismissed);
+            IsBeatShowing = _isBeatShowing;
 
             if (_isBeatShowing)
             {
@@ -146,6 +151,8 @@ namespace Corebound.Gameplay.Tutorial
         private void OnTutorialBeatDismissed()
         {
             _isBeatShowing = false;
+            IsBeatShowing = false;
+            IsBeatShowing = false;
 
             if (_promptRoot != null && !_isComplete)
             {

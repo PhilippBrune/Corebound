@@ -17,14 +17,14 @@ MonoBehaviour:
   _displayNameDe: Mörserturm
   _description: Heavy single-target support tower that hits far harder per shot than the Ballista, at a much slower fire rate.
   _descriptionDe: Schwerer Einzelziel-Unterstützungsturm, der pro Schuss deutlich härter trifft als die Ballista, dafür mit viel niedrigerer Feuerrate.
-  _sprite: {fileID: 21300000, guid: 2d7fda95098c4e745abfea4c0f27ae69, type: 3}
+  _sprite: {fileID: 0}
   _spritePath: Assets/Art/Towers/tower_mortar_topdown.png
   _spriteRect:
     serializedVersion: 2
-    x: 166
-    y: 150
-    width: 578
-    height: 624
+    x: 168
+    y: 152
+    width: 574
+    height: 620
   _buildCost: 20
   _range: 6
   _fireIntervalSeconds: 2
@@ -32,6 +32,10 @@ MonoBehaviour:
   _upgradeLevels:
   - {fileID: 11400000, guid: e32bf99b716e4efebc5da80b8b509349, type: 2}
   - {fileID: 11400000, guid: 2c482f5372bb4b2d976d1c8aca50cf3e, type: 2}
+  - {fileID: 11400000, guid: 086e40d1a7434a5cbb688454e698b57a, type: 2}
+  - {fileID: 11400000, guid: fb2eaec73283494ea774f2a977c94952, type: 2}
+  - {fileID: 11400000, guid: d6673aae2ecd4cfeb9d901a584c779fc, type: 2}
+  - {fileID: 11400000, guid: eb98d0514a0a4fd3ac962040993d2d4f, type: 2}
   _damageProfile: {fileID: 11400000, guid: 7789dc26dc9d4ff1b94a17c315cb7613, type: 2}
   _projectile: {fileID: 11400000, guid: 6ef0cf92ba224f8d8d9318a587f6a11b, type: 2}
   _strengths: Grouped enemies. Area damage clears packed waves.

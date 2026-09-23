@@ -33,6 +33,47 @@ namespace Corebound.MetaProgression
         private RectTransform _panelRect;
         private VerticalLayoutGroup _rowLayout;
         private ScrollRect _scrollRect;
+
+        // The menu scene's EventSystem never reaches this canvas (no raycaster on it, and the
+        // gameplay scene has none at all), so the ScrollRect gets no wheel events of its own.
+        // Driving it directly is the same manual hit-test the pause menu already uses for hover.
+        private void Update()
+        {
+            if (_controller == null || !_controller.IsOpen || _scrollRect == null || _scrollRect.content == null)
+            {
+                return;
+            }
+
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+
+            if (mouse == null)
+            {
+                return;
+            }
+
+            var scroll = mouse.scroll.ReadValue().y;
+
+            if (Mathf.Abs(scroll) < 0.01f)
+            {
+                return;
+            }
+
+            var viewport = _scrollRect.viewport;
+
+            if (viewport != null && !RectTransformUtility.RectangleContainsScreenPoint(viewport, mouse.position.ReadValue(), null))
+            {
+                return;
+            }
+
+            var content = _scrollRect.content;
+            var viewportHeight = viewport != null ? viewport.rect.height : 0f;
+            var maxScroll = Mathf.Max(0f, content.rect.height - viewportHeight);
+            var position = content.anchoredPosition;
+            position.y = Mathf.Clamp(position.y - scroll * WheelScrollStep, 0f, maxScroll);
+            content.anchoredPosition = position;
+        }
+
+        private const float WheelScrollStep = 0.6f;
         private Text _titleText;
         private Text _currencyText;
         private Text _skillPointText;
@@ -231,6 +272,18 @@ namespace Corebound.MetaProgression
             _currencyText.text = _controller.AlloyText;
             _skillPointText.text = _controller.SkillPointText;
             _ascensionText.text = _controller.AscensionText;
+            var iconPath = _controller.ActiveTabIconPath;
+
+            if (!string.IsNullOrWhiteSpace(iconPath))
+            {
+                var tabSprite = _controller.ActiveTabIconIsWeaponSheet
+                    ? Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectAtlasCellSprite(iconPath, 0, 0, 3, 3)
+                    : Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(iconPath);
+                _branchEmblem.sprite = tabSprite;
+                _branchEmblem.enabled = tabSprite != null;
+                return;
+            }
+
             var branch = _controller.ActiveBranchIndex;
             var emblem = branch >= 0 && branch < _branchSprites.Length ? _branchSprites[branch] : null;
             _branchEmblem.sprite = emblem;

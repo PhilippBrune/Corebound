@@ -17,14 +17,14 @@ MonoBehaviour:
   _displayNameDe: Ballistenturm
   _description: Reliable single-target support tower for the first Stage.
   _descriptionDe: Zuverlässiger Einzelziel-Unterstützungsturm für die erste Stage.
-  _sprite: {fileID: 21300000, guid: 9a3ef56cb96f29a469e713d6c306924d, type: 3}
+  _sprite: {fileID: 0}
   _spritePath: Assets/Art/Towers/tower_ballista_topdown.png.png
   _spriteRect:
     serializedVersion: 2
-    x: 0
-    y: 0
-    width: 0
-    height: 0
+    x: 360
+    y: 31
+    width: 466
+    height: 458
   _buildCost: 14
   _range: 7
   _fireIntervalSeconds: 1.05
@@ -32,6 +32,10 @@ MonoBehaviour:
   _upgradeLevels:
   - {fileID: 11400000, guid: 4abce1c640f54b4bb2e0f93875f3f76d, type: 2}
   - {fileID: 11400000, guid: d9b07f6c35bb4df9bbca22b4d7d3e14f, type: 2}
+  - {fileID: 11400000, guid: 8d9df20f085e4e5ea88b825562508ea6, type: 2}
+  - {fileID: 11400000, guid: c04d9979b3004841bdf1340bff296754, type: 2}
+  - {fileID: 11400000, guid: 7e212fbdae0f43638f9bfd233ccc4a98, type: 2}
+  - {fileID: 11400000, guid: f0d1fc988b53423da4f70d6efd1cf2c8, type: 2}
   _damageProfile: {fileID: 11400000, guid: 69f70f457c6d4411e967afe4bdd66c72, type: 2}
   _projectile: {fileID: 11400000, guid: d15088a6b81b4927b674572c54fdd0c8, type: 2}
   _strengths: Single hard targets. Reliable damage on Bruisers and bosses.

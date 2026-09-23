@@ -151,3 +151,14 @@ active node count, whether an amplifier is live, and what the next tier needs - 
 purpose: knowing that two more towers would tier the chain up is the investment decision the
 Factory exists to create. This closes vision Section 5.5's requirement that the player be able
 to recognise a system is working.
+
+---
+
+## Produktion läuft nur im Kampf (2026-09-22)
+
+Playtest: *"I get random Scrap in the intermission ... it should not be the case."* Tower-Pulse-
+Knoten liefen auf einer Wanduhr und tickten deshalb auch während einer Intermission, ohne dass auf
+dem Bildschirm etwas dazu passierte.
+
+`FactoryService` produziert jetzt ausschließlich in `WaveState.Combat` und `WaveState.BossCombat`.
+Das passt auch zum Rest der Spec: Produktion ist Teil des Kämpfens, nicht des Wartens.

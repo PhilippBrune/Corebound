@@ -25,6 +25,8 @@ namespace Corebound.UI.MainMenu
         // about 1006 units of height, leaving ~460 for the list, which needs 604 at full size.
         // Entries now shrink to fit (down to this height), recomputed when the screen changes.
         private const float MinEntryHeight = 46f;
+        private const float ProfileBadgeWidth = 360f;
+        private const float ProfileBadgeHeight = 76f;
         private const float SecondaryRowBottom = 118f;
         private const float SecondaryRowHeight = 96f;
         private const float SecondaryRowSpacing = 12f;
@@ -59,6 +61,7 @@ namespace Corebound.UI.MainMenu
         private MainMenuGlyphHintBar _glyphHintBar;
         private VerticalLayoutGroup _menuLayout;
         private GridLayoutGroup _secondaryLayout;
+        private Text _profileText;
         private RectTransform _secondaryRect;
         private Font _font;
         private Sprite _backgroundSprite;
@@ -196,6 +199,12 @@ namespace Corebound.UI.MainMenu
 
             _statusText = CreateText("Status", statusPanel.rectTransform, StatusFontSize, TextAnchor.MiddleLeft, ResolveStatusTextColor());
             StretchToParent(_statusText.rectTransform, Vector2.zero, Vector2.one, new Vector2(56f, 18f), new Vector2(-56f, -18f));
+
+            // Which profile you are about to play on, always visible (playtest 2026-09-22).
+            var profilePanel = CreateImage("ProfilePanel", _rootRect, _buttonFrameSprite, ResolveIdleFrameTint(), ResolvePanelImageType(_buttonFrameSprite));
+            SetAnchoredBox(profilePanel.rectTransform, new Vector2(1f, 1f), new Vector2(-HeaderLeft - ProfileBadgeWidth, -PromptTop), new Vector2(ProfileBadgeWidth, ProfileBadgeHeight));
+            _profileText = CreateText("ProfileLabel", profilePanel.rectTransform, StatusFontSize, TextAnchor.MiddleCenter, ResolvePromptTextColor());
+            StretchToParent(_profileText.rectTransform, Vector2.zero, Vector2.one, new Vector2(40f, 16f), new Vector2(-40f, -16f));
 
             var glyphHintObject = new GameObject("GlyphHints", typeof(RectTransform), typeof(MainMenuGlyphHintBar));
             glyphHintObject.transform.SetParent(_rootRect, false);
@@ -368,6 +377,16 @@ namespace Corebound.UI.MainMenu
             }
 
             _statusText.text = ResolveStatusText(introVisible);
+
+            if (_profileText != null)
+            {
+                var index = Corebound.SaveSystem.ProfileSelection.ActiveIndex;
+                var summary = Corebound.SaveSystem.ProfileSelection.Summarize(index);
+                _profileText.text = LocalizationService.Resolve("Profile ", "Profil ") + index
+                    + (summary.IsUsed
+                        ? "  ·  " + LocalizationService.Resolve("Ascension ", "Aufstieg ") + summary.AscensionRank
+                        : "  ·  " + LocalizationService.Resolve("empty", "leer"));
+            }
 
             if (_glyphHintBar != null)
             {

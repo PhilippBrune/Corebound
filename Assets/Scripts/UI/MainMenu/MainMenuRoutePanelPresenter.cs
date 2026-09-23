@@ -185,6 +185,14 @@ namespace Corebound.UI.MainMenu
 
                 if (Application.isPlaying)
                 {
+                    // Destroy is deferred and ProceduralUIFactory reuses a child it finds by name,
+                    // so a row rebuilt in the same frame attaches to the doomed one and vanishes
+                    // with it. Playtest 2026-09-22: "pressing down once the content of the menus is
+                    // empty; pressing it again shows all and moves two slots" - the first press did
+                    // move the selection, the screen just rendered nothing.
+                    child.name = child.name + "_Discarded";
+                    child.gameObject.SetActive(false);
+                    child.SetParent(null, false);
                     Destroy(child.gameObject);
                 }
                 else
@@ -198,12 +206,22 @@ namespace Corebound.UI.MainMenu
                 return;
             }
 
+            var selectedIndex = RouteTargetController != null ? RouteTargetController.ActivePanelSelectedIndex : -1;
+
             for (var index = 0; index < detailLines.Length; index++)
             {
-                var detailText = CreateText("Detail" + index, _detailLayout.transform as RectTransform, DetailFontSize, FontStyle.Normal, _skinData != null ? _skinData.IdleLabelColor : Color.white, TextAnchor.UpperLeft);
-                detailText.text = "- " + detailLines[index];
-                var layoutElement = detailText.gameObject.AddComponent<LayoutElement>();
-                layoutElement.preferredHeight = 44f;
+                var isSelected = index == selectedIndex;
+                var color = isSelected
+                    ? (_skinData != null ? _skinData.SelectedLabelColor : Color.white)
+                    : (_skinData != null ? _skinData.IdleLabelColor : Color.white);
+                var detailText = CreateText("Detail" + index, _detailLayout.transform as RectTransform, DetailFontSize, isSelected ? FontStyle.Bold : FontStyle.Normal, color, TextAnchor.UpperLeft);
+                detailText.text = (isSelected ? "> " : "- ") + detailLines[index];
+                detailText.horizontalOverflow = HorizontalWrapMode.Wrap;
+                detailText.verticalOverflow = VerticalWrapMode.Overflow;
+
+                // No LayoutElement: with childControlHeight the group then uses the text's own
+                // preferred height. A fixed 44 px made a wrapped row overlap its neighbours, which
+                // is what made the New Run panel unreadable (playtest 2026-09-22).
                 _detailTexts.Add(detailText);
             }
         }
