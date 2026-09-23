@@ -29,6 +29,20 @@ namespace Corebound.Gameplay.Enemies
         private const string BruiserStage3SpritePath = "Assets/Art/Characters/Enemies/enemy_bruiser_stage3_topdown.png";
         private const string BruiserStage4SpritePath = "Assets/Art/Characters/Enemies/enemy_bruiser_stage4_topdown.png";
         private const string BruiserStage5SpritePath = "Assets/Art/Characters/Enemies/enemy_bruiser_stage5_topdown.png";
+
+        // Assets 75-84: the Zone Denier and Relay Warden art was delivered on 2026-09-21 but never
+        // referenced or mirrored, so both roles still rendered a tinted chaser/ranged sheet and
+        // 10_OPEN_POINTS called them missing. Same per-stage pattern as the three older roles.
+        private const string AreaControlSpritePath = "Assets/Art/Characters/Enemies/enemy_zone_denier_topdown.png";
+        private const string AreaControlStage2SpritePath = "Assets/Art/Characters/Enemies/enemy_zone_denier_stage2_topdown.png";
+        private const string AreaControlStage3SpritePath = "Assets/Art/Characters/Enemies/enemy_zone_denier_stage3_topdown.png";
+        private const string AreaControlStage4SpritePath = "Assets/Art/Characters/Enemies/enemy_zone_denier_stage4_topdown.png";
+        private const string AreaControlStage5SpritePath = "Assets/Art/Characters/Enemies/enemy_zone_denier_stage5_topdown.png";
+        private const string SupportSpritePath = "Assets/Art/Characters/Enemies/enemy_relay_warden_topdown.png";
+        private const string SupportStage2SpritePath = "Assets/Art/Characters/Enemies/enemy_relay_warden_stage2_topdown.png";
+        private const string SupportStage3SpritePath = "Assets/Art/Characters/Enemies/enemy_relay_warden_stage3_topdown.png";
+        private const string SupportStage4SpritePath = "Assets/Art/Characters/Enemies/enemy_relay_warden_stage4_topdown.png";
+        private const string SupportStage5SpritePath = "Assets/Art/Characters/Enemies/enemy_relay_warden_stage5_topdown.png";
         // Playtest request (2026-09-16): use the actual bolt sprite as the telegraph instead of the
         // separate ranged_pressure_telegraph.png art, so the "ghost" that flies toward the target
         // during the windup (see ShowTelegraph()) looks identical to the real shot that follows it,
@@ -861,6 +875,24 @@ namespace Corebound.Gameplay.Enemies
                         case "theme_stage_04": return BruiserStage4SpritePath;
                         case "theme_stage_05": return BruiserStage5SpritePath;
                         default: return BruiserSpritePath;
+                    }
+                case "enemy_area_control":
+                    switch (stageThemeId)
+                    {
+                        case "theme_stage_02": return AreaControlStage2SpritePath;
+                        case "theme_stage_03": return AreaControlStage3SpritePath;
+                        case "theme_stage_04": return AreaControlStage4SpritePath;
+                        case "theme_stage_05": return AreaControlStage5SpritePath;
+                        default: return AreaControlSpritePath;
+                    }
+                case "enemy_support":
+                    switch (stageThemeId)
+                    {
+                        case "theme_stage_02": return SupportStage2SpritePath;
+                        case "theme_stage_03": return SupportStage3SpritePath;
+                        case "theme_stage_04": return SupportStage4SpritePath;
+                        case "theme_stage_05": return SupportStage5SpritePath;
+                        default: return SupportSpritePath;
                     }
                 default:
                     return null;

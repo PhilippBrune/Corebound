@@ -154,7 +154,24 @@ namespace Corebound.UI.MainMenu
             _wasPanelOpen = panelOpen;
             var mouse = UnityEngine.InputSystem.Mouse.current;
 
-            if (!panelOpen || mouse == null || Time.frameCount <= _panelOpenedFrame + 1)
+            if (mouse == null)
+            {
+                return;
+            }
+
+            // "Press Start" is the first thing anyone sees, and a mouse player's first instinct is
+            // to click it rather than hunt for a key (playtest 2026-09-23).
+            if (_mainMenuController.IsIntroVisible)
+            {
+                if (mouse.leftButton.wasPressedThisFrame && _mainMenuController.AcknowledgeIntro())
+                {
+                    ConfirmSubmitted?.Invoke();
+                }
+
+                return;
+            }
+
+            if (!panelOpen || Time.frameCount <= _panelOpenedFrame + 1)
             {
                 return;
             }

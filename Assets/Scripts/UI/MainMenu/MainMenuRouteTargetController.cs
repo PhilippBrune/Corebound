@@ -76,7 +76,8 @@ namespace Corebound.UI.MainMenu
 
             if (_pendingPanelRoute == MainMenuRoute.NewRun && _startWeaponOptions.Count > 0)
             {
-                var nextWeapon = Mathf.Clamp(_startWeaponRowIndex + step, 0, _startWeaponOptions.Count - 1);
+                var rowCount = _startWeaponOptions.Count + (OffersTutorialRow ? 1 : 0);
+                var nextWeapon = Mathf.Clamp(_startWeaponRowIndex + step, 0, rowCount - 1);
 
                 if (nextWeapon == _startWeaponRowIndex)
                 {
@@ -162,6 +163,11 @@ namespace Corebound.UI.MainMenu
         }
 
         // B11: the starting-weapon list, plus the overwrite warning when there is a run to lose.
+        // True when this profile has never finished the tutorial: the guided run is then offered
+        // as the first row rather than forced (playtest 2026-09-23, "for a clean profile the player
+        // should be asked if he wants to play the tutorial").
+        private bool OffersTutorialRow => _metaProgressionService != null && !_metaProgressionService.HasSeenTutorial;
+
         private string[] BuildStartWeaponLines()
         {
             if (_startWeaponOptions.Count == 0)
@@ -169,8 +175,16 @@ namespace Corebound.UI.MainMenu
                 RefreshStartWeaponOptions();
             }
 
+            var tutorialRow = OffersTutorialRow ? 1 : 0;
             var warning = HasContinueRun() ? 1 : 0;
-            var lines = new string[_startWeaponOptions.Count + warning];
+            var lines = new string[_startWeaponOptions.Count + tutorialRow + warning];
+
+            if (tutorialRow > 0)
+            {
+                lines[0] = LocalizationService.Resolve(
+                    "Guided first run (tutorial)   -   learn the loop; pays no Skill Points or Alloy",
+                    "Geführter erster Run (Tutorial)   -   lernt den Ablauf; zahlt keine Skillpunkte und keine Legierung");
+            }
 
             for (var index = 0; index < _startWeaponOptions.Count; index++)
             {
@@ -178,7 +192,7 @@ namespace Corebound.UI.MainMenu
                 // Name plus one short stat line: the full summary wrapped into three lines per
                 // weapon and the rows ran into each other (playtest 2026-09-22, "New Run window not
                 // readable").
-                lines[index] = weapon != null ? weapon.DisplayName + "   " + DescribeStartWeapon(weapon) : "?";
+                lines[index + tutorialRow] = weapon != null ? weapon.DisplayName + "   " + DescribeStartWeapon(weapon) : "?";
             }
 
             if (warning > 0)
@@ -365,6 +379,13 @@ namespace Corebound.UI.MainMenu
 
             if (route == MainMenuRoute.NewRun)
             {
+                if (OffersTutorialRow && _startWeaponRowIndex == 0)
+                {
+                    CloseActivePanel();
+                    ExecuteImmediateRoute(MainMenuRoute.Tutorial);
+                    return true;
+                }
+
                 SavePreferredStartWeapon();
             }
 
@@ -471,11 +492,13 @@ namespace Corebound.UI.MainMenu
                 : null;
             var preferred = saveData != null ? saveData.PreferredStartWeaponId : string.Empty;
 
+            var offset = OffersTutorialRow ? 1 : 0;
+
             for (var index = 0; index < _startWeaponOptions.Count; index++)
             {
                 if (_startWeaponOptions[index] != null && _startWeaponOptions[index].WeaponId == preferred)
                 {
-                    return index;
+                    return index + offset;
                 }
             }
 
@@ -486,7 +509,7 @@ namespace Corebound.UI.MainMenu
         {
             var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
 
-            if (SaveManager == null || definition == null || _startWeaponRowIndex < 0 || _startWeaponRowIndex >= _startWeaponOptions.Count)
+            if (SaveManager == null || definition == null)
             {
                 return;
             }
@@ -498,7 +521,14 @@ namespace Corebound.UI.MainMenu
                 return;
             }
 
-            var weapon = _startWeaponOptions[_startWeaponRowIndex];
+            var weaponIndex = _startWeaponRowIndex - (OffersTutorialRow ? 1 : 0);
+
+            if (weaponIndex < 0 || weaponIndex >= _startWeaponOptions.Count)
+            {
+                return;
+            }
+
+            var weapon = _startWeaponOptions[weaponIndex];
             saveData.SetPreferredStartWeaponId(weapon != null ? weapon.WeaponId : string.Empty);
             SaveManager.SaveMetaProgressionSaveData(saveData);
         }

@@ -18,7 +18,7 @@ MonoBehaviour:
   _description: Reliable single-target support tower for the first Stage.
   _descriptionDe: Zuverlässiger Einzelziel-Unterstützungsturm für die erste Stage.
   _sprite: {fileID: 0}
-  _spritePath: Assets/Art/Towers/tower_ballista_topdown.png.png
+  _spritePath: Assets/Art/Towers/tower_ballista_topdown.png
   _spriteRect:
     serializedVersion: 2
     x: 360

@@ -21,6 +21,8 @@ namespace Corebound.Input
         private const string ConfirmActionName = "Confirm";
         private const string CancelActionName = "Cancel";
         private const string PreviousActionName = "PreviousSlot";
+        private const string UiPreviousActionName = "Previous";
+        private const string UiNextActionName = "Next";
         private const string NextActionName = "NextSlot";
         private const string PreviousTowerTypeActionName = "PreviousTowerType";
         private const string NextTowerTypeActionName = "NextTowerType";
@@ -31,6 +33,8 @@ namespace Corebound.Input
         private InputActionMap _gameplayMap;
         private InputActionMap _buildMap;
         private InputActionMap _uiMap;
+        private InputAction _uiPreviousAction;
+        private InputAction _uiNextAction;
         private InputActionMap _systemMap;
 
         private InputAction _moveAction;
@@ -278,6 +282,13 @@ namespace Corebound.Input
             _uiConfirmAction = _uiMap.FindAction(ConfirmActionName, true);
             _uiCancelAction = _uiMap.FindAction(CancelActionName, true);
 
+            // Optional (false): Previous/Next were added to the UI map on 2026-09-23, so an older
+            // actions asset still loads. Without them the menus never saw Q / Tab or the shoulder
+            // buttons at all - tab switching and the profile panel's delete were dead keys, because
+            // the only Previous/Next lived in the Build map, which menus do not enable.
+            _uiPreviousAction = _uiMap.FindAction(UiPreviousActionName, false);
+            _uiNextAction = _uiMap.FindAction(UiNextActionName, false);
+
             _systemPauseAction = _systemMap.FindAction(PauseActionName, true);
 
             // Optional (false): an actions asset from before the loadout existed still loads.
@@ -317,6 +328,8 @@ namespace Corebound.Input
                 (_uiNavigateAction, OnNavigatePerformed),
                 (_uiConfirmAction, OnConfirmPerformed),
                 (_uiCancelAction, OnCancelPerformed),
+                (_uiPreviousAction, OnPreviousPerformed),
+                (_uiNextAction, OnNextPerformed),
                 (_systemPauseAction, OnPausePerformed),
                 (_systemLoadoutAction, OnLoadoutPerformed),
             };

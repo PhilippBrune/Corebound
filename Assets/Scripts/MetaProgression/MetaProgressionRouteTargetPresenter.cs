@@ -69,11 +69,13 @@ namespace Corebound.MetaProgression
             var viewportHeight = viewport != null ? viewport.rect.height : 0f;
             var maxScroll = Mathf.Max(0f, content.rect.height - viewportHeight);
             var position = content.anchoredPosition;
-            position.y = Mathf.Clamp(position.y - scroll * WheelScrollStep, 0f, maxScroll);
+            position.y = Mathf.Clamp(position.y - Mathf.Sign(scroll) * WheelScrollStep, 0f, maxScroll);
             content.anchoredPosition = position;
         }
 
-        private const float WheelScrollStep = 0.6f;
+        // One row per notch: a wheel detent reports +-1 (or +-120 on some drivers), so the
+        // step is a row height rather than a multiplier on the raw value.
+        private const float WheelScrollStep = 44f;
         private Text _titleText;
         private Text _currencyText;
         private Text _skillPointText;
@@ -272,20 +274,24 @@ namespace Corebound.MetaProgression
             _currencyText.text = _controller.AlloyText;
             _skillPointText.text = _controller.SkillPointText;
             _ascensionText.text = _controller.AscensionText;
+            // The emblem is the only thing that differs between a branch tab and the other three.
+            // An early return here (2026-09-22) skipped the tab strip and every row below it, which
+            // is why Unlocks, Upgrades and Ascension rendered empty (playtest 2026-09-23).
             var iconPath = _controller.ActiveTabIconPath;
+            Sprite emblem;
 
             if (!string.IsNullOrWhiteSpace(iconPath))
             {
-                var tabSprite = _controller.ActiveTabIconIsWeaponSheet
+                emblem = _controller.ActiveTabIconIsWeaponSheet
                     ? Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectAtlasCellSprite(iconPath, 0, 0, 3, 3)
                     : Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(iconPath);
-                _branchEmblem.sprite = tabSprite;
-                _branchEmblem.enabled = tabSprite != null;
-                return;
+            }
+            else
+            {
+                var branch = _controller.ActiveBranchIndex;
+                emblem = branch >= 0 && branch < _branchSprites.Length ? _branchSprites[branch] : null;
             }
 
-            var branch = _controller.ActiveBranchIndex;
-            var emblem = branch >= 0 && branch < _branchSprites.Length ? _branchSprites[branch] : null;
             _branchEmblem.sprite = emblem;
             _branchEmblem.enabled = emblem != null;
             _tabText.text = _controller.TabStrip;

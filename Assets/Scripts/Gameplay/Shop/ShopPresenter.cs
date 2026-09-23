@@ -14,7 +14,7 @@ namespace Corebound.Gameplay.Shop
     public sealed class ShopPresenter : MonoBehaviour
     {
         private const string PanelTexturePath = "Assets/Art/UI/HUD/shop_offer_panel.png";
-        private const string PanelTextureFallbackPath = "Assets/Art/UI/HUD/shop_offer_panel.png.png";
+        private const string PanelTextureFallbackPath = "Assets/Art/UI/HUD/shop_offer_panel.png";
         private const string PriceChipTexturePath = "Assets/Art/UI/HUD/shop_price_chip.png";
         private const string CommonFramePath = "Assets/Art/Cards/Frames/card_frame_common.png";
         private const string RareFramePath = "Assets/Art/Cards/Frames/card_frame_rare.png";

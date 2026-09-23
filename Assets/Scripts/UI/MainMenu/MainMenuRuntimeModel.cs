@@ -156,13 +156,12 @@ namespace Corebound.UI.MainMenu
             }
         }
 
+        // Until 2026-09-23 a New Run on a profile that had not seen the tutorial was silently
+        // turned into a tutorial run. On a fresh profile that made New Run unreachable, which is
+        // what blocked testing the starting-weapon choice and everything behind it. The decision is
+        // the player's now: the New Run panel offers the guided run as its first row.
         private MainMenuRoute ResolveRoute(MainMenuRoute route)
         {
-            if (route == MainMenuRoute.NewRun && !_state.HasSeenTutorial)
-            {
-                return MainMenuRoute.Tutorial;
-            }
-
             return route;
         }
     }
