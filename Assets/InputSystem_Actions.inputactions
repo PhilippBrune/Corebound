@@ -894,6 +894,17 @@
                 {
                     "name": "Keyboard&Mouse",
                     "id": "c8151d71-4812-4b6b-a3d5-8f894f78099a",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Next",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "Keyboard Alt",
+                    "id": "95e24cfa-855c-4c12-9e12-41de938e9491",
                     "path": "<Keyboard>/tab",
                     "interactions": "",
                     "processors": "",

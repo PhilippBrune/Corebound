@@ -68,6 +68,35 @@ namespace Corebound.Gameplay.Waves
             }
         }
 
+        // The gate nearest a world position, used to warn about the boss (2026-09-25).
+        public void CollectNearestGateIndex(StageData stageData, Vector2 position, List<int> result)
+        {
+            result.Clear();
+            var spawnPoints = stageData != null ? stageData.SpawnPoints : null;
+
+            if (spawnPoints == null || spawnPoints.Length == 0)
+            {
+                result.Add(0);
+                return;
+            }
+
+            var bestIndex = 0;
+            var bestDistance = float.MaxValue;
+
+            for (var index = 0; index < spawnPoints.Length; index++)
+            {
+                var distance = Vector2.SqrMagnitude(spawnPoints[index].Position - position);
+
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestIndex = index;
+                }
+            }
+
+            result.Add(bestIndex);
+        }
+
         // Playtest 2026-09-22: "I died because an enemy just spawned on me." A spawn point is where
         // enemies enter, not a guarantee the player is elsewhere - standing on a gate used to mean
         // being spawned into. Enemies now never appear closer than this to the player.

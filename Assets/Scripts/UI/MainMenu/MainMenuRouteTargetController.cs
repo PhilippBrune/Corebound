@@ -95,6 +95,43 @@ namespace Corebound.UI.MainMenu
         private int _profileRowIndex;
         private int _profileDeleteArmedIndex = -1;
 
+        public bool TrySelectPanelRow(int index)
+        {
+            if (_activePanelData == null || index < 0)
+            {
+                return false;
+            }
+
+            if (_pendingPanelRoute == MainMenuRoute.Profile)
+            {
+                if (index >= ProfileSelection.ProfileCount || index == _profileRowIndex)
+                {
+                    return false;
+                }
+
+                _profileRowIndex = index;
+                _profileDeleteArmedIndex = -1;
+                RouteTargetChanged?.Invoke();
+                return true;
+            }
+
+            if (_pendingPanelRoute == MainMenuRoute.NewRun)
+            {
+                var rowCount = _startWeaponOptions.Count + (OffersTutorialRow ? 1 : 0);
+
+                if (index >= rowCount || index == _startWeaponRowIndex)
+                {
+                    return false;
+                }
+
+                _startWeaponRowIndex = index;
+                RouteTargetChanged?.Invoke();
+                return true;
+            }
+
+            return false;
+        }
+
         public int ActivePanelSelectedIndex
         {
             get

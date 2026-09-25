@@ -514,10 +514,14 @@ namespace Corebound.Gameplay.Cards
                 _slotFrameImages[index].sprite = ResolveCardFrameSprite(card);
                 _slotFrameImages[index].type = Image.Type.Sliced;
                 _slotHighlights[index].color = index == _controller.SelectedIndex ? CardSelectedFillColor : CardFillColor;
-                _slotTitleTexts[index].text = card.DisplayName;
                 // Epic and Legendary frames have a dark header plaque; the dark title colour that
                 // reads on Common/Rare silver vanished on them entirely (autopilot shot 2026-09-22).
-                var darkPlaque = card.Rarity == CardRarity.Epic || card.Rarity == CardRarity.Legendary;
+                var offeredRarity = _controller.ResolveOfferedRarity(card);
+                // A weapon card names the grade it hands over, because that is the copy's tier.
+                _slotTitleTexts[index].text = card.IsWeaponCard && offeredRarity != CardRarity.Common
+                    ? card.DisplayName + "  (" + offeredRarity + ")"
+                    : card.DisplayName;
+                var darkPlaque = offeredRarity == CardRarity.Epic || offeredRarity == CardRarity.Legendary;
                 _slotTitleTexts[index].color = index == _controller.SelectedIndex
                     ? (_skinData != null ? _skinData.SelectedLabelColor : Color.white)
                     : darkPlaque ? new Color(0.95f, 0.91f, 0.82f, 1f) : new Color(0.14f, 0.12f, 0.1f, 0.98f);
@@ -534,6 +538,7 @@ namespace Corebound.Gameplay.Cards
 
         private void ApplyTagIcons(int slotIndex, CardData card)
         {
+            ApplyWeaponCardIcon(slotIndex, card);
             var icons = slotIndex < _slotTagIcons.Length ? _slotTagIcons[slotIndex] : null;
 
             if (icons == null)
@@ -569,6 +574,46 @@ namespace Corebound.Gameplay.Cards
                     icon.rectTransform.anchoredPosition = new Vector2(offset, AuthoredTagIconBottom);
                 }
             }
+        }
+
+        // Owner 2026-09-25: "I want a separate icon for the cards for weapon cards". A weapon card
+        // shows the weapon's own icon from the 3x3 sheet (Asset 102) in the card body, where an
+        // ordinary card shows only its tag icons - so a weapon offer is recognisable before reading
+        // a word of it.
+        private readonly Image[] _slotWeaponIcons = new Image[3];
+
+        private void ApplyWeaponCardIcon(int slotIndex, CardData card)
+        {
+            if (slotIndex >= _slotRoots.Length || _slotRoots[slotIndex] == null)
+            {
+                return;
+            }
+
+            var sprite = card != null && card.IsWeaponCard && card.GrantedWeapon != null && card.GrantedWeapon.Presentation != null
+                ? card.GrantedWeapon.Presentation.ResolveIconSprite()
+                : null;
+
+            if (sprite == null && _slotWeaponIcons[slotIndex] == null)
+            {
+                return;
+            }
+
+            if (_slotWeaponIcons[slotIndex] == null)
+            {
+                var icon = CreateImage("WeaponIcon", _slotRoots[slotIndex], sprite, Color.white, Image.Type.Simple);
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+                var rect = icon.rectTransform;
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = new Vector2(0f, -30f);
+                rect.sizeDelta = new Vector2(150f, 150f);
+                _slotWeaponIcons[slotIndex] = icon;
+            }
+
+            _slotWeaponIcons[slotIndex].sprite = sprite;
+            _slotWeaponIcons[slotIndex].gameObject.SetActive(sprite != null);
         }
 
         private Text CreateText(string name, RectTransform parent, int fontSize, FontStyle fontStyle, Color color, TextAnchor anchor)
@@ -632,7 +677,9 @@ namespace Corebound.Gameplay.Cards
                 return _frameSprite;
             }
 
-            switch (card.Rarity)
+            // A weapon card's rarity is rolled per offer (it is the tier the weapon arrives at), so
+            // the frame has to follow the rolled value rather than the authored one.
+            switch (_controller != null ? _controller.ResolveOfferedRarity(card) : card.Rarity)
             {
                 case CardRarity.Rare:
                     return _rareFrameSprite != null ? _rareFrameSprite : _frameSprite;

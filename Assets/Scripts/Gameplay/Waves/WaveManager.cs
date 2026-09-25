@@ -453,6 +453,20 @@ namespace Corebound.Gameplay.Waves
             arena.PulseSpawnGates(_upcomingGateIndices, WaveStartSpawnDelaySeconds);
         }
 
+        // The gate closest to where the boss will appear, so the warning points at the right place.
+        private void PulseGateNearest(Vector2 position)
+        {
+            var arena = ArenaArtPresenter;
+
+            if (arena == null || _stageData == null)
+            {
+                return;
+            }
+
+            _spawnPlacement.CollectNearestGateIndex(_stageData, position, _upcomingGateIndices);
+            arena.PulseSpawnGates(_upcomingGateIndices, WaveStartSpawnDelaySeconds);
+        }
+
         private void StartBossEncounter(int restoredPhaseIndex)
         {
             if (_stageData == null || _stageData.BossData == null)
@@ -478,7 +492,14 @@ namespace Corebound.Gameplay.Waves
             }
 
             _bossRuntimeController.PhaseChanged -= OnBossPhaseChanged;
-            _bossRuntimeController.transform.position = _spawnPlacement.ResolveBossSpawnPosition(_stageData, ArenaArtPresenter, _playerTarget);
+            var bossSpawnPosition = _spawnPlacement.ResolveBossSpawnPosition(_stageData, ArenaArtPresenter, _playerTarget);
+            _bossRuntimeController.transform.position = bossSpawnPosition;
+
+            // Owner 2026-09-25: the boss gets the same 2 s warning an ordinary wave gets. Its
+            // arrival used to be instant, which is the one spawn in the game that most deserves a
+            // tell. The boss holds still and takes no action for the delay; the nearest gate pulses.
+            _bossRuntimeController.SetSpawnDelay(WaveStartSpawnDelaySeconds);
+            PulseGateNearest(bossSpawnPosition);
             _bossRuntimeController.Initialize(_stageData.BossData, _playerTarget, _coreTarget, _sharedProjectilePrototype, _projectileParent, _enemyPool, restoredPhaseIndex);
             _bossRuntimeController.PhaseChanged += OnBossPhaseChanged;
             ApplyPersistenceContext();

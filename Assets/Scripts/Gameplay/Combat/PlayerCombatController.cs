@@ -860,6 +860,8 @@ namespace Corebound.Gameplay.Combat
                 return false;
             }
 
+            RecordWeaponDiscovered(weapon);
+
             var price = purchasePrice > 0 ? purchasePrice : weapon.BasePurchaseCost;
 
             if (_loadout.TryAdd(weapon, tier, price))
@@ -871,6 +873,38 @@ namespace Corebound.Gameplay.Combat
             _loadout.SetPending(weapon, tier, price, purchasePrice);
             NotificationPresenter.Show(LocalizationService.Resolve("Loadout full - choose a slot to replace", "Ausrüstung voll - wähle einen Platz zum Ersetzen"));
             return true;
+        }
+
+        // A weapon held once in a run may be chosen as a future run's starting weapon
+        // (StartWeaponOptions). Licensed weapons are not discovered this way - their licence is
+        // the gate - and a tutorial run discovers nothing, like every other meta reward.
+        private void RecordWeaponDiscovered(WeaponData weapon)
+        {
+            var definition = _combatData != null ? _combatData.MetaProgressionDefinitionData : null;
+
+            if (SaveManager == null || definition == null || weapon == null)
+            {
+                return;
+            }
+
+            var runSaveData = SaveManager.LoadRunSaveData();
+
+            if (runSaveData != null && runSaveData.IsTutorialRun)
+            {
+                return;
+            }
+
+            var metaSaveData = SaveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
+
+            if (metaSaveData == null || !metaSaveData.RecordWeaponDiscovered(weapon.WeaponId))
+            {
+                return;
+            }
+
+            SaveManager.SaveMetaProgressionSaveData(metaSaveData);
+            Corebound.UI.NotificationPresenter.Show(
+                Corebound.UI.LocalizationService.Resolve("New weapon discovered: ", "Neue Waffe entdeckt: ") + weapon.DisplayName
+                + Corebound.UI.LocalizationService.Resolve(" - selectable at the start of future runs", " - in künftigen Runs als Startwaffe wählbar"));
         }
 
         public int ResolveSellValue(int slotIndex)

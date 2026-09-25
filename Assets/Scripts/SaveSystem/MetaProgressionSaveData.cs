@@ -38,6 +38,11 @@ namespace Corebound.SaveSystem
         [SerializeField] private int _freeRespecUsedTreeVersion;
         [SerializeField] private int _ascensionRank;
         [SerializeField] private string _preferredStartWeaponId = string.Empty;
+
+        // Owner 2026-09-25: a new profile starts with the default weapon only. Any other unlicensed
+        // weapon becomes a *starting* option once the player has held it in a run at least once;
+        // licensed weapons stay behind their licence and are not discovered this way.
+        [SerializeField] private List<string> _discoveredWeaponIds = new List<string>();
         [SerializeField] private List<string> _ascensionChoices = new List<string>();
         [SerializeField] private List<string> _pendingAscensionOffer = new List<string>();
 
@@ -88,6 +93,30 @@ namespace Corebound.SaveSystem
         // panel. Empty means the default (Rapid). A weapon *licence* no longer decides this - it
         // only adds the weapon to reward and shop offers.
         public string PreferredStartWeaponId => _preferredStartWeaponId;
+
+        public bool HasDiscoveredWeapon(string weaponId)
+        {
+            return !string.IsNullOrWhiteSpace(weaponId) && _discoveredWeaponIds != null && _discoveredWeaponIds.Contains(weaponId);
+        }
+
+        // True when this is the first time, so the caller can announce it.
+        public bool RecordWeaponDiscovered(string weaponId)
+        {
+            if (string.IsNullOrWhiteSpace(weaponId))
+            {
+                return false;
+            }
+
+            _discoveredWeaponIds ??= new List<string>();
+
+            if (_discoveredWeaponIds.Contains(weaponId))
+            {
+                return false;
+            }
+
+            _discoveredWeaponIds.Add(weaponId);
+            return true;
+        }
 
         public void SetPreferredStartWeaponId(string weaponId)
         {

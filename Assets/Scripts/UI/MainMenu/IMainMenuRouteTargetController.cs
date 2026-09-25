@@ -18,6 +18,9 @@ namespace Corebound.UI.MainMenu
         // Index of the highlighted row in that override, or -1 when the panel is plain text.
         int ActivePanelSelectedIndex { get; }
 
+        // Mouse selection of a panel row; false when this panel has no selectable rows.
+        bool TrySelectPanelRow(int index);
+
         bool TryHandleNavigation(Vector2 navigationInput);
 
         bool TryHandleConfirm();

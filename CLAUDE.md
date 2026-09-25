@@ -51,7 +51,16 @@ COREBOUND — a singleplayer Windows/Steam action roguelite combining direct com
   `RefreshV2(NoUpdateAssetOptions)` picked up nothing. Changing the file's *length* (not just its
   mtime) reliably wakes it; `SetForegroundWindow` alone is not enough, and Windows' foreground lock
   needs `AttachThreadInput` to beat while the user is active.
-- **Synthetic input does not reach Unity's Input System.** `SendInput`/`keybd_event` drive Editor UI (Play button, menus, Hierarchy) but never `Keyboard.current`, so gameplay input cannot be scripted. `InputSystem.QueueStateEvent` updates device state but does not fire bound `InputAction` callbacks either, and `InputTestFixture` needs its own assembly, which this project's asmdef-less layout cannot provide. See the header of `Assets/Editor/InputSimulatorWindow.cs` before re-attempting. **Anything requiring a keypress needs the user to press it.**
+- **Synthetic *OS* input does not reach Unity's Input System, but a virtual device does.**
+  `SendInput`/`keybd_event` drive Editor UI (Play button, menus, Hierarchy) and never reach
+  `Keyboard.current`. A **virtual gamepad** does: `Corebound > Virtual Gamepad > Add` creates a real
+  device via `InputSystem.AddDevice<Gamepad>()`, and `QueueStateEvent` feeds it state that runs the
+  whole binding path - actions, control schemes, device detection. Verified 2026-09-25 by
+  `Corebound > Virtual Gamepad > Self Test` (Confirm, Cancel, Previous, Next all fired,
+  `IsUsingGamepad` flipped) and by the autopilot variant `padN`, which plays a whole run with
+  movement, aim and fire coming from the virtual stick instead of the reader's debug surface.
+  Write `test` into `VirtualPadRequest.txt` to run the self test while already in Play Mode.
+  Keyboard input still has no synthetic path; anything needing a *key* press needs the user.
 - Agents cannot hear audio. Do not guess at audio bugs; ask which sounds.
 
 ## Engine gotchas that have already caused bugs

@@ -587,6 +587,15 @@ namespace Corebound.Gameplay.Bosses
             return _bossData.Phases[Mathf.Clamp(_currentPhaseIndex, 0, _bossData.Phases.Length - 1)];
         }
 
+        // The 2 s arrival warning (2026-09-25): the boss exists and is visible, but does not move
+        // or attack until the delay has run, matching the wave-start spawn delay.
+        public void SetSpawnDelay(float seconds)
+        {
+            // Reuses the existing engage delay rather than adding a second timer: it already holds
+            // the boss still and silent, which is exactly the warning window.
+            _engageDelayTimer = Mathf.Max(_engageDelayTimer, seconds);
+        }
+
         private void EnsureComponents()
         {
             _hitReceiver = GetComponent<CombatHitReceiver>();

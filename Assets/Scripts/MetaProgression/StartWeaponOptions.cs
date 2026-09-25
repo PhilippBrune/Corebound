@@ -27,7 +27,17 @@ namespace Corebound.MetaProgression
 
             var unlockId = ResolveUnlockId(weapon, definitionData);
 
-            return string.IsNullOrWhiteSpace(unlockId) || (saveData != null && saveData.HasPurchased(unlockId));
+            // Licensed weapon: the licence is the whole gate, buying it makes it a start option.
+            if (!string.IsNullOrWhiteSpace(unlockId))
+            {
+                return saveData != null && saveData.HasPurchased(unlockId);
+            }
+
+            // Unlicensed weapon: it has to have been held in a run at least once (owner 2026-09-25,
+            // "a new profile should have only one default weapon; when first picking up a weapon it
+            // can be chosen"). Without this a fresh profile could start with any of the five
+            // unlicensed weapons, which gave the first run nothing to discover.
+            return saveData != null && saveData.HasDiscoveredWeapon(weapon.WeaponId);
         }
 
         public static void Collect(WeaponCatalogData catalog, MetaProgressionSaveData saveData, MetaProgressionDefinitionData definitionData, List<WeaponData> result)

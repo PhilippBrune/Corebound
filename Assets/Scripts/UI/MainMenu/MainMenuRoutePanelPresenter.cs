@@ -7,12 +7,12 @@ namespace Corebound.UI.MainMenu
 {
     public sealed class MainMenuRoutePanelPresenter : MonoBehaviour
     {
-        private const float PanelWidth = 980f;
+        private const float PanelWidth = 1240f;
         // button_primary_frame.png has a 220px/140px (horiz/vert) 9-slice border baked into the
         // art itself; 650 left too little safe vertical space once title+subtitle+summary+detail
         // lines+footer are all accounted for, so title through footer are laid out below with
         // insets that clear that border instead of rendering across it.
-        private const float PanelHeight = 750f;
+        private const float PanelHeight = 900f;
         private const int TitleFontSize = 42;
         private const int SubtitleFontSize = 24;
         private const int SummaryFontSize = 24;
@@ -114,12 +114,14 @@ namespace Corebound.UI.MainMenu
             // Summary strings here run long enough to wrap 2-3 lines (e.g. the New Run body) -
             // the previous 55px band was sized for one line and crowded straight into the detail
             // list below it with no visible gap.
-            StretchToParent(_summaryText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -380f), new Vector2(-230f, -295f));
+            // The summary runs 2-3 lines on the New Run panel; the old band was one line tall and
+            // the rows below it drew straight through the overflow (playtest 2026-09-23).
+            StretchToParent(_summaryText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -430f), new Vector2(-230f, -300f));
 
             var detailContainer = new GameObject("DetailContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
             detailContainer.transform.SetParent(_panelRect, false);
             var detailRect = detailContainer.GetComponent<RectTransform>();
-            StretchToParent(detailRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(230f, 205f), new Vector2(-230f, -395f));
+            StretchToParent(detailRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(230f, 215f), new Vector2(-230f, -445f));
 
             _detailLayout = detailContainer.GetComponent<VerticalLayoutGroup>();
             _detailLayout.spacing = 14f;
@@ -155,6 +157,58 @@ namespace Corebound.UI.MainMenu
             _footerText.text = panelData.FooterHint;
             RebuildDetailLines(RouteTargetController.ActivePanelDetailLinesOverride ?? panelData.DetailLines);
             UIManager.NotifyPanelChanged(_managedPanel);
+        }
+
+        // Mouse on the panel rows: hovering selects, clicking confirms. The main menu scene has an
+        // EventSystem, but this canvas has no raycaster of its own, so the rows are hit-tested here
+        // exactly as the reward screen does it (playtest 2026-09-23: "profiles cannot be selected
+        // via mouse click").
+        private Vector2 _lastPointer;
+
+        private void Update()
+        {
+            var controller = RouteTargetController;
+
+            if (controller == null || controller.ActivePanelData == null || controller.ActivePanelSelectedIndex < 0)
+            {
+                return;
+            }
+
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+
+            if (mouse == null)
+            {
+                return;
+            }
+
+            var pointer = mouse.position.ReadValue();
+            var moved = (pointer - _lastPointer).sqrMagnitude > 4f;
+            _lastPointer = pointer;
+            var clicked = mouse.leftButton.wasPressedThisFrame;
+
+            if (!moved && !clicked)
+            {
+                return;
+            }
+
+            for (var index = 0; index < _detailTexts.Count; index++)
+            {
+                var row = _detailTexts[index];
+
+                if (row == null || !RectTransformUtility.RectangleContainsScreenPoint(row.rectTransform, pointer, null))
+                {
+                    continue;
+                }
+
+                controller.TrySelectPanelRow(index);
+
+                if (clicked)
+                {
+                    controller.TryHandleConfirm();
+                }
+
+                return;
+            }
         }
 
         private void EnsureForegroundOrder()

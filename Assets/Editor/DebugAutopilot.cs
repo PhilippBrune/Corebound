@@ -249,6 +249,16 @@ namespace Corebound.EditorTools
             // earning slot unlocks.
             // "arsenal3": the same, with the six weapons added 2026-09-22 - one of each, so Full
             // Arsenal is active and every new archetype fires in one run.
+            // "pad3": drive movement, aim and fire through a virtual Gamepad device instead of the
+            // reader's debug surface, so a run also proves the bindings and the device detection.
+            var padTest = contents.StartsWith("pad", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(PadTestSessionKey, padTest);
+
+            if (padTest)
+            {
+                contents = contents.Substring("pad".Length).Trim();
+            }
+
             var arsenalTest = contents.StartsWith("arsenal", System.StringComparison.OrdinalIgnoreCase);
             var loadoutTest = arsenalTest || contents.StartsWith("loadout", System.StringComparison.OrdinalIgnoreCase);
             SessionState.SetBool(LoadoutTestSessionKey, loadoutTest);
@@ -315,6 +325,7 @@ namespace Corebound.EditorTools
         // text, not input.
         public const string LoadoutTestSessionKey = "Corebound.Autopilot.LoadoutTest";
         public const string ArsenalTestSessionKey = "Corebound.Autopilot.ArsenalTest";
+        public const string PadTestSessionKey = "Corebound.Autopilot.PadTest";
         public const string ProgressionTestSessionKey = "Corebound.Autopilot.ProgressionTest";
         public const string AscensionTestSessionKey = "Corebound.Autopilot.AscensionTest";
         public const string GodModeSessionKey = "Corebound.Autopilot.GodMode";
@@ -983,9 +994,18 @@ namespace Corebound.EditorTools
             // direction in gamepad mode. A driven test has no real mouse, so it must announce
             // itself as a gamepad or every shot is aimed at whatever screen corner the fed vector
             // maps to - which looks exactly like "projectiles do no damage".
-            _inputReader.DebugSetUsingGamepad(true);
-            _inputReader.DebugSetAim(direction);
-            _inputReader.DebugSetPrimaryFireHeld(true);
+            if (UsePad)
+            {
+                _padAim = direction;
+                _padFire = true;
+                PushPadState();
+            }
+            else
+            {
+                _inputReader.DebugSetUsingGamepad(true);
+                _inputReader.DebugSetAim(direction);
+                _inputReader.DebugSetPrimaryFireHeld(true);
+            }
 
             // Kite rather than charge: hold a working distance, circle so chasers never line up a
             // straight run, and bias back toward the middle so it cannot be pinned against a wall.
@@ -1032,7 +1052,17 @@ namespace Corebound.EditorTools
                 _strafeSign = -_strafeSign;
             }
 
-            _inputReader.DebugSetMove(move.sqrMagnitude > 1f ? move.normalized : move);
+            var clampedMove = move.sqrMagnitude > 1f ? move.normalized : move;
+
+            if (UsePad)
+            {
+                _padMove = clampedMove;
+                PushPadState();
+            }
+            else
+            {
+                _inputReader.DebugSetMove(clampedMove);
+            }
         }
 
         // Reward screen, shop and intermission all resolve on Confirm, but at a human pace rather
@@ -1453,6 +1483,19 @@ namespace Corebound.EditorTools
         private void OnSummaryDeath(Corebound.Gameplay.Combat.DeathEventArgs args)
         {
             _enemiesKilled++;
+        }
+
+        // Virtual-pad driving. The device is added once; every frame that changes an axis pushes a
+        // full state, because a gamepad state event carries all controls at once.
+        private bool UsePad => SessionState.GetBool(DebugAutopilot.PadTestSessionKey, false);
+
+        private Vector2 _padMove;
+        private Vector2 _padAim;
+        private bool _padFire;
+
+        private void PushPadState()
+        {
+            Corebound.EditorTools.VirtualGamepadDriver.Hold(_padMove, _padAim, _padFire);
         }
 
         private void TickRunSummary()

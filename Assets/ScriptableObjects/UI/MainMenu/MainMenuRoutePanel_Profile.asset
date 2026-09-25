@@ -27,5 +27,5 @@ MonoBehaviour:
   - Profil 1
   - Profil 2
   - Profil 3
-  _footerHint: Confirm switches profile, Cancel returns.
-  _footerHintDe: Bestaetigen wechselt das Profil, Abbrechen kehrt zurueck.
+  _footerHint: Confirm switches profile.  Q (or LB) twice deletes the selected profile.  Cancel returns.
+  _footerHintDe: Bestaetigen wechselt das Profil.  Q (oder LB) zweimal loescht das gewaehlte Profil.  Abbrechen kehrt zurueck.

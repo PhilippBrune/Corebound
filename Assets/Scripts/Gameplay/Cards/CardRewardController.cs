@@ -193,6 +193,11 @@ namespace Corebound.Gameplay.Cards
             StateChanged?.Invoke();
         }
 
+        public CardRarity ResolveOfferedRarity(CardData card)
+        {
+            return _cardService != null ? _cardService.ResolveOfferedRarity(card) : (card != null ? card.Rarity : CardRarity.Common);
+        }
+
         public int RemainingRerolls => _cardService != null ? _cardService.RemainingRerolls : 0;
 
         private void OnConfirmPressed()

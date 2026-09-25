@@ -34,6 +34,42 @@ namespace Corebound.Gameplay.Cards
 
         public IReadOnlyList<CardData> CurrentOffer => _currentOffer;
 
+        // Owner 2026-09-25: "weapon cards should have different rarity too, which would result in
+        // an upgraded version of this weapon". A weapon card's rarity is rolled per offer rather
+        // than authored, and WeaponTierRules reads the same enum, so a Rare card hands over a Rare
+        // copy. Non-weapon cards keep their authored rarity.
+        private readonly Dictionary<string, CardRarity> _rolledWeaponRarities = new Dictionary<string, CardRarity>();
+
+        public CardRarity ResolveOfferedRarity(CardData card)
+        {
+            if (card == null)
+            {
+                return CardRarity.Common;
+            }
+
+            return card.IsWeaponCard && _rolledWeaponRarities.TryGetValue(card.CardId, out var rolled)
+                ? rolled
+                : card.Rarity;
+        }
+
+        // 62 / 26 / 10 / 2 - a Legendary copy (x1.75 damage before anything else) stays a story.
+        private CardRarity RollWeaponRarity()
+        {
+            var roll = UnityEngine.Random.value;
+
+            if (roll < 0.62f)
+            {
+                return CardRarity.Common;
+            }
+
+            if (roll < 0.88f)
+            {
+                return CardRarity.Rare;
+            }
+
+            return roll < 0.98f ? CardRarity.Epic : CardRarity.Legendary;
+        }
+
         // Set by the loadout owner. Null in a scene without a player, where weapon cards are then
         // simply not offered.
         public IWeaponGrantHandler WeaponGrantHandler { get; set; }
@@ -89,6 +125,7 @@ namespace Corebound.Gameplay.Cards
         public void BuildRewardOffer()
         {
             _currentOffer.Clear();
+            _rolledWeaponRarities.Clear();
             _rerollsUsedThisOffer = _rerollInProgress ? _rerollsUsedThisOffer : 0;
 
             if (_cardPoolData == null || _cardPoolData.Cards == null || _cardOfferData == null)
@@ -113,7 +150,17 @@ namespace Corebound.Gameplay.Cards
 
             if (eligibleCards.Count == 0)
             {
-                StateChanged?.Invoke();
+                for (var index = 0; index < _currentOffer.Count; index++)
+            {
+                var offered = _currentOffer[index];
+
+                if (offered != null && offered.IsWeaponCard && !_rolledWeaponRarities.ContainsKey(offered.CardId))
+                {
+                    _rolledWeaponRarities[offered.CardId] = RollWeaponRarity();
+                }
+            }
+
+            StateChanged?.Invoke();
                 return;
             }
 
@@ -223,7 +270,7 @@ namespace Corebound.Gameplay.Cards
 
             if (card.IsWeaponCard)
             {
-                var granted = WeaponGrantHandler != null && WeaponGrantHandler.TryGrantWeapon(card.GrantedWeapon, (int)card.Rarity, purchasePrice);
+                var granted = WeaponGrantHandler != null && WeaponGrantHandler.TryGrantWeapon(card.GrantedWeapon, (int)ResolveOfferedRarity(card), purchasePrice);
 
                 if (granted)
                 {
