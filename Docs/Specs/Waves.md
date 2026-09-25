@@ -38,6 +38,13 @@ Das Wave-System steuert Tempo und Schwierigkeit, ohne selbst Combat- oder Reward
   deckte weiterhin alles ab. Die authored Initial-Delays (0 / 1.2 / 2.4s gegen ~0.4s Spawn-Intervall)
   sorgen dafür, dass die Ströme gleichzeitig laufen statt nacheinander. Waves mit nur einer
   Spawn-Gruppe (Stage 1, Wave 1) bleiben einseitig.
+- **Arena-Objectives** (2026-09-25): eine Wave kann ein zeitlich begrenztes Objective enthalten, das
+  bei halbem Spawn-Fortschritt an einer zufälligen begehbaren Position erscheint und abläuft, wenn
+  niemand es einsammelt. Die Chance steigt mit dem Stage-Index und wird **einmal beim Wave-Start**
+  gewürfelt, nicht pro Frame. Boss-Waves bekommen keines. Ein abgelaufenes Objective wird weder
+  gutgeschrieben noch bestraft, und der Wave-End-Vacuum (`ResourcePickupPool.ForceCollectAll`) darf
+  es nicht einsammeln - sonst verschwindet die Entscheidung, die es erzeugen soll. Entscheidungen und
+  Umsetzung: `Docs/Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md`.
 - Elite-Waves und Boss-Vorbereitungen sind Datenvarianten des bestehenden Wave-Rahmens.
 - Eine Wave darf den Player fordern, aber nicht ohne lesbare Ursache überrollen.
 - Zwischenphasen müssen controller-freundlich navigierbar bleiben.

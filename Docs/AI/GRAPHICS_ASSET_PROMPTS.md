@@ -1386,3 +1386,38 @@ the volley reads as random shards rather than as one deliberate ring.
 Prompt:
 
 Create a 2D top-down energy pulse sprite for a sci-fantasy defense roguelite: a thin violet ring with a soft inner glow and a slightly brighter leading edge, drawn as a single centred circle that can be scaled up over its short lifetime. The ring must stay readable over a busy arena floor without hiding what is under it, so keep the fill nearly transparent and the edge crisp. Match the established Corebound language: restrained, readable, industrial sci-fantasy. Transparent background, no text.
+
+### Asset 106 - Salvage Cache
+
+Target: Assets/Art/Environment/Arena/arena_salvage_cache.png
+
+**Status:** NOT CREATED. The runtime ships using `resource_primary_icon.png` scaled to 1.1 world
+units as a stand-in, which reads as "a lot of Scrap" but not as a container worth crossing the arena
+for.
+
+Needed because:
+
+Timed arena objectives (owner decisions 2026-09-25, `Docs/Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md`)
+put a cache at a random spot mid-wave that expires if nobody walks over it. It has to be spotted
+instantly from anywhere in the arena and read as a prize rather than as another enemy drop, since
+the whole mechanic is the player deciding to leave a safe position for it.
+
+Prompt:
+
+Create a 2D top-down sprite of a sealed salvage container for a sci-fantasy defense roguelite: a squat armoured crate seen from directly above, with a lid seam, two heavy clamps, and a small amber status light. It must read as openable and valuable at roughly 96 pixels across, and must stay distinct in silhouette from the game's hexagonal tower pads and from small round resource pickups. Match the established Corebound language: steel-blue structure, pale metallic edges, amber-gold energy, industrial sci-fantasy. Transparent background, no text.
+
+### Asset 107 - Objective Claim Ring
+
+Target: Assets/Art/Environment/Arena/arena_objective_ring.png
+
+**Status:** NOT CREATED. The runtime currently draws a tinted square that shrinks as the lifetime
+drains, which works but is visibly a placeholder.
+
+Needed because:
+
+The ring is the countdown. It closes in toward the cache as the timer runs out, so the player reads
+"how long have I got" from its radius at arena scale, where digits are unreadable.
+
+Prompt:
+
+Create a 2D top-down ring sprite for a sci-fantasy defense roguelite: a single thin amber circle with a soft inner falloff and a crisp outer edge, drawn centred so it can be scaled from large to small over its lifetime. The interior must be almost fully transparent so the arena floor, props and enemies stay visible through it. Match the established Corebound language: restrained, readable, industrial sci-fantasy. Transparent background, no text.

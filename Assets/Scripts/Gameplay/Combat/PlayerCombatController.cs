@@ -135,6 +135,7 @@ namespace Corebound.Gameplay.Combat
 
             var deltaTime = Time.deltaTime;
             _runtime.Tick(deltaTime);
+            TickTimedFireIntervalBuff(deltaTime);
             UpdateAimFacing();
             RefreshSlotModifierStates();
 
@@ -335,6 +336,46 @@ namespace Corebound.Gameplay.Combat
             return true;
         }
 
+        // A short, run-scoped fire-rate buff granted by an arena objective (D1 option 3, owner
+        // 2026-09-25). Deliberately not a card, a skill or a weapon modifier: all three are
+        // permanent for the run and are saved, while this must be gone when it runs out and must
+        // not survive a checkpoint. Kept here rather than in a static so it dies with the player
+        // object and cannot leak across runs or a domain reload.
+        private float _timedFireIntervalMultiplier = 1f;
+        private float _timedFireIntervalRemaining;
+
+        public float TimedFireIntervalRemainingSeconds => _timedFireIntervalRemaining;
+
+        // A stronger buff replaces a weaker one and refreshes the clock; a weaker one only extends
+        // the clock. Stacking multiplicatively would let two caches in quick succession trivialise
+        // a wave.
+        public void ApplyTimedFireIntervalBuff(float fireIntervalMultiplier, float durationSeconds)
+        {
+            if (durationSeconds <= 0f || fireIntervalMultiplier >= 1f)
+            {
+                return;
+            }
+
+            _timedFireIntervalMultiplier = Mathf.Min(_timedFireIntervalMultiplier, Mathf.Max(0.1f, fireIntervalMultiplier));
+            _timedFireIntervalRemaining = Mathf.Max(_timedFireIntervalRemaining, durationSeconds);
+        }
+
+        private void TickTimedFireIntervalBuff(float deltaTime)
+        {
+            if (_timedFireIntervalRemaining <= 0f)
+            {
+                return;
+            }
+
+            _timedFireIntervalRemaining -= deltaTime;
+
+            if (_timedFireIntervalRemaining <= 0f)
+            {
+                _timedFireIntervalRemaining = 0f;
+                _timedFireIntervalMultiplier = 1f;
+            }
+        }
+
         private float ResolveFireInterval(WeaponSlotRuntime slot)
         {
             var weapon = slot.Weapon;
@@ -343,6 +384,7 @@ namespace Corebound.Gameplay.Combat
                 * WeaponTierRules.FireIntervalMultiplier(slot.Tier)
                 * _progression.Upgrades.GetReductionMultiplier(weapon.WeaponId, UpgradableStat.FireSpeed)
                 * _progression.Skills[SkillEffectTarget.WeaponFireIntervalMultiplier]
+                * _timedFireIntervalMultiplier
                 * slot.Modifiers.FireIntervalMultiplier);
         }
 

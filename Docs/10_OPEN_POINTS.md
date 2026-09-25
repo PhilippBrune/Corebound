@@ -65,18 +65,20 @@ new stage starts without one - so it sits through the whole first wave. Weapon c
 while one is pending, so nothing is lost, but the wait is odd. Should a new stage open with a short
 Intermission when a weapon is pending?
 
-### 5. The arena still does not need to be used (partly answered)
+### 5. The arena work of 2026-09-25 is entirely unplayed
 
-Playtest 2026-09-25: *"it feels like there is no need to use the whole arena."* Two-sided waves
-shipped the same day and change where enemies come from, but nothing yet gives the player a reason
-to stand anywhere except between the Core and the nearest threat. The owner approved pursuing timed
-arena objectives; the design decisions are open in
-[`Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md`](Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md) and need
-answering before code.
+Both answers to *"it feels like there is no need to use the whole arena"* shipped that day and
+neither has been played by a human. Decisions and what they produced:
+[`Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md`](Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md).
 
-Also unmeasured: whether two-sided waves made stages 2-5 harder than the balance in item 1 assumed.
-A wave that used to arrive as one stream now arrives as two, which is a real difficulty change that
-nobody has played.
+- **Two-sided waves** are a real difficulty change on top of item 1's untested numbers: a wave that
+  used to arrive as one stream now arrives as two.
+- **The salvage cache** needs feel, not verification. Whether 0.55 of the wave's drop budget is
+  worth the trip, whether the computed ~7s window is tight or generous, and whether a 35% per-wave
+  chance reads as "be ready" or as "random" are all open.
+- **The cache has no audio and no dedicated art.** Appear/claim/expire cues need the owner to say
+  which sounds (agents cannot hear). The body is the Scrap icon scaled up and the countdown ring is
+  a tinted square; prompts are Assets 106 and 107 in `Docs/AI/GRAPHICS_ASSET_PROMPTS.md`.
 
 ---
 

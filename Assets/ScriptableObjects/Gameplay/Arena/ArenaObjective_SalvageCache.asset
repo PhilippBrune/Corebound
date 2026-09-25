@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9a9e43002a82d247bcccf57dc3454f0, type: 3}
+  m_Name: ArenaObjective_SalvageCache
+  m_EditorClassIdentifier:
+  _objectiveId: objective_salvage_cache
+  _displayName: Salvage Cache
+  _displayNameDe: Bergungscontainer
+  _scrapFractionOfWaveBudget: 0.55
+  _fireIntervalMultiplier: 0.74
+  _buffDurationSeconds: 20
+  _spawnChanceStage1: 0.35
+  _spawnChancePerStage: 0.1
+  _maxSpawnChance: 0.8
+  _lifetimeSlackSeconds: 4
+  _minLifetimeSeconds: 6
+  _travelDetourFactor: 1.6
+  _spawnAtWaveProgress: 0.5
+  _claimRadius: 0.75
+  _worldSize: 1.1
+  _tint: {r: 1, g: 0.78, b: 0.35, a: 1}
+  _urgentSeconds: 2

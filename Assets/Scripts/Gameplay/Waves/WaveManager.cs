@@ -48,6 +48,10 @@ namespace Corebound.Gameplay.Waves
         [SerializeField] private Transform _projectileParent;
         [SerializeField] private MetaProgressionDefinitionData _metaProgressionDefinitionData;
 
+        // Leave empty to turn arena objectives off entirely - the service treats a null as "this
+        // wave has none", so no scene needs changing to disable the feature.
+        [SerializeField] private Arena.ArenaObjectiveData _arenaObjectiveData;
+
         // Playtest feedback (2026-09-19): "Enemies spawns are still to static - it should be more
         // random" / "Enemies per Wave should be more random but ballenced". Both knobs are
         // deliberately bounded so a wave still reads as the encounter its data authored: enemies
@@ -69,6 +73,12 @@ namespace Corebound.Gameplay.Waves
         // pure geometry with no wave state, and it is where the worst bug of the week hid.
         private readonly WaveSpawnPlacement _spawnPlacement = new WaveSpawnPlacement();
         private readonly List<int> _upcomingGateIndices = new List<int>();
+
+        // Timed arena objectives (owner 2026-09-25, Docs/Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md).
+        // The service owns every decision about them; WaveManager only tells it when a wave starts,
+        // how far the wave has got, and when it ends.
+        private readonly Arena.ArenaObjectiveService _arenaObjectiveService = new Arena.ArenaObjectiveService();
+        private int _spawnedEnemiesThisWave;
 
 
         private EnemyPool _enemyPool;
@@ -425,6 +435,13 @@ namespace Corebound.Gameplay.Waves
                 }
             }
 
+            // Rolled once here rather than per frame: a per-frame chance would effectively
+            // guarantee an objective in a long wave and never fire in a short one. Boss encounters
+            // run through StartBossEncounter and never reach this method, which is how they stay
+            // excluded.
+            _spawnedEnemiesThisWave = 0;
+            _arenaObjectiveService.BeginWave(_arenaObjectiveData, _stageData, waveData, false);
+
             PulseUpcomingSpawnGates();
             ApplyPersistenceContext();
             WaveEvents.RaiseWaveStarted(CreateEventArgs(CurrentWaveNumber, WaveEncounterLabelResolver.ResolveCurrentEncounterLabel(_stageData, _currentWaveIndex, _state, _bossRuntimeController), WaveEncounterLabelResolver.ResolveCurrentEncounterIsElite(_stageData, _currentWaveIndex, _state)));
@@ -482,6 +499,11 @@ namespace Corebound.Gameplay.Waves
 
             _currentWaveIndex = Mathf.Max(TotalWaveCount, _currentWaveIndex);
             _completeStageAfterReward = false;
+
+            // Boss waves get no arena objective: the fight already dictates where the player
+            // stands, so one would compete with the encounter rather than shape it. Clearing here
+            // also covers an objective still live when the last wave rolled into the boss.
+            _arenaObjectiveService.EndWave();
             _state = WaveState.BossCombat;
             BossEncounterState.SetActive(true);
 
@@ -555,8 +577,14 @@ namespace Corebound.Gameplay.Waves
                     _stageData, ArenaArtPresenter, _spawnPlacement.NextSpawnIndex(), _spawnAngleJitter, _playerTarget, index);
                 enemy.Initialize(spawnGroup.EnemyData, spawnGroup.EliteModifierData, _playerTarget, _coreTarget, _sharedProjectilePrototype, _projectileParent);
                 _remainingAliveEnemies += 1;
+                _spawnedEnemiesThisWave += 1;
                 spawnGroup.ConsumeSpawn();
             }
+
+            // After the wave-start delay's early return above, so an objective can never compete
+            // with the gate pulse that tells the player where the wave is coming from.
+            _arenaObjectiveService.TickCombat(
+                _arenaObjectiveData, ArenaArtPresenter, _playerTarget, _enemyParent, _spawnedEnemiesThisWave);
 
             if (!hasPendingSpawns && _remainingAliveEnemies <= 0)
             {
@@ -570,6 +598,11 @@ namespace Corebound.Gameplay.Waves
         {
             var waveData = _stageData.Waves[_currentWaveIndex];
             _state = WaveState.Reward;
+
+            // Before ForceCollectAll, and pointedly not part of it. The vacuum exists so the player
+            // does not have to walk over every last drop; handing them an arena objective they
+            // chose not to go for would delete the decision the objective exists to create (D7).
+            _arenaObjectiveService.EndWave();
             _resourcePickupPool?.ForceCollectAll();
             _cardService?.NotifyWaveCleared();
             WaveEvents.RaiseWaveCompleted(CreateEventArgs(CurrentWaveNumber, WaveEncounterLabelResolver.ResolveCurrentEncounterLabel(_stageData, _currentWaveIndex, _state, _bossRuntimeController), WaveEncounterLabelResolver.ResolveCurrentEncounterIsElite(_stageData, _currentWaveIndex, _state)));
@@ -873,6 +906,7 @@ namespace Corebound.Gameplay.Waves
                 // destroyed'" - the generic message didn't say which. Captured here since this is
                 // the one place that already distinguishes the two victims.
                 _wasCoreDestroyedOnFailure = _coreTarget != null && eventArgs.Victim == _coreTarget.gameObject;
+                _arenaObjectiveService.EndWave();
                 _state = WaveState.Failed;
                 RecordRunOutcomeStatistic(false);
                 StateChanged?.Invoke();

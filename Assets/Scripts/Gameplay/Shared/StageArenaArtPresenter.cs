@@ -614,6 +614,11 @@ namespace Corebound.Gameplay.Shared
 
         public int SpawnGateCount => _spawnGates.Count;
 
+        // The open maze cells, i.e. every interior position that is guaranteed not to be inside a
+        // prop or blocker collider. Already used to place the Core; ArenaObjectiveService uses it
+        // so an arena objective never lands inside a wall where it can be seen but not reached.
+        public IReadOnlyList<Vector2> WalkableInteriorPositions => _walkableInteriorPositions;
+
         // Playtest check 2026-09-22: tinting the gate itself toward orange barely shows, because the
         // gate art is dark and a multiply tint on dark pixels stays dark. A soft light pool behind
         // the gate is what actually reads as "this door is about to open".

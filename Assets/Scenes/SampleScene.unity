@@ -555,6 +555,7 @@ MonoBehaviour:
   _sharedProjectilePrototype: {fileID: 100002102}
   _projectileParent: {fileID: 100002001}
   _metaProgressionDefinitionData: {fileID: 11400000, guid: b16f0dd0e6c0437f9107adcf5996f079, type: 2}
+  _arenaObjectiveData: {fileID: 11400000, guid: 65b72f409b94d264c86e5ce8bebe2e89, type: 2}
 --- !u!114 &100002012
 MonoBehaviour:
   m_ObjectHideFlags: 0

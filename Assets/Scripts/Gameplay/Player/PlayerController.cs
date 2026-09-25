@@ -24,6 +24,12 @@ namespace Corebound.Gameplay.Player
 
         public event Action Moved;
 
+        // What the player actually moves at right now, cards and skills included. Read by
+        // ArenaObjectiveService to compute how long an arena objective must stay reachable
+        // (D4 option 2) rather than hardcoding a duration per stage.
+        public float CurrentMoveSpeed => (_playerData != null ? _playerData.MoveSpeed : 4f)
+            * (_combatController != null ? _combatController.MovementSpeedMultiplier : 1f);
+
         private IInputReader InputReader => _inputReaderSource as IInputReader;
 
         private void Awake()
