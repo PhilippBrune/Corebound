@@ -542,7 +542,12 @@ namespace Corebound.EditorTools
 
         private void Update()
         {
-            _elapsed += Time.deltaTime;
+            // Unscaled: every blocking overlay in the game holds Time.timeScale at 0 (see
+            // WaveStatePresenter.OpenOverlay), so a scaled clock stops exactly when the autopilot
+            // most needs to act - and the time cap that is supposed to rescue a wedged run stops
+            // with it. This is what left the 2026-09-25 run frozen in front of the "Collect
+            // Resources" beat with the dismissal code right there and never reaching 0.6s.
+            _elapsed += Time.unscaledDeltaTime;
             TickRunSummary();
 
             // A tutorial beat blocks everything until it is confirmed. It can appear in Combat,
@@ -550,7 +555,7 @@ namespace Corebound.EditorTools
             // this the run sat in front of the first beat until the time cap (2026-09-23).
             if (Corebound.Gameplay.Tutorial.TutorialService.IsBeatShowing && _inputReader != null)
             {
-                _confirmTimer += Time.deltaTime;
+                _confirmTimer += Time.unscaledDeltaTime;
 
                 if (_confirmTimer >= 0.6f)
                 {

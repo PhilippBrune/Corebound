@@ -27,6 +27,8 @@ namespace Corebound.Gameplay.Waves
         private int _spawnCounter;
         private int _spawnPointOffset;
         private float _fanRotationDegrees;
+        private StageData _gateOrderStage;
+        private int[] _gateOrderByAngle = System.Array.Empty<int>();
 
         // Rolled once per wave rather than per enemy. Offsetting the round-robin by a per-wave
         // value keeps every authored entry point used an even number of times within a wave -
@@ -44,26 +46,89 @@ namespace Corebound.Gameplay.Waves
             return _spawnCounter++;
         }
 
-        // The spawn-point (gate) indices the next enemyCount spawns will round-robin through, in
-        // the order they will be used. Same wrap as ResolveEnemySpawnPosition, so the lit gates are
-        // exactly the ones the wave then comes out of. A stage with no authored spawn points has a
-        // single gate at index 0.
-        public void CollectUpcomingGateIndices(StageData stageData, int enemyCount, List<int> result)
+        // The gate a spawn group comes out of. Owner 2026-09-25: "attack from two sides at once ...
+        // splitting a wave across opposite gates means a central position can't cover both". The
+        // gate is therefore chosen per *spawn group*, not per enemy: round-robining every enemy did
+        // alternate the gates, but a single enemy from each side walks the same path to the Core, so
+        // the wave still converged and standing on the Core still covered everything. A whole group
+        // streaming in from one gate while a second group streams in from the opposite one is what
+        // actually splits the player's attention - and gives towers a reason to be spread out.
+        //
+        // Consecutive groups take the gate half a turn away - exactly opposite on an even gate count,
+        // the furthest available on an odd one. Stage 2-5 waves overlap their groups in time
+        // (authored initial delays of 0 / 1.2 / 2.4s against ~0.4s spawn intervals), so the two
+        // streams really are live at once rather than in sequence.
+        //
+        // On a four-gate stage the half-turn stride revisits one opposed pair rather than touching
+        // all four. That is the intended trade: the ask was two sides at once, and _spawnPointOffset
+        // rotates which pair a wave uses, so all four still see traffic across a stage.
+        public int ResolveGateForGroup(StageData stageData, int groupIndex)
+        {
+            EnsureGateOrder(stageData);
+            var gateCount = _gateOrderByAngle.Length;
+
+            if (gateCount <= 1)
+            {
+                return 0;
+            }
+
+            var stride = Mathf.Max(1, gateCount / 2);
+            var slot = ((((groupIndex * stride) + _spawnPointOffset) % gateCount) + gateCount) % gateCount;
+            return _gateOrderByAngle[slot];
+        }
+
+        // Gates are authored in whatever order was convenient, not around a circle: Stage 5 lists
+        // bottom-left, bottom-right, top, bottom. Stepping half a turn through the *authored* order
+        // would have paired the two bottom gates and called them opposite. Ordering the indices by
+        // each gate's angle around the arena centre first makes "half a turn away" mean half a turn
+        // in the arena. Rebuilt only when the stage changes, since it is pure geometry.
+        private void EnsureGateOrder(StageData stageData)
+        {
+            if (ReferenceEquals(stageData, _gateOrderStage))
+            {
+                return;
+            }
+
+            _gateOrderStage = stageData;
+            var spawnPoints = stageData != null ? stageData.SpawnPoints : null;
+
+            if (spawnPoints == null || spawnPoints.Length == 0)
+            {
+                _gateOrderByAngle = System.Array.Empty<int>();
+                return;
+            }
+
+            var order = new int[spawnPoints.Length];
+            var angles = new float[spawnPoints.Length];
+
+            for (var index = 0; index < spawnPoints.Length; index++)
+            {
+                order[index] = index;
+                var position = spawnPoints[index] != null ? spawnPoints[index].Position : Vector2.zero;
+                angles[index] = Mathf.Atan2(position.y, position.x);
+            }
+
+            System.Array.Sort(angles, order);
+            _gateOrderByAngle = order;
+        }
+
+        // The spawn-point (gate) indices a wave's groups will use, in group order. Same mapping as
+        // ResolveEnemySpawnPosition, so the lit gates are exactly the ones the wave then comes out
+        // of. A stage with no authored spawn points has a single gate at index 0.
+        public void CollectUpcomingGateIndices(StageData stageData, int groupCount, List<int> result)
         {
             result.Clear();
             var spawnPoints = stageData != null ? stageData.SpawnPoints : null;
             var gateCount = spawnPoints != null && spawnPoints.Length > 0 ? spawnPoints.Length : 1;
-            var count = Mathf.Min(Mathf.Max(1, enemyCount), gateCount);
+            var count = Mathf.Min(Mathf.Max(1, groupCount), gateCount);
 
             for (var index = 0; index < count; index++)
             {
-                var wrappedIndex = gateCount == 1
-                    ? 0
-                    : ((((_spawnCounter + index + _spawnPointOffset) % gateCount) + gateCount) % gateCount);
+                var gate = ResolveGateForGroup(stageData, index);
 
-                if (!result.Contains(wrappedIndex))
+                if (!result.Contains(gate))
                 {
-                    result.Add(wrappedIndex);
+                    result.Add(gate);
                 }
             }
         }
@@ -102,9 +167,9 @@ namespace Corebound.Gameplay.Waves
         // being spawned into. Enemies now never appear closer than this to the player.
         private const float EnemyMinPlayerDistance = 3.5f;
 
-        public Vector3 ResolveEnemySpawnPosition(StageData stageData, StageArenaArtPresenter arena, int spawnIndex, float angleJitter, Transform playerTarget)
+        public Vector3 ResolveEnemySpawnPosition(StageData stageData, StageArenaArtPresenter arena, int spawnIndex, float angleJitter, Transform playerTarget, int groupIndex)
         {
-            var position = (Vector2)ResolveEnemySpawnPosition(stageData, arena, spawnIndex, angleJitter);
+            var position = (Vector2)ResolveEnemySpawnPosition(stageData, arena, spawnIndex, angleJitter, groupIndex);
 
             if (playerTarget == null)
             {
@@ -133,7 +198,7 @@ namespace Corebound.Gameplay.Waves
             return ClampToArena(player - away * EnemyMinPlayerDistance, arena);
         }
 
-        public Vector3 ResolveEnemySpawnPosition(StageData stageData, StageArenaArtPresenter arena, int spawnIndex, float angleJitter)
+        public Vector3 ResolveEnemySpawnPosition(StageData stageData, StageArenaArtPresenter arena, int spawnIndex, float angleJitter, int groupIndex)
         {
             var spawnPoints = stageData != null ? stageData.SpawnPoints : null;
             Vector2 origin;
@@ -142,11 +207,10 @@ namespace Corebound.Gameplay.Waves
 
             if (spawnPoints != null && spawnPoints.Length > 0)
             {
-                // A stage with multiple authored spawn points round-robins enemies across them by
-                // spawn index, so a burst spreads across the stage's different entry points instead
-                // of fanning out from one.
-                var wrappedIndex = (((spawnIndex + _spawnPointOffset) % spawnPoints.Length) + spawnPoints.Length) % spawnPoints.Length;
-                var spawnPoint = spawnPoints[wrappedIndex];
+                // One gate per spawn group (see ResolveGateForGroup). spawnIndex still drives the
+                // fan angle below, so the enemies of one group arrive spread along their gate's
+                // mouth instead of stacking on a single point.
+                var spawnPoint = spawnPoints[ResolveGateForGroup(stageData, groupIndex)];
                 origin = spawnPoint.Position;
                 fanRadius = spawnPoint.FanRadius;
                 angleStepDegrees = spawnPoint.FanAngleStepDegrees;

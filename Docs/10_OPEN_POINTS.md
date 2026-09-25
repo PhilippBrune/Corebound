@@ -1,6 +1,6 @@
 # Open Points Register
 
-Version: 3.0 · Created 2026-09-20 · Last updated 2026-09-23 · Status: Active
+Version: 3.1 · Created 2026-09-20 · Last updated 2026-09-25 · Status: Active
 
 The single live list of what is still open. `08_IMPLEMENTATION_BACKLOG.md` is the *plan*; this is
 the *punch list*. Closed items are removed, not archived — the session reports
@@ -65,23 +65,36 @@ new stage starts without one - so it sits through the whole first wave. Weapon c
 while one is pending, so nothing is lost, but the wait is odd. Should a new stage open with a short
 Intermission when a weapon is pending?
 
+### 5. The arena still does not need to be used (partly answered)
+
+Playtest 2026-09-25: *"it feels like there is no need to use the whole arena."* Two-sided waves
+shipped the same day and change where enemies come from, but nothing yet gives the player a reason
+to stand anywhere except between the Core and the nearest threat. The owner approved pursuing timed
+arena objectives; the design decisions are open in
+[`Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md`](Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md) and need
+answering before code.
+
+Also unmeasured: whether two-sided waves made stages 2-5 harder than the balance in item 1 assumed.
+A wave that used to arrive as one stream now arrives as two, which is a real difficulty change that
+nobody has played.
+
 ---
 
 ## P2 — Needed for the Early Access target
 
-### 5. Shop and Reward screens still look alike
+### 6. Shop and Reward screens still look alike
 
 Structurally the same: three card-shaped slots in a row with the same rarity frames. The wash colour
 and the price chip are the only separators. Closing this properly is an art-direction call, not code.
 
-### 6. `UIThemeData` colours are unread
+### 7. `UIThemeData` colours are unread
 
 `.Font` reaches eleven presenters through `UIFontResolver`, but `PrimaryTextColor`,
 `SecondaryTextColor`, `AccentColor` and `PanelFrameSprite` are read by nothing - every presenter
 hardcodes its own colours. Best done together with a shared procedural-UI builder, since
 `CreateText`/`CreateImage` are duplicated across at least six presenters and have already drifted.
 
-### 7. Factory amplification is invisible
+### 8. Factory amplification is invisible
 
 The amplifier pays out with no on-screen sign. The Intermission line names the chain tier, but
 nothing shows that an amplifier is live or what it is adding. Vision Section 5.5 asks that a player
@@ -91,7 +104,7 @@ can recognise a system is working.
 
 ## P3 — Worth doing, not urgent
 
-### 8. God-object refactors
+### 9. God-object refactors
 
 `WaveStatePresenter` (~1600 lines, five responsibilities including the pause overlay and the
 tutorial beats) and `StageArenaArtPresenter` (~1000) are the remaining large ones; `WaveManager`
@@ -99,14 +112,14 @@ still carries most of its responsibilities. `WaveSpawnPlacement` was split out i
 and is the pattern to follow. The old reason for deferring (no way to verify) is gone: the autopilot
 plays a full run end to end.
 
-### 9. Unresolved vision questions
+### 10. Unresolved vision questions
 
 `00_PROJECT_VISION.md` §20.1: how deep the Factory chain should go, and the shape of the
 meta-progression curve. §20.2 lists where the vision text and the build still disagree - tower
 count, "resource conversion" versus the single-currency decision, and the unvalidated 60-70 minute
 run length. The autopilot's `SUMMARY` line now measures run length, so the last one is checkable.
 
-### 10. Smaller items carried forward
+### 11. Smaller items carried forward
 
 - No automated coverage of boss state transitions.
 - `StageEnemyPoolData` is authored but read by no code; per-stage wave sets replaced it as the

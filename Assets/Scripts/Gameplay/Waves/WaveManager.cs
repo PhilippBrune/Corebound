@@ -442,14 +442,19 @@ namespace Corebound.Gameplay.Waves
                 return;
             }
 
-            var enemyCount = 0;
+            // One gate per spawn group, not per enemy: the gates that light are the ones the wave's
+            // groups are actually assigned to.
+            var groupCount = 0;
 
             for (var index = 0; index < _spawnGroups.Count; index++)
             {
-                enemyCount += _spawnGroups[index].RemainingCount;
+                if (_spawnGroups[index].RemainingCount > 0)
+                {
+                    groupCount++;
+                }
             }
 
-            _spawnPlacement.CollectUpcomingGateIndices(_stageData, enemyCount, _upcomingGateIndices);
+            _spawnPlacement.CollectUpcomingGateIndices(_stageData, groupCount, _upcomingGateIndices);
             arena.PulseSpawnGates(_upcomingGateIndices, WaveStartSpawnDelaySeconds);
         }
 
@@ -542,10 +547,12 @@ namespace Corebound.Gameplay.Waves
 
                 var enemy = _enemyPool.Get();
 
-                // A running per-wave counter, NOT the spawn-group index: passing the group index
-                // meant every enemy in a group resolved to the identical position.
+                // Two arguments that look interchangeable and are not. The spawn index is a running
+                // per-wave counter, NOT the group index: passing the group index here made every
+                // enemy in a group resolve to the identical position. The group index picks the
+                // gate, so a group stays one stream from one side of the arena.
                 enemy.transform.position = _spawnPlacement.ResolveEnemySpawnPosition(
-                    _stageData, ArenaArtPresenter, _spawnPlacement.NextSpawnIndex(), _spawnAngleJitter, _playerTarget);
+                    _stageData, ArenaArtPresenter, _spawnPlacement.NextSpawnIndex(), _spawnAngleJitter, _playerTarget, index);
                 enemy.Initialize(spawnGroup.EnemyData, spawnGroup.EliteModifierData, _playerTarget, _coreTarget, _sharedProjectilePrototype, _projectileParent);
                 _remainingAliveEnemies += 1;
                 spawnGroup.ConsumeSpawn();

@@ -32,3 +32,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2802f0f0f7f2476888dfcc6633c0e8cb, type: 2}
   - {fileID: 11400000, guid: af41d1dc791b4565b46c8a40986ce1be, type: 2}
   _bossData: {fileID: 11400000, guid: 6095d2d88fbf4eb8ab93e5555a12cbec, type: 2}
+  _spawnPoints:
+  - _position: {x: -5.6, y: -2.6}
+    _fanRadius: {x: 2.2, y: 1.8}
+    _fanAngleStepDegrees: 70
+  - _position: {x: 5.6, y: 2.6}
+    _fanRadius: {x: 2.2, y: 1.8}
+    _fanAngleStepDegrees: 70

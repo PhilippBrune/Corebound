@@ -29,6 +29,15 @@ Das Wave-System steuert Tempo und Schwierigkeit, ohne selbst Combat- oder Reward
 - Wave-Ablauf folgt stets derselben Grundstruktur: Start, aktiver Kampf, Abschluss, Belohnung, nächste Entscheidung.
 - Spawn-Positionen müssen fair und lesbar sein. Konkret (2026-09-22): ein Spawn hält mindestens **3.5 Einheiten Abstand zum Player** und liegt nie innerhalb der Core-Reparaturreichweite. Ist ein Spawnpunkt zu nah, wird er vom Player weg geschoben; ist auch das blockiert, wird er an der Arena-Mitte gespiegelt (`WaveSpawnPlacement`).
 - Schwierigkeitssteigerung erfolgt über Enemy-Komposition, Spawn-Rhythmus und Raumdruck.
+- **Eine Wave greift von zwei Seiten an** (2026-09-25). Das Gate wird pro *Spawn-Gruppe* gewählt,
+  nicht pro Enemy: aufeinanderfolgende Gruppen bekommen das Gate eine halbe Drehung weiter, wobei
+  die Gates nach ihrem Winkel um die Arena-Mitte geordnet werden - die Reihenfolge im Asset sagt
+  nichts über die Geometrie aus (Stage 5 listet unten-links, unten-rechts, oben, unten). Ein
+  Rundlauf pro Enemy hatte die Gates zwar abgewechselt, aber ein einzelner Gegner von jeder Seite
+  läuft denselben Weg zum Core, also konvergierte die Wave trotzdem und eine zentrale Position
+  deckte weiterhin alles ab. Die authored Initial-Delays (0 / 1.2 / 2.4s gegen ~0.4s Spawn-Intervall)
+  sorgen dafür, dass die Ströme gleichzeitig laufen statt nacheinander. Waves mit nur einer
+  Spawn-Gruppe (Stage 1, Wave 1) bleiben einseitig.
 - Elite-Waves und Boss-Vorbereitungen sind Datenvarianten des bestehenden Wave-Rahmens.
 - Eine Wave darf den Player fordern, aber nicht ohne lesbare Ursache überrollen.
 - Zwischenphasen müssen controller-freundlich navigierbar bleiben.
