@@ -74,6 +74,10 @@ namespace Corebound.Gameplay.Combat
         // so a wide spread that missed still converts into damage at the end of its reach.
         private void Explode()
         {
+            // Drawn at the real radius so the player can learn the weapon's reach from what they
+            // see. Until 2026-09-27 splash damage was dealt with nothing on screen at all.
+            CombatVfxSpawner.SpawnSplashBurst(transform.position, ExpireExplosionRadius);
+
             var count = Physics2D.OverlapCircleNonAlloc(transform.position, ExpireExplosionRadius, ExplosionBuffer);
             var explosionContext = new DamageContext(
                 _damageContext.SourceType,

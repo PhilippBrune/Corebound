@@ -20,6 +20,15 @@ namespace Corebound.Gameplay.Combat
         private const string FreezePulseSpritePath = "Assets/Art/Combat/VFX/vfx_freeze_status_pulse.png";
         private const string TowerActivationPulseSpritePath = "Assets/Art/Combat/VFX/vfx_tower_activation_pulse.png";
 
+        // Asset 103. A 4x2 grid of 364x360 cells: row 0 is a flame impact over four frames, row 1
+        // a frost impact. Delivered 2026-09-23 with the transparency checkerboard painted into the
+        // pixels, repaired 2026-09-27, and wired here now that a burst can play a frame sequence.
+        // Burn and Freeze previously shared the generic still, so a burning enemy and a frozen one
+        // looked identical at the moment of impact - exactly what this sheet exists to fix.
+        private const string ImpactFlameFrostSheetPath = "Assets/Art/Combat/VFX/vfx_impact_flame_frost.png";
+        private const int ImpactSheetColumns = 4;
+        private const int ImpactSheetRows = 2;
+
         // Never fully hides feedback at the low end - Settings.md frames Effects Intensity as an
         // accessibility control for reducing visual intensity, not eliminating combat feedback.
         private const float MinEffectsIntensityScale = 0.4f;
@@ -45,6 +54,8 @@ namespace Corebound.Gameplay.Combat
         private static Sprite _burnTickSprite;
         private static Sprite _freezePulseSprite;
         private static Sprite _towerActivationPulseSprite;
+        private static Sprite[] _burnFrames;
+        private static Sprite[] _freezeFrames;
         private static bool _spritesLoaded;
         private static readonly Color TowerActivationPulseColor = new Color(0.55f, 0.75f, 1f, 0.8f);
 
@@ -82,6 +93,33 @@ namespace Corebound.Gameplay.Combat
             _burnTickSprite = Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(BurnTickSpritePath);
             _freezePulseSprite = Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(FreezePulseSpritePath);
             _towerActivationPulseSprite = Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(TowerActivationPulseSpritePath);
+            _burnFrames = LoadImpactRow(0);
+            _freezeFrames = LoadImpactRow(1);
+        }
+
+        // Returns null rather than a part-filled array if any cell fails to load, so the caller
+        // falls back to the existing single-sprite behaviour instead of flickering through holes.
+        private static Sprite[] LoadImpactRow(int row)
+        {
+            return LoadSheetRow(ImpactFlameFrostSheetPath, row, ImpactSheetColumns, ImpactSheetRows);
+        }
+
+        private static Sprite[] LoadSheetRow(string sheetPath, int row, int columns, int rows)
+        {
+            var frames = new Sprite[columns];
+
+            for (var column = 0; column < columns; column++)
+            {
+                frames[column] = Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectAtlasCellSprite(
+                    sheetPath, column, row, columns, rows);
+
+                if (frames[column] == null)
+                {
+                    return null;
+                }
+            }
+
+            return frames;
         }
 
         // Callable directly by TowerRuntimeController (a pure runtime-constructed object with no
@@ -106,6 +144,30 @@ namespace Corebound.Gameplay.Combat
             }
 
             SpawnBurst(position, _novaRingSprite, NovaRingColor, 3.4f, 0.28f, 44, 1f);
+        }
+
+        // Asset 104, wired 2026-09-27. A projectile with ExplodeOnImpact/ExplodeOnExpire dealt its
+        // splash damage in complete silence visually - nothing on screen showed the radius, so the
+        // player had no way to learn the Launcher's reach. The burst is sized to the caller's
+        // radius so what is drawn is what actually got hit, rather than a decorative flash.
+        //
+        // Same 4x2 grid as the flame/frost sheet; the delivered art runs seven frames of a
+        // mechanical mine detonating rather than the five-frame shockwave Asset 104 specified, so
+        // all eight cells are played in order and the last (empty) one simply lands on the fade.
+        private const string ImpactSplashSheetPath = "Assets/Art/Combat/VFX/vfx_impact_splash_burst.png";
+        private static Sprite[] _splashFrames;
+        private static bool _splashFramesLoaded;
+        private static readonly Color SplashBurstColor = new Color(1f, 0.72f, 0.35f, 0.9f);
+
+        public static void SpawnSplashBurst(Vector2 position, float radius)
+        {
+            if (!_splashFramesLoaded)
+            {
+                _splashFramesLoaded = true;
+                _splashFrames = LoadSheetRow(ImpactSplashSheetPath, 0, ImpactSheetColumns, ImpactSheetRows);
+            }
+
+            SpawnBurst(position, null, SplashBurstColor, Mathf.Max(0.2f, radius * 2f), 0.34f, 46, 1f, Color.white, _splashFrames);
         }
 
         public static void SpawnTowerActivationPulse(Vector2 position)
@@ -165,10 +227,10 @@ namespace Corebound.Gameplay.Combat
             switch (eventArgs.EffectType)
             {
                 case StatusEffectType.Burn:
-                    SpawnBurst(position, _burnTickSprite, _burnTickColor, _statusEffectVfxSize, _statusEffectVfxLifetimeSeconds, 44, EffectsIntensityScale);
+                    SpawnBurst(position, _burnTickSprite, _burnTickColor, _statusEffectVfxSize, _statusEffectVfxLifetimeSeconds, 44, EffectsIntensityScale, Color.white, _burnFrames);
                     break;
                 case StatusEffectType.Freeze:
-                    SpawnBurst(position, _freezePulseSprite, _freezePulseColor, _statusEffectVfxSize, _statusEffectVfxLifetimeSeconds, 44, EffectsIntensityScale);
+                    SpawnBurst(position, _freezePulseSprite, _freezePulseColor, _statusEffectVfxSize, _statusEffectVfxLifetimeSeconds, 44, EffectsIntensityScale, Color.white, _freezeFrames);
                     break;
             }
         }
@@ -181,6 +243,14 @@ namespace Corebound.Gameplay.Combat
         // artTint multiplies the art sprite (white = unchanged); the crit spark is the same art in gold.
         private static void SpawnBurst(Vector2 position, Sprite artSprite, Color fallbackColor, float targetSize, float lifetimeSeconds, int sortingOrder, float intensityScale, Color artTint)
         {
+            SpawnBurst(position, artSprite, fallbackColor, targetSize, lifetimeSeconds, sortingOrder, intensityScale, artTint, null);
+        }
+
+        private static void SpawnBurst(Vector2 position, Sprite artSprite, Color fallbackColor, float targetSize, float lifetimeSeconds, int sortingOrder, float intensityScale, Color artTint, Sprite[] frames)
+        {
+            // A frame sequence supersedes the single still; an unloadable sheet leaves frames null
+            // and the still is used, so this can never render nothing.
+            artSprite = frames != null && frames.Length > 0 ? frames[0] : artSprite;
             var burstObject = new GameObject("CombatVfxBurst");
             burstObject.transform.position = position;
 
@@ -199,7 +269,7 @@ namespace Corebound.Gameplay.Combat
 
             spriteRenderer.sortingOrder = sortingOrder;
 
-            burstObject.AddComponent<CombatVfxBurstRuntime>().Initialize(targetSize * intensityScale, lifetimeSeconds);
+            burstObject.AddComponent<CombatVfxBurstRuntime>().Initialize(targetSize * intensityScale, lifetimeSeconds, frames);
         }
     }
 }

@@ -109,7 +109,7 @@ namespace Corebound.MetaProgression
                     case Tab.Upgrades:
                         return "Assets/Art/UI/HUD/weapon_icon_sheet.png";
                     case Tab.Ascension:
-                        return "Assets/Art/UI/Skilltree/ascension_rank_badge.png";
+                        return "Assets/Art/UI/SkillTree/ascension_rank_badge.png";
                     default:
                         return string.Empty;
                 }

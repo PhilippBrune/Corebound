@@ -1286,7 +1286,7 @@ Create a compact 2D UI info card frame for a top-down sci-fantasy defense roguel
 
 Target: Assets/Art/UI/SkillTree/character_portrait_frame.png
 
-**Status:** CREATED 2026-09-21 in `Assets/Art/UI/Skilltree/` (lower-case t; the target path above says `SkillTree`). Not used yet - there is no character select. **Defect:** the centre, which should be transparent for the portrait, is a baked-in checkerboard.
+**Status:** CREATED 2026-09-21 in `Assets/Art/UI/SkillTree/` (lower-case t; the target path above says `SkillTree`). Not used yet - there is no character select. **Defect:** the centre, which should be transparent for the portrait, is a baked-in checkerboard.
 
 Needed because:
 

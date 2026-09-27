@@ -42,33 +42,42 @@ Field Repair).
 
 ### 3.1 Delivered but wired to nothing
 
-Audited 2026-09-27 across every `.cs`, `.asset`, `.unity` and `.md` in the project. **112 art files,
-96 wired, 16 unwired, 0 orphans.** The StreamingAssets mirror is complete and consistent in both
-directions — that part is healthy.
+Audited 2026-09-27 across every `.cs`, `.asset`, `.unity` and `.md`, matching both filenames **and
+the guid in each file's `.meta`** — assets reference textures by guid, and a first pass that checked
+only filenames wrongly reported the main menu logo and background as unused.
 
-Every file below exists, looks finished, and is referenced by no code and no asset:
+**112 art files, 100 wired, 12 unwired, 0 orphans.** The StreamingAssets mirror is complete and
+consistent in both directions.
 
-| File | What it was for |
+The twelve fall into three groups, and only one of them is a wiring job:
+
+**Superseded — safe to delete once you confirm** (3). `weapon_rapid_sprite.png`,
+`weapon_spread_sprite.png`, `weapon_beam_sprite.png`. These are not a gap: 11 of 12 projectiles draw
+from `projectile_sheet_core.png` or `projectile_sheet_weapons_02.png`, which replaced these three
+standalone files. They are leftovers. *(An earlier note in this file claimed every projectile was a
+procedural square — that was wrong, and this replaces it. The one projectile that genuinely had no
+art, `Projectile_BossBurst`, was wired on 2026-09-27.)*
+
+**Needs a feature first, not a wiring change** (6):
+
+| File | What is missing |
 | --- | --- |
-| `UI/MainMenu/corebound_logo.png` | The game's logo. The main menu draws its title as text. |
-| `UI/MainMenu/mainmenu_background.png` | Main menu backdrop. |
-| `UI/MainMenu/route_panel_frame.png` | Frame for the New Run / Profile / Quit panels. |
-| `UI/MainMenu/glyph_hint_capsule.png` | Controller-glyph capsule behind hint text. |
-| `Combat/Projectiles/weapon_rapid_sprite.png` | Rapid projectile. |
-| `Combat/Projectiles/weapon_spread_sprite.png` | Spread projectile. |
-| `Combat/Projectiles/weapon_beam_sprite.png` | Beam projectile. |
-| `Combat/VFX/vfx_impact_flame_frost.png` | Burn / Freeze impacts (alpha fixed 2026-09-27). |
-| `Combat/VFX/vfx_impact_splash_burst.png` | Launcher splash (alpha fixed 2026-09-27). |
-| `UI/HUD/factory_chain_tier_indicator.png` | Factory chain tier readout — see §6.2. |
-| `UI/Skilltree/skill_node_key_frame.png` | Keystone node frame (re-delivered 2026-09-27). |
-| `UI/Skilltree/skill_node_sub_frame.png` | Minor node frame (re-delivered 2026-09-27). |
-| `UI/Skilltree/skill_link_segment.png` | Connector between skill nodes. |
-| `UI/Skilltree/character_portrait_frame.png` | Portrait frame (re-delivered 2026-09-27). |
-| `UI/Tutorial/tutorial_prompt_panel.png` | Tutorial beat panel — beats use the pause overlay. |
-| `UI/Tutorial/tutorial_glyph_strip.png` | Tutorial input glyph strip. |
+| `SkillTree/skill_node_key_frame.png` | There is no node graph. The Progression screen is a list of text rows (`MetaProgressionRouteTargetPresenter`), so node frames, the link segment and the portrait frame have nowhere to attach. Wiring them means *building a graphical skill tree*. |
+| `SkillTree/skill_node_sub_frame.png` | as above |
+| `SkillTree/skill_link_segment.png` | as above |
+| `SkillTree/character_portrait_frame.png` | as above |
+| `Tutorial/tutorial_prompt_panel.png` | Tutorial beats reuse the pause overlay (`WaveStatePresenter.TryShowTutorialBeat`). A dedicated tutorial panel does not exist. |
+| `Tutorial/tutorial_glyph_strip.png` | as above |
 
-The three projectile sprites are the most visible miss: every projectile in the game is a procedural
-square, and three hand-drawn sprites have been sitting unused the whole time.
+**Genuinely just unwired** (3): `UI/HUD/factory_chain_tier_indicator.png` (see §6.2, which proposes
+exactly this), `UI/MainMenu/route_panel_frame.png` and `UI/MainMenu/glyph_hint_capsule.png`. These
+three have an obvious home and need no new system.
+
+Wired on 2026-09-27: `vfx_impact_flame_frost.png` (Burn and Freeze now animate through their own
+four-frame rows instead of sharing the generic still) and `vfx_impact_splash_burst.png` (splash
+damage was previously dealt with nothing drawn at all). Both needed `CombatVfxBurstRuntime` to learn
+frame sequences first — every VFX before this was a single still that grew and faded, which is why
+multi-frame sheets had nowhere to go.
 
 ### 3.2 Audio delivered but not wired
 
