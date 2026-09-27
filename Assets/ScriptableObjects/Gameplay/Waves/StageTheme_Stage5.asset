@@ -31,6 +31,6 @@ MonoBehaviour:
   _spawnGateTint: {r: 1, g: 0.9, b: 0.5, a: 0.96}
   _arenaSize: {x: 20, y: 13}
   _boundaryThickness: 0.8
-  _coreScale: 1.6
+  _coreScale: 1.15
   _spawnGateWorldSize: {x: 3.2, y: 1.8}
   _spawnGateLocalPosition: {x: 0, y: -5}
