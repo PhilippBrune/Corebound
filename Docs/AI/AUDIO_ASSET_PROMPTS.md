@@ -63,6 +63,8 @@ Globaler Stilrahmen für alle Prompts:
 
 Target: Assets/Audio/Music/music_calm_loop.mp3
 
+**Status:** DELIVERED and wired.
+
 Prompt:
 
 A calm, low-tension ambient loop for the "between waves" state of a sci-fantasy industrial defense game. Sparse, slow synth pads with a faint mechanical hum undertone, subtle rhythmic pulse suggesting an idle factory/Core system rather than silence. Should feel safe but purposeful, not sleepy. Seamlessly loopable, roughly 30-45 seconds, no percussion hits, no melody spikes that would clash with UI sounds.
@@ -71,6 +73,8 @@ A calm, low-tension ambient loop for the "between waves" state of a sci-fantasy 
 
 Target: Assets/Audio/Music/music_combat_loop.mp3
 
+**Status:** DELIVERED and wired.
+
 Prompt:
 
 A mid-tension driving combat loop for a top-down action roguelite with tower-defense and factory elements. Steady rhythmic percussion, industrial synth bass, a repeating tense melodic motif, energy that supports fast decision-making without becoming exhausting over a multi-minute wave. Seamlessly loopable, roughly 30-45 seconds, no vocals, headroom left for hit/impact SFX layered on top.
@@ -78,6 +82,8 @@ A mid-tension driving combat loop for a top-down action roguelite with tower-def
 ### Audio 03 - Music Boss
 
 Target: Assets/Audio/Music/music_boss_loop.mp3
+
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -89,6 +95,8 @@ A high-tension boss-encounter loop for a sci-fantasy industrial defense roguelit
 
 Target: Assets/Audio/SFX/sfx_combat_hit.mp3
 
+**Status:** DELIVERED and wired.
+
 Prompt:
 
 A short, punchy impact sound effect for a projectile or melee hit landing on an enemy in a sci-fantasy action game. Crisp, tight, mid-frequency thud with a subtle metallic/energy edge. Roughly 0.1-0.15 seconds, no reverb tail, mono, suitable for rapid repeated triggering without becoming fatiguing.
@@ -96,6 +104,8 @@ A short, punchy impact sound effect for a projectile or melee hit landing on an 
 ### Audio 05 - Combat Death
 
 Target: Assets/Audio/SFX/sfx_combat_death.mp3
+
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -107,6 +117,8 @@ A short enemy-death/dissolve sound effect for a top-down sci-fantasy action game
 
 Target: Assets/Audio/SFX/sfx_wave_start.mp3
 
+**Status:** DELIVERED and wired.
+
 Prompt:
 
 A short alert chime signaling a new enemy wave beginning in a sci-fantasy defense game. Bright, clear, single rising tone, urgent but not alarming, roughly 0.15 seconds, mono, cuts through combat noise without being harsh.
@@ -114,6 +126,8 @@ A short alert chime signaling a new enemy wave beginning in a sci-fantasy defens
 ### Audio 07 - Elite Wave
 
 Target: Assets/Audio/SFX/sfx_wave_elite.mp3
+
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -123,6 +137,8 @@ A short warning chime signaling an elite/stronger enemy wave beginning in a sci-
 
 Target: Assets/Audio/SFX/sfx_wave_complete.mp3
 
+**Status:** DELIVERED and wired.
+
 Prompt:
 
 A short resolving success chime signaling an enemy wave has been cleared in a sci-fantasy defense game. Bright, upward two-note resolution, satisfying but brief, roughly 0.18 seconds, mono.
@@ -131,6 +147,8 @@ A short resolving success chime signaling an enemy wave has been cleared in a sc
 
 Target: Assets/Audio/SFX/sfx_wave_intermission.mp3
 
+**Status:** DELIVERED and wired.
+
 Prompt:
 
 A short, calm transitional chime signaling the intermission/planning phase between waves in a sci-fantasy defense game. Soft, settling single tone, communicates a breathing moment. Roughly 0.12 seconds, mono, no reverb tail.
@@ -138,6 +156,8 @@ A short, calm transitional chime signaling the intermission/planning phase betwe
 ### Audio 10 - Stage Complete
 
 Target: Assets/Audio/SFX/sfx_stage_complete.mp3
+
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -149,6 +169,8 @@ A short triumphant fanfare-style sound effect signaling an entire stage has been
 
 Target: Assets/Audio/SFX/sfx_boss_warning.mp3
 
+**Status:** DELIVERED and wired.
+
 Prompt:
 
 A short ominous warning sound signaling an imminent boss encounter in a sci-fantasy defense game. Low rumbling tone with a sharp rising edge, communicates dread and urgency. Roughly 0.25 seconds, mono, no reverb tail.
@@ -156,6 +178,8 @@ A short ominous warning sound signaling an imminent boss encounter in a sci-fant
 ### Audio 12 - Boss Spawn
 
 Target: Assets/Audio/SFX/sfx_boss_spawn.mp3
+
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -165,6 +189,8 @@ A short, heavy impact/arrival sound effect for a boss entering the arena in a sc
 
 Target: Assets/Audio/SFX/sfx_boss_phase_change.mp3
 
+**Status:** DELIVERED and wired.
+
 Prompt:
 
 A short, sharp alert sound effect signaling a boss transitioning to a new combat phase in a sci-fantasy defense game. Bright, tense, single distinctive tone, easily distinguishable mid-fight from other cues. Roughly 0.2 seconds, mono, no reverb tail.
@@ -172,6 +198,8 @@ A short, sharp alert sound effect signaling a boss transitioning to a new combat
 ### Audio 14 - Boss Defeat
 
 Target: Assets/Audio/SFX/sfx_boss_defeat.mp3
+
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -183,6 +211,8 @@ A short but satisfying victory sound effect for defeating a boss in a sci-fantas
 
 Target: Assets/Audio/SFX/sfx_factory_resource_generated.mp3
 
+**Status:** DELIVERED and wired.
+
 Prompt:
 
 A very short, light mechanical "ding"/chime sound effect for a factory production node generating a resource in a sci-fantasy industrial defense game. Small, crisp, positive tick sound, must be pleasant even when triggered frequently in quick succession. Roughly 0.08 seconds, mono, no reverb tail.
@@ -193,6 +223,8 @@ A very short, light mechanical "ding"/chime sound effect for a factory productio
 
 Target: Assets/Audio/SFX/sfx_menu_open.mp3
 
+**Status:** DELIVERED and wired.
+
 Prompt:
 
 A short UI sound effect for opening a menu panel in a controller-first sci-fantasy game. Soft rising swoosh with a subtle mechanical panel-sliding character. Roughly 0.14 seconds, mono, no reverb tail.
@@ -200,6 +232,8 @@ A short UI sound effect for opening a menu panel in a controller-first sci-fanta
 ### Audio 17 - Menu Navigate
 
 Target: Assets/Audio/SFX/sfx_menu_navigate.mp3
+
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -209,6 +243,8 @@ A very short, subtle UI tick sound effect for moving focus between menu entries 
 
 Target: Assets/Audio/SFX/sfx_menu_confirm.mp3
 
+**Status:** DELIVERED and wired.
+
 Prompt:
 
 A short, positive UI confirmation sound effect for a controller-first sci-fantasy game. Clear, bright, single affirmative tone communicating a successful selection. Roughly 0.12 seconds, mono, no reverb tail.
@@ -216,6 +252,8 @@ A short, positive UI confirmation sound effect for a controller-first sci-fantas
 ### Audio 19 - Menu Cancel
 
 Target: Assets/Audio/SFX/sfx_menu_cancel.mp3
+
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -229,6 +267,8 @@ A short, neutral UI cancel/back sound effect for a controller-first sci-fantasy 
 
 Target: Assets/Audio/Music/music_boss_stage2_loop.mp3
 
+**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
+
 Prompt:
 
 A high-tension boss-encounter loop for a reactor-guardian fight in a sci-fantasy industrial defense roguelite, in the same instrumental family as the base combat/boss loops. Add a pulsing, alarm-like containment-field motif and a resonant metallic drone underneath the percussion, suggesting an unstable reactor core. Heavier percussion and darker bass than the standard combat loop. Seamlessly loopable, roughly 30-45 seconds, no vocals.
@@ -236,6 +276,8 @@ A high-tension boss-encounter loop for a reactor-guardian fight in a sci-fantasy
 ### Audio 21 - Boss Loop Salvage Overseer (Stage 3)
 
 Target: Assets/Audio/Music/music_boss_stage3_loop.mp3
+
+**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
 
 Prompt:
 
@@ -245,6 +287,8 @@ A high-tension boss-encounter loop for a scrapyard-overseer fight in a sci-fanta
 
 Target: Assets/Audio/Music/music_boss_stage4_loop.mp3
 
+**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
+
 Prompt:
 
 A high-tension boss-encounter loop for a frost-guardian fight in a sci-fantasy industrial defense roguelite, in the same instrumental family as the base combat/boss loops. Colder and sparser than the standard boss loop, with a shimmering high-register crystalline motif (bell-like or glassy texture) layered over the usual heavier percussion and dark bass, suggesting an icy, controlled threat rather than raw aggression. Seamlessly loopable, roughly 30-45 seconds, no vocals.
@@ -252,6 +296,8 @@ A high-tension boss-encounter loop for a frost-guardian fight in a sci-fantasy i
 ### Audio 23 - Boss Loop Final Boss (Stage 5, Core Nexus)
 
 Target: Assets/Audio/Music/music_boss_stage5_loop.mp3
+
+**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
 
 Prompt:
 
@@ -265,6 +311,8 @@ Neither a "you beat the game" cue nor a credits track exists yet - `WaveManager.
 
 Target: Assets/Audio/Music/music_run_victory_sting.mp3
 
+**Status:** NOT CREATED - the cue still plays as a procedural sine placeholder.
+
 Prompt:
 
 A short, triumphant victory sting for completing an entire run in a sci-fantasy industrial defense roguelite - the payoff moment after defeating the Final Boss (Core Nexus). More elaborate, resolved and ceremonial than the Stage Complete chime (Audio 10): a rising fanfare-like flourish that resolves into a warm, settled final chord, echoing the white-gold "Core Nexus" motif established in the Stage 5 boss loop (Audio 23) rather than introducing new unrelated melodic material. Roughly 4-6 seconds, not intended to loop, no vocals, no baked reverb longer than the cue itself.
@@ -273,6 +321,49 @@ A short, triumphant victory sting for completing an entire run in a sci-fantasy 
 
 Target: Assets/Audio/Music/music_credits_loop.mp3
 
+**Status:** NOT CREATED - the cue still plays as a procedural sine placeholder.
+
 Prompt:
 
 A warm, reflective instrumental loop for the credits screen of a sci-fantasy industrial defense roguelite, in the same instrumental family as the game's Calm loop (Audio 01) but more melodically developed and satisfying to listen to on repeat for several minutes - this plays while the player reads scrolling credits, not during gameplay. Gentle synth pads, a slow, memorable melodic theme that echoes the game's amber/steel-blue "Core" motif established across the Calm and Combat loops, subtle mechanical-hum undertone kept very low in the mix. Seamlessly loopable, roughly 45-60 seconds, no percussion hits or sudden dynamic spikes that would feel jarring on a long loop, no vocals.
+
+## Arena Objectives (2026-09-27)
+
+Die Salvage Cache (Arena-Objective, siehe [OPEN_TOPICS.md](../OPEN_TOPICS.md)) erscheint mitten in
+einer Wave an einer zufälligen Position und läuft ab, wenn niemand sie einsammelt. Der ganze Sinn
+ist eine Entscheidung unter Zeitdruck — und genau die funktioniert nur, wenn der Spieler das
+Erscheinen **hört**, ohne hinsehen zu müssen: er kämpft gerade woanders. Das Ablaufen braucht
+ebenfalls einen eigenen Cue, sonst bleibt "verpasst" unsichtbar.
+
+Alle drei gehören in eine gemeinsame Klangfamilie, damit sie als ein System lesbar sind, und dürfen
+Boss-Telegraphen (Audio 11–13) nicht überdecken.
+
+### Audio 26 - Arena Objective Spawn
+
+Target: Assets/Audio/SFX/sfx_objective_spawn.mp3
+
+**Status:** NOT CREATED - the cue still plays as a procedural sine placeholder.
+
+Prompt:
+
+A short attention-pulling alert for a salvage container appearing somewhere in the arena of a sci-fantasy industrial defense game. A bright two-note rising ping with a faint metallic container-latch undertone, clearly audible over ongoing combat but distinctly lighter and less threatening than a boss or wave warning - this is an opportunity, not a danger. Roughly 0.25 seconds, mono, no reverb tail.
+
+### Audio 27 - Arena Objective Claimed
+
+Target: Assets/Audio/SFX/sfx_objective_claimed.mp3
+
+**Status:** NOT CREATED - the cue still plays as a procedural sine placeholder.
+
+Prompt:
+
+A short satisfying pickup sound for claiming a salvage container in a sci-fantasy industrial defense game. A clasp releasing followed by a warm resolving chime, richer and more rewarding than the small resource-pickup tick but shorter than a wave-complete fanfare. Must feel like a reward worth having crossed the arena for. Roughly 0.3 seconds, mono.
+
+### Audio 28 - Arena Objective Lost
+
+Target: Assets/Audio/SFX/sfx_objective_lost.mp3
+
+**Status:** NOT CREATED - the cue still plays as a procedural sine placeholder.
+
+Prompt:
+
+A short deflating sound for a salvage container expiring uncollected in a sci-fantasy industrial defense game. A soft downward two-note fall with a faint mechanical powering-down undertone. It must read as a missed opportunity, not as damage or failure - disappointed, never punishing. Roughly 0.25 seconds, mono, no reverb tail.

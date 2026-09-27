@@ -12,7 +12,19 @@ COREBOUND — a singleplayer Windows/Steam action roguelite combining direct com
 2. `Docs/Specs/*.md` — per-system contracts.
 3. `Docs/Slices/*.md` — scoped work packages.
 4. `Docs/08_IMPLEMENTATION_BACKLOG.md` — plan and status.
-5. `Docs/10_OPEN_POINTS.md` — the live open-items register.
+5. `Docs/OPEN_TOPICS.md` — the live open-items register. **One file, since 2026-09-27**: the old
+   `10_OPEN_POINTS`, `SESSION_REPORT_*`, `SPEC_REVIEW_*` and `Specs/DIY/*_PROPOSALS` files were
+   merged into it and deleted. Do not start a new report file; add to this one.
+
+**Asset prompts and their delivery status** live in two registers, and both carry a per-asset
+`**Status:**` line that says whether the file exists and whether anything references it:
+
+- `Docs/AI/GRAPHICS_ASSET_PROMPTS.md` — every sprite, with its target path.
+- `Docs/AI/AUDIO_ASSET_PROMPTS.md` — every music loop and SFX cue, same format.
+
+Keep both current when art or audio is added, replaced or wired. A prompt with no status line, or a
+status that disagrees with the disk, is how assets end up finished and unused — the 2026-09-27 audit
+found 16 finished sprites and 4 finished boss loops that nothing referenced.
 
 **Treat these docs as claims, not facts.** They have repeatedly drifted from the code in *both* directions — a 2026-09-17 audit found seven "still open" items that were fully implemented, and the vision still states targets the build has since passed or missed. Verify against code before acting on any status claim, and correct the doc when it is wrong.
 
@@ -84,6 +96,6 @@ COREBOUND — a singleplayer Windows/Steam action roguelite combining direct com
 ## Workflow
 
 - Commit messages: what changed and **why**, in prose. Reference the playtest report or spec that motivated it.
-- Log substantive sessions in `Docs/SESSION_REPORT_*.md`; keep `Docs/10_OPEN_POINTS.md` current.
+- Log substantive sessions in `Docs/OPEN_TOPICS.md`; keep `Docs/OPEN_TOPICS.md` current.
 - Do not delete the user's files (including `be_*` art backups) without asking.
 - Never claim something is verified if it was only reasoned about. Distinguish "compiles" from "runs" from "plays correctly".

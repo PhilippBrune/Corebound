@@ -44,7 +44,7 @@ Das Wave-System steuert Tempo und Schwierigkeit, ohne selbst Combat- oder Reward
   gewürfelt, nicht pro Frame. Boss-Waves bekommen keines. Ein abgelaufenes Objective wird weder
   gutgeschrieben noch bestraft, und der Wave-End-Vacuum (`ResourcePickupPool.ForceCollectAll`) darf
   es nicht einsammeln - sonst verschwindet die Entscheidung, die es erzeugen soll. Entscheidungen und
-  Umsetzung: `Docs/Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md`.
+  Umsetzung: `Docs/OPEN_TOPICS.md`.
 - Elite-Waves und Boss-Vorbereitungen sind Datenvarianten des bestehenden Wave-Rahmens.
 - Eine Wave darf den Player fordern, aber nicht ohne lesbare Ursache überrollen.
 - Zwischenphasen müssen controller-freundlich navigierbar bleiben.

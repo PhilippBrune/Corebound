@@ -10,7 +10,7 @@ namespace Corebound.Gameplay.Arena
 {
     // Decides whether a wave gets an arena objective, where it goes, how long it lives, and what
     // claiming it pays out. Owner decisions of 2026-09-25 against
-    // Docs/Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md: D1 "1 and 3" (Scrap lump *and* a timed buff),
+    // Docs/OPEN_TOPICS.md: D1 "1 and 3" (Scrap lump *and* a timed buff),
     // D2 1 (uniformly random placement), D3 1 (walk over it), D4 2 (computed lifetime),
     // D6 3 (per-wave chance rising with stage), D7 1 (ignored means gone).
     //

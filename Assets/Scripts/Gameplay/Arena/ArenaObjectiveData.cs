@@ -6,7 +6,7 @@ namespace Corebound.Gameplay.Arena
     // Owner playtest 2026-09-25: "I currently don't like that it feels like there is no need to use
     // the whole arena." Two-sided waves changed where enemies come from; this is the other half -
     // something worth standing somewhere else for. Decisions recorded in
-    // Docs/Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md, owner answers of the same day.
+    // Docs/OPEN_TOPICS.md, owner answers of the same day.
     //
     // The payload is deliberately two independent halves (owner chose D1 "1 and 3"): a Scrap lump
     // and a timed fire-rate buff. Either may be zeroed out in data, which is also how the variants

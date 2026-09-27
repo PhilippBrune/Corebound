@@ -13,7 +13,8 @@ namespace Corebound.Gameplay.Arena
     // in a full playthrough (D8). An objective that expires has to actually be lost.
     public sealed class ArenaObjectiveRuntime : MonoBehaviour
     {
-        private const string BodySpritePath = "Assets/Art/Resources/resource_primary_icon.png";
+        private const string BodySpritePath = "Assets/Art/Environment/Arena/arena_salvage_cache.png";
+        private const string RingSpritePath = "Assets/Art/Environment/Arena/arena_objective_ring.png";
         private const float PulseBeatsPerSecond = 1.1f;
         private const float UrgentBeatsPerSecond = 3.2f;
         private const float RingOuterScale = 1.85f;
@@ -27,6 +28,7 @@ namespace Corebound.Gameplay.Arena
         private SpriteRenderer _body;
         private SpriteRenderer _ring;
         private Vector3 _bodyBaseScale;
+        private float _ringBaseScale = 1f;
         private float _remainingSeconds;
         private float _lifetimeSeconds;
         private bool _isLive;
@@ -81,17 +83,17 @@ namespace Corebound.Gameplay.Arena
                 _body = gameObject.AddComponent<SpriteRenderer>();
             }
 
-            // Placeholder art: the Scrap icon at roughly three times pickup size, which reads as
-            // "a lot of this" rather than as a new object. A dedicated cache sprite is listed in
-            // GRAPHICS_ASSET_PROMPTS; until it exists this is honest about what it represents,
-            // where a plain square would not be.
-            var bodySprite = DebugSpriteFactory.LoadProjectSprite(BodySpritePath);
+            // Both files are a ~515px subject on a 1422x702 canvas, so they are fitted by their
+            // opaque region - fitting the file would scale the padding and render the cache at
+            // roughly a third of the intended size, which is the same trap the Core fell into.
+            var bodyTexture = DebugSpriteFactory.LoadTextureFromProjectFile(BodySpritePath);
+            var bodySprite = bodyTexture != null ? DebugSpriteFactory.CreateSprite(bodyTexture, 100f) : null;
 
             if (bodySprite != null)
             {
                 _body.sprite = bodySprite;
                 _body.color = Color.white;
-                DebugSpriteFactory.FitTransformToSprite(transform, bodySprite, Vector2.one * size);
+                DebugSpriteFactory.FitTransformToSpriteContent(transform, bodySprite, bodyTexture, Vector2.one * size);
             }
             else
             {
@@ -107,10 +109,21 @@ namespace Corebound.Gameplay.Arena
             var ringObject = new GameObject("ClaimRing");
             ringObject.transform.SetParent(transform, false);
             _ring = ringObject.AddComponent<SpriteRenderer>();
-            _ring.sprite = DebugSpriteFactory.CreateSquare(100f);
-            _ring.color = new Color(tint.r, tint.g, tint.b, 0.28f);
+            var ringTexture = DebugSpriteFactory.LoadTextureFromProjectFile(RingSpritePath);
+            var ringSprite = ringTexture != null ? DebugSpriteFactory.CreateSprite(ringTexture, 100f) : null;
+            _ring.sprite = ringSprite != null ? ringSprite : DebugSpriteFactory.CreateSquare(100f);
+            _ring.color = new Color(1f, 1f, 1f, 0.85f);
             _ring.sortingOrder = -4;
-            ringObject.transform.localScale = new Vector3(RingOuterScale, RingOuterScale, 1f);
+
+            // The ring is a child, so its scale multiplies the body's fit. Normalising by the body
+            // scale keeps the ring's world size independent of how the cache art happened to be
+            // padded, which is what lets RingOuterScale stay a readable "how much bigger" number.
+            var bodyScale = Mathf.Max(0.0001f, transform.localScale.x);
+            var ringFit = ringSprite != null && ringTexture != null
+                ? size / Mathf.Max(0.0001f, DebugSpriteFactory.GetOpaqueSizePixels(ringTexture).x / 100f) / bodyScale
+                : 1f;
+            ringObject.transform.localScale = new Vector3(ringFit * RingOuterScale, ringFit * RingOuterScale, 1f);
+            _ringBaseScale = ringFit;
         }
 
         private void Update()
@@ -168,7 +181,7 @@ namespace Corebound.Gameplay.Arena
                 // The ring closes in as the lifetime drains, so "how long have I got" is readable
                 // at arena scale, where a digit would not be.
                 var normalized = Mathf.Clamp01(_remainingSeconds / _lifetimeSeconds);
-                var ringScale = Mathf.Lerp(1.05f, RingOuterScale, normalized);
+                var ringScale = _ringBaseScale * Mathf.Lerp(1.05f, RingOuterScale, normalized);
                 _ring.transform.localScale = new Vector3(ringScale, ringScale, 1f);
                 var ringColor = isUrgent ? UrgentColor : tint;
                 _ring.color = new Color(ringColor.r, ringColor.g, ringColor.b, 0.18f + 0.2f * beat);

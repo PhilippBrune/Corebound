@@ -125,4 +125,4 @@ bounded only by the wallet. The balance consequence is that a hoarding strategy 
 somewhere to spend, which the price-multiplier fields are the lever for if it proves too strong.
 
 Also fixed 2026-09-21: the shop was opening and closing within a single frame and was
-therefore never visible at all. See the decision log in `Docs/10_OPEN_POINTS.md`.
+therefore never visible at all. See the decision log in `Docs/OPEN_TOPICS.md`.

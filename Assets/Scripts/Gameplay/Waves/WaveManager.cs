@@ -74,7 +74,7 @@ namespace Corebound.Gameplay.Waves
         private readonly WaveSpawnPlacement _spawnPlacement = new WaveSpawnPlacement();
         private readonly List<int> _upcomingGateIndices = new List<int>();
 
-        // Timed arena objectives (owner 2026-09-25, Docs/Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md).
+        // Timed arena objectives (owner 2026-09-25, Docs/OPEN_TOPICS.md).
         // The service owns every decision about them; WaveManager only tells it when a wave starts,
         // how far the wave has got, and when it ends.
         private readonly Arena.ArenaObjectiveService _arenaObjectiveService = new Arena.ArenaObjectiveService();

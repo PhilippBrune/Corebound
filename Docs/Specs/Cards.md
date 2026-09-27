@@ -166,7 +166,7 @@ reload loop instead: `WeaponModifier_CoolingArrayReload` (reload time x0.75) and
 unreferenced but kept.
 
 Rapid Cycler, Hair Trigger, Twin Barrel and Skirmisher's Kit still share the fire-interval
-target. See `Docs/SPEC_REVIEW_2026-09-22.md` finding A9 for the options.
+target. See `Docs/OPEN_TOPICS.md` finding A9 for the options.
 
 The reward screen footer now shows each card's actual numbers, built from its effect data
 (`CardEffectDescriber`), e.g. "+22% tower damage". This means two cards that do the same

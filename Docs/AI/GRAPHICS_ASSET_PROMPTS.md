@@ -1397,7 +1397,7 @@ for.
 
 Needed because:
 
-Timed arena objectives (owner decisions 2026-09-25, `Docs/Specs/DIY/ARENA_OBJECTIVES_2026-09-25.md`)
+Timed arena objectives (owner decisions 2026-09-25, `Docs/OPEN_TOPICS.md`)
 put a cache at a random spot mid-wave that expires if nobody walks over it. It has to be spotted
 instantly from anywhere in the arena and read as a prize rather than as another enemy drop, since
 the whole mechanic is the player deciding to leave a safe position for it.
