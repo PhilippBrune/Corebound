@@ -177,6 +177,89 @@ namespace Corebound.UI.Gameplay
             {
                 Refresh();
             }
+
+            if (_isOpen)
+            {
+                UpdateMouse();
+            }
+        }
+
+        // Playtest 2026-09-27: "replace interaction is not working with mouse click." The panel was
+        // controller/keyboard only - it never read the mouse at all, so the Replace row could be
+        // read but not pressed. The gameplay scene carries no EventSystem (the HUD canvases are
+        // additive and none of them has a raycaster), so pointer input is hit-tested by hand here,
+        // the same way CardRewardPresenter and MainMenuRoutePanelPresenter already do it.
+        //
+        // Hover selects and click confirms, matching the reward screen, so one mental model covers
+        // both. Clicking a weapon slot selects that slot rather than firing an action, because the
+        // destructive actions (Sell, Replace) must stay a deliberate second click.
+        private Vector2 _lastPointerPosition;
+
+        private void UpdateMouse()
+        {
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+
+            if (mouse == null)
+            {
+                return;
+            }
+
+            var pointer = mouse.position.ReadValue();
+            var moved = (pointer - _lastPointerPosition).sqrMagnitude > 4f;
+            _lastPointerPosition = pointer;
+            var clicked = mouse.leftButton.wasPressedThisFrame;
+
+            if (!moved && !clicked)
+            {
+                return;
+            }
+
+            for (var index = 0; index < _slotImages.Length; index++)
+            {
+                var slotImage = _slotImages[index];
+
+                if (slotImage == null
+                    || !slotImage.gameObject.activeInHierarchy
+                    || index >= _player.Loadout.UnlockedSlotCount
+                    || !RectTransformUtility.RectangleContainsScreenPoint(slotImage.rectTransform, pointer, null))
+                {
+                    continue;
+                }
+
+                if (index != _selectedSlot)
+                {
+                    _selectedSlot = index;
+                    _selectedAction = 0;
+                    Refresh();
+                }
+
+                return;
+            }
+
+            for (var index = 0; index < _actionTexts.Count && index < _actions.Count; index++)
+            {
+                var actionText = _actionTexts[index];
+
+                if (actionText == null
+                    || !actionText.gameObject.activeInHierarchy
+                    || !RectTransformUtility.RectangleContainsScreenPoint(actionText.rectTransform, pointer, null))
+                {
+                    continue;
+                }
+
+                if (index != _selectedAction)
+                {
+                    _selectedAction = index;
+                    RefreshActionHighlight();
+                }
+
+                if (clicked)
+                {
+                    OnConfirm();
+                }
+
+                return;
+            }
         }
 
         private bool CanOpenNow()

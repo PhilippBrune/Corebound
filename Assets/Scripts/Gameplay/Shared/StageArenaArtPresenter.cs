@@ -32,6 +32,10 @@ namespace Corebound.Gameplay.Shared
         private const string BoundaryTexturePath = "Assets/Art/Environment/Arena/stage1_boundary_set.png";
         private const string PropTexturePath = "Assets/Art/Environment/Arena/stage1_prop_set.png";
         private const string CoreTexturePath = "Assets/Art/Environment/Arena/core_main_sprite.png";
+
+        // What a built tower fits into (TowerRuntimeController). The Core is measured against this
+        // so "as big as the towers" stays true if either is retuned.
+        public const float TowerWorldSize = 0.9f;
         private const string SpawnGateTexturePath = "Assets/Art/Environment/Arena/stage1_spawn_gate.png";
 
         // stage1_boundary_set.png is a hand-composed sheet, not a uniform grid (its 18 pieces
@@ -923,8 +927,14 @@ namespace Corebound.Gameplay.Shared
 
             if (sprite != null)
             {
-                var tileSize = Mathf.Min(arenaSize.x / 8f, arenaSize.y / 5f);
-                DebugSpriteFactory.FitTransformToSprite(_coreTarget, sprite, Vector2.one * (tileSize * 0.34f * Mathf.Max(0.1f, coreScale)));
+                // Owner 2026-09-27: "make the core as big as the towers". A tower fits into a
+                // 0.9-unit box (TowerRuntimeController), so the Core is sized against that same
+                // number instead of a tile fraction that happened to land near it. CoreScale stays
+                // as the per-stage dial - Stage 5's 1.6 is deliberate - and the fit measures the
+                // sprite's opaque region, because this file is mostly transparent padding and
+                // fitting the padding is what made the Core render at about half size.
+                DebugSpriteFactory.FitTransformToSpriteContent(
+                    _coreTarget, sprite, texture, Vector2.one * (TowerWorldSize * Mathf.Max(0.1f, coreScale)));
             }
 
             if (_walkableInteriorPositions.Count > 0)

@@ -651,7 +651,17 @@ namespace Corebound.Gameplay.Cards
         // reward panel. Cropping to the shared visible-content rect and slicing it fixes both the
         // oversized-canvas problem and lets the frame's corner art stay crisp when
         // stretched into the slot instead of being squished.
-        private static readonly Rect CardFrameContentRect = new Rect(335f, 25f, 465f, 560f);
+        // Re-measured 2026-09-27 from each file's alpha bounding box after the playtest note that
+        // the card contents sit slightly offset inside the card. The previous (335, 25, 465, 560)
+        // carried ~20px of transparent slack on the right and ~7px on top, so stretching it into
+        // the slot drew the visible frame inset from - and off-centre within - the slot's own fill,
+        // which is what showed up as the selected card's wash not lining up with its border.
+        //
+        // The four rarities have slightly different bounds (common 340,35..784,576; rare
+        // 340,33..790,580; epic 340,29..793,582; legendary 342,36..787,581 in top-left pixels), so
+        // this is their union rather than any one file's: all three slots are the same size on
+        // screen and must render their frames identically, whatever rarity landed in them.
+        private static readonly Rect CardFrameContentRect = new Rect(340f, 25f, 453f, 553f);
         // Measured directly off the art: the metal border inside the 465x560 crop is ~90px left,
         // ~75px right, ~100px top, ~80px bottom - a border that size renders at a fixed pixel
         // thickness regardless of the target Image's RectTransform size, so on the much smaller

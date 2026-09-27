@@ -26,10 +26,19 @@ namespace Corebound.Gameplay.Towers
         private static readonly Rect LargeCardRect = new Rect(44f, 342f, 525f, 525f);
         private static readonly Rect SmallCardRect = new Rect(626f, 601f, 242f, 255f);
 
-        private const float LargeCardSize = 300f;
-        private static readonly Vector2 SmallCardSize = new Vector2(170f, 179f);
-        private const float CardGap = 14f;
-        private const float BottomOffset = 150f;
+        // Playtest 2026-09-27: "the slots are overlaid by the tower card - find a better position".
+        // The browser floated 150px above the bottom edge at 300px tall, which put it squarely over
+        // the arena's tower-slot row - so the one thing the player is choosing *for* was hidden by
+        // the thing they were choosing *from*. Dropping it onto the bottom edge and shrinking the
+        // large card frees about 190px of arena height, which clears the slot row on every stage
+        // without moving the browser somewhere the eye does not already go during a build.
+        //
+        // The bottom-centre strip is free: the weapon-slot HUD sits bottom-left and the wave HUD
+        // top-right, so this does not trade one overlap for another.
+        private const float LargeCardSize = 230f;
+        private static readonly Vector2 SmallCardSize = new Vector2(140f, 147f);
+        private const float CardGap = 12f;
+        private const float BottomOffset = 18f;
         private const int MaxCards = 6;
 
         private static readonly Color LockedTint = new Color(0.42f, 0.44f, 0.48f, 1f);

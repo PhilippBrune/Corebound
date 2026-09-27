@@ -38,6 +38,48 @@ namespace Corebound.UI.MainMenu
             StateChanged?.Invoke();
         }
 
+        // Playtest 2026-09-27: "changing profile can not have Continue". The menu resolved its
+        // state once in Awake and never again, so after switching to a profile with no saved run
+        // the entry list was still the *previous* profile's - Continue stayed on the menu and
+        // resuming it would have loaded a run that belongs to someone else. HasSeenTutorial and the
+        // meta-progression unlock are per-profile in exactly the same way, so the whole state is
+        // re-resolved rather than just the one flag.
+        private void OnEnable()
+        {
+            SaveSystem.ProfileSelection.ActiveProfileChanged += OnActiveProfileChanged;
+        }
+
+        private void OnDisable()
+        {
+            SaveSystem.ProfileSelection.ActiveProfileChanged -= OnActiveProfileChanged;
+        }
+
+        // Deferred by a frame on purpose. LocalProfileSaveManager clears its per-profile caches from
+        // this same event, and subscriber order between two MonoBehaviours is not guaranteed - reading
+        // the state inline can therefore still hit the previous profile's cached run and put Continue
+        // straight back. Waiting a frame means the caches are certainly clear.
+        private bool _profileChangePending;
+
+        private void OnActiveProfileChanged()
+        {
+            _profileChangePending = true;
+        }
+
+        private void Update()
+        {
+            if (!_profileChangePending)
+            {
+                return;
+            }
+
+            _profileChangePending = false;
+
+            if (_flowData != null)
+            {
+                ApplyState(ResolveInitialState());
+            }
+        }
+
         public void ApplyState(MainMenuState state)
         {
             _model.ApplyState(state);

@@ -191,6 +191,22 @@ namespace Corebound.SaveSystem
             _hasSeenTutorial = value;
         }
 
+        // Playtest 2026-09-27: "after the very first time earning Alloy or SP the game should show
+        // the player how to spend them." Both currencies are meta, so the hint is owed once per
+        // profile and has to survive the run that earned it - a run-scoped flag would re-fire on
+        // every later run, and a static would re-fire after a domain reload.
+        //
+        // Appended, never inserted: this is serialized by field and old saves simply deserialize it
+        // as false, which is the correct answer for a profile that has not seen the hint.
+        [SerializeField] private bool _hasSeenMetaCurrencyHint;
+
+        public bool HasSeenMetaCurrencyHint => _hasSeenMetaCurrencyHint;
+
+        public void MarkMetaCurrencyHintSeen()
+        {
+            _hasSeenMetaCurrencyHint = true;
+        }
+
         // ---- Alloy -----------------------------------------------------------------------------
 
         public void GrantAlloy(int amount)

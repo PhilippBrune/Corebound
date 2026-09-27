@@ -16,10 +16,27 @@ namespace Corebound.Audio
     // source with "(one-shot)" is a PlayOneShot in progress.
     //
     // Editor and development builds only; a release build does not contain it.
+    //
+    // **Off by default since 2026-09-27.** It did its job (the double-music bug was a shared
+    // DontDestroyOnLoad GameObject) and then kept writing a line every two seconds forever, which
+    // buried the autopilot's own output in Editor.log - 234 probe lines in one short run. Turn it
+    // on from `Corebound > Audio > Playback Probe` when an audio question actually needs it.
     public sealed class AudioPlaybackProbe : MonoBehaviour
     {
+        // Read by the editor menu item that toggles it; kept here so the key has one definition.
+        public const string EnabledPrefsKey = "Corebound.AudioPlaybackProbe.Enabled";
+
         private const float PollSeconds = 2f;
         private const float HeartbeatSeconds = 10f;
+
+        private static bool IsEnabled
+        {
+#if UNITY_EDITOR
+            get { return UnityEditor.EditorPrefs.GetBool(EnabledPrefsKey, false); }
+#else
+            get { return false; }
+#endif
+        }
 
         private readonly StringBuilder _builder = new StringBuilder(512);
         private string _lastReport = string.Empty;
@@ -29,6 +46,11 @@ namespace Corebound.Audio
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
         {
+            if (!IsEnabled)
+            {
+                return;
+            }
+
             var host = new GameObject("AudioPlaybackProbe");
             DontDestroyOnLoad(host);
             host.hideFlags = HideFlags.HideInHierarchy;

@@ -211,6 +211,92 @@ namespace Corebound.Gameplay.Shared
             return sprite;
         }
 
+        // Fits by what you can actually see rather than by the file's dimensions.
+        //
+        // Playtest 2026-09-27: "make the core as big as the towers". The Core was already being
+        // fitted into a 0.95-unit box against the tower's 0.9, so on paper it matched - but
+        // core_main_sprite.png is 1090x606 for a reactor that occupies about 560px of that width,
+        // so fitting the *file* scaled the padding and left the visible Core at roughly half the
+        // intended size. Measuring the opaque region first fixes it here and for any other art
+        // delivered with generous padding, instead of hiding it in a per-stage scale number that
+        // silently becomes wrong the next time a sprite is redrawn.
+        private static readonly Dictionary<Texture2D, Vector2> OpaqueSizeCache = new Dictionary<Texture2D, Vector2>();
+
+        public static Vector2 GetOpaqueSizePixels(Texture2D texture)
+        {
+            if (texture == null)
+            {
+                return Vector2.zero;
+            }
+
+            if (OpaqueSizeCache.TryGetValue(texture, out var cached))
+            {
+                return cached;
+            }
+
+            var result = new Vector2(texture.width, texture.height);
+
+            try
+            {
+                var pixels = texture.GetPixels32();
+                int minX = texture.width, minY = texture.height, maxX = -1, maxY = -1;
+
+                for (var y = 0; y < texture.height; y++)
+                {
+                    var rowStart = y * texture.width;
+
+                    for (var x = 0; x < texture.width; x++)
+                    {
+                        // 8 rather than 0: the delivered art has faint anti-aliased dust in the
+                        // padding that would otherwise count as content.
+                        if (pixels[rowStart + x].a <= 8)
+                        {
+                            continue;
+                        }
+
+                        if (x < minX) { minX = x; }
+                        if (x > maxX) { maxX = x; }
+                        if (y < minY) { minY = y; }
+                        if (y > maxY) { maxY = y; }
+                    }
+                }
+
+                if (maxX >= minX && maxY >= minY)
+                {
+                    result = new Vector2(maxX - minX + 1, maxY - minY + 1);
+                }
+            }
+            catch (UnityException)
+            {
+                // Not readable (an imported asset without Read/Write enabled): fall back to the
+                // full size, which is the pre-2026-09-27 behaviour rather than a broken one.
+            }
+
+            OpaqueSizeCache[texture] = result;
+            return result;
+        }
+
+        public static void FitTransformToSpriteContent(Transform targetTransform, Sprite sprite, Texture2D texture, Vector2 targetWorldSize)
+        {
+            if (targetTransform == null || sprite == null)
+            {
+                return;
+            }
+
+            var opaquePixels = GetOpaqueSizePixels(texture);
+
+            if (opaquePixels.x <= Mathf.Epsilon || opaquePixels.y <= Mathf.Epsilon)
+            {
+                FitTransformToSprite(targetTransform, sprite, targetWorldSize);
+                return;
+            }
+
+            var pixelsPerUnit = sprite.pixelsPerUnit > Mathf.Epsilon ? sprite.pixelsPerUnit : 100f;
+            var contentWorldSize = opaquePixels / pixelsPerUnit;
+            var scaleFactor = Mathf.Min(targetWorldSize.x / contentWorldSize.x, targetWorldSize.y / contentWorldSize.y);
+            targetTransform.localScale = new Vector3(scaleFactor, scaleFactor, 1f);
+        }
+
         public static void FitTransformToSprite(Transform targetTransform, Sprite sprite, Vector2 targetWorldSize)
         {
             if (targetTransform == null || sprite == null)

@@ -52,6 +52,34 @@ namespace Corebound.MetaProgression
             RewardGranted?.Invoke(grant);
         }
 
+        // Playtest 2026-09-27: "after the very first time earning Alloy or SP the game should show
+        // the player how to spend them." Both grant paths funnel through here, so the check lives
+        // here rather than being repeated in each caller - and it fires at the moment of the kill,
+        // where the player can connect the number to what they just did, instead of on some later
+        // screen where it reads as a stray tip.
+        //
+        // Fires once per profile: the flag is saved with the same write that banks the currency, so
+        // a run that earns Alloy and then dies still counts as having seen it.
+        private static void TryShowMetaCurrencyHint(ISaveManager saveManager, MetaProgressionSaveData saveData, MetaRewardGrant grant)
+        {
+            if (saveData == null || saveData.HasSeenMetaCurrencyHint || grant.IsEmpty)
+            {
+                return;
+            }
+
+            saveData.MarkMetaCurrencyHintSeen();
+
+            var what = grant.SkillPoints > 0 && grant.Alloy > 0
+                ? UI.LocalizationService.Resolve("Skill Points and Alloy", "Skillpunkte und Legierung")
+                : (grant.SkillPoints > 0
+                    ? UI.LocalizationService.Resolve("Skill Points", "Skillpunkte")
+                    : UI.LocalizationService.Resolve("Alloy", "Legierung"));
+
+            UI.NotificationPresenter.Show(UI.LocalizationService.Resolve(
+                "First " + what + " earned - spend them in Progression, from the Main Menu. They are kept when a run ends.",
+                "Erste " + what + " verdient - ausgeben im Fortschritt-Menue im Hauptmenue. Sie bleiben erhalten, wenn ein Run endet."));
+        }
+
         // Owner 2026-09-22: "Tutorial should not give any Alloy or SP". The guided first run uses
         // the same systems as a real run, so the payouts have to be refused here rather than in
         // each caller.
@@ -74,9 +102,10 @@ namespace Corebound.MetaProgression
             var alloy = definition.ResolveBossAlloy(stageIndex) + (isFirstKill ? definition.BossFirstKillAlloy : 0);
             saveData.GrantSkillPoints(skillPoints);
             saveData.GrantAlloy(alloy);
-            saveManager.SaveMetaProgressionSaveData(saveData);
 
             var grant = new MetaRewardGrant(skillPoints, alloy, isFirstKill);
+            TryShowMetaCurrencyHint(saveManager, saveData, grant);
+            saveManager.SaveMetaProgressionSaveData(saveData);
             Record(grant);
             return grant;
         }
@@ -90,9 +119,10 @@ namespace Corebound.MetaProgression
 
             var saveData = saveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
             saveData.GrantAlloy(definition.EliteKillAlloy);
-            saveManager.SaveMetaProgressionSaveData(saveData);
 
             var grant = new MetaRewardGrant(0, definition.EliteKillAlloy, false);
+            TryShowMetaCurrencyHint(saveManager, saveData, grant);
+            saveManager.SaveMetaProgressionSaveData(saveData);
             Record(grant);
             return grant;
         }
