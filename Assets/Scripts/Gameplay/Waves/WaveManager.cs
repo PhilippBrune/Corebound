@@ -778,14 +778,11 @@ namespace Corebound.Gameplay.Waves
             AdvanceToNextStage();
         }
 
-        // Known limitation (2026-09-09): a fresh app launch resumed mid-Stage-2+ falls back to
-        // whatever StageData is serialized on this component in the scene (always Stage 1) - the
-        // save system persists StageIndex as an int (RunPersistenceController.ApplyWaveContext,
-        // called below via ApplyPersistenceContext/StartCurrentWave) but InitializeFromSave() has
-        // no stage-asset lookup-by-index to resolve which StageData that number refers to. Staying
-        // in the current session across the transition works correctly; quitting and relaunching
-        // mid-Stage-2 does not yet. Adding that lookup needs a stage registry this project doesn't
-        // have yet, so it's deliberately left as a known gap rather than guessed at blind.
+        // The stage-asset lookup this comment used to say was missing now exists:
+        // ResolveStageDataForSave() indexes StageProgressionData.Stages by the saved StageIndex, so
+        // resuming mid-Stage-2+ loads the right StageData. What was actually broken until
+        // 2026-09-28 was the *write* side - nothing checkpointed the save when a new stage began,
+        // so the newest record on disk was still the previous stage's last wave.
         private void AdvanceToNextStage()
         {
             var nextStageData = _stageData != null ? _stageData.NextStageData : null;
@@ -811,6 +808,12 @@ namespace Corebound.Gameplay.Waves
             _towerService?.RebuildSlotsForNewStage();
 
             StartCurrentWave();
+
+            // After StartCurrentWave, so ApplyPersistenceContext has already pushed the new stage
+            // and wave into the persistence controller. Without this the save still described the
+            // previous stage's last wave until a wave finished here, and quitting in between
+            // resumed the player a whole stage back (playtest 2026-09-28).
+            _runPersistenceController?.WriteStageEntrySnapshot();
         }
 
         private void OnConfirmPressed()

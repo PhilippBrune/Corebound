@@ -145,7 +145,13 @@ namespace Corebound.Gameplay.Bosses
             {
                 _engageDelayTimer = Mathf.Max(0f, _engageDelayTimer - Time.fixedDeltaTime);
                 _rigidbody2D.linearVelocity = Vector2.zero;
+                ApplyMaterialisation();
                 return;
+            }
+
+            if (_isMaterialising)
+            {
+                EndMaterialisation();
             }
 
             _attackCooldownTimer = Mathf.Max(0f, _attackCooldownTimer - Time.fixedDeltaTime);
@@ -594,6 +600,82 @@ namespace Corebound.Gameplay.Bosses
             // Reuses the existing engage delay rather than adding a second timer: it already holds
             // the boss still and silent, which is exactly the warning window.
             _engageDelayTimer = Mathf.Max(_engageDelayTimer, seconds);
+            BeginMaterialisation(_engageDelayTimer);
+        }
+
+        // Playtest 2026-09-28: "boss still spawns directly and can be hit - now he is just AFK for
+        // 5 seconds. Make him spawn later too."
+        //
+        // The engage delay held the boss still but left it fully present: visible, solid, and
+        // damageable. That reads as a bug rather than a warning, and it let the player open with
+        // five seconds of free hits on a stationary target. During the delay the boss is now an
+        // arrival rather than a statue - intangible, fading up from nothing and settling to its
+        // real size - so the window tells the truth about what it is: the boss is not here yet.
+        private bool _isMaterialising;
+        private Collider2D[] _bossColliders;
+        private float _materialiseDuration = 1f;
+        private Vector3 _materialiseBaseScale = Vector3.one;
+
+        private void BeginMaterialisation(float seconds)
+        {
+            if (seconds <= 0f)
+            {
+                return;
+            }
+
+            _isMaterialising = true;
+            _materialiseDuration = seconds;
+            _materialiseBaseScale = transform.localScale;
+            _bossColliders = GetComponentsInChildren<Collider2D>(true);
+
+            for (var index = 0; index < _bossColliders.Length; index++)
+            {
+                if (_bossColliders[index] != null)
+                {
+                    _bossColliders[index].enabled = false;
+                }
+            }
+
+            ApplyMaterialisation();
+        }
+
+        private void ApplyMaterialisation()
+        {
+            if (!_isMaterialising || _spriteRenderer == null)
+            {
+                return;
+            }
+
+            // 0 at the start of the window, 1 as it closes.
+            var progress = 1f - Mathf.Clamp01(_engageDelayTimer / Mathf.Max(0.01f, _materialiseDuration));
+            var color = _spriteRenderer.color;
+            _spriteRenderer.color = new Color(color.r, color.g, color.b, Mathf.Lerp(0.05f, 1f, progress * progress));
+            transform.localScale = _materialiseBaseScale * Mathf.Lerp(0.72f, 1f, progress);
+        }
+
+        private void EndMaterialisation()
+        {
+            _isMaterialising = false;
+            transform.localScale = _materialiseBaseScale;
+
+            if (_spriteRenderer != null)
+            {
+                var color = _spriteRenderer.color;
+                _spriteRenderer.color = new Color(color.r, color.g, color.b, 1f);
+            }
+
+            if (_bossColliders == null)
+            {
+                return;
+            }
+
+            for (var index = 0; index < _bossColliders.Length; index++)
+            {
+                if (_bossColliders[index] != null)
+                {
+                    _bossColliders[index].enabled = true;
+                }
+            }
         }
 
         private void EnsureComponents()

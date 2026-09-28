@@ -712,6 +712,10 @@ namespace Corebound.Gameplay.Waves
         }
 
         private readonly List<PauseEffectEntry> _pauseEffectEntries = new List<PauseEffectEntry>();
+
+        // How many of the perk grid's entries are cards; everything at or after this index is a
+        // relic, which is what lets one grid and one selection index cover both.
+        private int _pauseEffectCards;
         private readonly List<StatLine> _pauseStatLines = new List<StatLine>();
         private RectTransform _pauseEffectsGrid;
         private Text _pauseTabText;
@@ -840,8 +844,16 @@ namespace Corebound.Gameplay.Waves
             _pauseStatsRight.gameObject.SetActive(false);
             _pauseDescriptionText.gameObject.SetActive(true);
 
+            // Playtest 2026-09-28: "I get a relic but I don't see it afterwards in any overview."
+            // Relics were granted, saved and applied, and shown exactly once in a reveal that fades
+            // after three seconds - after which the only evidence of owning one was the modifier it
+            // silently contributed. From the player's side a card and a relic are the same thing (a
+            // permanent effect picked up mid-run), so they share this grid: relics after cards, and
+            // prefixed so the two stay tellable apart.
             var cards = _cardService != null ? _cardService.SelectedCards : null;
-            _pauseEffectCount = cards != null ? cards.Count : 0;
+            var relics = _cardService != null ? _cardService.SelectedRelics : null;
+            _pauseEffectCards = cards != null ? cards.Count : 0;
+            _pauseEffectCount = _pauseEffectCards + (relics != null ? relics.Count : 0);
             _pauseSelectedEffect = Mathf.Clamp(_pauseSelectedEffect, 0, Mathf.Max(0, _pauseEffectCount - 1));
             var rows = Mathf.Max(1, Mathf.CeilToInt(_pauseEffectCount / (float)PauseEffectColumns));
             var gridHeight = rows * PauseEffectRowHeight + 16f;
@@ -855,10 +867,14 @@ namespace Corebound.Gameplay.Waves
             for (var index = 0; index < _pauseEffectEntries.Count; index++)
             {
                 var entry = _pauseEffectEntries[index];
-                var card = index < _pauseEffectCount ? cards[index] : null;
-                entry.Root.gameObject.SetActive(card != null);
+                var isRelic = index >= _pauseEffectCards;
+                var card = !isRelic && index < _pauseEffectCards ? cards[index] : null;
+                var relic = isRelic && relics != null && index - _pauseEffectCards < relics.Count
+                    ? relics[index - _pauseEffectCards]
+                    : null;
+                entry.Root.gameObject.SetActive(card != null || relic != null);
 
-                if (card == null)
+                if (card == null && relic == null)
                 {
                     continue;
                 }
@@ -871,7 +887,8 @@ namespace Corebound.Gameplay.Waves
                 entry.Root.sizeDelta = new Vector2(columnWidth - 8f, PauseEffectRowHeight);
                 entry.Root.anchoredPosition = new Vector2(column * columnWidth, -8f - row * PauseEffectRowHeight);
 
-                var tags = card.Tags;
+                // Only cards carry tags; a relic row simply shows no icons.
+                var tags = card != null ? card.Tags : null;
                 var iconCount = 0;
 
                 for (var iconIndex = 0; iconIndex < entry.Icons.Length; iconIndex++)
@@ -893,7 +910,8 @@ namespace Corebound.Gameplay.Waves
                 entry.Label.rectTransform.offsetMin = new Vector2(textLeft, 0f);
                 entry.Label.rectTransform.offsetMax = Vector2.zero;
                 var selected = index == _pauseSelectedEffect;
-                entry.Label.text = selected ? "<b>" + card.DisplayName + "</b>" : card.DisplayName;
+                var entryName = card != null ? card.DisplayName : "* " + relic.DisplayName;
+                entry.Label.text = selected ? "<b>" + entryName + "</b>" : entryName;
                 entry.Label.supportRichText = true;
                 entry.Label.color = selected ? PauseSelectedColor : PauseTextColor;
             }
@@ -904,12 +922,20 @@ namespace Corebound.Gameplay.Waves
 
             if (_pauseEffectCount == 0)
             {
-                _pauseDescriptionText.text = LocalizationService.Resolve("No perks yet - card rewards add them.", "Noch keine Perks - Kartenbelohnungen fügen sie hinzu.");
+                _pauseDescriptionText.text = LocalizationService.Resolve(
+                    "No perks yet - card rewards and boss relics add them.",
+                    "Noch keine Perks - Kartenbelohnungen und Boss-Relikte fügen sie hinzu.");
             }
             else
             {
-                var selectedCard = cards[_pauseSelectedEffect];
-                _pauseDescriptionText.text = "<b>" + selectedCard.DisplayName + "</b>  ·  " + selectedCard.Description
+                var selectedIsRelic = _pauseSelectedEffect >= _pauseEffectCards;
+                var selectedName = selectedIsRelic
+                    ? relics[_pauseSelectedEffect - _pauseEffectCards].DisplayName + LocalizationService.Resolve(" (Relic)", " (Relikt)")
+                    : cards[_pauseSelectedEffect].DisplayName;
+                var selectedDescription = selectedIsRelic
+                    ? relics[_pauseSelectedEffect - _pauseEffectCards].Description
+                    : cards[_pauseSelectedEffect].Description;
+                _pauseDescriptionText.text = "<b>" + selectedName + "</b>  ·  " + selectedDescription
                     + LocalizationService.Resolve("\n<size=14>Arrows or mouse to select a perk.</size>", "\n<size=14>Pfeiltasten oder Maus zum Auswählen.</size>");
             }
 

@@ -98,6 +98,40 @@ namespace Corebound.SaveSystem
             _currentBossPhaseIndex = Mathf.Max(0, bossPhaseIndex);
         }
 
+        // Writes where the run currently *is*, without waiting for a wave to finish.
+        //
+        // Playtest 2026-09-28: "going to the main menu and continuing brought me back from Stage 2
+        // to Stage 1 wave 6/6." The run was only ever checkpointed at wave completion, boss
+        // completion and intermission, so advancing to a new stage wrote nothing - quit before
+        // finishing a wave on the new stage and the newest checkpoint on disk was still the last
+        // wave of the previous one. Which is exactly Stage 1, wave 6 of 6.
+        public void WriteStageEntrySnapshot()
+        {
+            var runSaveData = SaveManager != null ? SaveManager.LoadRunSaveData() : null;
+
+            if (runSaveData == null || _playerCombatController == null)
+            {
+                return;
+            }
+
+            SyncCoreHealthFromRuntime();
+            runSaveData.UpdateCombatCheckpoint(
+                SceneManager.GetActiveScene().name,
+                _currentStageIndex,
+                _currentWaveIndex,
+                _playerCombatController.CurrentHealthNormalized,
+                _currentCoreHealthNormalized,
+                _resourceWalletService != null ? _resourceWalletService.CurrentAmount : 0,
+                _playerCombatController.ActiveWeaponId);
+
+            // A new stage starts in combat, never mid-intermission, and carries no pending reward -
+            // leaving either set would resume the player into a screen the stage has not reached.
+            runSaveData.SetIntermissionOpen(false, _currentStageIndex, _currentWaveIndex);
+            runSaveData.SetPendingReward(string.Empty, string.Empty);
+            runSaveData.SetBossEncounterState(false, 0);
+            SaveManager.SaveRunSaveData(runSaveData);
+        }
+
         public void WriteWaveCompletionSnapshot(int completedWaveIndex, WaveRewardData waveRewardData)
         {
             if (SaveManager == null || _playerCombatController == null)

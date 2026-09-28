@@ -742,6 +742,24 @@ namespace Corebound.UI.MainMenu
         // any, and seeds the fresh RunSaveData with it - otherwise a new run always used the
         // static RunSaveBootstrapData regardless of what the player had unlocked in the Meta
         // Progression menu.
+        // True when the profile has chosen a starting weapon that it is actually allowed to use.
+        // Mirrors PlayerCombatController.ResolveWeaponFromMetaProgressionSave so the menu and the
+        // run agree about what "the player chose something" means.
+        private bool HasPreferredStartWeapon()
+        {
+            var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+            var catalog = definition != null ? definition.UpgradeWeapons : null;
+
+            if (SaveManager == null || definition == null || catalog == null)
+            {
+                return false;
+            }
+
+            var saveData = SaveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
+            var preferred = saveData != null ? catalog.FindById(saveData.PreferredStartWeaponId) : null;
+            return preferred != null && MetaProgression.StartWeaponOptions.IsAvailable(preferred, saveData, definition);
+        }
+
         private void ApplyUnlockedStartLoadout()
         {
             if (_metaProgressionService == null)
@@ -770,7 +788,16 @@ namespace Corebound.UI.MainMenu
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(loadout.StartingWeaponId))
+            // Playtest 2026-09-28: "New Run -> select weapon. The selected weapon is not in the
+            // player's hand, it is always Rapid."
+            //
+            // A purchased start loadout used to stamp its own weapon into the fresh run save here,
+            // which fills slot 0 - and PlayerCombatController.LoadLoadout only consults the
+            // player's preferred start weapon when *no* slot is filled. So the moment any start
+            // loadout was unlocked, the New Run choice became decorative. B11 already settled that
+            // the player's own choice wins and licences only widen the pool; this makes the two
+            // paths agree. The loadout's cards and towers still apply - only the weapon defers.
+            if (!string.IsNullOrWhiteSpace(loadout.StartingWeaponId) && !HasPreferredStartWeapon())
             {
                 runSaveData.SetEquippedWeaponId(loadout.StartingWeaponId);
             }
