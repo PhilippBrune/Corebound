@@ -44,40 +44,43 @@ namespace Corebound.UI.MainMenu
         // resuming it would have loaded a run that belongs to someone else. HasSeenTutorial and the
         // meta-progression unlock are per-profile in exactly the same way, so the whole state is
         // re-resolved rather than just the one flag.
-        private void OnEnable()
-        {
-            SaveSystem.ProfileSelection.ActiveProfileChanged += OnActiveProfileChanged;
-        }
+        private int _appliedProfileIndex = -1;
+        private int _pendingProfileIndex = -1;
 
-        private void OnDisable()
-        {
-            SaveSystem.ProfileSelection.ActiveProfileChanged -= OnActiveProfileChanged;
-        }
-
-        // Deferred by a frame on purpose. LocalProfileSaveManager clears its per-profile caches from
-        // this same event, and subscriber order between two MonoBehaviours is not guaranteed - reading
-        // the state inline can therefore still hit the previous profile's cached run and put Continue
-        // straight back. Waiting a frame means the caches are certainly clear.
-        private bool _profileChangePending;
-
-        private void OnActiveProfileChanged()
-        {
-            _profileChangePending = true;
-        }
-
+        // Polled, not event-driven - and that is the whole point of the second attempt at this.
+        //
+        // The first fix (2026-09-27) subscribed to ProfileSelection.ActiveProfileChanged in OnEnable
+        // and unsubscribed in OnDisable. That looks correct and is not: the Profile panel is a UI
+        // panel drawn over this menu, and while it is open this component can be disabled - so the
+        // switch fires with nobody listening, OnEnable re-subscribes afterwards, and the change is
+        // simply lost. Continue survived the swap exactly as before (playtest 2026-09-28).
+        //
+        // Comparing the index every frame cannot miss a switch, however it happened and whoever was
+        // enabled at the time. It costs one int compare per frame.
         private void Update()
         {
-            if (!_profileChangePending)
+            if (_flowData == null)
             {
                 return;
             }
 
-            _profileChangePending = false;
+            var activeIndex = SaveSystem.ProfileSelection.ActiveIndex;
 
-            if (_flowData != null)
+            if (activeIndex == _appliedProfileIndex)
             {
-                ApplyState(ResolveInitialState());
+                return;
             }
+
+            // One frame of grace: LocalProfileSaveManager clears its per-profile caches from the
+            // change event, and reading inline can still hit the previous profile's cached run.
+            if (_pendingProfileIndex != activeIndex)
+            {
+                _pendingProfileIndex = activeIndex;
+                return;
+            }
+
+            _appliedProfileIndex = activeIndex;
+            ApplyState(ResolveInitialState());
         }
 
         public void ApplyState(MainMenuState state)

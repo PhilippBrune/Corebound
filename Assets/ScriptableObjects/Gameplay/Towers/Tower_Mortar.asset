@@ -37,7 +37,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d6673aae2ecd4cfeb9d901a584c779fc, type: 2}
   - {fileID: 11400000, guid: eb98d0514a0a4fd3ac962040993d2d4f, type: 2}
   _damageProfile: {fileID: 11400000, guid: 7789dc26dc9d4ff1b94a17c315cb7613, type: 2}
-  _projectile: {fileID: 11400000, guid: 6ef0cf92ba224f8d8d9318a587f6a11b, type: 2}
+  _projectile: {fileID: 11400000, guid: 86fed4766884af848a8db3e0e8526383, type: 2}
   _strengths: Grouped enemies. Area damage clears packed waves.
   _strengthsDe: Gruppierte Gegner. Flaechenschaden raeumt dichte Wellen.
   _weaknesses: Slow and expensive. Poor against a single fast target.

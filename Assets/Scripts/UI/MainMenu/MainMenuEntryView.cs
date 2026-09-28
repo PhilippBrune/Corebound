@@ -45,8 +45,15 @@ namespace Corebound.UI.MainMenu
             EnsureFocus(focusCornerSprites, skinData);
         }
 
+        // What this row currently shows. MainMenuCanvasPresenter compares it against the model so a
+        // profile swap that trades one entry for another - same count, different menu - still forces
+        // a rebuild instead of leaving the previous profile's rows on screen.
+        public MenuEntryData AppliedEntry { get; private set; }
+
         public void Apply(MenuEntryData entry, bool isSelected, bool isIntroVisible, MainMenuSkinData skinData)
         {
+            AppliedEntry = entry;
+
             if (_labelText == null || _frameImage == null || _focusImages == null || skinData == null)
             {
                 return;

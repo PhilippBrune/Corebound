@@ -37,7 +37,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 77989fb4feb34b57b91aa3d2c58219ee, type: 2}
   - {fileID: 11400000, guid: 8eb71396d29f442298ab70c6e22643d0, type: 2}
   _damageProfile: {fileID: 11400000, guid: 0d9ee73df45c4a719b2cf0a3c8744dcf, type: 2}
-  _projectile: {fileID: 11400000, guid: edbf4f0d9d044cc8a0c7f3ddc3426372, type: 2}
+  _projectile: {fileID: 11400000, guid: 2073db8e6fef3a743bb08ab4e30ab8f0, type: 2}
   _strengths: Everything else. Pulses resources and boosts the network.
   _strengthsDe: Alles andere. Erzeugt Ressourcen und staerkt das Netz.
   _weaknesses: Deals almost no damage. Needs other towers to matter.

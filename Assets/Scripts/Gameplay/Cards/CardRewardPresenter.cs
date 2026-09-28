@@ -517,10 +517,12 @@ namespace Corebound.Gameplay.Cards
                 // Epic and Legendary frames have a dark header plaque; the dark title colour that
                 // reads on Common/Rare silver vanished on them entirely (autopilot shot 2026-09-22).
                 var offeredRarity = _controller.ResolveOfferedRarity(card);
-                // A weapon card names the grade it hands over, because that is the copy's tier.
-                _slotTitleTexts[index].text = card.IsWeaponCard && offeredRarity != CardRarity.Common
-                    ? card.DisplayName + "  (" + offeredRarity + ")"
-                    : card.DisplayName;
+                // Playtest 2026-09-28: "adjust font size so the card title fits on the top row".
+                // The grade used to be appended here ("Rapid Array  (Rare)"), which is what pushed
+                // long titles out of the plaque - the name alone always fits, the name plus a suffix
+                // does not. The grade moved to the first line of the description, where there is
+                // room, and the rarity-coloured frame already carries it at a glance.
+                _slotTitleTexts[index].text = card.DisplayName;
                 var darkPlaque = offeredRarity == CardRarity.Epic || offeredRarity == CardRarity.Legendary;
                 _slotTitleTexts[index].color = index == _controller.SelectedIndex
                     ? (_skinData != null ? _skinData.SelectedLabelColor : Color.white)
@@ -528,10 +530,12 @@ namespace Corebound.Gameplay.Cards
                 // Long names ("Overcharged Rounds") wrapped out of the plaque; shrink instead.
                 _slotTitleTexts[index].resizeTextForBestFit = true;
                 _slotTitleTexts[index].resizeTextMinSize = 10;
-                _slotTitleTexts[index].resizeTextMaxSize = Mathf.Max(11, _slotTitleTexts[index].fontSize);
+                _slotTitleTexts[index].resizeTextMaxSize = Mathf.Max(11, _slotTitleTexts[index].fontSize - 2);
                 _slotTitleTexts[index].verticalOverflow = VerticalWrapMode.Truncate;
                 _slotRarityTexts[index].text = card.Rarity.ToString();
-                _slotDescriptionTexts[index].text = card.Description;
+                _slotDescriptionTexts[index].text = card.IsWeaponCard && offeredRarity != CardRarity.Common
+                    ? offeredRarity + LocalizationService.Resolve(" copy", "-Kopie") + System.Environment.NewLine + card.Description
+                    : card.Description;
                 ApplyTagIcons(index, card);
             }
         }

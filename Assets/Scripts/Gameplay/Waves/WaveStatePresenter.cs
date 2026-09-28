@@ -1007,6 +1007,11 @@ namespace Corebound.Gameplay.Waves
                         case Corebound.Settings.SettingsOptionKey.UiVolume:
                         case Corebound.Settings.SettingsOptionKey.ControllerAimAssistStrength:
                         case Corebound.Settings.SettingsOptionKey.InputDevice:
+                        // Playtest 2026-09-28: "Pause -> Settings should have HUD scaling". The
+                        // option already existed and was reachable only from the main menu, which
+                        // is the one place you cannot see the HUD you are scaling. Adjusting it
+                        // mid-run with the arena behind you is the only way to judge it.
+                        case Corebound.Settings.SettingsOptionKey.HudScale:
                             _pauseSettingsOptions.Add(option);
                             break;
                     }
@@ -1362,6 +1367,12 @@ namespace Corebound.Gameplay.Waves
             _bannerImage.color = tint;
             _bannerText.text = message;
             _bannerImage.gameObject.SetActive(true);
+
+            // Playtest 2026-09-28: "wave banner is behind the HUD". Draw order inside a canvas is
+            // sibling order, and the banner is created before the HUD panels around it, so it was
+            // permanently underneath them. Raised on show rather than at build time because other
+            // things (the pause overlay) also claim the top and must keep it.
+            _bannerImage.rectTransform.SetAsLastSibling();
             _bannerTimer = BannerDisplaySeconds;
         }
 

@@ -111,6 +111,13 @@ namespace Corebound.Gameplay.Enemies
                     : null;
             _hasTakenDamage = false;
             _contactCooldownTimer = 0f;
+
+            // Enemies come from a pool, so the stuck watchdog has to start clean or a reused body
+            // inherits the previous life's progress sample and can trip immediately.
+            _lastProgressPosition = transform.position;
+            _stuckSampleTimer = 0f;
+            _stuckSeconds = 0f;
+            _stuckBurstTimer = 0f;
             _attackCooldownTimer = 0f;
             _telegraphTimer = 0f;
             _chargeTimer = 0f;
@@ -285,8 +292,86 @@ namespace Corebound.Gameplay.Enemies
             }
 
             var moveDirection = ApplyObstacleAvoidance(direction.normalized);
+            moveDirection = ApplyStuckRecovery(moveDirection, direction, moveSpeed);
             _rigidbody2D.linearVelocity = moveDirection * moveSpeed;
             FaceMovementDirection(moveDirection);
+        }
+
+        // Playtest 2026-09-28: "enemies can be stuck - create a way to prevent this."
+        //
+        // ApplyObstacleAvoidance steers around a single blocker, but it cannot resolve a wedge: two
+        // props forming a V, a corner between a blocker and the boundary, or a knot of enemies all
+        // pushing the same way. The enemy then sits with a non-zero desired velocity and no actual
+        // movement, and because RemainingAliveEnemies never drops the whole wave waits on it - the
+        // same shape as the 2026-09-20 bug where spawns landed outside the walls and hung the run
+        // forever.
+        //
+        // Two escalating responses, because the cheap one is usually enough and the expensive one
+        // must never be needed twice:
+        //   1. After StuckSeconds of no real progress, push perpendicular to the target for a short
+        //      burst, alternating side each time, which walks the enemy out of a V.
+        //   2. After StuckTeleportSeconds it is genuinely trapped - nudge it bodily toward the
+        //      target. Ugly, rare, and strictly better than a run that cannot end.
+        private const float StuckSampleSeconds = 0.5f;
+        private const float StuckProgressThreshold = 0.12f;
+        private const float StuckSeconds = 1.5f;
+        private const float StuckBurstSeconds = 0.55f;
+        private const float StuckTeleportSeconds = 6f;
+
+        private Vector2 _lastProgressPosition;
+        private float _stuckSampleTimer;
+        private float _stuckSeconds;
+        private float _stuckBurstTimer;
+        private float _stuckBurstSign = 1f;
+
+        private Vector2 ApplyStuckRecovery(Vector2 desiredDirection, Vector2 toTarget, float moveSpeed)
+        {
+            if (moveSpeed <= 0.01f)
+            {
+                return desiredDirection;
+            }
+
+            _stuckSampleTimer += Time.fixedDeltaTime;
+
+            if (_stuckSampleTimer >= StuckSampleSeconds)
+            {
+                // Measured against how far it *should* have travelled, so a slowed or aura-damped
+                // enemy is not mistaken for a stuck one.
+                var expected = moveSpeed * _stuckSampleTimer;
+                var travelled = (_rigidbody2D.position - _lastProgressPosition).magnitude;
+                _stuckSeconds = travelled < expected * StuckProgressThreshold
+                    ? _stuckSeconds + _stuckSampleTimer
+                    : 0f;
+
+                _lastProgressPosition = _rigidbody2D.position;
+                _stuckSampleTimer = 0f;
+
+                if (_stuckSeconds >= StuckTeleportSeconds)
+                {
+                    _stuckSeconds = 0f;
+                    _stuckBurstTimer = 0f;
+                    var step = toTarget.sqrMagnitude > 0.0001f ? toTarget.normalized : Vector2.up;
+                    _rigidbody2D.position = _rigidbody2D.position + step * 1.25f;
+                    _lastProgressPosition = _rigidbody2D.position;
+                    return desiredDirection;
+                }
+
+                if (_stuckSeconds >= StuckSeconds && _stuckBurstTimer <= 0f)
+                {
+                    _stuckBurstTimer = StuckBurstSeconds;
+                    _stuckBurstSign = -_stuckBurstSign;
+                }
+            }
+
+            if (_stuckBurstTimer <= 0f)
+            {
+                return desiredDirection;
+            }
+
+            _stuckBurstTimer -= Time.fixedDeltaTime;
+            var straight = toTarget.sqrMagnitude > 0.0001f ? toTarget.normalized : desiredDirection;
+            var sideways = new Vector2(-straight.y, straight.x) * _stuckBurstSign;
+            return (sideways * 0.85f + straight * 0.35f).normalized;
         }
 
         // enemy_chaser_topdown.png (and the other top-down enemy art) is drawn nose-pointing-left

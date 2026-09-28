@@ -91,7 +91,7 @@ namespace Corebound.Gameplay.Waves
         // no beat for the player to register the WaveStarted banner/HUD update before combat was
         // already underway. A short grace window before the first spawn group is allowed to tick
         // gives that beat without touching spawn cadence itself.
-        private const float WaveStartSpawnDelaySeconds = 2f;
+        private const float WaveStartSpawnDelaySeconds = 5f;
 
         private WaveState _state;
         private int _currentWaveIndex;

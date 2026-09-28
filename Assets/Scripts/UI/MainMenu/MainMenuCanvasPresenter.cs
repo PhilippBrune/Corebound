@@ -354,6 +354,21 @@ namespace Corebound.UI.MainMenu
             }
         }
 
+        private bool EntryViewsMatch()
+        {
+            var entries = _mainMenuController.VisibleEntries;
+
+            for (var index = 0; index < _entryViews.Count && index < entries.Count; index++)
+            {
+                if (_entryViews[index] == null || _entryViews[index].AppliedEntry != entries[index])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private void Refresh()
         {
             if (_mainMenuController == null)
@@ -361,7 +376,11 @@ namespace Corebound.UI.MainMenu
                 return;
             }
 
-            if (_entryViews.Count != _mainMenuController.VisibleEntries.Count)
+            // Count alone is not enough. A profile swap can trade one entry for another - losing
+            // Continue while gaining Tutorial, say - which leaves the count identical and the rows
+            // showing the previous profile's menu. Comparing the entries themselves costs a handful
+            // of reference checks on a list that is never longer than seven.
+            if (_entryViews.Count != _mainMenuController.VisibleEntries.Count || !EntryViewsMatch())
             {
                 RebuildEntries();
             }

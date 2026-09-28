@@ -22,8 +22,8 @@ namespace Corebound.Gameplay.Relics
         private const string RevealFlashPath = "Assets/Art/Combat/VFX/vfx_card_reveal_flash.png";
         private static readonly Rect FrameContentRect = new Rect(335f, 25f, 465f, 560f);
         private static readonly Vector4 FrameBorder = new Vector4(27f, 27f, 27f, 27f);
-        private const float PanelWidth = 460f;
-        private const float PanelHeight = 300f;
+        private const float PanelWidth = 520f;
+        private const float PanelHeight = 340f;
         private const float FadeInSeconds = 0.25f;
         private const float HoldSeconds = 3.2f;
         private const float FadeOutSeconds = 0.5f;
@@ -94,6 +94,13 @@ namespace Corebound.Gameplay.Relics
                 : LocalizationService.Resolve("Relic Gained", "Relikt erhalten");
             _nameText.text = eventArgs.IsEvolution ? eventArgs.Relic.EvolvedDisplayName : eventArgs.Relic.DisplayName;
             _descriptionText.text = eventArgs.IsEvolution ? eventArgs.Relic.EvolvedDescription : eventArgs.Relic.Description;
+
+            // Playtest 2026-09-28: "relic text not fitting inside the frame". Truncate kept the
+            // text inside the box by cutting it off, which is not the same as fitting - a
+            // build-defining effect the player cannot finish reading is the one thing this panel
+            // exists to prevent. Both labels now step their size down until they genuinely fit.
+            FitTextToRect(_nameText, 26, 15);
+            FitTextToRect(_descriptionText, 14, 9);
             _timer = 0f;
             _isShowing = true;
             _canvasGroup.alpha = 0f;
@@ -146,6 +153,38 @@ namespace Corebound.Gameplay.Relics
             StretchToParent(_descriptionText.rectTransform, new Vector2(0.08f, 0.08f), new Vector2(0.92f, 0.64f));
 
             UIManager.RegisterPanel(panelRect, "relic_reveal", UIPanelLayer.HUD, false, false, _canvasGroup);
+        }
+
+        // Measured, not best-fit. resizeTextForBestFit rasterises through a dynamic glyph atlas,
+        // which under this canvas's ScaleWithScreenSize stretch is what made text blurry elsewhere
+        // in the project. Stepping the size down and asking preferredHeight each time gives the
+        // same result deterministically, at a handful of layout queries on a panel that appears
+        // once per relic.
+        private static void FitTextToRect(Text text, int maxSize, int minSize)
+        {
+            if (text == null || string.IsNullOrEmpty(text.text))
+            {
+                return;
+            }
+
+            var available = text.rectTransform.rect.height;
+
+            if (available <= 1f)
+            {
+                return;
+            }
+
+            for (var size = maxSize; size >= minSize; size--)
+            {
+                text.fontSize = size;
+
+                if (text.preferredHeight <= available)
+                {
+                    return;
+                }
+            }
+
+            text.fontSize = minSize;
         }
 
         private Image CreateImage(string name, RectTransform parent, Sprite sprite, Color color)
