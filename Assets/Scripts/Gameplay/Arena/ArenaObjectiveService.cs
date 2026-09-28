@@ -106,6 +106,7 @@ namespace Corebound.Gameplay.Arena
                 OnClaimed,
                 OnExpired);
 
+            Corebound.Audio.AudioManager.PlayCueStatic(data.SpawnCue);
             NotificationPresenter.Show(LocalizationService.Resolve(
                 data.DisplayName + " sighted",
                 data.DisplayName + " gesichtet"));
@@ -182,6 +183,7 @@ namespace Corebound.Gameplay.Arena
                 return;
             }
 
+            Corebound.Audio.AudioManager.PlayCueStatic(data.ClaimedCue);
             var message = string.Empty;
             var scrap = Mathf.RoundToInt(_waveScrapBudget * data.ScrapFractionOfWaveBudget);
 
@@ -225,6 +227,7 @@ namespace Corebound.Gameplay.Arena
 
             if (data != null)
             {
+                Corebound.Audio.AudioManager.PlayCueStatic(data.LostCue);
                 NotificationPresenter.Show(LocalizationService.Resolve(
                     data.DisplayName + " lost",
                     data.DisplayName + " verloren"));
@@ -288,3 +291,4 @@ namespace Corebound.Gameplay.Arena
         }
     }
 }
+

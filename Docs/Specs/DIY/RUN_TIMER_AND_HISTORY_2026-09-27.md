@@ -3,8 +3,25 @@
 **Owner request:** *"I want a Timer function to the game to see how long runs go, and history with what
 the player got, how far — not implement first, design and review."*
 
-**Nothing here is implemented.** Decisions are numbered in the A/B form of the earlier spec review;
-answer them and the build follows.
+**Answered by the owner 2026-09-28 — this is now the build contract, not a proposal.**
+
+| # | Question | Answer |
+| --- | --- | --- |
+| D1 | What the timer measures | **3** — store both `elapsedRealSeconds` and `elapsedActiveSeconds` |
+| D2 | Where the running timer shows | **3** — off by default, Settings toggle, plus the run-end summary |
+| D3 | When a history entry is written | **1** — on run end only (victory or death). Abandoned runs are *not* recorded |
+| D4 | Entry contents | **As proposed** |
+| D5 | Storage | **2** — a new per-profile `history.json` |
+| D6 | Retention | **2** — last **50** plus the best run per stage reached |
+| D7 | Where history is read | **1** — a new Records route on the main menu |
+| — | Timer during Shop / build browser | **Runs.** Build decisions count as part of the run |
+| — | Tutorial runs | **No entry.** A guided run is not a performance |
+
+One consequence of D3 worth stating: because abandoned runs are not recorded, a player who quits to
+the menu mid-run leaves no trace of how far they got. That is the owner's call and is consistent
+with treating the history as a record of *finished attempts*.
+
+Nothing is implemented yet.
 
 ---
 

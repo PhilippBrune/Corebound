@@ -90,6 +90,26 @@ namespace Corebound.Audio
             PlayCue(_combatDeathCue);
         }
 
+        // A static entry for systems that own their own cue references rather than being wired
+        // through this component's serialized fields. Arena objectives are the first: the cue lives
+        // on ArenaObjectiveData beside the rest of that objective's tuning, which keeps a new
+        // objective type a pure data addition instead of three more fields here and three more
+        // scene references (2026-09-28).
+        private static AudioManager _instance;
+
+        public static void PlayCueStatic(AudioCueData cue)
+        {
+            if (_instance == null)
+            {
+                _instance = FindFirstObjectByType<AudioManager>();
+            }
+
+            if (_instance != null)
+            {
+                _instance.PlayCue(cue);
+            }
+        }
+
         private void PlayCue(AudioCueData cue)
         {
             if (cue == null || _sfxSource == null || cue.Volume <= 0f)

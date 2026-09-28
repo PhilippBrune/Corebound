@@ -25,6 +25,9 @@ MonoBehaviour:
   _minLifetimeSeconds: 6
   _travelDetourFactor: 1.6
   _spawnAtWaveProgress: 0.5
+  _spawnCue: {fileID: 11400000, guid: fb2f89a1924b8d34a9e7db32d5de0930, type: 2}
+  _claimedCue: {fileID: 11400000, guid: f28e2cdd8233c604e8eda524a5009734, type: 2}
+  _lostCue: {fileID: 11400000, guid: af3fabec6fbd65e42a7b56ea058ee2b9, type: 2}
   _claimRadius: 0.75
   _worldSize: 1.1
   _tint: {r: 1, g: 0.78, b: 0.35, a: 1}

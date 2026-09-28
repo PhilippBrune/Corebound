@@ -59,6 +59,14 @@ namespace Corebound.Gameplay.Arena
         [Header("Claim (D3 option 1 — walk over it)")]
         [SerializeField] private float _claimRadius = 0.75f;
 
+        [Header("Audio")]
+        // Owner 2026-09-28: the cues were created, so they are wired. The spawn cue is the
+        // load-bearing one - the whole mechanic is a timed opportunity the player is meant to
+        // notice while fighting somewhere else, which only works if it is heard rather than seen.
+        [SerializeField] private Corebound.Audio.AudioCueData _spawnCue;
+        [SerializeField] private Corebound.Audio.AudioCueData _claimedCue;
+        [SerializeField] private Corebound.Audio.AudioCueData _lostCue;
+
         [Header("Presentation")]
         [SerializeField] private float _worldSize = 1.1f;
         [SerializeField] private Color _tint = new Color(1f, 0.78f, 0.35f, 1f);
@@ -68,6 +76,12 @@ namespace Corebound.Gameplay.Arena
         [SerializeField] private float _urgentSeconds = 2f;
 
         public string ObjectiveId => _objectiveId;
+
+        public Corebound.Audio.AudioCueData SpawnCue => _spawnCue;
+
+        public Corebound.Audio.AudioCueData ClaimedCue => _claimedCue;
+
+        public Corebound.Audio.AudioCueData LostCue => _lostCue;
 
         public string DisplayName => LocalizationService.Resolve(_displayName, _displayNameDe);
 

@@ -267,7 +267,7 @@ A short, neutral UI cancel/back sound effect for a controller-first sci-fantasy 
 
 Target: Assets/Audio/Music/music_boss_stage2_loop.mp3
 
-**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -277,7 +277,7 @@ A high-tension boss-encounter loop for a reactor-guardian fight in a sci-fantasy
 
 Target: Assets/Audio/Music/music_boss_stage3_loop.mp3
 
-**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -287,7 +287,7 @@ A high-tension boss-encounter loop for a scrapyard-overseer fight in a sci-fanta
 
 Target: Assets/Audio/Music/music_boss_stage4_loop.mp3
 
-**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -297,7 +297,7 @@ A high-tension boss-encounter loop for a frost-guardian fight in a sci-fantasy i
 
 Target: Assets/Audio/Music/music_boss_stage5_loop.mp3
 
-**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -311,7 +311,7 @@ Neither a "you beat the game" cue nor a credits track exists yet - `WaveManager.
 
 Target: Assets/Audio/Music/music_run_victory_sting.mp3
 
-**Status:** NOT CREATED - the cue still plays as a procedural sine placeholder.
+**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
 
 Prompt:
 
@@ -321,7 +321,7 @@ A short, triumphant victory sting for completing an entire run in a sci-fantasy 
 
 Target: Assets/Audio/Music/music_credits_loop.mp3
 
-**Status:** NOT CREATED - the cue still plays as a procedural sine placeholder.
+**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
 
 Prompt:
 
@@ -342,7 +342,7 @@ Boss-Telegraphen (Audio 11–13) nicht überdecken.
 
 Target: Assets/Audio/SFX/sfx_objective_spawn.mp3
 
-**Status:** NOT CREATED - the cue still plays as a procedural sine placeholder.
+**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
 
 Prompt:
 
@@ -352,7 +352,7 @@ A short attention-pulling alert for a salvage container appearing somewhere in t
 
 Target: Assets/Audio/SFX/sfx_objective_claimed.mp3
 
-**Status:** NOT CREATED - the cue still plays as a procedural sine placeholder.
+**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
 
 Prompt:
 
@@ -362,7 +362,7 @@ A short satisfying pickup sound for claiming a salvage container in a sci-fantas
 
 Target: Assets/Audio/SFX/sfx_objective_lost.mp3
 
-**Status:** NOT CREATED - the cue still plays as a procedural sine placeholder.
+**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
 
 Prompt:
 
