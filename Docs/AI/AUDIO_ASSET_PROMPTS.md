@@ -342,7 +342,7 @@ Boss-Telegraphen (Audio 11–13) nicht überdecken.
 
 Target: Assets/Audio/SFX/sfx_objective_spawn.mp3
 
-**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -352,7 +352,7 @@ A short attention-pulling alert for a salvage container appearing somewhere in t
 
 Target: Assets/Audio/SFX/sfx_objective_claimed.mp3
 
-**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -362,7 +362,7 @@ A short satisfying pickup sound for claiming a salvage container in a sci-fantas
 
 Target: Assets/Audio/SFX/sfx_objective_lost.mp3
 
-**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
