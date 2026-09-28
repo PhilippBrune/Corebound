@@ -54,7 +54,6 @@ single-point-of-failure: clearing the mirror would lose the asset entirely.
 - `Assets/Art/Characters/Enemies/enemy_relay_warden_stage4_topdown.png`
 - `Assets/Art/Characters/Enemies/enemy_relay_warden_stage5_topdown.png`
 
-
 **Recovered 2026-09-21:** all 15 `enemy_*_topdown.png` sprites were missing from
 `Assets/Art/Characters/Enemies/` when this audit ran - deleted from the working tree with
 nothing put in their place. They were still in git and still in the StreamingAssets mirror, so
@@ -73,7 +72,7 @@ deletion was invisible in play.
 
 Target: Assets/Art/UI/MainMenu/mainmenu_background.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -83,7 +82,7 @@ Create a wide 2D title-screen background for a top-down sci-fantasy action rogue
 
 Target: Assets/Art/UI/MainMenu/corebound_logo.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -93,7 +92,7 @@ Design a logo for the game title "Corebound" for a stylized top-down sci-fantasy
 
 Target: Assets/Art/UI/MainMenu/button_primary_frame.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -103,7 +102,7 @@ Create a modular 2D UI button frame for the main menu of a controller-first sci-
 
 Target: Assets/Art/UI/MainMenu/focus_marker.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -113,7 +112,7 @@ Create a 2D controller-focus marker for menu navigation in a top-down sci-fantas
 
 Target: Assets/Art/UI/HUD/hud_frame_panel.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -123,7 +122,7 @@ Create a modular 2D HUD frame panel for a top-down action-defense roguelite. It 
 
 Target: Assets/Art/UI/Tutorial/tutorial_prompt_panel.png
 
-**Status:** present.
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Prompt:
 
@@ -133,7 +132,7 @@ Create a tutorial prompt panel for a controller-first top-down Unity roguelite. 
 
 Target: Assets/Art/Cards/Frames/card_frame_common.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -143,7 +142,7 @@ Create a 2D card frame for a passive upgrade card in a sci-fantasy top-down rogu
 
 Target: Assets/Art/Cards/Frames/card_frame_rare.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -153,7 +152,7 @@ Create a 2D card frame for the Rare rarity of a passive upgrade card in a sci-fa
 
 Target: Assets/Art/Cards/Frames/card_frame_epic.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -163,7 +162,7 @@ Create a 2D card frame for the Epic rarity of a passive upgrade card in a styliz
 
 Target: Assets/Art/Cards/Frames/card_frame_legendary.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -173,7 +172,7 @@ Create a 2D card frame for the Legendary rarity of a passive upgrade card in a t
 
 Target: Assets/Art/Cards/Icons/card_tag_icon_sheet.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Unity Import Note:
 
@@ -187,7 +186,7 @@ Create a unified 2D icon sheet for the core card tags of a sci-fantasy defense r
 
 Target: Assets/Art/Resources/resource_primary_icon.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -197,7 +196,7 @@ Create a primary run-resource icon for a top-down sci-fantasy roguelite. The ico
 
 Target: Assets/Art/Towers/tower_slot_marker.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -207,7 +206,7 @@ Create a top-down tower-slot marker for a controller-first tower defense rogueli
 
 Target: Assets/Art/Characters/Player/player_base_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -217,7 +216,7 @@ Create the main playable character sprite for a top-down sci-fantasy action rogu
 
 Target: Assets/Art/Environment/Arena/core_main_sprite.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -227,7 +226,7 @@ Create the central Core sprite for a top-down defense roguelite. The Core must f
 
 Target: Assets/Art/Characters/Enemies/enemy_chaser_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -237,7 +236,7 @@ Create a top-down enemy sprite for the Chaser role in a sci-fantasy action rogue
 
 Target: Assets/Art/Characters/Enemies/enemy_ranged_pressure_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -247,7 +246,7 @@ Create a top-down enemy sprite for the Ranged Pressure role in a sci-fantasy def
 
 Target: Assets/Art/Characters/Enemies/enemy_bruiser_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -257,7 +256,7 @@ Create a top-down enemy sprite for the Bruiser role in a sci-fantasy defense rog
 
 Target: Assets/Art/Characters/Bosses/boss_stage1_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -267,7 +266,7 @@ Create a Stage 1 boss sprite for a top-down sci-fantasy action-defense roguelite
 
 Target: Assets/Art/Combat/Projectiles/weapon_rapid_sprite.png
 
-**Status:** present.
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Prompt:
 
@@ -277,7 +276,7 @@ Create a weapon sprite or top-down held-device visual for the rapid projectile s
 
 Target: Assets/Art/Combat/Projectiles/weapon_spread_sprite.png
 
-**Status:** present.
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Prompt:
 
@@ -287,7 +286,7 @@ Create a weapon sprite or top-down held-device visual for a spread-shot starter 
 
 Target: Assets/Art/Combat/Projectiles/weapon_beam_sprite.png
 
-**Status:** present.
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Prompt:
 
@@ -297,7 +296,7 @@ Create a weapon sprite or top-down held-device visual for a short piercing or be
 
 Target: Assets/Art/Combat/Projectiles/projectile_sheet_core.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -311,7 +310,7 @@ Der ursprüngliche Sammel-Prompt für ein einziges `combat_vfx_sheet_essentials.
 
 Target: Assets/Art/Combat/VFX/vfx_hit_spark.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -321,7 +320,7 @@ Create a single 2D impact hit-spark effect frame for a top-down sci-fantasy acti
 
 Target: Assets/Art/Combat/VFX/vfx_enemy_death_burst.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -331,7 +330,7 @@ Create a single 2D enemy-death burst effect frame for a top-down sci-fantasy act
 
 Target: Assets/Art/Combat/VFX/vfx_core_damage_flare.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -341,7 +340,7 @@ Create a single 2D warning flare effect frame for a top-down sci-fantasy action 
 
 Target: Assets/Art/Combat/VFX/vfx_card_reveal_flash.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -351,7 +350,7 @@ Create a single 2D reveal-flash effect frame for a top-down sci-fantasy roguelit
 
 Target: Assets/Art/Combat/VFX/vfx_burn_status_tick.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Regenerate note (2026-09-08): the first generation came back as 1354x738 (wide) instead of square. Lead the prompt explicitly with the aspect-ratio constraint below.
 
@@ -363,7 +362,7 @@ Prompt:
 
 Target: Assets/Art/Combat/VFX/vfx_freeze_status_pulse.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Regenerate note (2026-09-08): the first generation came back as 1354x738 (wide) instead of square. Lead the prompt explicitly with the aspect-ratio constraint below.
 
@@ -375,7 +374,7 @@ Prompt:
 
 Target: Assets/Art/Combat/VFX/vfx_tower_activation_pulse.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -385,7 +384,7 @@ Create a single 2D activation-pulse effect frame for a top-down sci-fantasy defe
 
 Target: Assets/Art/Environment/Arena/stage1_ground_tileset.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -395,7 +394,7 @@ Create a seamless top-down 2D ground tile set for Stage 1 of a sci-fantasy defen
 
 Target: Assets/Art/Environment/Arena/stage1_prop_set.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -405,7 +404,7 @@ Create a top-down prop set for Stage 1 of a sci-fantasy defense roguelite, inclu
 
 Target: Assets/Art/UI/HUD/wave_banner.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -415,7 +414,7 @@ Create a 2D UI banner for wave start, elite warning and boss warning in a contro
 
 Target: Assets/Art/UI/Tutorial/tutorial_glyph_strip.png
 
-**Status:** present.
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Prompt:
 
@@ -425,7 +424,7 @@ Create a clean icon strip for controller and keyboard hints used in a Unity top-
 
 Target: Assets/Art/UI/MainMenu/route_panel_frame.png
 
-**Status:** present.
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Prompt:
 
@@ -435,7 +434,7 @@ Create a large modular 2D overlay panel frame for the main menu of a controller-
 
 Target: Assets/Art/UI/MainMenu/glyph_hint_capsule.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Prompt:
 
@@ -445,7 +444,7 @@ Create a compact modular 2D UI capsule panel for main menu controller hints in a
 
 Target: Assets/Art/Towers/tower_ballista_topdown.png
 
-**Status:** present but misnamed - on disk as `tower_ballista_topdown.png.png` (doubled extension)
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -455,7 +454,7 @@ Create a top-down tower sprite for the Ballista Tower in a sci-fantasy defense r
 
 Target: Assets/Art/Towers/tower_support_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -465,7 +464,7 @@ Create a top-down tower sprite for the Support Tower in a sci-fantasy defense ro
 
 Target: Assets/Art/UI/HUD/gameplay_modal_frame.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -475,7 +474,7 @@ Create a medium-sized modular 2D modal frame for gameplay overlays in a sci-fant
 
 Target: Assets/Art/UI/HUD/card_reward_choice_panel.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -485,7 +484,7 @@ Create a wide 2D reward-selection panel for a controller-first sci-fantasy rogue
 
 Target: Assets/Art/Environment/Arena/stage1_boundary_set.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -495,7 +494,7 @@ Create a top-down 2D arena boundary set for Stage 1 of a sci-fantasy defense rog
 
 Target: Assets/Art/Environment/Arena/stage1_spawn_gate.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -505,7 +504,7 @@ Create a top-down Stage 1 enemy spawn gate marker for a sci-fantasy defense rogu
 
 Target: Assets/Art/Combat/VFX/ranged_pressure_telegraph.png
 
-**Status:** INCOMPLETE - only in the StreamingAssets mirror, missing from `Assets/Art`
+**Status:** NOT ON DISK - the Target path does not exist.
 
 Prompt:
 
@@ -515,7 +514,7 @@ Create a 2D telegraph marker for ranged enemy attacks in a top-down sci-fantasy 
 
 Target: Assets/Art/Towers/tower_upgrade_ring.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -525,7 +524,7 @@ Create a top-down upgrade indicator ring for towers in a controller-first sci-fa
 
 Target: Assets/Art/Combat/Projectiles/enemy_bolt_projectile.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -535,7 +534,7 @@ Create a compact top-down projectile sprite for ranged enemy attacks in a sci-fa
 
 Target: Assets/Art/Combat/VFX/elite_enemy_marker.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -545,7 +544,7 @@ Create a top-down elite-enemy marker for a sci-fantasy defense roguelite. The as
 
 Target: Assets/Art/UI/HUD/shop_offer_panel.png
 
-**Status:** present but misnamed - on disk as `shop_offer_panel.png.png` (doubled extension)
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -555,7 +554,7 @@ Create a wide 2D shop panel for a controller-first sci-fantasy defense roguelite
 
 Target: Assets/Art/UI/HUD/shop_price_chip.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -565,7 +564,7 @@ Create a compact 2D price chip for shop offers in a top-down sci-fantasy rogueli
 
 Target: Assets/Art/UI/HUD/shop_tower_upgrade_icon.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -581,7 +580,7 @@ Prompt:
 
 Target: Assets/Art/Towers/tower_mortar_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -595,7 +594,7 @@ Prompt:
 
 Target: Assets/Art/Towers/tower_sentinel_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -607,9 +606,9 @@ Prompt:
 
 ## Asset 46 - Arena Boundary Set Rework (flat top-down)
 
-Target: Assets/Art/Environment/Arena/stage1_boundary_set.png (replacement)
+Target: Assets/Art/Environment/Arena/stage1_boundary_set.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -627,7 +626,7 @@ Playtest asked for a full visual concept covering up to 5 stages (see [Stages.md
 
 Target: Assets/Art/Environment/Arena/stage2_ground_tileset.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -637,7 +636,7 @@ Create a seamless top-down 2D ground tile set for a reactor-depths stage of a sc
 
 Target: Assets/Art/Environment/Arena/stage2_prop_set.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -647,7 +646,7 @@ Create a top-down prop set for a reactor-depths stage of a sci-fantasy defense r
 
 Target: Assets/Art/Environment/Arena/stage2_boundary_set.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -657,7 +656,7 @@ Flat top-down (orthographic) arena boundary set for a reactor-depths stage: cont
 
 Target: Assets/Art/Characters/Bosses/boss_stage2_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Needed because: `Boss_Stage2.asset` names this boss "Reactor Sentinel" but has no sprite assigned yet.
 
@@ -669,7 +668,7 @@ Create a Stage 2 boss sprite for a top-down sci-fantasy defense roguelite: the "
 
 Target: Assets/Art/Environment/Arena/stage3_ground_tileset.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -679,7 +678,7 @@ Create a seamless top-down 2D ground tile set for a salvage-fields stage of a sc
 
 Target: Assets/Art/Environment/Arena/stage3_prop_set.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -689,7 +688,7 @@ Create a top-down prop set for a salvage-fields stage of a sci-fantasy defense r
 
 Target: Assets/Art/Environment/Arena/stage3_boundary_set.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -699,7 +698,7 @@ Flat top-down (orthographic) arena boundary set for a salvage-fields stage: make
 
 Target: Assets/Art/Characters/Bosses/boss_stage3_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -709,7 +708,7 @@ Create a Stage 3 boss sprite for a top-down sci-fantasy defense roguelite: a scr
 
 Target: Assets/Art/Environment/Arena/stage4_ground_tileset.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -719,7 +718,7 @@ Create a seamless top-down 2D ground tile set for a cryo-vaults stage of a sci-f
 
 Target: Assets/Art/Environment/Arena/stage4_prop_set.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -729,7 +728,7 @@ Create a top-down prop set for a cryo-vaults stage of a sci-fantasy defense rogu
 
 Target: Assets/Art/Environment/Arena/stage4_boundary_set.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -739,7 +738,7 @@ Flat top-down (orthographic) arena boundary set for a cryo-vaults stage: frost-r
 
 Target: Assets/Art/Characters/Bosses/boss_stage4_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -749,7 +748,7 @@ Create a Stage 4 boss sprite for a top-down sci-fantasy defense roguelite: the "
 
 Target: Assets/Art/Environment/Arena/stage5_ground_tileset.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -759,7 +758,7 @@ Create a seamless top-down 2D ground tile set for the final Core Nexus stage of 
 
 Target: Assets/Art/Environment/Arena/stage5_prop_set.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -769,7 +768,7 @@ Create a top-down prop set for the final Core Nexus stage of a sci-fantasy defen
 
 Target: Assets/Art/Environment/Arena/stage5_boundary_set.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -779,7 +778,7 @@ Flat top-down (orthographic) arena boundary set for the final Core Nexus stage: 
 
 Target: Assets/Art/Characters/Bosses/boss_stage5_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Needed because: Stage 5 is the run's Final Boss (`IsFinalStage`), combining Stage 2's area-denial, Stage 3's summon-phase and Stage 4's freeze-pulse mechanics into one multi-phase fight - the sprite should read as the culmination of the previous three bosses' visual languages, not a fourth unrelated design.
 
@@ -797,7 +796,7 @@ Needed because (wiring gap, not just missing art): unlike `StageThemeData`/`Boss
 
 Target: Assets/Art/Characters/Enemies/enemy_chaser_stage2_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -807,7 +806,7 @@ Create a top-down enemy sprite for the Chaser role, reskinned for a reactor-dept
 
 Target: Assets/Art/Characters/Enemies/enemy_ranged_pressure_stage2_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -817,7 +816,7 @@ Create a top-down enemy sprite for the Ranged Pressure role, reskinned for a rea
 
 Target: Assets/Art/Characters/Enemies/enemy_bruiser_stage2_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -827,7 +826,7 @@ Create a top-down enemy sprite for the Bruiser role, reskinned for a reactor-dep
 
 Target: Assets/Art/Characters/Enemies/enemy_chaser_stage3_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -837,7 +836,7 @@ Create a top-down enemy sprite for the Chaser role, reskinned for a salvage-fiel
 
 Target: Assets/Art/Characters/Enemies/enemy_ranged_pressure_stage3_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -847,7 +846,7 @@ Create a top-down enemy sprite for the Ranged Pressure role, reskinned for a sal
 
 Target: Assets/Art/Characters/Enemies/enemy_bruiser_stage3_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -857,7 +856,7 @@ Create a top-down enemy sprite for the Bruiser role, reskinned for a salvage-fie
 
 Target: Assets/Art/Characters/Enemies/enemy_chaser_stage4_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -867,7 +866,7 @@ Create a top-down enemy sprite for the Chaser role, reskinned for a cryo-vaults 
 
 Target: Assets/Art/Characters/Enemies/enemy_ranged_pressure_stage4_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -877,7 +876,7 @@ Create a top-down enemy sprite for the Ranged Pressure role, reskinned for a cry
 
 Target: Assets/Art/Characters/Enemies/enemy_bruiser_stage4_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -887,7 +886,7 @@ Create a top-down enemy sprite for the Bruiser role, reskinned for a cryo-vaults
 
 Target: Assets/Art/Characters/Enemies/enemy_chaser_stage5_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -897,7 +896,7 @@ Create a top-down enemy sprite for the Chaser role, reskinned for the final Core
 
 Target: Assets/Art/Characters/Enemies/enemy_ranged_pressure_stage5_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -907,7 +906,7 @@ Create a top-down enemy sprite for the Ranged Pressure role, reskinned for the f
 
 Target: Assets/Art/Characters/Enemies/enemy_bruiser_stage5_topdown.png
 
-**Status:** present.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -947,7 +946,7 @@ exact pattern the three existing roles use, with the five paths below, and clear
 
 Target: Assets/Art/Characters/Enemies/enemy_zone_denier_topdown.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -957,7 +956,7 @@ Prompt:
 
 Target: Assets/Art/Characters/Enemies/enemy_zone_denier_stage2_topdown.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -967,7 +966,7 @@ Prompt:
 
 Target: Assets/Art/Characters/Enemies/enemy_zone_denier_stage3_topdown.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -977,7 +976,7 @@ Prompt:
 
 Target: Assets/Art/Characters/Enemies/enemy_zone_denier_stage4_topdown.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -987,7 +986,7 @@ Prompt:
 
 Target: Assets/Art/Characters/Enemies/enemy_zone_denier_stage5_topdown.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -997,7 +996,7 @@ Prompt:
 
 Target: Assets/Art/Characters/Enemies/enemy_relay_warden_topdown.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -1007,7 +1006,7 @@ Prompt:
 
 Target: Assets/Art/Characters/Enemies/enemy_relay_warden_stage2_topdown.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -1017,7 +1016,7 @@ Prompt:
 
 Target: Assets/Art/Characters/Enemies/enemy_relay_warden_stage3_topdown.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -1027,7 +1026,7 @@ Prompt:
 
 Target: Assets/Art/Characters/Enemies/enemy_relay_warden_stage4_topdown.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -1037,7 +1036,7 @@ Prompt:
 
 Target: Assets/Art/Characters/Enemies/enemy_relay_warden_stage5_topdown.png
 
-**Status:** NOT CREATED YET.
+**Status:** DELIVERED and wired.
 
 Prompt:
 
@@ -1063,7 +1062,7 @@ player cannot tell what they are spending. They must differ in silhouette, not o
 
 Target: Assets/Art/UI/SkillTree/skill_node_key_frame.png
 
-**Status:** DELIVERED 2026-09-22, DEFECTIVE - the frame's centre is a baked-in checkerboard (fake transparency). Not wired; the Progression screen keeps its procedural rows. Needs a re-render with a real transparent centre.
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Needed because:
 
@@ -1077,7 +1076,7 @@ Prompt:
 
 Target: Assets/Art/UI/SkillTree/skill_node_sub_frame.png
 
-**Status:** DELIVERED 2026-09-22, WRONG CONTENT - the image is a node-cluster diagram, not a single sub-node frame. Not wired. Needs a re-render as one small frame.
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Needed because:
 
@@ -1091,7 +1090,7 @@ Prompt:
 
 Target: Assets/Art/UI/SkillTree/skill_link_segment.png
 
-**Status:** DELIVERED 2026-09-22. Mirrored to StreamingAssets; not wired yet (the tree is a tab strip, so there is nothing to link).
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Needed because:
 
@@ -1105,7 +1104,7 @@ Create a short horizontal 2D UI connector segment for a skill tree, designed to 
 
 Target: Assets/Art/UI/SkillTree/ascension_rank_badge.png
 
-**Status:** DELIVERED 2026-09-22 and wired (main-menu Ascension badge).
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1119,7 +1118,7 @@ Prompt:
 
 Target: Assets/Art/UI/SkillTree/skill_branch_icon_sheet.png
 
-**Status:** DELIVERED 2026-09-22 and wired (Progression screen branch emblem, four rects cut from the sheet).
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1133,7 +1132,7 @@ Create a unified 2D icon sheet containing exactly four icons in a single row, ev
 
 Target: Assets/Art/UI/HUD/weapon_slot_frame.png
 
-**Status:** DELIVERED 2026-09-22 and wired with a workaround - the centre is a baked-in checkerboard, so the HUD draws it as a 9-slice with the centre not filled (border only). A re-render with a transparent centre would let it be used as-is.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1147,7 +1146,7 @@ Prompt:
 
 Target: Assets/Art/UI/HUD/weapon_set_tier_pips.png
 
-**Status:** DELIVERED 2026-09-22 and wired (HUD Set Bonus pips, off/on cells).
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1161,7 +1160,7 @@ Create a 2D icon sheet containing exactly five small pip shapes in a single row,
 
 Target: Assets/Art/Resources/resource_alloy_icon.png
 
-**Status:** DELIVERED 2026-09-22 and wired (Progression header).
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1175,7 +1174,7 @@ Prompt:
 
 Target: Assets/Art/Resources/resource_skill_point_icon.png
 
-**Status:** DELIVERED 2026-09-22 and wired (Progression header).
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1189,7 +1188,7 @@ Prompt:
 
 Target: Assets/Art/UI/HUD/core_repair_icon.png
 
-**Status:** DELIVERED 2026-09-22 and wired (world prompt above the Core during an Intermission).
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1203,7 +1202,7 @@ Prompt:
 
 Target: Assets/Art/UI/HUD/factory_chain_tier_indicator.png
 
-**Status:** DELIVERED 2026-09-22. Mirrored to StreamingAssets; not wired yet.
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Needed because:
 
@@ -1230,7 +1229,7 @@ what it was designed for, and Spiral is a Fan that rotates.
 
 Target: Assets/Art/Combat/VFX/vfx_boss_telegraph_ring.png
 
-**Status:** CREATED 2026-09-21 and wired 2026-09-22 - `BossRuntimeController` draws it for the Ring and Spiral wind-ups (scales up over the wind-up). Mirrored to StreamingAssets.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1244,7 +1243,7 @@ Prompt:
 
 Target: Assets/Art/Combat/VFX/vfx_boss_telegraph_lance.png
 
-**Status:** CREATED 2026-09-21 and wired 2026-09-22 for the Lance wind-up. **Defect:** the far end of the lance has a baked-in grey checkerboard (fake transparency) where it should be transparent - regenerate or erase that tip. Mirrored to StreamingAssets.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1258,7 +1257,7 @@ Create a 2D attack telegraph for a top-down sci-fantasy defense roguelite, warni
 
 Target: Assets/Art/Combat/VFX/vfx_boss_telegraph_volley.png
 
-**Status:** CREATED 2026-09-21 and wired 2026-09-22 for the Volley wind-up, oriented along the firing direction. Mirrored to StreamingAssets.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1272,7 +1271,7 @@ Create a 2D attack telegraph for a top-down sci-fantasy defense roguelite, warni
 
 Target: Assets/Art/UI/HUD/tower_info_card_frame.png
 
-**Status:** CREATED 2026-09-21 and wired 2026-09-22 in the tower build browser. Delivered as a sheet (one large card at x44 y44 525x525, three small cards at x626-868), sliced by pixel rect in `TowerBuildBrowserPresenter`. The art bakes in the words "Strong against" / "Weak against" in English, so they will not localise. Mirrored to StreamingAssets.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1286,7 +1285,7 @@ Create a compact 2D UI info card frame for a top-down sci-fantasy defense roguel
 
 Target: Assets/Art/UI/SkillTree/character_portrait_frame.png
 
-**Status:** CREATED 2026-09-21 in `Assets/Art/UI/SkillTree/` (lower-case t; the target path above says `SkillTree`). Not used yet - there is no character select. **Defect:** the centre, which should be transparent for the portrait, is a baked-in checkerboard.
+**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
 
 Needed because:
 
@@ -1295,7 +1294,6 @@ Each playable character now has its own skill tree and is levelled separately, s
 Prompt:
 
 1:1 square aspect ratio, exactly equal width and height, do not output a wide or landscape canvas, and do not add a white or colored page background - the canvas outside the artwork must be fully transparent (alpha 0), not white. Create a 2D portrait frame for a character selector in a sci-fantasy defense roguelite. A rounded-square frame with a heavy lower band where a character name and level number can be drawn over it at runtime, and a clean inner window for the portrait. It must read as selected or unselected purely through tinting, since one piece of art serves both states. Match the established Corebound language: steel-blue structure, pale metallic edges, restrained amber-gold energy accents, clean industrial framing, strong silhouette. Transparent background, no text.
-
 
 ---
 
@@ -1313,7 +1311,7 @@ für geliefertes Artwork").
 
 Target: Assets/Art/Combat/Projectiles/projectile_sheet_weapons_02.png
 
-**Status:** DELIVERED 2026-09-22 and wired. Six rows of frames; each weapon takes the first frame of its row by pixel rect, because the rows do not share one cell size. Animating the remaining frames is still open.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1330,7 +1328,7 @@ Create a 2D top-down projectile sprite sheet on a 6-row by 4-column grid, every 
 
 Target: Assets/Art/UI/HUD/weapon_icon_sheet.png
 
-**Status:** DELIVERED 2026-09-22 and wired (3 x 3 grid, one cell per weapon, HUD slot tiles and the loadout panel).
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1346,7 +1344,7 @@ Create a 2D icon sheet on a 3-row by 3-column grid, every cell exactly the same 
 
 Target: Assets/Art/Combat/VFX/vfx_impact_flame_frost.png
 
-**Status:** DELIVERED 2026-09-22, DEFECTIVE - the whole image is opaque: the transparency checkerboard is painted into the pixels (0 % transparent, corner alpha 255). Not wired; Burn and Freeze keep the old effects. Needs a re-render with a real alpha channel.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1361,7 +1359,7 @@ Create a 2D effect sprite sheet on a 2-row by 4-column grid, every cell exactly 
 
 Target: Assets/Art/Combat/VFX/vfx_impact_splash_burst.png
 
-**Status:** DELIVERED 2026-09-22, DEFECTIVE - same problem: fully opaque, checkerboard baked in. Not wired; the Launcher burst still uses the generic death burst.
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1376,7 +1374,7 @@ Create a 2D top-down explosion sprite sheet on a single row of five frames, ever
 
 Target: Assets/Art/Combat/VFX/vfx_nova_ring_pulse.png
 
-**Status:** DELIVERED 2026-09-22 and wired (Nova Pulse ring on fire).
+**Status:** DELIVERED and wired.
 
 Needed because:
 
@@ -1391,7 +1389,8 @@ Create a 2D top-down energy pulse sprite for a sci-fantasy defense roguelite: a 
 
 Target: Assets/Art/Environment/Arena/arena_salvage_cache.png
 
-**Status:** NOT CREATED. The runtime ships using `resource_primary_icon.png` scaled to 1.1 world
+**Status:** DELIVERED and wired.
+
 units as a stand-in, which reads as "a lot of Scrap" but not as a container worth crossing the arena
 for.
 
@@ -1410,7 +1409,8 @@ Create a 2D top-down sprite of a sealed salvage container for a sci-fantasy defe
 
 Target: Assets/Art/Environment/Arena/arena_objective_ring.png
 
-**Status:** NOT CREATED. The runtime currently draws a tinted square that shrinks as the lifetime
+**Status:** DELIVERED and wired.
+
 drains, which works but is visibly a placeholder.
 
 Needed because:

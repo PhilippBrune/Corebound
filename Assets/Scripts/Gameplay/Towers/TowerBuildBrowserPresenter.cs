@@ -43,8 +43,13 @@ namespace Corebound.Gameplay.Towers
 
         private static readonly Color LockedTint = new Color(0.42f, 0.44f, 0.48f, 1f);
         private static readonly Color PlateTextColor = new Color(0.93f, 0.95f, 0.98f, 1f);
-        private static readonly Color StrengthColor = new Color(0.62f, 0.95f, 0.62f, 1f);
-        private static readonly Color WeaknessColor = new Color(1f, 0.62f, 0.55f, 1f);
+        // Playtest 2026-09-28: "green is hard to read, choose a better colour." These sit on the
+        // tower card's pale parchment, where a 0.62/0.95/0.62 green is close enough in luminance to
+        // the background to wash out entirely - the strength line was the least readable text on
+        // the screen despite being the reason the card exists. Both are now dark enough to carry
+        // their own contrast against the light plate, and still read as green and red.
+        private static readonly Color StrengthColor = new Color(0.09f, 0.42f, 0.16f, 1f);
+        private static readonly Color WeaknessColor = new Color(0.62f, 0.13f, 0.09f, 1f);
         private static readonly Color UnaffordableColor = new Color(1f, 0.45f, 0.4f, 1f);
         private static readonly Color DamageBarColor = new Color(1f, 0.62f, 0.25f, 0.95f);
         private static readonly Color RangeBarColor = new Color(0.35f, 0.78f, 1f, 0.95f);

@@ -118,6 +118,50 @@ the autopilot's combat is slow enough that five full runs needs its own session.
 
 ---
 
+## 2.6 Duplicate cards — audited 2026-09-28, **Decide**
+
+Owner asked for a review of cards that differ only by a number. Scanning all 43 cards by their
+*effect signature* (target + operation, ignoring magnitude) found **nine groups, 19 cards**, where
+two or more cards at the same rarity do the same thing:
+
+| Rarity | Effect | Cards (value) |
+| --- | --- | --- |
+| Common | Weapon damage | Overcharged Rounds (1.10) · Rapid Chamber (1.15) |
+| Common | Resource gain | Scrap Magnet (1.10) · Salvage Protocol (1.15) |
+| Rare | Fire interval | Rapid Cycler (0.85) · Twin Barrel (0.88) |
+| Rare | Resource gain | Assembly Line (1.20) · Harvest Protocol (1.25) |
+| **Rare** | **Tower damage** | **Relay Overclock (1.15) · Fortified Relay (1.20) · Reinforced Emitters (1.22)** |
+| Epic | Weapon damage | Status Archive (1.15) · Volatile Payload (1.40) |
+| Epic | Resource gain | Bulk Salvage (1.40) · Endless Supply Line (1.45) |
+| Epic | Tower damage | Siege Battery (1.35) · Twin Turret Array (1.40) |
+| Legendary | Weapon + tower damage | Apex Overload (1.30/1.30) · Reactor Bleed (1.25/1.25) |
+
+The three Rare tower-damage cards are the worst: 1.15 / 1.20 / 1.22 is not a choice, it is a lottery
+for the best number. The Epic weapon-damage pair is the other extreme — 1.15 against 1.40 at the
+same rarity is not a duplicate so much as one card being strictly worse.
+
+Three ways to resolve, and this needs an owner call because it is content design:
+
+1. **Differentiate.** Give one card of each pair a second axis — Relay Overclock becomes tower *fire
+   rate*, Twin Barrel becomes *projectile count*, Status Archive leans on status duration. Most work,
+   best result, and it uses effect targets that already exist.
+2. **Merge and replace.** Delete the weaker of each pair and author new cards in the gaps the pool
+   has (there is nothing at all for pierce, crit rate on towers, or Core repair).
+3. **Make them stack deliberately.** Keep them, rename them as an explicit family, and let the
+   duplication be the point — the deckbuilding equivalent of two copies.
+
+**Recommendation: 1 for the three Rare tower cards and the Epic weapon pair** (the two that read
+worst), **2 for the rest**. Not started — say which and it is a data-only change.
+
+Separately, the same scan found **14 cards with no resolvable effects**. Nine are weapon-grant cards,
+which is correct — they hand over a weapon rather than a modifier. The other five are not:
+**Cooling Array, Critical Focus, Critical Amplifier, Split Barrel and Unstable Payload** reference
+effect assets the scan could not read as a target/operation pair, which means either they use a
+mechanism the audit does not understand or they genuinely do nothing. Worth a look before the
+duplicate work, since a card that does nothing outranks a card that duplicates.
+
+---
+
 ## 3 · Decide — second round of suggestions
 
 The first round is in git history; these are fresh takes, not a re-print.

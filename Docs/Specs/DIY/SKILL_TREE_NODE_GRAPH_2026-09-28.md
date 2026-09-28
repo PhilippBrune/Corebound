@@ -3,7 +3,21 @@
 **Owner request:** *"Create a concept for a node graph. This concept should also contain a levelling
 system and each level grants a SP."*
 
-**Nothing here is implemented.** Decisions are numbered; answer them and the build follows.
+**Answered by the owner 2026-09-28 — this is the build contract now.**
+
+| # | Question | Answer |
+| --- | --- | --- |
+| N1 | Node positions | **1** — authored `Vector2` per key node; sub-nodes on an arc around theirs |
+| N2 | Overall shape | **2** — radial, branches fanning from a central portrait |
+| N3 | Navigation | **3** — tabs switch branch, stick moves within it, shoulders jump tiers |
+| N4 | Unselected node state | **As proposed** — frame, accent, rank pips, and locked / unaffordable / affordable / owned readable without colour alone |
+| L1 | What earns XP | **2** — weighted kills, wave clears and stage clears |
+| L2 | Level scope | **1** — per profile, persisting across runs |
+| L3 | Curve | **2** — gentle geometric, ×1.15 per level |
+| L4 | Where XP shows | **3** — HUD bar behind the run-timer Settings toggle, plus run-end and main menu |
+
+**Not implemented yet.** The balance note below is now load-bearing: boss SP must come down by
+roughly a third as levels are added, or the tree trivialises.
 
 ---
 

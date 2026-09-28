@@ -525,9 +525,15 @@ namespace Corebound.Gameplay.Waves
             // Owner 2026-09-25: the boss gets the same 2 s warning an ordinary wave gets. Its
             // arrival used to be instant, which is the one spawn in the game that most deserves a
             // tell. The boss holds still and takes no action for the delay; the nearest gate pulses.
-            _bossRuntimeController.SetSpawnDelay(WaveStartSpawnDelaySeconds);
             PulseGateNearest(bossSpawnPosition);
             _bossRuntimeController.Initialize(_stageData.BossData, _playerTarget, _coreTarget, _sharedProjectilePrototype, _projectileParent, _enemyPool, restoredPhaseIndex);
+
+            // AFTER Initialize, not before. Initialize assigns _engageDelayTimer outright, so the
+            // call sitting above it was silently overwritten and the boss engaged on its own 2 s
+            // default no matter what was asked for - reported twice (2026-09-27, 2026-09-28) as
+            // "boss spawn is still not delayed". SetSpawnDelay only ever raises the timer, so
+            // running it afterwards is what actually applies the wave's longer delay.
+            _bossRuntimeController.SetSpawnDelay(WaveStartSpawnDelaySeconds);
             _bossRuntimeController.PhaseChanged += OnBossPhaseChanged;
             ApplyPersistenceContext();
             WaveEvents.RaiseWaveStarted(CreateEventArgs(CurrentWaveNumber, WaveEncounterLabelResolver.ResolveCurrentEncounterLabel(_stageData, _currentWaveIndex, _state, _bossRuntimeController), false));
@@ -663,7 +669,21 @@ namespace Corebound.Gameplay.Waves
         {
             // CardService.TryGrantRandomRelic() raises RelicEvents.RelicGranted itself, which
             // RelicRevealPresenter listens for - no toast call needed here anymore.
-            _cardService?.TryGrantRandomRelic();
+            var granted = _cardService != null ? _cardService.TryGrantRandomRelic() : null;
+
+            if (granted != null)
+            {
+                return;
+            }
+
+            // Playtest 2026-09-28: "defeating a boss should give a relic, currently I don't get
+            // any." A silent null here is indistinguishable from the feature not existing, and the
+            // three ways it can happen are all configuration rather than logic: no CardService on
+            // this object, an empty relic pool, or every relic already held / gated behind an
+            // unmet unlock. Saying which one it was turns an invisible miss into a fixable report.
+            Debug.LogWarning(_cardService == null
+                ? "[Relic] Boss defeated but no CardService is attached to WaveManager - no relic granted."
+                : "[Relic] Boss defeated but no relic was eligible: the pool is empty, every relic is already held, or all remaining ones are gated behind unmet unlocks.");
         }
 
         private void StartIntermission()
