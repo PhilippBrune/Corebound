@@ -40,6 +40,12 @@ namespace Corebound.SaveSystem
         [SerializeField] private bool _isTutorialRun;
         [SerializeField] private long _lastUpdatedUtcTicks;
 
+        // Run clocks, persisted so a run resumed across sessions reports its whole length
+        // rather than only the current sitting. Appended, never inserted.
+        [SerializeField] private float _elapsedActiveSeconds;
+        [SerializeField] private float _elapsedRealSeconds;
+        [SerializeField] private long _runStartedUtcTicks;
+
         [SerializeField] private List<string> _equippedWeaponIds = new List<string>();
         [SerializeField] private List<int> _equippedWeaponTiers = new List<int>();
         [SerializeField] private List<int> _equippedWeaponPrices = new List<int>();
@@ -103,6 +109,20 @@ namespace Corebound.SaveSystem
         public bool IsTutorialRun => _isTutorialRun;
 
         public long LastUpdatedUtcTicks => _lastUpdatedUtcTicks;
+
+        public float ElapsedActiveSeconds => _elapsedActiveSeconds;
+
+        public float ElapsedRealSeconds => _elapsedRealSeconds;
+
+        public long RunStartedUtcTicks => _runStartedUtcTicks;
+
+        public void SetRunClocks(float activeSeconds, float realSeconds, long startedUtcTicks)
+        {
+            _elapsedActiveSeconds = Mathf.Max(0f, activeSeconds);
+            _elapsedRealSeconds = Mathf.Max(0f, realSeconds);
+            _runStartedUtcTicks = startedUtcTicks;
+            Touch();
+        }
 
         public IReadOnlyList<string> EquippedWeaponIds => _equippedWeaponIds;
 

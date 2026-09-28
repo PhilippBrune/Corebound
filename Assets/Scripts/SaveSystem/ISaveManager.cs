@@ -27,5 +27,9 @@ namespace Corebound.SaveSystem
         StatisticsSaveData LoadStatisticsSaveData(StatisticsSaveData defaults);
 
         void SaveStatisticsSaveData(StatisticsSaveData saveData);
+
+        RunHistorySaveData LoadRunHistorySaveData();
+
+        void SaveRunHistorySaveData(RunHistorySaveData saveData);
     }
 }

@@ -118,6 +118,9 @@ namespace Corebound.Settings
                 case SettingsOptionKey.HudScale:
                     candidate.SetHudScale(candidate.HudScale + optionDefinition.StepValue * direction);
                     return;
+                case SettingsOptionKey.ShowRunTimer:
+                    candidate.SetShowRunTimer(!candidate.ShowRunTimer);
+                    return;
                 case SettingsOptionKey.ControllerAimAssistStrength:
                     candidate.SetControllerAimAssistStrength(candidate.ControllerAimAssistStrength + optionDefinition.StepValue * direction);
                     return;
@@ -159,6 +162,10 @@ namespace Corebound.Settings
                     return ToPercentLabel(settings.EffectsIntensity);
                 case SettingsOptionKey.HudScale:
                     return string.Format("{0:0.00}x", settings.HudScale);
+                case SettingsOptionKey.ShowRunTimer:
+                    return settings.ShowRunTimer
+                        ? UI.LocalizationService.Resolve("On", "An")
+                        : UI.LocalizationService.Resolve("Off", "Aus");
                 case SettingsOptionKey.ControllerAimAssistStrength:
                     return ToPercentLabel(settings.ControllerAimAssistStrength);
                 case SettingsOptionKey.InputDevice:

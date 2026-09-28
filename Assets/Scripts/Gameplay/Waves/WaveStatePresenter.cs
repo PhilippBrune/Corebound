@@ -489,6 +489,14 @@ namespace Corebound.Gameplay.Waves
             StretchToParent(_stateText.rectTransform, new Vector2(0.65f, 0f), new Vector2(1f, 0.56f), new Vector2(12f, 12f), new Vector2(-27f, -12f));
             ConfigureResponsiveHudText(_stateText, 10, 14);
 
+            // Run clock and account level, both behind the ShowRunTimer setting (run timer D2,
+            // levelling L4). Drawn under the wave label rather than inside the crowded status row,
+            // and hidden entirely when the setting is off so the default HUD is unchanged.
+            _runTimerText = CreateText("RunTimerText", _statusPanelRect, 13, TextAnchor.MiddleRight, new Color(0.88f, 0.92f, 1f, 0.92f));
+            StretchToParent(_runTimerText.rectTransform, new Vector2(0.45f, 0f), new Vector2(1f, 0.44f), new Vector2(12f, -6f), new Vector2(-27f, -20f));
+            ConfigureResponsiveHudText(_runTimerText, 9, 13);
+            _runTimerText.gameObject.SetActive(false);
+
             var bannerPanel = CreateImage("WaveBanner", rectTransform, _waveBannerSprite != null ? _waveBannerSprite : _statusPanelSprite, new Color(1f, 1f, 1f, 0.98f), ResolveBannerImageType());
             var bannerRect = bannerPanel.rectTransform;
             bannerRect.anchorMin = new Vector2(0.5f, 1f);
@@ -572,6 +580,7 @@ namespace Corebound.Gameplay.Waves
             }
 
             UpdateHealthBars();
+            UpdateRunTimerReadout();
 
             // Tower placement/upgrade info only matters while the player can actually act on it
             // (Intermission); showing stale slot-selection text during Combat cluttered the HUD
@@ -1038,6 +1047,8 @@ namespace Corebound.Gameplay.Waves
                         // is the one place you cannot see the HUD you are scaling. Adjusting it
                         // mid-run with the arena behind you is the only way to judge it.
                         case Corebound.Settings.SettingsOptionKey.HudScale:
+                        // The run timer and XP bar share this toggle (run-timer D2, levelling L4).
+                        case Corebound.Settings.SettingsOptionKey.ShowRunTimer:
                             _pauseSettingsOptions.Add(option);
                             break;
                     }
@@ -1550,6 +1561,62 @@ namespace Corebound.Gameplay.Waves
 
             // Low health reads as a warning colour without needing a second element.
             fill.color = shown <= 0.3f ? Color.Lerp(BarHitFlashColor, baseColor, shown / 0.3f) : baseColor;
+        }
+
+        private Text _runTimerText;
+        private Corebound.Gameplay.Waves.RunTimerService _runTimerService;
+
+        // One line: elapsed unpaused time, then the profile level and its XP progress. Active time
+        // rather than wall clock, because a clock that ticks while the game is paused feels broken;
+        // both are still stored, and the run-end record carries the pair.
+        private void UpdateRunTimerReadout()
+        {
+            if (_runTimerText == null)
+            {
+                return;
+            }
+
+            var manager = ResolveSettingsManager();
+            var show = manager != null && manager.RuntimeSettings != null && manager.RuntimeSettings.ShowRunTimer;
+
+            if (_runTimerText.gameObject.activeSelf != show)
+            {
+                _runTimerText.gameObject.SetActive(show);
+            }
+
+            if (!show)
+            {
+                return;
+            }
+
+            if (_runTimerService == null)
+            {
+                _runTimerService = FindFirstObjectByType<Corebound.Gameplay.Waves.RunTimerService>();
+            }
+
+            var elapsed = _runTimerService != null
+                ? Corebound.Gameplay.Waves.RunTimerService.Format(_runTimerService.ElapsedActiveSeconds)
+                : "0:00";
+
+            // Read live from the save, not from RunProgressionSnapshot: that snapshot is frozen at
+            // run start by design, and the level is the one thing here that moves during a run.
+            // LoadMetaProgressionSaveData returns the manager's cached instance, so this is a field
+            // read rather than a file read.
+            var saveManager = _waveManager != null ? _waveManager.SaveManagerSource : null;
+            var definition = _waveManager != null ? _waveManager.MetaProgressionDefinition : null;
+            var metaSaveData = saveManager != null && definition != null
+                ? saveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData())
+                : null;
+
+            if (metaSaveData == null)
+            {
+                _runTimerText.text = elapsed;
+                return;
+            }
+
+            metaSaveData.EnsureLevelFloor();
+            _runTimerText.text = elapsed + "   Lv " + metaSaveData.Level
+                + "  " + metaSaveData.Experience + "/" + metaSaveData.ExperienceForNextLevel;
         }
 
         private string ResolvePlayerHealthText()

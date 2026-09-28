@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 using Corebound.SaveSystem;
 
 namespace Corebound.MetaProgression
@@ -31,6 +32,9 @@ namespace Corebound.MetaProgression
     public static class MetaRewardLedger
     {
         public static event Action<MetaRewardGrant> RewardGranted;
+
+        // See GrantBossDefeat: levels supply the difference.
+        private const float BossSkillPointScale = 0.67f;
 
         // What the current run has earned so far, for the Run Failed screen (playtest 2026-09-22:
         // "add to Run Failed the earned resources"). Reset by WaveManager when a run's scene loads;
@@ -89,6 +93,40 @@ namespace Corebound.MetaProgression
             return runSaveData != null && runSaveData.IsTutorialRun;
         }
 
+        // L1 (owner 2026-09-28): weighted kills, wave clears and stage clears, not kills alone.
+        // Kills alone reward grinding a wave already beaten and punish a build that lets towers do
+        // the work; weighting the clears makes XP track progress, which is what a level is supposed
+        // to represent, while kills keep the bar moving so it never looks stuck.
+        public const int ExperiencePerKill = 2;
+        public const int ExperiencePerWaveCleared = 18;
+        public const int ExperiencePerStageCleared = 140;
+
+        // Fired once per level crossed so the HUD can toast without the save layer knowing about UI.
+        public static event Action<int> LevelGained;
+
+        public static void GrantExperience(ISaveManager saveManager, MetaProgressionDefinitionData definition, int amount)
+        {
+            if (saveManager == null || definition == null || amount <= 0 || IsTutorialRun(saveManager))
+            {
+                return;
+            }
+
+            var saveData = saveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
+
+            if (saveData == null)
+            {
+                return;
+            }
+
+            var levelsGained = saveData.GrantExperience(amount);
+            saveManager.SaveMetaProgressionSaveData(saveData);
+
+            for (var index = 0; index < levelsGained; index++)
+            {
+                LevelGained?.Invoke(saveData.Level - levelsGained + index + 1);
+            }
+        }
+
         public static MetaRewardGrant GrantBossDefeat(ISaveManager saveManager, MetaProgressionDefinitionData definition, int stageIndex, string bossId)
         {
             if (saveManager == null || definition == null || IsTutorialRun(saveManager))
@@ -98,7 +136,12 @@ namespace Corebound.MetaProgression
 
             var saveData = saveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
             var isFirstKill = saveData.RecordBossDefeated(bossId);
-            var skillPoints = definition.ResolveBossSkillPoints(stageIndex) + (isFirstKill ? definition.BossFirstKillSkillPoints : 0);
+            // The balance note in the levelling design, applied: levels are now a second SP source,
+            // so boss SP comes down by a third rather than the two stacking and trivialising the
+            // tree. The total across a run should stay near what it was; the distribution is what
+            // changes, from one lump per boss to a steadier trickle.
+            var skillPoints = Mathf.RoundToInt(
+                (definition.ResolveBossSkillPoints(stageIndex) + (isFirstKill ? definition.BossFirstKillSkillPoints : 0)) * BossSkillPointScale);
             var alloy = definition.ResolveBossAlloy(stageIndex) + (isFirstKill ? definition.BossFirstKillAlloy : 0);
             saveData.GrantSkillPoints(skillPoints);
             saveData.GrantAlloy(alloy);

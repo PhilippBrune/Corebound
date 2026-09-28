@@ -207,6 +207,68 @@ namespace Corebound.SaveSystem
             _hasSeenMetaCurrencyHint = true;
         }
 
+        // ---- Levelling (owner decisions 2026-09-28, L1-L4) --------------------------------------
+        //
+        // Per profile, not per run (L2): "each level grants a SP", SP is meta currency, and a
+        // per-run level granting meta currency would make farming an early stage optimal. It also
+        // fixes the older problem that a run dying in Stage 2 earned nothing at all - every run
+        // moves this bar, including a bad one.
+        //
+        // Appended, never inserted: old saves deserialize level 0 / XP 0, and EnsureLevelFloor()
+        // lifts them to level 1 on first read so no profile is stuck below the first level.
+        [SerializeField] private int _level;
+        [SerializeField] private int _experience;
+
+        // L3: gentle geometric, x1.15 per level, so early levels land fast and later ones are a
+        // commitment. BaseLevelCost is tuned so a cleared stage is roughly a level early on.
+        private const int BaseLevelCost = 120;
+        private const float LevelCostGrowth = 1.15f;
+
+        public int Level => Mathf.Max(1, _level);
+
+        public int Experience => Mathf.Max(0, _experience);
+
+        public int ExperienceForNextLevel => ResolveLevelCost(Level);
+
+        public static int ResolveLevelCost(int level)
+        {
+            return Mathf.Max(1, Mathf.RoundToInt(BaseLevelCost * Mathf.Pow(LevelCostGrowth, Mathf.Max(0, level - 1))));
+        }
+
+        // Returns how many levels were crossed, so the caller can grant one Skill Point per level
+        // and toast once per level rather than once per XP grant.
+        public int GrantExperience(int amount)
+        {
+            if (amount <= 0)
+            {
+                return 0;
+            }
+
+            EnsureLevelFloor();
+            _experience += amount;
+            var levelsGained = 0;
+
+            // A while loop, not an if: a stage clear can be worth more than one level on a fresh
+            // profile, and swallowing the surplus would quietly lose Skill Points.
+            while (_experience >= ResolveLevelCost(_level))
+            {
+                _experience -= ResolveLevelCost(_level);
+                _level += 1;
+                levelsGained += 1;
+                GrantSkillPoints(1);
+            }
+
+            return levelsGained;
+        }
+
+        public void EnsureLevelFloor()
+        {
+            if (_level < 1)
+            {
+                _level = 1;
+            }
+        }
+
         // ---- Alloy -----------------------------------------------------------------------------
 
         public void GrantAlloy(int amount)

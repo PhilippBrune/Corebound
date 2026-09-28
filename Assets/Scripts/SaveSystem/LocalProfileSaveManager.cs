@@ -11,10 +11,16 @@ namespace Corebound.SaveSystem
         private const string MetaFileName = "meta.json";
         private const string StatisticsFileName = "statistics.json";
 
+        // D5: run history is its own file. statistics.json is rewritten on every enemy kill, so
+        // an unbounded array living there would re-serialise the whole history per death.
+        private const string RunHistoryFileName = "history.json";
+
         // Every *SaveData class stamps this into its own SaveFormatVersion field. No format
         // change has shipped yet, so this never fires today; it exists so a future schema change
         // is a loud warning instead of JsonUtility silently defaulting the new fields on old saves.
         private const int CurrentSaveFormatVersion = 1;
+
+        private RunHistorySaveData _runHistorySaveData;
 
         [SerializeField] private string _profileFolderName = "Profile_01";
         [SerializeField] private RunSaveBootstrapData _runBootstrapData;
@@ -98,6 +104,7 @@ namespace Corebound.SaveSystem
             _settingsSaveData = null;
             _metaProgressionSaveData = null;
             _statisticsSaveData = null;
+            _runHistorySaveData = null;
         }
 
         private void OnDestroy()
@@ -290,6 +297,42 @@ namespace Corebound.SaveSystem
             _saveStore.Save(GetStatisticsPath(), _statisticsSaveData);
         }
 
+        public RunHistorySaveData LoadRunHistorySaveData()
+        {
+            if (_forwardTo != null)
+            {
+                return _forwardTo.LoadRunHistorySaveData();
+            }
+
+            if (_runHistorySaveData != null)
+            {
+                return _runHistorySaveData;
+            }
+
+            if (_saveStore.TryLoad(GetRunHistoryPath(), out _runHistorySaveData))
+            {
+                WarnIfVersionMismatch("history", _runHistorySaveData.SaveFormatVersion);
+                return _runHistorySaveData;
+            }
+
+            // Deliberately not written on first load: an empty history file for a profile that has
+            // never finished a run is noise, and the first completed run creates it.
+            _runHistorySaveData = new RunHistorySaveData();
+            return _runHistorySaveData;
+        }
+
+        public void SaveRunHistorySaveData(RunHistorySaveData saveData)
+        {
+            if (_forwardTo != null)
+            {
+                _forwardTo.SaveRunHistorySaveData(saveData);
+                return;
+            }
+
+            _runHistorySaveData = saveData != null ? saveData.Clone() : new RunHistorySaveData();
+            _saveStore.Save(GetRunHistoryPath(), _runHistorySaveData);
+        }
+
         private static void WarnIfVersionMismatch(string saveName, int loadedVersion, int expectedVersion = CurrentSaveFormatVersion)
         {
             if (loadedVersion != expectedVersion)
@@ -317,6 +360,11 @@ namespace Corebound.SaveSystem
         private string GetStatisticsPath()
         {
             return Path.Combine(GetProfileRootPath(), StatisticsFileName);
+        }
+
+        private string GetRunHistoryPath()
+        {
+            return Path.Combine(GetProfileRootPath(), RunHistoryFileName);
         }
 
         private string GetProfileRootPath()

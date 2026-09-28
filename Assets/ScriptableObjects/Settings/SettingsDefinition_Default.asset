@@ -141,6 +141,17 @@ MonoBehaviour:
       _defaultToggleValue: 0
       _defaultChoiceIndex: 0
       _choiceLabels: []
+    - _key: 14
+      _label: Show Run Timer
+      _description: Shows the run clock and level progress on the HUD. Off by default.
+      _optionKind: 1
+      _minValue: 0
+      _maxValue: 1
+      _stepValue: 1
+      _defaultFloatValue: 0
+      _defaultToggleValue: 0
+      _defaultChoiceIndex: 0
+      _choiceLabels: []
     - _key: 12
       _label: Language
       _description: Switches all in-game text between English and German.

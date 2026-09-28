@@ -80,6 +80,11 @@ namespace Corebound.Gameplay.Waves
         private readonly Arena.ArenaObjectiveService _arenaObjectiveService = new Arena.ArenaObjectiveService();
         private int _spawnedEnemiesThisWave;
 
+        // Counted here rather than read back from statistics.json, which holds a lifetime total
+        // across every run on the profile - a history entry wants what *this* run killed.
+        private int _runEnemiesKilled;
+        private RunTimerService _runTimer;
+
 
         private EnemyPool _enemyPool;
         private ResourcePickupPool _resourcePickupPool;
@@ -144,6 +149,12 @@ namespace Corebound.Gameplay.Waves
         public StageData StageDataAsset => _stageData;
 
         public int StageIndex => _stageData != null ? _stageData.StageIndex : 1;
+
+        // Exposed for the HUD's level readout, which needs live save data rather than the
+        // run-start snapshot - the level is the one progression value that moves mid-run.
+        public MetaProgressionDefinitionData MetaProgressionDefinition => _metaProgressionDefinitionData;
+
+        public ISaveManager SaveManagerSource => SaveManager;
 
         public string StageId => _stageData != null ? _stageData.StageId : string.Empty;
 
@@ -229,7 +240,38 @@ namespace Corebound.Gameplay.Waves
                 _bossRuntimeController.HeavyAttackStarted += OnBossHeavyAttackStarted;
             }
 
+            EnsureRunTimer();
+            MetaRewardLedger.LevelGained -= OnLevelGained;
+            MetaRewardLedger.LevelGained += OnLevelGained;
             InitializeFromSave();
+        }
+
+        // Lives on this GameObject so it shares WaveManager's lifetime: the run timer must survive
+        // the additive canvas scene loads and die with the run, which is exactly this object.
+        private void EnsureRunTimer()
+        {
+            if (_runTimer != null)
+            {
+                return;
+            }
+
+            _runTimer = GetComponent<RunTimerService>() ?? gameObject.AddComponent<RunTimerService>();
+            var runSaveData = SaveManager != null ? SaveManager.LoadRunSaveData() : null;
+
+            // A resumed run continues its clocks instead of restarting them, so a run played across
+            // three sessions still reports its whole length rather than only the last sitting.
+            if (runSaveData != null && runSaveData.HasActiveRun && runSaveData.ElapsedRealSeconds > 0f)
+            {
+                _runTimer.Restore(
+                    runSaveData.ElapsedActiveSeconds,
+                    runSaveData.ElapsedRealSeconds,
+                    runSaveData.RunStartedUtcTicks > 0
+                        ? new System.DateTime(runSaveData.RunStartedUtcTicks, System.DateTimeKind.Utc)
+                        : System.DateTime.UtcNow);
+                return;
+            }
+
+            _runTimer.BeginRun();
         }
 
         // Run- and stage-start bonuses are paid here, not in InitializeFromSave (OnEnable): every
@@ -243,6 +285,7 @@ namespace Corebound.Gameplay.Waves
 
         private void OnDisable()
         {
+            MetaRewardLedger.LevelGained -= OnLevelGained;
             CombatEvents.CombatantDied -= OnCombatantDied;
 
             if (InputReader != null)
@@ -611,6 +654,7 @@ namespace Corebound.Gameplay.Waves
             _arenaObjectiveService.EndWave();
             _resourcePickupPool?.ForceCollectAll();
             _cardService?.NotifyWaveCleared();
+            MetaRewardLedger.GrantExperience(SaveManager, _metaProgressionDefinitionData, MetaRewardLedger.ExperiencePerWaveCleared);
             WaveEvents.RaiseWaveCompleted(CreateEventArgs(CurrentWaveNumber, WaveEncounterLabelResolver.ResolveCurrentEncounterLabel(_stageData, _currentWaveIndex, _state, _bossRuntimeController), WaveEncounterLabelResolver.ResolveCurrentEncounterIsElite(_stageData, _currentWaveIndex, _state)));
 
             if (_runPersistenceController != null)
@@ -761,6 +805,7 @@ namespace Corebound.Gameplay.Waves
             StageEvents.RaiseStageTransitioned(CreateStageEventArgs(WaveEncounterLabelResolver.ResolveStageTransitionLabel(_stageData)));
 
             MetaRewardLedger.RecordStageCleared(SaveManager, _metaProgressionDefinitionData, ShouldEndRunOnCompletion());
+            MetaRewardLedger.GrantExperience(SaveManager, _metaProgressionDefinitionData, MetaRewardLedger.ExperiencePerStageCleared);
 
             if (ShouldEndRunOnCompletion())
             {
@@ -1053,12 +1098,82 @@ namespace Corebound.Gameplay.Waves
         private void RecordEnemyKillStatistic()
         {
             WaveStatisticsRecorder.RecordEnemyKill(SaveManager);
+            _runEnemiesKilled += 1;
+            MetaRewardLedger.GrantExperience(SaveManager, _metaProgressionDefinitionData, MetaRewardLedger.ExperiencePerKill);
+        }
+
+        // A toast, never an overlay: levelling up mid-combat must not touch Time.timeScale
+        // (levelling L4, and Vision section 19's readability boundary).
+        private void OnLevelGained(int newLevel)
+        {
+            Corebound.UI.NotificationPresenter.Show(LocalizationService.Resolve(
+                "Level " + newLevel + " - +1 Skill Point",
+                "Level " + newLevel + " - +1 Skillpunkt"));
         }
 
         private void RecordRunOutcomeStatistic(bool completed)
         {
             WaveStatisticsRecorder.RecordRunOutcome(SaveManager, StageIndex, completed);
+            RecordRunHistory(completed);
         }
+
+        // Both run-end paths already funnel through RecordRunOutcomeStatistic, so the history write
+        // sits here rather than being repeated in the victory and death branches - the same
+        // single-chokepoint shape MetaRewardLedger uses, for the same reason.
+        private void RecordRunHistory(bool completed)
+        {
+            _runTimer?.StopRun();
+
+            var endedBy = completed
+                ? LocalizationService.Resolve("Run completed", "Run abgeschlossen")
+                : (_wasCoreDestroyedOnFailure
+                    ? LocalizationService.Resolve("Core destroyed", "Core zerstoert")
+                    : LocalizationService.Resolve("Player died", "Spieler gestorben"));
+
+            _historyCardIds.Clear();
+            _historyRelicIds.Clear();
+
+            if (_cardService != null)
+            {
+                var cards = _cardService.SelectedCards;
+
+                for (var index = 0; cards != null && index < cards.Count; index++)
+                {
+                    if (cards[index] != null)
+                    {
+                        _historyCardIds.Add(cards[index].CardId);
+                    }
+                }
+
+                var relics = _cardService.SelectedRelics;
+
+                for (var index = 0; relics != null && index < relics.Count; index++)
+                {
+                    if (relics[index] != null)
+                    {
+                        _historyRelicIds.Add(relics[index].RelicId);
+                    }
+                }
+            }
+
+            RunHistoryRecorder.RecordRunEnded(
+                SaveManager,
+                _metaProgressionDefinitionData,
+                completed ? RunOutcome.Completed : RunOutcome.Died,
+                StageIndex,
+                CurrentWaveNumber,
+                endedBy,
+                _runTimer != null ? _runTimer.ElapsedActiveSeconds : 0f,
+                _runTimer != null ? _runTimer.ElapsedRealSeconds : 0f,
+                _runTimer != null ? _runTimer.StartedUtc : System.DateTime.UtcNow,
+                _runEnemiesKilled,
+                _resourceWalletService != null ? _resourceWalletService.CurrentAmount : 0,
+                _historyCardIds,
+                _historyRelicIds);
+        }
+
+        private readonly List<string> _historyCardIds = new List<string>();
+        private readonly List<string> _historyRelicIds = new List<string>();
 
         // Salvage Instinct: elites drop (1 + value) times their Scrap.
         private static int ResolveKillScrap(EnemyRuntimeController enemy)
@@ -1280,6 +1395,14 @@ namespace Corebound.Gameplay.Waves
             var waveNumber = _state == WaveState.BossCombat ? TotalWaveCount + 1 : CurrentWaveNumber;
             var bossPhaseIndex = _bossRuntimeController != null ? _bossRuntimeController.CurrentPhaseIndex : 0;
             _runPersistenceController.ApplyWaveContext(StageIndex, waveNumber, _state == WaveState.BossCombat, bossPhaseIndex);
+
+            // Pushed alongside the wave context so every checkpoint that writes the run also
+            // carries its clocks; without this a resumed run restarts from zero.
+            if (_runTimer != null)
+            {
+                _runPersistenceController.ApplyRunClocks(
+                    _runTimer.ElapsedActiveSeconds, _runTimer.ElapsedRealSeconds, _runTimer.StartedUtc.Ticks);
+            }
         }
 
         private void RaiseStageStartedIfNeeded(string detailLabel)

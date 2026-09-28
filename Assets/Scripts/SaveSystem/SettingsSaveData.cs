@@ -17,6 +17,9 @@ namespace Corebound.SaveSystem
         [SerializeField] private float _screenShakeIntensity = 0.5f;
         [SerializeField] private float _effectsIntensity = 0.75f;
         [SerializeField] private float _hudScale = 1f;
+
+        // Run timer / XP bar visibility. Default false - see SettingsOptionKey.ShowRunTimer.
+        [SerializeField] private bool _showRunTimer;
         [SerializeField] private float _controllerAimAssistStrength = 0.65f;
         [SerializeField] private int _controlProfileIndex;
         [SerializeField] private int _languageIndex;
@@ -43,6 +46,8 @@ namespace Corebound.SaveSystem
         public float EffectsIntensity => _effectsIntensity;
 
         public float HudScale => _hudScale;
+
+        public bool ShowRunTimer => _showRunTimer;
 
         public float ControllerAimAssistStrength => _controllerAimAssistStrength;
 
@@ -124,6 +129,11 @@ namespace Corebound.SaveSystem
         public void SetEffectsIntensity(float value)
         {
             _effectsIntensity = Mathf.Clamp01(value);
+        }
+
+        public void SetShowRunTimer(bool value)
+        {
+            _showRunTimer = value;
         }
 
         public void SetHudScale(float value)

@@ -89,6 +89,27 @@ namespace Corebound.SaveSystem
             }
         }
 
+        // The run clocks travel with the wave context so every snapshot that writes the run also
+        // carries them; without that a resumed run restarts its timer from zero.
+        private float _elapsedActiveSeconds;
+        private float _elapsedRealSeconds;
+        private long _runStartedUtcTicks;
+
+        public void ApplyRunClocks(float activeSeconds, float realSeconds, long startedUtcTicks)
+        {
+            _elapsedActiveSeconds = activeSeconds;
+            _elapsedRealSeconds = realSeconds;
+            _runStartedUtcTicks = startedUtcTicks;
+        }
+
+        private void WriteRunClocks(RunSaveData runSaveData)
+        {
+            if (runSaveData != null && _runStartedUtcTicks > 0)
+            {
+                runSaveData.SetRunClocks(_elapsedActiveSeconds, _elapsedRealSeconds, _runStartedUtcTicks);
+            }
+        }
+
         public void ApplyWaveContext(int stageIndex, int waveIndex, bool isBossEncounterActive = false, int bossPhaseIndex = 0)
         {
             _currentStageIndex = Mathf.Max(1, stageIndex);
@@ -129,6 +150,7 @@ namespace Corebound.SaveSystem
             runSaveData.SetIntermissionOpen(false, _currentStageIndex, _currentWaveIndex);
             runSaveData.SetPendingReward(string.Empty, string.Empty);
             runSaveData.SetBossEncounterState(false, 0);
+            WriteRunClocks(runSaveData);
             SaveManager.SaveRunSaveData(runSaveData);
         }
 
@@ -167,6 +189,7 @@ namespace Corebound.SaveSystem
 
             runSaveData.SetBossEncounterState(false, 0);
             runSaveData.SetIntermissionOpen(true, _currentStageIndex, nextWaveIndex);
+            WriteRunClocks(runSaveData);
             SaveManager.SaveRunSaveData(runSaveData);
         }
 
@@ -204,6 +227,7 @@ namespace Corebound.SaveSystem
 
             runSaveData.SetBossEncounterState(false, 0);
             runSaveData.SetIntermissionOpen(false, _currentStageIndex, _currentWaveIndex);
+            WriteRunClocks(runSaveData);
             SaveManager.SaveRunSaveData(runSaveData);
         }
 
@@ -227,6 +251,7 @@ namespace Corebound.SaveSystem
                 _playerCombatController.ActiveWeaponId);
             runSaveData.SetBossEncounterState(_isBossEncounterActive, _currentBossPhaseIndex);
             runSaveData.SetIntermissionOpen(false, _currentStageIndex, _currentWaveIndex);
+            WriteRunClocks(runSaveData);
             SaveManager.SaveRunSaveData(runSaveData);
         }
 
