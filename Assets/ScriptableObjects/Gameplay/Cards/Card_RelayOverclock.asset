@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: Card_RelayOverclock
   m_EditorClassIdentifier: 
   _cardId: card_relay_overclock
-  _displayName: Relay Overclock
-  _displayNameDe: Relais-Übertaktung
-  _description: Increase Tower damage so support fire stays relevant into later Waves.
-  _descriptionDe: Erhöht den Turmschaden, damit Unterstützungsfeuer auch in späteren Waves relevant bleibt.
+  _displayName: Chilling Rounds
+  _displayNameDe: Frostmunition
+  _description: Your hits slow what they strike.
+  _descriptionDe: Deine Treffer verlangsamen Gegner.
   _rarity: 1
   _requiredUnlockId: 
   _tags:
   - 2
-  _effects:
-  - {fileID: 11400000, guid: 9d2f2f8d4f304f23af8fbd1d86c0e77a, type: 2}
+  _effects: []
   _stackable: 1

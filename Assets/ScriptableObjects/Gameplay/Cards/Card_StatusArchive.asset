@@ -13,14 +13,16 @@ MonoBehaviour:
   m_Name: Card_StatusArchive
   m_EditorClassIdentifier: 
   _cardId: card_status_archive
-  _displayName: Status Archive
-  _displayNameDe: Status-Archiv
-  _description: Advanced Card line unlocked through Meta Progression for future Burn and Freeze leaning Builds.
-  _descriptionDe: Fortgeschrittene Kartenlinie, freigeschaltet über Meta Progression, für künftige Burn- und Freeze-lastige Builds.
+  _displayName: Splitfire
+  _displayNameDe: Splitterfeuer
+  _description: Fire an additional projectile with every shot.
+  _descriptionDe: Feuert ein zusaetzliches Projektil pro Schuss.
   _rarity: 2
   _requiredUnlockId: unlock_card_status
   _tags:
   - 5
   - 6
-  _effects:
-  - {fileID: 11400000, guid: 2d14d0f4f8204a9b9eed0228a19d5c0d, type: 2}
+  _effects: []
+  _weaponModifiers:
+  - {fileID: 11400000, guid: b1810508075457e4b83fe39bc3fcb0e4, type: 2}
+  _stackable: 1

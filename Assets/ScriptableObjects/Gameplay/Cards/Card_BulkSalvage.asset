@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: Card_BulkSalvage
   m_EditorClassIdentifier:
   _cardId: card_bulk_salvage
-  _displayName: Bulk Salvage
-  _displayNameDe: Massenbergung
-  _description: A major surge to primary Run Resource gains from Combat rewards.
-  _descriptionDe: Ein großer Schub für die primäre Run-Ressource aus Combat-Belohnungen.
+  _displayName: Volatile Shells
+  _displayNameDe: Instabile Geschosse
+  _description: Projectiles that hit nothing explode where they land.
+  _descriptionDe: Projektile, die nichts treffen, explodieren am Einschlag.
   _rarity: 2
   _requiredUnlockId:
   _tags:
   - 3
-  _effects:
-  - {fileID: 11400000, guid: 1d8f224818994ba58825aec4dcc25c87, type: 2}
+  _effects: []
   _stackable: 0

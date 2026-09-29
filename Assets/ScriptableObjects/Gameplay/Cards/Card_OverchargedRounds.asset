@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: Card_OverchargedRounds
   m_EditorClassIdentifier:
   _cardId: card_overcharged_rounds
-  _displayName: Overcharged Rounds
-  _displayNameDe: Überladene Munition
-  _description: Increase Weapon damage for a steady output boost.
-  _descriptionDe: Erhöht den Waffenschaden für eine gleichmäßig stärkere Ausbeute.
+  _displayName: Piercing Rounds
+  _displayNameDe: Durchschlagsmunition
+  _description: Your shots pass through one extra enemy.
+  _descriptionDe: Deine Schuesse durchdringen einen Gegner mehr.
   _rarity: 0
   _requiredUnlockId:
   _tags:
   - 0
-  _effects:
-  - {fileID: 11400000, guid: a5d8a298af454a0ba1101e862ddb4291, type: 2}
+  _effects: []
   _stackable: 1

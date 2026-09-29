@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: Card_FortifiedRelay
   m_EditorClassIdentifier:
   _cardId: card_fortified_relay
-  _displayName: Fortified Relay
-  _displayNameDe: Verstärktes Relais
-  _description: Increase Tower damage so support fire hits harder.
-  _descriptionDe: Erhöht den Turmschaden, damit Unterstützungsfeuer härter trifft.
+  _displayName: Marked Volley
+  _displayNameDe: Markierte Salve
+  _description: Every fourth volley is a guaranteed critical hit.
+  _descriptionDe: Jede vierte Salve ist ein garantierter kritischer Treffer.
   _rarity: 1
   _requiredUnlockId:
   _tags:
   - 2
-  _effects:
-  - {fileID: 11400000, guid: 91ab93ea66b5467e94438811373aa92e, type: 2}
+  _effects: []
   _stackable: 1

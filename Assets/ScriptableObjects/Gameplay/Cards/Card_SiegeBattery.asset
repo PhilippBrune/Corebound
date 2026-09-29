@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: Card_SiegeBattery
   m_EditorClassIdentifier:
   _cardId: card_siege_battery
-  _displayName: Siege Battery
-  _displayNameDe: Belagerungsbatterie
-  _description: A major surge to Tower damage for a support-heavy Build.
-  _descriptionDe: Ein großer Schub für den Turmschaden - für einen unterstützungslastigen Build.
+  _displayName: Executioner's Edge
+  _displayNameDe: Henkersklinge
+  _description: Critical hits strike considerably harder.
+  _descriptionDe: Kritische Treffer richten deutlich mehr Schaden an.
   _rarity: 2
   _requiredUnlockId:
   _tags:
   - 2
-  _effects:
-  - {fileID: 11400000, guid: d6bf8d6721a0404ea7de020796b822f3, type: 2}
+  _effects: []
   _stackable: 0

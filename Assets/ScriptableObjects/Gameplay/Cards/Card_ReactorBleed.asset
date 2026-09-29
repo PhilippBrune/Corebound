@@ -13,16 +13,14 @@ MonoBehaviour:
   m_Name: Card_ReactorBleed
   m_EditorClassIdentifier:
   _cardId: card_reactor_bleed
-  _displayName: Reactor Bleed
-  _displayNameDe: Reaktorleck
-  _description: Legendary dual-scaling surge that raises both Weapon and Tower damage together.
-  _descriptionDe: Legendärer Doppelschub, der Waffen- und Turmschaden gemeinsam erhöht.
+  _displayName: Nova Discharge
+  _displayNameDe: Nova-Entladung
+  _description: Your volleys fire as a full ring in every direction.
+  _descriptionDe: Deine Salven feuern als vollstaendiger Ring in alle Richtungen.
   _rarity: 3
   _requiredUnlockId:
   _tags:
   - 2
   - 0
-  _effects:
-  - {fileID: 11400000, guid: 00d67aee3061418fa6d7d431f990f9c7, type: 2}
-  - {fileID: 11400000, guid: 9cedb38423ec4f14b32c01f5335bbae9, type: 2}
+  _effects: []
   _stackable: 0

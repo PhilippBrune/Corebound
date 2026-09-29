@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: Card_TwinBarrel
   m_EditorClassIdentifier:
   _cardId: card_twin_barrel
-  _displayName: Twin Barrel
-  _displayNameDe: Doppellauf
-  _description: Reduce Weapon fire interval for a faster firing rhythm.
-  _descriptionDe: Verkürzt das Waffen-Feuerintervall für einen schnelleren Feuerrhythmus.
+  _displayName: Focused Barrel
+  _displayNameDe: Fokussierter Lauf
+  _description: Tightens your spread, so shots land where you aim.
+  _descriptionDe: Verringert die Streuung, Schuesse treffen genauer.
   _rarity: 1
   _requiredUnlockId:
   _tags:
   - 0
-  _effects:
-  - {fileID: 11400000, guid: 8ee43ec781c440449d3e4bd66e65d595, type: 2}
+  _effects: []
   _stackable: 1
