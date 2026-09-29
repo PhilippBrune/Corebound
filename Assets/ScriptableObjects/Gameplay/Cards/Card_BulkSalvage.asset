@@ -22,4 +22,6 @@ MonoBehaviour:
   _tags:
   - 3
   _effects: []
+  _weaponModifiers:
+  - {fileID: 11400000, guid: e0592ffdb908ba04aaee2675fe08e4cd, type: 2}
   _stackable: 0

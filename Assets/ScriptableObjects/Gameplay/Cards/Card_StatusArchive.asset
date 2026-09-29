@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Card_StatusArchive
   m_EditorClassIdentifier: 
   _cardId: card_status_archive
-  _displayName: Splitfire
-  _displayNameDe: Splitterfeuer
-  _description: Fire an additional projectile with every shot.
-  _descriptionDe: Feuert ein zusaetzliches Projektil pro Schuss.
+  _displayName: Impact Charges
+  _displayNameDe: Aufschlagladungen
+  _description: Every hit bursts, damaging what stands next to the target.
+  _descriptionDe: Jeder Treffer explodiert und trifft auch, was neben dem Ziel steht.
   _rarity: 2
   _requiredUnlockId: unlock_card_status
   _tags:

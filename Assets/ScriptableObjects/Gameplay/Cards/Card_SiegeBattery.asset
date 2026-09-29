@@ -13,13 +13,15 @@ MonoBehaviour:
   m_Name: Card_SiegeBattery
   m_EditorClassIdentifier:
   _cardId: card_siege_battery
-  _displayName: Executioner's Edge
-  _displayNameDe: Henkersklinge
-  _description: Critical hits strike considerably harder.
-  _descriptionDe: Kritische Treffer richten deutlich mehr Schaden an.
+  _displayName: Sustained Fire
+  _displayNameDe: Dauerfeuer
+  _description: Damage builds the longer you hold fire, and resets when you let go.
+  _descriptionDe: Der Schaden steigt, je laenger du feuerst, und faellt beim Loslassen zurueck.
   _rarity: 2
   _requiredUnlockId:
   _tags:
   - 2
   _effects: []
+  _weaponModifiers:
+  - {fileID: 11400000, guid: f3ea4ffc0083c3f43ad3ceab6fee6df7, type: 2}
   _stackable: 0

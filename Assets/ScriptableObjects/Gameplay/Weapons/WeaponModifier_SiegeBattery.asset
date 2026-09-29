@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e9908ec259842c40a906a89b66d0667, type: 3}
   m_Name: WeaponModifier_SiegeBattery
   m_EditorClassIdentifier:
-  _modifierId: weapon_modifier_executioners_edge
-  _displayName: Executioner's Edge
-  _description: Critical hits strike considerably harder.
-  _target: 4
-  _value: 1.6
+  _modifierId: weapon_modifier_sustained_fire
+  _displayName: Sustained Fire
+  _description: Damage builds the longer you hold fire.
+  _target: 12
+  _value: 0.12
   _requiredWeaponId:

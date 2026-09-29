@@ -23,4 +23,6 @@ MonoBehaviour:
   - 2
   - 0
   _effects: []
+  _weaponModifiers:
+  - {fileID: 11400000, guid: ce049fb3821f50f4bbe98c146eb2065c, type: 2}
   _stackable: 0
