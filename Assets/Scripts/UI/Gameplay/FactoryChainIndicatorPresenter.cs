@@ -25,7 +25,8 @@ namespace Corebound.UI.Gameplay
         private const float RefreshIntervalSeconds = 0.35f;
         private const int MaxPips = 4;
 
-        private static readonly Color PipLitColor = new Color(1f, 0.78f, 0.35f, 0.95f);
+        // Falls back to the old constant when the theme asset has no accent set.
+        private static Color PipLitColor => ProceduralUIBuilder.ResolveAccentColor();
         private static readonly Color PipDimColor = new Color(0.4f, 0.45f, 0.52f, 0.55f);
 
         [SerializeField] private FactoryService _factoryService;
@@ -71,8 +72,11 @@ namespace Corebound.UI.Gameplay
                 _pips[index] = pip;
             }
 
-            _bonusText = ProceduralUIFactory.CreateText(
-                "FactoryBonus", _root, font, 13, FontStyle.Bold, PipLitColor, TextAnchor.MiddleLeft);
+            // First presenter migrated onto ProceduralUIBuilder (OPEN_TOPICS 2.1). The accent
+             // colour now comes from UIThemeData instead of a local constant, which is the whole
+             // point of the unification - the theme asset finally describes something.
+            _bonusText = ProceduralUIBuilder.CreateText(
+                "FactoryBonus", _root, 13, FontStyle.Bold, TextAnchor.MiddleLeft, ProceduralUIBuilder.ResolveAccentColor());
             var textRect = _bonusText.rectTransform;
             textRect.anchorMin = new Vector2(0f, 0.5f);
             textRect.anchorMax = new Vector2(0f, 0.5f);
