@@ -4,6 +4,7 @@ using System.Text;
 using Corebound.Gameplay.Towers;
 using Corebound.Gameplay.Weapons;
 using Corebound.Input;
+using Corebound.MetaProgression.SkillTree;
 using Corebound.SaveSystem;
 using Corebound.UI;
 using Corebound.UI.MainMenu;
@@ -155,9 +156,203 @@ namespace Corebound.MetaProgression
             }
         }
 
-        public string FooterHint => LocalizationService.Resolve(
-            "Left/Right: tab   Up/Down: select   Confirm: buy   Cancel: back",
-            "Links/Rechts: Reiter   Hoch/Runter: wählen   Bestätigen: kaufen   Abbrechen: zurück");
+        public string FooterHint => IsSkillBranchTabActive
+            ? LocalizationService.Resolve(
+                "Stick / arrows: move on the tree   Q / Tab, LB / RB: branch   Confirm or click: buy   Cancel: back",
+                "Stick / Pfeile: im Baum bewegen   Q / Tab, LB / RB: Zweig   Bestätigen oder Klick: kaufen   Abbrechen: zurück")
+            : LocalizationService.Resolve(
+                "Left/Right, Q / Tab: tab   Up/Down: select   Confirm or click: buy   Cancel: back",
+                "Links/Rechts, Q / Tab: Reiter   Hoch/Runter: wählen   Bestätigen oder Klick: kaufen   Abbrechen: zurück");
+
+        // ---- Presenter surface (playtest 2026-09-29) ----------------------------------------------
+        //
+        // "Check that I can click with the mouse everywhere. The Progression tabs are not
+        // clickable." The tab strip was one rich-text string, so there was nothing to click. The
+        // presenter now draws one label per tab and asks for these.
+
+        public IReadOnlyList<string> TabNames
+        {
+            get
+            {
+                BuildTabStrip();
+                return _tabNames;
+            }
+        }
+
+        public int ActiveTabIndex => _tabIndex;
+
+        public int SelectedRow => _selectedRow;
+
+        public bool SelectTab(int tabIndex)
+        {
+            if (!_isOpen || tabIndex < 0 || tabIndex >= ResolveTabCount() || tabIndex == _tabIndex)
+            {
+                return false;
+            }
+
+            SwitchTab(tabIndex - _tabIndex);
+            return true;
+        }
+
+        // Mouse hover on a row or node. Headers are information, not choices, so they are skipped
+        // exactly as the keyboard skips them.
+        public bool TrySelectRow(int rowIndex)
+        {
+            if (!_isOpen || rowIndex < 0 || rowIndex >= _commands.Count || rowIndex == _selectedRow)
+            {
+                return false;
+            }
+
+            if (_commands[rowIndex].State == RowState.Header)
+            {
+                return false;
+            }
+
+            _selectedRow = rowIndex;
+            _respecArmed = false;
+            _statusMessage = string.Empty;
+            RebuildRows();
+            TargetChanged?.Invoke();
+            return true;
+        }
+
+        public int FindGraphRow(int keyIndex, int subIndex)
+        {
+            for (var index = 0; index < _commands.Count; index++)
+            {
+                if (_commands[index].GraphKey == keyIndex && _commands[index].GraphSub == subIndex && keyIndex >= 0)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        public bool TryGetSelectedGraphNode(out int keyIndex, out int subIndex)
+        {
+            keyIndex = -1;
+            subIndex = -1;
+
+            if (_selectedRow < 0 || _selectedRow >= _commands.Count || _commands[_selectedRow].GraphKey < 0)
+            {
+                return false;
+            }
+
+            keyIndex = _commands[_selectedRow].GraphKey;
+            subIndex = _commands[_selectedRow].GraphSub;
+            return true;
+        }
+
+        // The branch tab's one row that is not a node: Respec. The presenter draws it as a
+        // button under the details column.
+        public int RespecRowIndex => IsSkillBranchTabActive && _commands.Count > 0 && _commands[_commands.Count - 1].GraphKey < 0
+            ? _commands.Count - 1
+            : -1;
+
+        public string SelectedLabel => _selectedRow >= 0 && _selectedRow < _commands.Count ? _commands[_selectedRow].Label.Trim() : string.Empty;
+
+        public string SelectedStatus => _selectedRow >= 0 && _selectedRow < _commands.Count ? _commands[_selectedRow].Status : string.Empty;
+
+        public RowState SelectedState => _selectedRow >= 0 && _selectedRow < _commands.Count ? _commands[_selectedRow].State : RowState.Header;
+
+        // Nearest node of the active branch in the pushed direction, within a 50 degree cone.
+        // Down from the outermost tier reaches Respec; any direction from Respec returns to the
+        // node the player left.
+        private int _lastGraphRow = -1;
+
+        private bool TryNavigateGraph(Vector2 direction)
+        {
+            var tree = _metaProgressionService.ActiveSkillTree;
+            var branchIndex = ActiveBranchIndex;
+
+            if (tree == null || branchIndex < 0 || _commands.Count == 0)
+            {
+                return false;
+            }
+
+            if (_selectedRow == RespecRowIndex)
+            {
+                var back = _lastGraphRow >= 0 && _lastGraphRow < _commands.Count ? _lastGraphRow : 0;
+                return direction.y > 0f && TrySelectRow(back);
+            }
+
+            if (!TryResolveGraphPosition(tree, branchIndex, _selectedRow, out var from))
+            {
+                return false;
+            }
+
+            var best = -1;
+            var bestScore = float.MaxValue;
+
+            for (var index = 0; index < _commands.Count; index++)
+            {
+                if (index == _selectedRow || !TryResolveGraphPosition(tree, branchIndex, index, out var to))
+                {
+                    continue;
+                }
+
+                var delta = to - from;
+                var along = Vector2.Dot(delta, direction);
+
+                if (along <= 1f)
+                {
+                    continue;
+                }
+
+                var sideways = Mathf.Abs(direction.x * delta.y - direction.y * delta.x);
+
+                if (sideways > along * 1.2f)
+                {
+                    continue;
+                }
+
+                var score = along + sideways * 2f;
+
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    best = index;
+                }
+            }
+
+            if (best >= 0)
+            {
+                _lastGraphRow = best;
+                return TrySelectRow(best);
+            }
+
+            if (direction.y < 0f && RespecRowIndex >= 0)
+            {
+                _lastGraphRow = _selectedRow;
+                return TrySelectRow(RespecRowIndex);
+            }
+
+            return false;
+        }
+
+        private bool TryResolveGraphPosition(SkillTreeDefinitionData tree, int branchIndex, int rowIndex, out Vector2 position)
+        {
+            position = Vector2.zero;
+
+            if (rowIndex < 0 || rowIndex >= _commands.Count || _commands[rowIndex].GraphKey < 0)
+            {
+                return false;
+            }
+
+            var branch = tree.Branches[branchIndex];
+            var keyIndex = _commands[rowIndex].GraphKey;
+
+            if (branch == null || branch.KeyNodes == null || keyIndex >= branch.KeyNodes.Length)
+            {
+                return false;
+            }
+
+            var keyPosition = SkillTreeGraphLayout.KeyNode(branch.KeyNodes[keyIndex], branchIndex, tree.Branches.Length, keyIndex);
+            var subIndex = _commands[rowIndex].GraphSub;
+            position = subIndex < 0 ? keyPosition : SkillTreeGraphLayout.SubNode(keyPosition, subIndex);
+            return true;
+        }
 
         private void OnEnable()
         {
@@ -201,6 +396,16 @@ namespace Corebound.MetaProgression
             var horizontal = Mathf.Abs(navigationInput.x) >= NavigationThreshold && Mathf.Abs(navigationInput.x) > Mathf.Abs(navigationInput.y);
             var vertical = Mathf.Abs(navigationInput.y) >= NavigationThreshold && Mathf.Abs(navigationInput.y) >= Mathf.Abs(navigationInput.x);
 
+            // N3: on a branch tab the stick moves across the graph. Only when there is nothing
+            // further in that direction does Left/Right fall through to switching tab, so the
+            // screen still reads the way the list taught.
+            if ((horizontal || vertical) && IsSkillBranchTabActive && TryNavigateGraph(horizontal
+                    ? new Vector2(Mathf.Sign(navigationInput.x), 0f)
+                    : new Vector2(0f, Mathf.Sign(navigationInput.y))))
+            {
+                return true;
+            }
+
             if (horizontal)
             {
                 var tabCount = Mathf.Max(1, ResolveTabCount());
@@ -214,7 +419,7 @@ namespace Corebound.MetaProgression
                 return true;
             }
 
-            if (!vertical || _commands.Count == 0)
+            if (!vertical || _commands.Count == 0 || IsSkillBranchTabActive)
             {
                 return false;
             }
@@ -706,7 +911,9 @@ namespace Corebound.MetaProgression
                     DescribeNodeStatus(keyState, keyNode.Cost),
                     ToRowState(keyState),
                     keyNode.Description + "\n" + DescribeKeyNodeLock(keyState, keyNode, tree, branchSpend),
-                    () => SkillTreeRules.TryPurchaseKeyNode(save, tree, branch, capturedKey)));
+                    () => SkillTreeRules.TryPurchaseKeyNode(save, tree, branch, capturedKey),
+                    keyIndex,
+                    -1));
 
                 if (keyNode.SubNodes == null)
                 {
@@ -732,7 +939,9 @@ namespace Corebound.MetaProgression
                         subNode.Description + (subState == SkillNodeState.LockedParent
                             ? "\n" + LocalizationService.Resolve("Requires ", "Benötigt ") + keyNode.DisplayName + "."
                             : string.Empty),
-                        () => SkillTreeRules.TryPurchaseSubNode(save, tree, capturedKey, capturedSub)));
+                        () => SkillTreeRules.TryPurchaseSubNode(save, tree, capturedKey, capturedSub),
+                        keyIndex,
+                        subIndex));
                 }
             }
 
@@ -903,14 +1112,22 @@ namespace Corebound.MetaProgression
 
         private readonly struct RowCommand
         {
-            public RowCommand(string label, string status, RowState state, string description, Func<bool> execute)
+            public RowCommand(string label, string status, RowState state, string description, Func<bool> execute, int graphKey = -1, int graphSub = -1)
             {
                 Label = label;
                 Status = status;
                 State = state;
                 Description = description;
                 Execute = execute;
+                GraphKey = graphKey;
+                GraphSub = graphSub;
             }
+
+            // Where this row sits in the skill graph: key-node index in the branch, and sub-node
+            // index under it (-1 for the key node itself). GraphKey is -1 for every non-node row.
+            public int GraphKey { get; }
+
+            public int GraphSub { get; }
 
             public string Label { get; }
 

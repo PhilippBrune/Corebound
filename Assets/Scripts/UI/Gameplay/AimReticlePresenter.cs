@@ -1,37 +1,42 @@
 using Corebound.Gameplay.Combat;
-using Corebound.Gameplay.Shared;
+using Corebound.Gameplay.Waves;
 using Corebound.Input;
-using Corebound.Gameplay.Weapons;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Corebound.UI.Gameplay
 {
     // Replaces the OS mouse pointer with a reticle that reports weapon state (OPEN_TOPICS 3.1,
     // owner chose option 3).
     //
-    // The point is not decoration. The reticle opens while the weapon is cooling and closes as it
-    // becomes ready, so reload state is readable at the place the player is already looking -
-    // information the HUD otherwise has to carry, and which a player in a firefight does not have
-    // the attention to go and read. It also tints when the aim point is over a live enemy, which
-    // answers "will this hit anything" without a hit-scan preview.
+    // Second design, playtest 2026-09-29: "the mouse changes look strange - implement another
+    // way / visual." The first reticle was four loose dashes in world space that spread apart
+    // while the weapon cooled. At a glance they read as a glitch rather than a pointer, and their
+    // size followed the camera, not the screen.
     //
-    // Drawn in world space rather than as a hardware cursor because a hardware cursor cannot change
-    // with game state. That costs a frame of latency, which is the honest trade named in the
-    // proposal; the OS cursor is hidden while this is active so there are never two pointers.
+    // This one is the shape players already read as "aim here": a dot inside a ring.
+    //  - The dot is the exact aim point and never moves or changes size.
+    //  - The ring's bright arc is the magazine. It drains as you fire and refills, grey, during a
+    //    reload - so "am I about to run dry" is answered where the player is already looking.
+    //  - Over a live enemy the whole reticle turns red and the ring tightens slightly.
+    // It is drawn on its own screen-space canvas, so it is crisp and the same size at any zoom.
     //
-    // On a gamepad the OS pointer is meaningless and the aim comes from the stick, so the reticle
-    // follows the resolved aim direction instead of the pointer - and the Windows arrow, which used
-    // to sit parked in the arena during controller play, is hidden outright.
+    // While a menu is open (pause, reward, shop, loadout) the reticle hides and the Windows pointer
+    // comes back. The world-space version stayed hidden under those overlays with the OS pointer
+    // also hidden, which left a mouse player clicking blind.
     public sealed class AimReticlePresenter : MonoBehaviour
     {
         private const float OrbitRadius = 1.35f;
-        private const float ReadySize = 0.42f;
-        private const float CoolingSize = 0.78f;
-        private const int SortingOrder = 60;
+        private const int CanvasSortingOrder = 400;
+        private const int RingTextureSize = 128;
+        private const float RingSize = 46f;
+        private const float DotSize = 8f;
+        private const float TargetRingScale = 0.86f;
 
-        private static readonly Color ReadyColor = new Color(1f, 0.78f, 0.35f, 0.95f);
-        private static readonly Color CoolingColor = new Color(0.72f, 0.78f, 0.88f, 0.7f);
-        private static readonly Color TargetColor = new Color(1f, 0.42f, 0.35f, 0.98f);
+        private static readonly Color ReadyColor = new Color(1f, 0.8f, 0.38f, 1f);
+        private static readonly Color ReloadColor = new Color(0.72f, 0.78f, 0.88f, 0.9f);
+        private static readonly Color TargetColor = new Color(1f, 0.36f, 0.3f, 1f);
+        private static readonly Color BackingColor = new Color(0f, 0f, 0f, 0.5f);
 
         [SerializeField] private PlayerCombatController _playerCombatController;
         [SerializeField] private UnityEngine.Object _inputReaderSource;
@@ -42,8 +47,15 @@ namespace Corebound.UI.Gameplay
 
         private readonly Collider2D[] _probeBuffer = new Collider2D[8];
 
-        private Transform[] _petals;
-        private Transform _root;
+        private Canvas _canvas;
+        private RectTransform _canvasRect;
+        private RectTransform _root;
+        private Image _ringBacking;
+        private Image _ammoArc;
+        private Image _dot;
+        private Image _dotBacking;
+        private Texture2D _ringTexture;
+        private Texture2D _dotTexture;
         private Camera _camera;
         private bool _cursorHidden;
 
@@ -67,29 +79,128 @@ namespace Corebound.UI.Gameplay
         private void OnDisable()
         {
             RestoreCursor();
+
+            if (_canvas != null)
+            {
+                _canvas.enabled = false;
+            }
+        }
+
+        private void OnEnable()
+        {
+            if (_canvas != null)
+            {
+                _canvas.enabled = true;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            RestoreCursor();
+
+            if (_canvas != null)
+            {
+                Destroy(_canvas.gameObject);
+            }
+
+            if (_ringTexture != null)
+            {
+                Destroy(_ringTexture);
+            }
+
+            if (_dotTexture != null)
+            {
+                Destroy(_dotTexture);
+            }
         }
 
         private void BuildReticle()
         {
-            var rootObject = new GameObject("AimReticle");
-            _root = rootObject.transform;
-            // One-unit quad, so each petal's localScale below is its real world size.
-            var sprite = DebugSpriteFactory.CreateSquare(DebugSpriteFactory.UnitPixelsPerUnit);
-            _petals = new Transform[4];
+            // Its own canvas rather than a child of the HUD: the HUD canvases live in additive
+            // scenes that load a frame late (CLAUDE.md), and the reticle must exist from frame one.
+            // Parented to the player and built with its components in the constructor, exactly as
+            // WeaponHudPresenter does it. The first version was a scene-root object with the
+            // components added afterwards; it reported itself active, enabled and ordered and
+            // still never drew a pixel (checked 2026-09-29 with a magenta test quad). The cause
+            // was not isolated - this is the construction that is known to render.
+            var canvasObject = new GameObject("AimReticleCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+            canvasObject.transform.SetParent(transform, false);
+            _canvas = canvasObject.GetComponent<Canvas>();
+            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            _canvas.sortingOrder = CanvasSortingOrder;
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+            _canvasRect = canvasObject.GetComponent<RectTransform>();
 
-            // Four petals arranged around the centre. They spread apart while cooling and draw in
-            // as the weapon becomes ready, which reads as "closing" without needing an animation.
-            for (var index = 0; index < _petals.Length; index++)
+            var rootObject = new GameObject("AimReticle", typeof(RectTransform));
+            rootObject.transform.SetParent(_canvasRect, false);
+            _root = rootObject.GetComponent<RectTransform>();
+            _root.anchorMin = new Vector2(0.5f, 0.5f);
+            _root.anchorMax = new Vector2(0.5f, 0.5f);
+            _root.sizeDelta = Vector2.zero;
+
+            _ringTexture = CreateRingTexture(RingTextureSize, 0.36f, 0.46f);
+            _dotTexture = CreateRingTexture(32, 0f, 0.42f);
+            var ringSprite = Sprite.Create(_ringTexture, new Rect(0f, 0f, RingTextureSize, RingTextureSize), new Vector2(0.5f, 0.5f), 100f);
+            var dotSprite = Sprite.Create(_dotTexture, new Rect(0f, 0f, 32f, 32f), new Vector2(0.5f, 0.5f), 100f);
+
+            // A dark copy one size up behind each bright part, so the reticle reads on the pale
+            // stage floors as well as the dark ones.
+            _ringBacking = CreateImage("RingBacking", ringSprite, RingSize + 5f, BackingColor);
+            _ammoArc = CreateImage("AmmoArc", ringSprite, RingSize, ReadyColor);
+            _ammoArc.type = Image.Type.Filled;
+            _ammoArc.fillMethod = Image.FillMethod.Radial360;
+            _ammoArc.fillOrigin = (int)Image.Origin360.Top;
+            _ammoArc.fillClockwise = false;
+            _dotBacking = CreateImage("DotBacking", dotSprite, DotSize + 4f, BackingColor);
+            _dot = CreateImage("Dot", dotSprite, DotSize, ReadyColor);
+        }
+
+        private Image CreateImage(string name, Sprite sprite, float size, Color color)
+        {
+            var imageObject = new GameObject(name, typeof(RectTransform), typeof(Image));
+            imageObject.transform.SetParent(_root, false);
+            var image = imageObject.GetComponent<Image>();
+            image.sprite = sprite;
+            image.color = color;
+            image.raycastTarget = false;
+            image.rectTransform.sizeDelta = new Vector2(size, size);
+            return image;
+        }
+
+        // An anti-aliased ring (or, with inner 0, a disc) as a fraction of the texture's radius.
+        private static Texture2D CreateRingTexture(int size, float innerFraction, float outerFraction)
+        {
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Bilinear;
+            var pixels = new Color32[size * size];
+            var centre = (size - 1) * 0.5f;
+            var inner = innerFraction * size;
+            var outer = outerFraction * size;
+
+            for (var y = 0; y < size; y++)
             {
-                var petalObject = new GameObject("Petal" + index);
-                petalObject.transform.SetParent(_root, false);
-                var renderer = petalObject.AddComponent<SpriteRenderer>();
-                renderer.sprite = sprite;
-                renderer.sortingOrder = SortingOrder;
-                petalObject.transform.localScale = new Vector3(0.06f, 0.2f, 1f);
-                petalObject.transform.localRotation = Quaternion.Euler(0f, 0f, index * 90f);
-                _petals[index] = petalObject.transform;
+                for (var x = 0; x < size; x++)
+                {
+                    var distance = Mathf.Sqrt((x - centre) * (x - centre) + (y - centre) * (y - centre));
+                    var alpha = Mathf.Clamp01(outer - distance + 0.5f);
+
+                    if (inner > 0f)
+                    {
+                        alpha = Mathf.Min(alpha, Mathf.Clamp01(distance - inner + 0.5f));
+                    }
+
+                    pixels[y * size + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(alpha * 255f));
+                }
             }
+
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            texture.hideFlags = HideFlags.DontSave;
+            return texture;
         }
 
         private void LateUpdate()
@@ -104,45 +215,80 @@ namespace Corebound.UI.Gameplay
                 _camera = Camera.main;
             }
 
+            var menuOpen = IsPointerMenuOpen();
+
+            _root.gameObject.SetActive(!menuOpen);
+
+            if (menuOpen)
+            {
+                RestoreCursor();
+                return;
+            }
+
+            HideCursor();
+
             var reader = InputReader;
             var usingGamepad = reader != null && reader.IsUsingGamepad;
             var origin = (Vector2)_playerCombatController.transform.position;
-            var aimPoint = ResolveAimPoint(reader, usingGamepad, origin);
+            var screenPoint = ResolveAimScreenPoint(reader, usingGamepad, origin, out var worldPoint);
 
-            HideCursorWhileActive();
-            _root.position = aimPoint;
-
-            var readiness = _playerCombatController.WeaponReadinessState;
-            var cooldown = Mathf.Clamp01(_playerCombatController.FireCooldownNormalized);
-
-            // FireCooldownNormalized runs 1 -> 0 as the weapon recovers, so the spread follows it
-            // directly: wide right after a shot, tight when ready.
-            var spread = readiness == WeaponReadinessState.Ready
-                ? Mathf.Lerp(ReadySize, CoolingSize, cooldown)
-                : CoolingSize;
-
-            var color = readiness == WeaponReadinessState.Unavailable
-                ? CoolingColor
-                : (IsAimingAtEnemy(aimPoint) ? TargetColor : (cooldown > 0.02f ? CoolingColor : ReadyColor));
-
-            for (var index = 0; index < _petals.Length; index++)
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(_canvasRect, screenPoint, null, out var local))
             {
-                var angle = (index * 90f + 45f) * Mathf.Deg2Rad;
-                _petals[index].localPosition = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * spread;
-                var renderer = _petals[index].GetComponent<SpriteRenderer>();
-
-                if (renderer != null)
-                {
-                    renderer.color = color;
-                }
+                _root.anchoredPosition = local;
             }
+
+            var reloading = _playerCombatController.IsPrimaryReloading;
+            var onTarget = !reloading && IsAimingAtEnemy(worldPoint);
+            var accent = onTarget ? TargetColor : ReadyColor;
+
+            _ammoArc.fillAmount = reloading ? _playerCombatController.PrimaryReloadProgress : _playerCombatController.PrimaryAmmoNormalized;
+            _ammoArc.color = reloading ? ReloadColor : accent;
+            _dot.color = reloading ? ReloadColor : accent;
+
+            var ringScale = onTarget ? TargetRingScale : 1f;
+            _ammoArc.rectTransform.localScale = Vector3.one * ringScale;
+            _ringBacking.rectTransform.localScale = Vector3.one * ringScale;
         }
 
-        private Vector2 ResolveAimPoint(IInputReader reader, bool usingGamepad, Vector2 origin)
+        // Menus that are driven by the pointer. Pause, run-end and tutorial beats hold the
+        // time-scale guard and the loadout panel has its own flag. The reward screen and the shop
+        // are asked directly: their UIManager registrations point at a root that stays at alpha 0
+        // while the visible content lives in the additive canvas scenes, so "is a blocking panel
+        // visible" answered no with the reward cards on screen (checked 2026-09-29).
+        private Corebound.Gameplay.Cards.CardRewardController _rewardController;
+        private Corebound.Gameplay.Shop.ShopService _shopService;
+        private float _nextServiceLookup;
+
+        private bool IsPointerMenuOpen()
         {
-            if (reader == null)
+            if (GameplayTimeScaleGuard.IsHeld || WeaponLoadoutPanelPresenter.IsOpen)
             {
-                return origin;
+                return true;
+            }
+
+            if ((_rewardController == null || _shopService == null) && Time.unscaledTime >= _nextServiceLookup)
+            {
+                _nextServiceLookup = Time.unscaledTime + 1f;
+                _rewardController = _rewardController != null ? _rewardController : FindFirstObjectByType<Corebound.Gameplay.Cards.CardRewardController>();
+                _shopService = _shopService != null ? _shopService : FindFirstObjectByType<Corebound.Gameplay.Shop.ShopService>();
+            }
+
+            if ((_rewardController != null && _rewardController.IsOpen) || (_shopService != null && _shopService.IsOpen))
+            {
+                return true;
+            }
+
+            var manager = UIManager.Instance;
+            return manager != null && manager.HasBlockingPanelVisible;
+        }
+
+        private Vector2 ResolveAimScreenPoint(IInputReader reader, bool usingGamepad, Vector2 origin, out Vector2 worldPoint)
+        {
+            worldPoint = origin;
+
+            if (reader == null || _camera == null)
+            {
+                return _camera != null ? (Vector2)_camera.WorldToScreenPoint(origin) : Vector2.zero;
             }
 
             // PlayerAimResolver reads Aim as a *screen position* in mouse mode and as a direction on
@@ -151,18 +297,14 @@ namespace Corebound.UI.Gameplay
             if (usingGamepad)
             {
                 var direction = reader.Aim;
-                return direction.sqrMagnitude > 0.01f
-                    ? origin + direction.normalized * OrbitRadius
-                    : origin + Vector2.right * OrbitRadius;
+                worldPoint = origin + (direction.sqrMagnitude > 0.01f ? direction.normalized : Vector2.right) * OrbitRadius;
+                return _camera.WorldToScreenPoint(worldPoint);
             }
 
-            if (_camera == null)
-            {
-                return origin;
-            }
-
-            var world = _camera.ScreenToWorldPoint(new Vector3(reader.Aim.x, reader.Aim.y, -_camera.transform.position.z));
-            return new Vector2(world.x, world.y);
+            var screen = reader.Aim;
+            var world = _camera.ScreenToWorldPoint(new Vector3(screen.x, screen.y, -_camera.transform.position.z));
+            worldPoint = new Vector2(world.x, world.y);
+            return screen;
         }
 
         private bool IsAimingAtEnemy(Vector2 aimPoint)
@@ -190,7 +332,7 @@ namespace Corebound.UI.Gameplay
             return false;
         }
 
-        private void HideCursorWhileActive()
+        private void HideCursor()
         {
             if (_cursorHidden)
             {
@@ -208,8 +350,8 @@ namespace Corebound.UI.Gameplay
                 return;
             }
 
-            // Restored on disable so leaving the gameplay scene never strands the player without a
-            // pointer in the menus.
+            // Restored on disable and whenever a menu opens, so the player is never left without
+            // a pointer where one is needed.
             Cursor.visible = true;
             _cursorHidden = false;
         }

@@ -68,7 +68,7 @@ namespace Corebound.Gameplay.Shop
 
         public string FooterHint => _activeShopData != null && _activeShopData.PresentationData != null
             ? _activeShopData.PresentationData.FooterHint
-            : LocalizationService.Resolve("Confirm buys. Cancel skips the shop.", "Bestätigen kauft. Abbrechen überspringt den Shop.");
+            : LocalizationService.Resolve("Confirm or click buys. Cancel or right-click skips the shop.", "Bestätigen oder Klick kauft. Abbrechen oder Rechtsklick überspringt den Shop.");
 
         public string ResourceSummary => _resourceWalletService != null ? _resourceWalletService.DisplayLabel + ": " + _resourceWalletService.CurrentAmount : string.Empty;
 
@@ -425,6 +425,13 @@ namespace Corebound.Gameplay.Shop
             }
 
             _resourceWalletService?.AddReward(amount);
+        }
+
+        // Right click on the open shop (playtest 2026-09-29, mouse everywhere): the pointer's
+        // Cancel, as it is on the main menu's panels. Same guard as the key.
+        public void RequestSkip()
+        {
+            OnCancelPressed();
         }
 
         private void OnCancelPressed()

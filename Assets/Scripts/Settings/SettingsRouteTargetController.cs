@@ -34,7 +34,9 @@ namespace Corebound.Settings
 
         public string Title => "Settings";
 
-        public string Summary => "Use left or right to adjust the selected option. Confirm applies all changes. Cancel discards this session.";
+        public string Summary => Corebound.UI.LocalizationService.Resolve(
+            "Left / Right or click (right-click steps back) changes the selected option. Apply keeps the changes, Cancel discards them.",
+            "Links / Rechts oder Klick (Rechtsklick geht zurück) ändert die gewählte Option. Übernehmen behält die Änderungen, Abbrechen verwirft sie.");
 
         public string SelectedDescription => TryGetSelectedOption(out var optionDefinition) ? optionDefinition.Description : string.Empty;
 
@@ -77,12 +79,69 @@ namespace Corebound.Settings
                 return false;
             }
 
-            if (!TryGetSelectedOption(out var optionDefinition))
+            return TryAdjustSelected(navigationInput.x > 0f ? 1 : -1);
+        }
+
+        // ---- Mouse surface (playtest 2026-09-29: "check that I can click with the mouse
+        // everywhere"). The presenter draws one label per tab and hit-tests the rows; these are
+        // the same operations the keyboard path uses, so both stay in step. -----------------
+
+        public IReadOnlyList<string> TabNames
+        {
+            get
+            {
+                _tabNames.Clear();
+                var categories = _settingsManager != null && _settingsManager.DefinitionData != null
+                    ? _settingsManager.DefinitionData.Categories
+                    : null;
+
+                for (var index = 0; categories != null && index < categories.Length; index++)
+                {
+                    _tabNames.Add(categories[index].Label);
+                }
+
+                return _tabNames;
+            }
+        }
+
+        private readonly List<string> _tabNames = new List<string>();
+
+        public int ActiveTabIndex => _tabIndex;
+
+        public int SelectedOptionIndex => _selectedOptionIndex;
+
+        public bool SelectTab(int tabIndex)
+        {
+            if (!_isOpen || tabIndex == _tabIndex || tabIndex < 0 || tabIndex >= TabNames.Count)
             {
                 return false;
             }
 
-            _settingsManager.AdjustValue(_workingCopy, optionDefinition, navigationInput.x > 0f ? 1 : -1);
+            SwitchTab(tabIndex - _tabIndex);
+            return true;
+        }
+
+        public bool TrySelectOption(int optionIndex)
+        {
+            if (!_isOpen || optionIndex < 0 || optionIndex >= _optionLocations.Count || optionIndex == _selectedOptionIndex)
+            {
+                return false;
+            }
+
+            _selectedOptionIndex = optionIndex;
+            RebuildRows();
+            TargetChanged?.Invoke();
+            return true;
+        }
+
+        public bool TryAdjustSelected(int direction)
+        {
+            if (!_isOpen || !TryGetSelectedOption(out var optionDefinition))
+            {
+                return false;
+            }
+
+            _settingsManager.AdjustValue(_workingCopy, optionDefinition, direction);
             _settingsManager.ApplyPreview(_workingCopy);
             RebuildRows();
             TargetChanged?.Invoke();

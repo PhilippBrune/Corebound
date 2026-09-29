@@ -8,8 +8,16 @@ namespace Corebound.Settings
 {
     public sealed class SettingsRouteTargetPresenter : MonoBehaviour
     {
-        private const float PanelWidth = 1180f;
-        private const float PanelHeight = 760f;
+        // Same frame treatment as Progression and Records (2026-09-29): larger panel, thinner
+        // border, so there is room for clickable tabs and the Apply / Cancel buttons.
+        private const float PanelWidth = 1500f;
+        private const float PanelHeight = 940f;
+        private const float FrameScale = 1.6f;
+        private const float SideInset = 165f;
+        private const float WheelScrollStep = 44f;
+        private static readonly Color ActiveTabColor = new Color(1f, 0.78f, 0.35f, 1f);
+        private static readonly Color ButtonTint = new Color(0.16f, 0.2f, 0.26f, 0.92f);
+        private static readonly Color ButtonHoverTint = new Color(0.45f, 0.3f, 0.12f, 0.95f);
         private const int TitleFontSize = 42;
         private const int SummaryFontSize = 22;
         private const int FooterFontSize = 18;
@@ -33,6 +41,125 @@ namespace Corebound.Settings
         private Font _font;
         private Sprite _frameSprite;
         private UIManagedPanel _managedPanel;
+        private RectTransform _tabsRoot;
+        private Image _tabUnderline;
+        private readonly List<Text> _tabLabels = new List<Text>();
+        private Image _applyButton;
+        private Image _cancelButton;
+        private Vector2 _lastPointer;
+
+        // Mouse (playtest 2026-09-29: "check that I can click with the mouse everywhere"). The
+        // menu canvas has no raycaster reaching this panel, so everything is hit-tested here, the
+        // same way the route panel and Progression do it. Left click on an option steps it
+        // forward, right click steps it back - the two directions Left/Right give the keyboard.
+        private void Update()
+        {
+            if (_controller == null || !_controller.IsOpen)
+            {
+                return;
+            }
+
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+
+            if (mouse == null)
+            {
+                return;
+            }
+
+            var pointer = mouse.position.ReadValue();
+            HandleWheel(mouse.scroll.ReadValue().y, pointer);
+            var moved = (pointer - _lastPointer).sqrMagnitude > 4f;
+            _lastPointer = pointer;
+            var leftClick = mouse.leftButton.wasPressedThisFrame;
+            var rightClick = mouse.rightButton.wasPressedThisFrame;
+
+            UpdateButtonHover(pointer);
+
+            if (!moved && !leftClick && !rightClick)
+            {
+                return;
+            }
+
+            if (leftClick)
+            {
+                if (Contains(_applyButton, pointer))
+                {
+                    _controller.TryHandleConfirm();
+                    return;
+                }
+
+                if (Contains(_cancelButton, pointer))
+                {
+                    _controller.TryHandleCancel();
+                    return;
+                }
+
+                for (var index = 0; index < _tabLabels.Count; index++)
+                {
+                    if (_tabLabels[index].gameObject.activeSelf && RectTransformUtility.RectangleContainsScreenPoint(_tabLabels[index].rectTransform, pointer, null))
+                    {
+                        _controller.SelectTab(index);
+                        return;
+                    }
+                }
+            }
+
+            if (_scrollRect == null || _scrollRect.viewport == null
+                || !RectTransformUtility.RectangleContainsScreenPoint(_scrollRect.viewport, pointer, null))
+            {
+                return;
+            }
+
+            for (var index = 0; index < _rowTexts.Count; index++)
+            {
+                if (_rowTexts[index] == null || !RectTransformUtility.RectangleContainsScreenPoint(_rowTexts[index].rectTransform, pointer, null))
+                {
+                    continue;
+                }
+
+                _controller.TrySelectOption(index);
+
+                if ((leftClick || rightClick) && _controller.SelectedOptionIndex == index)
+                {
+                    _controller.TryAdjustSelected(leftClick ? 1 : -1);
+                }
+
+                return;
+            }
+        }
+
+        private void HandleWheel(float scroll, Vector2 pointer)
+        {
+            if (Mathf.Abs(scroll) < 0.01f || _scrollRect == null || _scrollRect.content == null || _scrollRect.viewport == null
+                || !RectTransformUtility.RectangleContainsScreenPoint(_scrollRect.viewport, pointer, null))
+            {
+                return;
+            }
+
+            var content = _scrollRect.content;
+            var maxScroll = Mathf.Max(0f, content.rect.height - _scrollRect.viewport.rect.height);
+            var position = content.anchoredPosition;
+            position.y = Mathf.Clamp(position.y - Mathf.Sign(scroll) * WheelScrollStep, 0f, maxScroll);
+            content.anchoredPosition = position;
+        }
+
+        private void UpdateButtonHover(Vector2 pointer)
+        {
+            if (_applyButton != null)
+            {
+                _applyButton.color = Contains(_applyButton, pointer) ? ButtonHoverTint : ButtonTint;
+            }
+
+            if (_cancelButton != null)
+            {
+                _cancelButton.color = Contains(_cancelButton, pointer) ? ButtonHoverTint : ButtonTint;
+            }
+        }
+
+        private static bool Contains(Image image, Vector2 pointer)
+        {
+            return image != null && image.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(image.rectTransform, pointer, null);
+        }
 
         private void Awake()
         {
@@ -96,6 +223,7 @@ namespace Corebound.Settings
             StretchToParent(_overlayRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
             var panel = CreateImage("Panel", _presenterRoot, _frameSprite, _skinData != null ? _skinData.SelectedFrameTint : Color.white, ResolvePanelType(_frameSprite));
+            panel.pixelsPerUnitMultiplier = FrameScale;
             _panelRect = panel.rectTransform;
             SetAnchoredBox(_panelRect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PanelWidth, PanelHeight));
 
@@ -103,10 +231,18 @@ namespace Corebound.Settings
             // button_primary_frame.png has a 220px/140px (horiz/vert) 9-slice border baked into
             // the art itself - insets below (230/165/140) keep content clear of that border
             // instead of rendering across it, which is what the previous much-smaller insets did.
-            StretchToParent(_titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -235f), new Vector2(-230f, -165f));
+            StretchToParent(_titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(SideInset, -160f), new Vector2(-SideInset, -102f));
 
-            _summaryText = CreateText("Summary", _panelRect, SummaryFontSize, FontStyle.Normal, _skinData != null ? _skinData.StatusLabelColor : Color.white, TextAnchor.UpperLeft);
-            StretchToParent(_summaryText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -295f), new Vector2(-230f, -245f));
+            _summaryText = CreateText("Summary", _panelRect, 20, FontStyle.Normal, _skinData != null ? _skinData.StatusLabelColor : Color.white, TextAnchor.UpperLeft);
+            _summaryText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            StretchToParent(_summaryText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(SideInset, -210f), new Vector2(-SideInset, -164f));
+
+            var tabsObject = new GameObject("Tabs", typeof(RectTransform));
+            tabsObject.transform.SetParent(_panelRect, false);
+            _tabsRoot = tabsObject.GetComponent<RectTransform>();
+            StretchToParent(_tabsRoot, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(SideInset, -258f), new Vector2(-SideInset, -220f));
+            _tabUnderline = CreateImage("TabUnderline", _tabsRoot, null, ActiveTabColor, Image.Type.Simple);
+            _tabUnderline.raycastTarget = false;
 
             // 4 categories + 13 options (17 rows at ~34-42px plus 10px spacing) need roughly 840px
             // of vertical space, but this viewport is only ~430px - without scrolling the list
@@ -116,7 +252,7 @@ namespace Corebound.Settings
             var viewportObject = new GameObject("RowsViewport", typeof(RectTransform), typeof(RectMask2D));
             viewportObject.transform.SetParent(_panelRect, false);
             var viewportRect = viewportObject.GetComponent<RectTransform>();
-            StretchToParent(viewportRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(230f, 220f), new Vector2(-230f, -310f));
+            StretchToParent(viewportRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(SideInset, 215f), new Vector2(-SideInset, -272f));
 
             var listObject = new GameObject("Rows", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             listObject.transform.SetParent(viewportRect, false);
@@ -147,8 +283,77 @@ namespace Corebound.Settings
             _scrollRect.movementType = ScrollRect.MovementType.Clamped;
             _scrollRect.scrollSensitivity = 24f;
 
-            _footerText = CreateText("Footer", _panelRect, FooterFontSize, FontStyle.Italic, _skinData != null ? _skinData.IdleLabelColor : Color.white, TextAnchor.LowerLeft);
-            StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(230f, 140f), new Vector2(-230f, 205f));
+            _footerText = CreateText("Footer", _panelRect, FooterFontSize, FontStyle.Italic, _skinData != null ? _skinData.IdleLabelColor : Color.white, TextAnchor.UpperLeft);
+            _footerText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(SideInset, 100f), new Vector2(-(SideInset + 400f), 200f));
+
+            _applyButton = CreateButton("ApplyButton", Corebound.UI.LocalizationService.Resolve("Apply", "Übernehmen"), -(SideInset + 200f));
+            _cancelButton = CreateButton("CancelButton", Corebound.UI.LocalizationService.Resolve("Cancel", "Abbrechen"), -SideInset);
+        }
+
+        private Image CreateButton(string name, string label, float right)
+        {
+            var button = CreateImage(name, _panelRect, null, ButtonTint, Image.Type.Simple);
+            button.raycastTarget = false;
+            var rect = button.rectTransform;
+            rect.anchorMin = new Vector2(1f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(1f, 0f);
+            rect.sizeDelta = new Vector2(184f, 52f);
+            rect.anchoredPosition = new Vector2(right, 128f);
+            var text = CreateText(name + "Label", rect, 22, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+            text.text = label;
+            StretchToParent(text.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            return button;
+        }
+
+        private void RefreshTabs()
+        {
+            var names = _controller.TabNames;
+
+            while (_tabLabels.Count < names.Count)
+            {
+                var label = CreateText("Tab" + _tabLabels.Count, _tabsRoot, 22, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
+                var rect = label.rectTransform;
+                rect.anchorMin = new Vector2(0f, 0f);
+                rect.anchorMax = new Vector2(0f, 1f);
+                rect.pivot = new Vector2(0f, 0.5f);
+                _tabLabels.Add(label);
+            }
+
+            var x = 0f;
+            var idle = _skinData != null ? _skinData.IdleLabelColor : Color.white;
+
+            for (var index = 0; index < _tabLabels.Count; index++)
+            {
+                var label = _tabLabels[index];
+                var visible = index < names.Count;
+                label.gameObject.SetActive(visible);
+
+                if (!visible)
+                {
+                    continue;
+                }
+
+                var active = index == _controller.ActiveTabIndex;
+                label.text = names[index];
+                label.color = active ? ActiveTabColor : idle;
+                var width = label.preferredWidth + 8f;
+                label.rectTransform.sizeDelta = new Vector2(width, 0f);
+                label.rectTransform.anchoredPosition = new Vector2(x, 0f);
+
+                if (active)
+                {
+                    var underline = _tabUnderline.rectTransform;
+                    underline.anchorMin = Vector2.zero;
+                    underline.anchorMax = Vector2.zero;
+                    underline.pivot = Vector2.zero;
+                    underline.sizeDelta = new Vector2(width - 8f, 3f);
+                    underline.anchoredPosition = new Vector2(x, -2f);
+                }
+
+                x += width + 30f;
+            }
         }
 
         private void Refresh()
@@ -172,6 +377,7 @@ namespace Corebound.Settings
             _titleText.text = _controller.Title;
             _summaryText.text = _controller.Summary;
             _footerText.text = _controller.SelectedDescription;
+            RefreshTabs();
             RebuildRows();
             UIManager.NotifyPanelChanged(_managedPanel);
         }
@@ -208,6 +414,14 @@ namespace Corebound.Settings
             for (var index = 0; index < rows.Count; index++)
             {
                 var row = rows[index];
+
+                // The category row is the old one-line tab strip; the clickable tab labels above
+                // the list replace it, and skipping it keeps _rowTexts index == option index.
+                if (row.IsCategory)
+                {
+                    continue;
+                }
+
                 var label = CreateText(row.PrimaryText, _rowLayout.transform as RectTransform, row.IsCategory ? CategoryFontSize : OptionFontSize, row.IsCategory ? FontStyle.Bold : FontStyle.Normal, ResolveRowColor(row), row.IsCategory ? TextAnchor.MiddleLeft : TextAnchor.MiddleLeft);
                 label.text = row.IsCategory ? row.PrimaryText : row.PrimaryText + "    " + row.SecondaryText;
                 label.gameObject.AddComponent<LayoutElement>().preferredHeight = row.IsCategory ? 34f : 42f;

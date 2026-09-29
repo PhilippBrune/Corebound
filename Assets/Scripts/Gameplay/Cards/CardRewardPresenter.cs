@@ -665,7 +665,7 @@ namespace Corebound.Gameplay.Cards
         // 340,33..790,580; epic 340,29..793,582; legendary 342,36..787,581 in top-left pixels), so
         // this is their union rather than any one file's: all three slots are the same size on
         // screen and must render their frames identically, whatever rarity landed in them.
-        private static readonly Rect CardFrameContentRect = new Rect(340f, 25f, 453f, 553f);
+        internal static readonly Rect CardFrameContentRect = new Rect(340f, 25f, 453f, 553f);
         // Measured directly off the art: the metal border inside the 465x560 crop is ~90px left,
         // ~75px right, ~100px top, ~80px bottom - a border that size renders at a fixed pixel
         // thickness regardless of the target Image's RectTransform size, so on the much smaller
@@ -674,7 +674,7 @@ namespace Corebound.Gameplay.Cards
         // crop (~0.67x) so the border reads at roughly the same visual proportion at this size.
         // Halved again from 55 per playtest feedback ("frame is still too thick") - the metal trim
         // now renders at roughly a quarter of its native-art thickness relative to the 282x414 slot.
-        private static readonly Vector4 CardFrameBorder = new Vector4(27f, 27f, 27f, 27f);
+        internal static readonly Vector4 CardFrameBorder = new Vector4(27f, 27f, 27f, 27f);
 
         private void ResolveCardFrameSprites()
         {

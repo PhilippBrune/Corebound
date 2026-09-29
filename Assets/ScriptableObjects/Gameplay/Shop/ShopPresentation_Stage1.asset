@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _title: Foundry Exchange
   _summary: Spend Scrap on one targeted upgrade before tower placement.
-  _footerHint: Confirm buys. Cancel skips the shop.
+  _footerHint: Confirm or click buys. Cancel or right-click skips the shop.

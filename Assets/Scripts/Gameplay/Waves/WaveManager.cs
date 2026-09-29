@@ -211,7 +211,13 @@ namespace Corebound.Gameplay.Waves
 
             var runSaveData = SaveManager != null ? SaveManager.LoadRunSaveData() : null;
             RestoreCoreHealthFromSave(runSaveData);
+
+            // Captured now because the run save is wiped the moment the run is lost, before the
+            // history is written (see RunHistoryRecorder.RunBuild).
+            _isTutorialRun = runSaveData != null && runSaveData.IsTutorialRun;
         }
+
+        private bool _isTutorialRun;
 
         private void OnEnable()
         {
@@ -1177,7 +1183,44 @@ namespace Corebound.Gameplay.Waves
                 _runEnemiesKilled,
                 _resourceWalletService != null ? _resourceWalletService.CurrentAmount : 0,
                 _historyCardIds,
-                _historyRelicIds);
+                _historyRelicIds,
+                CaptureRunBuild());
+        }
+
+        private readonly List<string> _historyWeaponIds = new List<string>();
+        private readonly List<int> _historyWeaponTiers = new List<int>();
+        private PlayerCombatController _historyPlayer;
+
+        // The loadout and towers as they are at the moment the run ends, from the live objects.
+        private RunHistoryRecorder.RunBuild CaptureRunBuild()
+        {
+            _historyWeaponIds.Clear();
+            _historyWeaponTiers.Clear();
+
+            if (_historyPlayer == null && _playerTarget != null)
+            {
+                _historyPlayer = _playerTarget.GetComponentInParent<PlayerCombatController>();
+            }
+
+            var loadout = _historyPlayer != null ? _historyPlayer.Loadout : null;
+
+            for (var index = 0; loadout != null && index < Corebound.Gameplay.Weapons.WeaponLoadoutRuntime.Capacity; index++)
+            {
+                var slot = loadout.GetSlot(index);
+
+                if (slot != null && !slot.IsEmpty)
+                {
+                    _historyWeaponIds.Add(slot.Weapon.WeaponId);
+                    _historyWeaponTiers.Add(slot.Tier);
+                }
+            }
+
+            return new RunHistoryRecorder.RunBuild(
+                _isTutorialRun,
+                _historyWeaponIds,
+                _historyWeaponTiers,
+                _towerService != null ? _towerService.BuiltTowerIds : null,
+                _towerService != null ? _towerService.BuiltTowerUpgradeLevels : null);
         }
 
         private readonly List<string> _historyCardIds = new List<string>();

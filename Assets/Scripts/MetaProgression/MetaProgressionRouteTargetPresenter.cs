@@ -8,21 +8,31 @@ namespace Corebound.MetaProgression
 {
     public sealed class MetaProgressionRouteTargetPresenter : MonoBehaviour
     {
-        // Widened 2026-09-22 for the tabbed Progression screen: seven tab names and an upgrade
-        // row with a ten-pip track and a "12.0 -> 12.7" value have to fit on one line.
-        private const float PanelWidth = 1500f;
-        private const float PanelHeight = 900f;
+        // Playtest 2026-09-29 widened the panel again: a branch tab is now the skill graph with a
+        // details column beside it, and a radial graph needs height as much as width. The frame's
+        // border is drawn thinner (RecordsFrameScale-style multiplier) so the art does not eat the
+        // extra room.
+        private const float PanelWidth = 1800f;
+        private const float PanelHeight = 1020f;
+        private const float FrameScale = 1.6f;
+        private const float SideInset = 165f;
+        private const float DetailsColumnWidth = 440f;
         private const int TabFontSize = 22;
+        private const float TabSpacing = 26f;
 
         private static readonly Color UnaffordableRowColor = new Color(0.95f, 0.55f, 0.45f, 1f);
         private static readonly Color LockedRowColor = new Color(0.5f, 0.52f, 0.57f, 1f);
         private static readonly Color HeaderRowColor = new Color(1f, 0.82f, 0.45f, 1f);
+        private static readonly Color ActiveTabColor = new Color(1f, 0.78f, 0.35f, 1f);
+        private static readonly Color RespecIdleTint = new Color(0.16f, 0.2f, 0.26f, 0.92f);
+        private static readonly Color RespecSelectedTint = new Color(0.45f, 0.3f, 0.12f, 0.95f);
         private const int TitleFontSize = 42;
         private const int CurrencyFontSize = 26;
         private const int SummaryFontSize = 22;
         private const int RowFontSize = 24;
 
         private readonly List<Text> _rowTexts = new List<Text>();
+        private readonly List<Text> _tabLabels = new List<Text>();
 
         [SerializeField] private MainMenuSkinData _skinData;
         [SerializeField] private MetaProgressionRouteTargetController _controller;
@@ -33,45 +43,16 @@ namespace Corebound.MetaProgression
         private RectTransform _panelRect;
         private VerticalLayoutGroup _rowLayout;
         private ScrollRect _scrollRect;
-
-        // The menu scene's EventSystem never reaches this canvas (no raycaster on it, and the
-        // gameplay scene has none at all), so the ScrollRect gets no wheel events of its own.
-        // Driving it directly is the same manual hit-test the pause menu already uses for hover.
-        private void Update()
-        {
-            if (_controller == null || !_controller.IsOpen || _scrollRect == null || _scrollRect.content == null)
-            {
-                return;
-            }
-
-            var mouse = UnityEngine.InputSystem.Mouse.current;
-
-            if (mouse == null)
-            {
-                return;
-            }
-
-            var scroll = mouse.scroll.ReadValue().y;
-
-            if (Mathf.Abs(scroll) < 0.01f)
-            {
-                return;
-            }
-
-            var viewport = _scrollRect.viewport;
-
-            if (viewport != null && !RectTransformUtility.RectangleContainsScreenPoint(viewport, mouse.position.ReadValue(), null))
-            {
-                return;
-            }
-
-            var content = _scrollRect.content;
-            var viewportHeight = viewport != null ? viewport.rect.height : 0f;
-            var maxScroll = Mathf.Max(0f, content.rect.height - viewportHeight);
-            var position = content.anchoredPosition;
-            position.y = Mathf.Clamp(position.y - Mathf.Sign(scroll) * WheelScrollStep, 0f, maxScroll);
-            content.anchoredPosition = position;
-        }
+        private RectTransform _tabsRoot;
+        private Image _tabUnderline;
+        private RectTransform _graphArea;
+        private RectTransform _detailsColumn;
+        private Text _detailTitle;
+        private Text _detailStatus;
+        private Text _detailBody;
+        private Image _respecButton;
+        private Text _respecLabel;
+        private Vector2 _lastPointer;
 
         // One row per notch: a wheel detent reports +-1 (or +-120 on some drivers), so the
         // step is a row height rather than a multiplier on the raw value.
@@ -88,6 +69,7 @@ namespace Corebound.MetaProgression
         private const string SkillPointIconPath = "Assets/Art/Resources/resource_skill_point_icon.png";
         private const string BranchSheetPath = "Assets/Art/UI/SkillTree/skill_branch_icon_sheet.png";
         private const float HeaderIconSize = 34f;
+        private const float HeaderY = -238f;
         private static readonly Rect[] BranchIconRects =
         {
             new Rect(55f, 485f, 370f, 370f),
@@ -97,11 +79,129 @@ namespace Corebound.MetaProgression
         };
         private readonly Sprite[] _branchSprites = new Sprite[4];
         private Text _summaryText;
-        private Text _tabText;
         private Text _footerText;
         private Font _font;
         private Sprite _frameSprite;
         private UIManagedPanel _managedPanel;
+        private SkillTree.SkillTreeGraphPresenter _skillGraph;
+
+        // The menu scene's EventSystem never reaches this canvas (no raycaster on it), so every
+        // pointer interaction here is a manual hit-test, as on the pause menu and route panel.
+        private void Update()
+        {
+            if (_controller == null || !_controller.IsOpen)
+            {
+                return;
+            }
+
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+
+            if (mouse == null)
+            {
+                return;
+            }
+
+            var pointer = mouse.position.ReadValue();
+            HandleWheel(mouse.scroll.ReadValue().y, pointer);
+
+            var moved = (pointer - _lastPointer).sqrMagnitude > 4f;
+            _lastPointer = pointer;
+            var clicked = mouse.leftButton.wasPressedThisFrame;
+
+            if (!moved && !clicked)
+            {
+                return;
+            }
+
+            if (clicked && TryClickTab(pointer))
+            {
+                return;
+            }
+
+            var row = _controller.IsSkillBranchTabActive ? HitGraphRow(pointer) : HitListRow(pointer);
+
+            if (row < 0)
+            {
+                return;
+            }
+
+            _controller.TrySelectRow(row);
+
+            if (clicked && _controller.SelectedRow == row)
+            {
+                _controller.TryHandleConfirm();
+            }
+        }
+
+        private void HandleWheel(float scroll, Vector2 pointer)
+        {
+            if (Mathf.Abs(scroll) < 0.01f || _scrollRect == null || _scrollRect.content == null || !_scrollRect.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            var viewport = _scrollRect.viewport;
+
+            if (viewport != null && !RectTransformUtility.RectangleContainsScreenPoint(viewport, pointer, null))
+            {
+                return;
+            }
+
+            var content = _scrollRect.content;
+            var viewportHeight = viewport != null ? viewport.rect.height : 0f;
+            var maxScroll = Mathf.Max(0f, content.rect.height - viewportHeight);
+            var position = content.anchoredPosition;
+            position.y = Mathf.Clamp(position.y - Mathf.Sign(scroll) * WheelScrollStep, 0f, maxScroll);
+            content.anchoredPosition = position;
+        }
+
+        private bool TryClickTab(Vector2 pointer)
+        {
+            for (var index = 0; index < _tabLabels.Count; index++)
+            {
+                if (_tabLabels[index] != null && _tabLabels[index].gameObject.activeSelf
+                    && RectTransformUtility.RectangleContainsScreenPoint(_tabLabels[index].rectTransform, pointer, null))
+                {
+                    _controller.SelectTab(index);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private int HitGraphRow(Vector2 pointer)
+        {
+            if (_respecButton != null && _respecButton.gameObject.activeInHierarchy
+                && RectTransformUtility.RectangleContainsScreenPoint(_respecButton.rectTransform, pointer, null))
+            {
+                return _controller.RespecRowIndex;
+            }
+
+            return _skillGraph != null && _skillGraph.TryHitNode(pointer, out var keyIndex, out var subIndex)
+                ? _controller.FindGraphRow(keyIndex, subIndex)
+                : -1;
+        }
+
+        private int HitListRow(Vector2 pointer)
+        {
+            // Rows scrolled out of the viewport are still laid out; only the visible ones count.
+            if (_scrollRect == null || _scrollRect.viewport == null
+                || !RectTransformUtility.RectangleContainsScreenPoint(_scrollRect.viewport, pointer, null))
+            {
+                return -1;
+            }
+
+            for (var index = 0; index < _rowTexts.Count; index++)
+            {
+                if (_rowTexts[index] != null && RectTransformUtility.RectangleContainsScreenPoint(_rowTexts[index].rectTransform, pointer, null))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
 
         private void Awake()
         {
@@ -165,29 +265,30 @@ namespace Corebound.MetaProgression
             StretchToParent(_overlayRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
             var panel = CreateImage("Panel", _presenterRoot, _frameSprite, _skinData != null ? _skinData.SelectedFrameTint : Color.white, ResolvePanelType(_frameSprite));
+            panel.pixelsPerUnitMultiplier = FrameScale;
             _panelRect = panel.rectTransform;
             SetAnchoredBox(_panelRect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PanelWidth, PanelHeight));
 
             _titleText = CreateText("Title", _panelRect, TitleFontSize, FontStyle.Bold, _skinData != null ? _skinData.SelectedLabelColor : Color.white, TextAnchor.UpperLeft);
-            // button_primary_frame.png has a 220px/140px (horiz/vert) 9-slice border baked into
-            // the art itself - insets below keep content clear of that border instead of
-            // rendering across it, which is what the previous much-smaller insets did.
-            StretchToParent(_titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -235f), new Vector2(-230f, -165f));
+            StretchToParent(_titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(SideInset, -160f), new Vector2(-SideInset, -102f));
 
-            _tabText = CreateText("Tabs", _panelRect, TabFontSize, FontStyle.Bold, _skinData != null ? _skinData.IdleLabelColor : Color.white, TextAnchor.UpperLeft);
-            _tabText.supportRichText = true;
-            StretchToParent(_tabText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -275f), new Vector2(-230f, -240f));
+            var tabsObject = new GameObject("Tabs", typeof(RectTransform));
+            tabsObject.transform.SetParent(_panelRect, false);
+            _tabsRoot = tabsObject.GetComponent<RectTransform>();
+            StretchToParent(_tabsRoot, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(SideInset, -206f), new Vector2(-SideInset, -168f));
+            _tabUnderline = CreateImage("TabUnderline", _tabsRoot, null, ActiveTabColor, Image.Type.Simple);
+            _tabUnderline.raycastTarget = false;
 
             // Header: [Alloy icon] Alloy: 19    [SP icon] Skill Points: 3    Ascension 2
             var headerColor = _skinData != null ? _skinData.PromptLabelColor : Color.white;
-            CreateHeaderIcon("AlloyIcon", AlloyIconPath, 230f);
+            CreateHeaderIcon("AlloyIcon", AlloyIconPath, SideInset);
             _currencyText = CreateText("Currency", _panelRect, CurrencyFontSize, FontStyle.Bold, headerColor, TextAnchor.MiddleLeft);
-            PlaceHeaderText(_currencyText, 230f + HeaderIconSize + 8f, 260f);
-            CreateHeaderIcon("SkillPointIcon", SkillPointIconPath, 530f);
+            PlaceHeaderText(_currencyText, SideInset + HeaderIconSize + 8f, 260f);
+            CreateHeaderIcon("SkillPointIcon", SkillPointIconPath, SideInset + 300f);
             _skillPointText = CreateText("SkillPoints", _panelRect, CurrencyFontSize, FontStyle.Bold, headerColor, TextAnchor.MiddleLeft);
-            PlaceHeaderText(_skillPointText, 530f + HeaderIconSize + 8f, 320f);
+            PlaceHeaderText(_skillPointText, SideInset + 300f + HeaderIconSize + 8f, 340f);
             _ascensionText = CreateText("Ascension", _panelRect, CurrencyFontSize, FontStyle.Bold, headerColor, TextAnchor.MiddleLeft);
-            PlaceHeaderText(_ascensionText, 900f, 300f);
+            PlaceHeaderText(_ascensionText, SideInset + 700f, 300f);
 
             for (var index = 0; index < BranchIconRects.Length; index++)
             {
@@ -201,26 +302,28 @@ namespace Corebound.MetaProgression
             emblemRect.anchorMin = new Vector2(1f, 1f);
             emblemRect.anchorMax = new Vector2(1f, 1f);
             emblemRect.pivot = new Vector2(1f, 1f);
-            emblemRect.anchoredPosition = new Vector2(-240f, -150f);
-            emblemRect.sizeDelta = new Vector2(110f, 110f);
+            emblemRect.anchoredPosition = new Vector2(-SideInset, -96f);
+            emblemRect.sizeDelta = new Vector2(96f, 96f);
 
             _summaryText = CreateText("Summary", _panelRect, SummaryFontSize, FontStyle.Normal, _skinData != null ? _skinData.StatusLabelColor : Color.white, TextAnchor.UpperLeft);
             _summaryText.supportRichText = true;
-            StretchToParent(_summaryText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -400f), new Vector2(-230f, -320f));
+            StretchToParent(_summaryText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(SideInset, -345f), new Vector2(-SideInset, -266f));
 
             _footerText = CreateText("Footer", _panelRect, 18, FontStyle.Normal, _skinData != null ? _skinData.PromptLabelColor : Color.white, TextAnchor.MiddleLeft);
-            // Clear of the frame art: at x 230 / y 110 the footer sat on the orange corner piece and
-            // was unreadable (playtest 2026-09-22).
-            StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(300f, 150f), new Vector2(-300f, 182f));
+            StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(SideInset, 100f), new Vector2(-SideInset, 136f));
 
-            // Viewport (RectMask2D, clips) + ScrollRect wrapping a content object that's allowed to
-            // grow (ContentSizeFitter) - same treatment as SettingsRouteTargetPresenter, so the
-            // unlock list keeps working as more unlocks get added instead of silently overflowing
-            // the fixed panel height like Settings' option list did.
+            BuildRowList();
+            BuildGraphArea();
+        }
+
+        // Viewport (RectMask2D, clips) + ScrollRect wrapping a content object that's allowed to
+        // grow (ContentSizeFitter), so the list keeps working as more entries get added.
+        private void BuildRowList()
+        {
             var viewportObject = new GameObject("RowsViewport", typeof(RectTransform), typeof(RectMask2D));
             viewportObject.transform.SetParent(_panelRect, false);
             var viewportRect = viewportObject.GetComponent<RectTransform>();
-            StretchToParent(viewportRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(230f, 195f), new Vector2(-230f, -410f));
+            StretchToParent(viewportRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(SideInset, 150f), new Vector2(-SideInset, -355f));
 
             var listObject = new GameObject("Rows", typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             listObject.transform.SetParent(viewportRect, false);
@@ -250,6 +353,51 @@ namespace Corebound.MetaProgression
             _scrollRect.vertical = true;
             _scrollRect.movementType = ScrollRect.MovementType.Clamped;
             _scrollRect.scrollSensitivity = 24f;
+        }
+
+        // Branch tabs: the graph on the left, what the selected node is and costs on the right,
+        // Respec as a button under it.
+        private void BuildGraphArea()
+        {
+            var areaObject = new GameObject("GraphArea", typeof(RectTransform));
+            areaObject.transform.SetParent(_panelRect, false);
+            _graphArea = areaObject.GetComponent<RectTransform>();
+            StretchToParent(_graphArea, new Vector2(0f, 0f), new Vector2(1f, 1f),
+                new Vector2(SideInset, 150f), new Vector2(-(SideInset + DetailsColumnWidth + 24f), -262f));
+
+            var columnObject = new GameObject("NodeDetails", typeof(RectTransform));
+            columnObject.transform.SetParent(_panelRect, false);
+            _detailsColumn = columnObject.GetComponent<RectTransform>();
+            _detailsColumn.anchorMin = new Vector2(1f, 0f);
+            _detailsColumn.anchorMax = new Vector2(1f, 1f);
+            _detailsColumn.pivot = new Vector2(1f, 0.5f);
+            _detailsColumn.offsetMin = new Vector2(-(SideInset + DetailsColumnWidth), 150f);
+            _detailsColumn.offsetMax = new Vector2(-SideInset, -262f);
+
+            var backing = CreateImage("Backing", _detailsColumn, null, new Color(0.03f, 0.05f, 0.08f, 0.6f), Image.Type.Simple);
+            backing.raycastTarget = false;
+            StretchToParent(backing.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+
+            _detailTitle = CreateText("NodeTitle", _detailsColumn, 30, FontStyle.Bold, _skinData != null ? _skinData.SelectedLabelColor : Color.white, TextAnchor.UpperLeft);
+            _detailTitle.supportRichText = true;
+            _detailTitle.horizontalOverflow = HorizontalWrapMode.Wrap;
+            StretchToParent(_detailTitle.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(20f, -96f), new Vector2(-20f, -18f));
+
+            _detailStatus = CreateText("NodeStatus", _detailsColumn, 24, FontStyle.Bold, Color.white, TextAnchor.UpperLeft);
+            StretchToParent(_detailStatus.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(20f, -134f), new Vector2(-20f, -100f));
+
+            _detailBody = CreateText("NodeBody", _detailsColumn, 21, FontStyle.Normal, _skinData != null ? _skinData.StatusLabelColor : Color.white, TextAnchor.UpperLeft);
+            _detailBody.supportRichText = true;
+            _detailBody.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _detailBody.verticalOverflow = VerticalWrapMode.Truncate;
+            StretchToParent(_detailBody.rectTransform, Vector2.zero, Vector2.one, new Vector2(20f, 96f), new Vector2(-20f, -146f));
+
+            _respecButton = CreateImage("RespecButton", _detailsColumn, null, RespecIdleTint, Image.Type.Simple);
+            _respecButton.raycastTarget = false;
+            StretchToParent(_respecButton.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(20f, 18f), new Vector2(-20f, 82f));
+            _respecLabel = CreateText("RespecLabel", _respecButton.rectTransform, 19, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter);
+            _respecLabel.horizontalOverflow = HorizontalWrapMode.Wrap;
+            StretchToParent(_respecLabel.rectTransform, Vector2.zero, Vector2.one, new Vector2(10f, 4f), new Vector2(-10f, -4f));
         }
 
         private void Refresh()
@@ -294,53 +442,122 @@ namespace Corebound.MetaProgression
 
             _branchEmblem.sprite = emblem;
             _branchEmblem.enabled = emblem != null;
-            _tabText.text = _controller.TabStrip;
-            _summaryText.text = _controller.Summary;
+            RefreshTabs();
             _footerText.text = _controller.FooterHint;
-            RebuildRows();
-            RefreshSkillGraph();
+
+            // Playtest 2026-09-29: "I see the old and the new system for progression. It should be
+            // only one." A branch tab is the graph and nothing else; the list is for the tabs that
+            // are lists (Unlocks, Upgrades, Ascension).
+            var graphTab = _controller.IsSkillBranchTabActive;
+            _scrollRect.gameObject.SetActive(!graphTab);
+            _summaryText.gameObject.SetActive(!graphTab);
+            _graphArea.gameObject.SetActive(graphTab);
+            _detailsColumn.gameObject.SetActive(graphTab);
+
+            if (graphTab)
+            {
+                ClearRows();
+                RefreshSkillGraph();
+                RefreshNodeDetails();
+            }
+            else
+            {
+                _summaryText.text = _controller.Summary;
+                _skillGraph?.Clear();
+                RebuildRows();
+            }
+
             UIManager.NotifyPanelChanged(_managedPanel);
         }
 
-        // The node graph (SKILL_TREE_NODE_GRAPH_2026-09-28) drawn beside the existing rows while a
-        // skill branch tab is showing, and hidden on every other tab.
-        //
-        // Additive on purpose. The rows still own selection and purchasing, which are the parts of
-        // this screen that must not regress and which could not be interactively playtested before
-        // shipping. The graph is the visual half - complete, judgeable, and safe to look at - with
-        // replacing the list left as the reviewable next step.
-        private SkillTree.SkillTreeGraphPresenter _skillGraph;
+        // One label per tab, laid out by its own width, so each is a click target (playtest
+        // 2026-09-29: "the Progression tabs are not clickable").
+        private void RefreshTabs()
+        {
+            var names = _controller.TabNames;
+
+            while (_tabLabels.Count < names.Count)
+            {
+                var label = CreateText("Tab" + _tabLabels.Count, _tabsRoot, TabFontSize, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft);
+                var rect = label.rectTransform;
+                rect.anchorMin = new Vector2(0f, 0f);
+                rect.anchorMax = new Vector2(0f, 1f);
+                rect.pivot = new Vector2(0f, 0.5f);
+                _tabLabels.Add(label);
+            }
+
+            var x = 0f;
+            var idle = _skinData != null ? _skinData.IdleLabelColor : Color.white;
+
+            for (var index = 0; index < _tabLabels.Count; index++)
+            {
+                var label = _tabLabels[index];
+                var visible = index < names.Count;
+                label.gameObject.SetActive(visible);
+
+                if (!visible)
+                {
+                    continue;
+                }
+
+                var active = index == _controller.ActiveTabIndex;
+                label.text = names[index];
+                label.color = active ? ActiveTabColor : idle;
+                var width = label.preferredWidth + 8f;
+                label.rectTransform.sizeDelta = new Vector2(width, 0f);
+                label.rectTransform.anchoredPosition = new Vector2(x, 0f);
+
+                if (active)
+                {
+                    var underline = _tabUnderline.rectTransform;
+                    underline.anchorMin = new Vector2(0f, 0f);
+                    underline.anchorMax = new Vector2(0f, 0f);
+                    underline.pivot = new Vector2(0f, 0f);
+                    underline.sizeDelta = new Vector2(width - 8f, 3f);
+                    underline.anchoredPosition = new Vector2(x, -2f);
+                }
+
+                x += width + TabSpacing;
+            }
+        }
 
         private void RefreshSkillGraph()
         {
-            if (_controller == null || _panelRect == null)
-            {
-                return;
-            }
-
-            var show = _controller.IsSkillBranchTabActive;
-
             if (_skillGraph == null)
             {
-                if (!show)
-                {
-                    return;
-                }
-
                 _skillGraph = gameObject.AddComponent<SkillTree.SkillTreeGraphPresenter>();
             }
 
-            _skillGraph.SetVisible(show);
+            _controller.TryGetSelectedGraphNode(out var selectedKey, out var selectedSub);
+            _skillGraph.Build(_graphArea, _controller.ActiveSkillTree, _controller.SkillSaveData,
+                _controller.ActiveBranchIndex, selectedKey, selectedSub);
+        }
 
-            if (!show)
+        private void RefreshNodeDetails()
+        {
+            _detailTitle.text = _controller.SelectedLabel;
+            _detailStatus.text = _controller.SelectedStatus;
+            _detailStatus.color = ResolveStateColor(_controller.SelectedState, true, false);
+            _detailBody.text = _controller.Summary;
+
+            var respecRow = _controller.RespecRowIndex;
+            var rows = _controller.Rows;
+            var hasRespec = respecRow >= 0 && respecRow < rows.Count;
+            _respecButton.gameObject.SetActive(hasRespec);
+
+            if (!hasRespec)
             {
                 return;
             }
 
-            _skillGraph.Build(_panelRect, _controller.ActiveSkillTree, _controller.SkillSaveData);
+            var selected = _controller.SelectedRow == respecRow;
+            _respecButton.color = selected ? RespecSelectedTint : RespecIdleTint;
+            _respecLabel.text = rows[respecRow].Label + "\n<size=15>" + rows[respecRow].StatusLabel + "</size>";
+            _respecLabel.supportRichText = true;
+            _respecLabel.color = rows[respecRow].State == MetaProgressionRouteTargetController.RowState.Locked ? LockedRowColor : Color.white;
         }
 
-        private void RebuildRows()
+        private void ClearRows()
         {
             _rowTexts.Clear();
 
@@ -363,6 +580,11 @@ namespace Corebound.MetaProgression
                     DestroyImmediate(child.gameObject);
                 }
             }
+        }
+
+        private void RebuildRows()
+        {
+            ClearRows();
 
             var rows = _controller.Rows;
             RectTransform selectedRowRect = null;
@@ -370,14 +592,15 @@ namespace Corebound.MetaProgression
             for (var index = 0; index < rows.Count; index++)
             {
                 var row = rows[index];
-                var rowText = CreateText("Row" + index, _rowLayout.transform as RectTransform, RowFontSize, row.IsUnlocked ? FontStyle.Italic : FontStyle.Normal, ResolveRowColor(row), TextAnchor.MiddleLeft);
+                var color = ResolveStateColor(row.State, row.IsSelected, row.IsUnlocked);
+                var rowText = CreateText("Row" + index, _rowLayout.transform as RectTransform, RowFontSize, row.IsUnlocked ? FontStyle.Italic : FontStyle.Normal, color, TextAnchor.MiddleLeft);
                 rowText.supportRichText = true;
                 rowText.text = (row.IsSelected ? "> " : "   ") + row.Label;
                 rowText.gameObject.AddComponent<LayoutElement>().preferredHeight = 40f;
 
                 // Status (price, rank, Locked/Owned) in its own right-aligned column, so prices
                 // line up and a long label can never push the price off the row.
-                var statusText = CreateText("Status", rowText.rectTransform, RowFontSize, FontStyle.Bold, ResolveRowColor(row), TextAnchor.MiddleRight);
+                var statusText = CreateText("Status", rowText.rectTransform, RowFontSize, FontStyle.Bold, color, TextAnchor.MiddleRight);
                 StretchToParent(statusText.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
                 statusText.text = row.StatusLabel;
                 _rowTexts.Add(rowText);
@@ -418,25 +641,25 @@ namespace Corebound.MetaProgression
             content.anchoredPosition = new Vector2(content.anchoredPosition.x, targetOffset);
         }
 
-        private Color ResolveRowColor(MetaProgressionRouteTargetController.DisplayRow row)
+        private Color ResolveStateColor(MetaProgressionRouteTargetController.RowState state, bool isSelected, bool isUnlocked)
         {
             // SkillTree.md UI: "Unaffordable nodes are visibly distinct from locked ones."
-            switch (row.State)
+            switch (state)
             {
                 case MetaProgressionRouteTargetController.RowState.Header:
                     return HeaderRowColor;
                 case MetaProgressionRouteTargetController.RowState.Locked:
                     return LockedRowColor;
                 case MetaProgressionRouteTargetController.RowState.Unaffordable:
-                    return row.IsSelected ? Color.Lerp(UnaffordableRowColor, Color.white, 0.35f) : UnaffordableRowColor;
+                    return isSelected ? Color.Lerp(UnaffordableRowColor, Color.white, 0.35f) : UnaffordableRowColor;
             }
 
-            if (row.IsUnlocked)
+            if (isUnlocked)
             {
                 return _skinData != null ? _skinData.StatusLabelColor : Color.white;
             }
 
-            return row.IsSelected
+            return isSelected
                 ? (_skinData != null ? _skinData.SelectedLabelColor : Color.white)
                 : (_skinData != null ? _skinData.IdleLabelColor : Color.white);
         }
@@ -494,7 +717,7 @@ namespace Corebound.MetaProgression
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 0.5f);
-            rect.anchoredPosition = new Vector2(left, -297f);
+            rect.anchoredPosition = new Vector2(left, HeaderY);
             rect.sizeDelta = new Vector2(HeaderIconSize, HeaderIconSize);
         }
 
@@ -504,7 +727,7 @@ namespace Corebound.MetaProgression
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 0.5f);
-            rect.anchoredPosition = new Vector2(left, -297f);
+            rect.anchoredPosition = new Vector2(left, HeaderY);
             rect.sizeDelta = new Vector2(width, 36f);
         }
 

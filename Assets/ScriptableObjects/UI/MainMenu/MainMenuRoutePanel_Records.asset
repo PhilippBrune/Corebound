@@ -15,11 +15,11 @@ MonoBehaviour:
   _route: 7
   _title: Records
   _titleDe: Aufzeichnungen
-  _subtitle: Finished runs on this profile
-  _subtitleDe: Beendete Runs in diesem Profil
+  _subtitle: Finished runs and every card this profile has found
+  _subtitleDe: Beendete Runs und jede Karte, die dieses Profil gefunden hat
   _summary: Totals first, then your best run, then the most recent runs newest first. A run is recorded when it is won or lost - a run abandoned to the menu leaves no entry.
   _summaryDe: Zuerst die Gesamtwerte, dann der beste Run, dann die neuesten Runs. Ein Run wird aufgezeichnet, wenn er gewonnen oder verloren wurde - ein zum Menue verlassener Run hinterlaesst keinen Eintrag.
   _detailLines: []
   _detailLinesDe: []
-  _footerHint: Cancel returns.
-  _footerHintDe: Abbrechen kehrt zurueck.
+  _footerHint: Q / Tab or LB / RB switch between Runs and Cards.   Cancel returns.
+  _footerHintDe: Q / Tab oder LB / RB wechseln zwischen Runs und Karten.   Abbrechen kehrt zurück.

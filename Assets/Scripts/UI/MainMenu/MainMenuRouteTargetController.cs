@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 
 namespace Corebound.UI.MainMenu
 {
-    public sealed class MainMenuRouteTargetController : MonoBehaviour, IMainMenuRouteTargetController
+    public sealed class MainMenuRouteTargetController : MonoBehaviour, IMainMenuRouteTargetController, IRecordsViewSource
     {
         [SerializeField] private MainMenuController _mainMenuController;
         [SerializeField] private MainMenuRouteExecutionData _executionData;
@@ -48,6 +48,11 @@ namespace Corebound.UI.MainMenu
             if (_activeTarget != null && _activeTarget.IsOpen)
             {
                 return _activeTarget.TryHandleNavigation(navigationInput);
+            }
+
+            if (_activePanelData != null && _pendingPanelRoute == MainMenuRoute.Records)
+            {
+                return TryNavigateRecords(navigationInput);
             }
 
             // The profile panel is the one panel with a selection in it (SaveSystem.md, "Drei
@@ -162,6 +167,12 @@ namespace Corebound.UI.MainMenu
                     OnProfileDeletePressed();
                 }
 
+                return true;
+            }
+
+            if (_activePanelData != null && _pendingPanelRoute == MainMenuRoute.Records)
+            {
+                TrySelectRecordsTab(_recordsTab + (direction < 0 ? -1 : 1));
                 return true;
             }
 
@@ -288,7 +299,7 @@ namespace Corebound.UI.MainMenu
 
             lines.Add(string.Empty);
             var entries = history.Entries;
-            var shown = Mathf.Min(entries.Count, 12);
+            var shown = Mathf.Min(entries.Count, RecordsRunRows);
 
             for (var index = 0; index < shown; index++)
             {
@@ -303,10 +314,223 @@ namespace Corebound.UI.MainMenu
                     + LocalizationService.Resolve(" wave ", " Welle ") + entry.WaveReached
                     + "   " + Corebound.Gameplay.Waves.RunTimerService.Format(entry.ElapsedActiveSeconds)
                     + "   " + entry.EnemiesKilled + LocalizationService.Resolve(" kills", " Kills")
-                    + (string.IsNullOrEmpty(entry.EndedByLabel) ? string.Empty : "   " + entry.EndedByLabel));
+                    + (string.IsNullOrEmpty(entry.EndedByLabel) ? string.Empty : "   " + entry.EndedByLabel)
+                    + DescribeRunWeapons(entry));
             }
 
             return lines.ToArray();
+        }
+
+        private const int RecordsRunRows = 10;
+
+        // Playtest 2026-09-29: "Records should contain which weapons were used too." The history
+        // entry has carried the loadout since D6; it was simply never printed.
+        private string DescribeRunWeapons(SaveSystem.RunHistoryEntry entry)
+        {
+            var ids = entry != null ? entry.WeaponIds : null;
+
+            if (ids == null || ids.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+            var catalog = definition != null ? definition.UpgradeWeapons : null;
+            var builder = new System.Text.StringBuilder();
+
+            for (var index = 0; index < ids.Count; index++)
+            {
+                if (string.IsNullOrEmpty(ids[index]))
+                {
+                    continue;
+                }
+
+                var weapon = catalog != null ? catalog.FindById(ids[index]) : null;
+                var tier = entry.WeaponTiers != null && index < entry.WeaponTiers.Count ? entry.WeaponTiers[index] : 0;
+                builder.Append(builder.Length == 0 ? "   ·   " : ", ");
+                builder.Append(weapon != null ? weapon.DisplayName : ids[index]);
+
+                // Tier 0 is the Common copy; only an upgraded one is worth the extra characters.
+                if (tier > 0)
+                {
+                    builder.Append(" (").Append(TierName(tier)).Append(")");
+                }
+            }
+
+            return builder.ToString();
+        }
+
+        // Same names as the in-run loadout panel, so a run reads the same in both places.
+        private static string TierName(int tier)
+        {
+            switch ((Corebound.Gameplay.Cards.CardRarity)Mathf.Clamp(tier, 0, 3))
+            {
+                case Corebound.Gameplay.Cards.CardRarity.Rare:
+                    return LocalizationService.Resolve("Rare", "Selten");
+                case Corebound.Gameplay.Cards.CardRarity.Epic:
+                    return LocalizationService.Resolve("Epic", "Episch");
+                case Corebound.Gameplay.Cards.CardRarity.Legendary:
+                    return LocalizationService.Resolve("Legendary", "Legendär");
+                default:
+                    return LocalizationService.Resolve("Common", "Gewöhnlich");
+            }
+        }
+
+        // ---- Records: card collection (playtest 2026-09-29) -----------------------------------
+        //
+        // "I would like to have in Records an overview of all cards - blurred if not collected,
+        // clear if collected once." Two tabs: the run history as before, and a grid of every card
+        // in the pool. The state lives here so controller, keyboard and mouse agree about it; the
+        // route panel presenter only draws it.
+
+        public const int RecordsCardColumns = 11;
+
+        private readonly System.Collections.Generic.List<RecordsCardEntry> _recordsCards =
+            new System.Collections.Generic.List<RecordsCardEntry>();
+
+        private int _recordsTab;
+        private int _recordsCardIndex;
+
+        public MainMenuRoute? ActivePanelRoute => _activePanelData != null ? _pendingPanelRoute : null;
+
+        public int RecordsTab => _recordsTab;
+
+        public System.Collections.Generic.IReadOnlyList<RecordsCardEntry> RecordsCards => _recordsCards;
+
+        public int RecordsSelectedCard => _recordsTab == 1 && _recordsCards.Count > 0 ? _recordsCardIndex : -1;
+
+        public int RecordsCollectedCount
+        {
+            get
+            {
+                var count = 0;
+
+                for (var index = 0; index < _recordsCards.Count; index++)
+                {
+                    if (_recordsCards[index].Collected)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        public bool TrySelectRecordsTab(int tab)
+        {
+            var clamped = Mathf.Clamp(tab, 0, 1);
+
+            if (_activePanelData == null || _pendingPanelRoute != MainMenuRoute.Records || clamped == _recordsTab)
+            {
+                return false;
+            }
+
+            _recordsTab = clamped;
+            RouteTargetChanged?.Invoke();
+            return true;
+        }
+
+        public bool TrySelectRecordsCard(int index)
+        {
+            if (_recordsTab != 1 || index < 0 || index >= _recordsCards.Count || index == _recordsCardIndex)
+            {
+                return false;
+            }
+
+            _recordsCardIndex = index;
+            RouteTargetChanged?.Invoke();
+            return true;
+        }
+
+        private bool TryNavigateRecords(Vector2 navigationInput)
+        {
+            if (_recordsTab != 1 || _recordsCards.Count == 0)
+            {
+                return false;
+            }
+
+            var step = 0;
+
+            if (Mathf.Abs(navigationInput.x) >= 0.5f)
+            {
+                step = navigationInput.x > 0f ? 1 : -1;
+            }
+            else if (Mathf.Abs(navigationInput.y) >= 0.5f)
+            {
+                step = navigationInput.y > 0f ? -RecordsCardColumns : RecordsCardColumns;
+            }
+
+            var next = _recordsCardIndex + step;
+            return step != 0 && next >= 0 && next < _recordsCards.Count && TrySelectRecordsCard(next);
+        }
+
+        // "Collected" is the union of the new per-profile record and everything the profile could
+        // already prove before it existed: cards in any history entry and in the run in progress.
+        // Without the backfill every existing profile would open onto a wall of blurred cards.
+        private void RefreshRecordsCards()
+        {
+            _recordsCards.Clear();
+            var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+            var pool = definition != null ? definition.CardCollection : null;
+
+            if (pool == null || pool.Cards == null)
+            {
+                return;
+            }
+
+            var collected = new System.Collections.Generic.HashSet<string>();
+            var statistics = SaveManager != null ? SaveManager.LoadStatisticsSaveData(new SaveSystem.StatisticsSaveData()) : null;
+            AddAll(collected, statistics != null ? statistics.CollectedCardIds : null);
+            var history = SaveManager != null ? SaveManager.LoadRunHistorySaveData() : null;
+
+            if (history != null && history.Entries != null)
+            {
+                for (var index = 0; index < history.Entries.Count; index++)
+                {
+                    AddAll(collected, history.Entries[index] != null ? history.Entries[index].CardIds : null);
+                }
+            }
+
+            var runSaveData = SaveManager != null ? SaveManager.LoadRunSaveData() : null;
+
+            if (runSaveData != null && runSaveData.HasActiveRun)
+            {
+                AddAll(collected, runSaveData.SelectedCardIds);
+            }
+
+            for (var index = 0; index < pool.Cards.Length; index++)
+            {
+                var card = pool.Cards[index];
+
+                if (card != null)
+                {
+                    _recordsCards.Add(new RecordsCardEntry(card, collected.Contains(card.CardId)));
+                }
+            }
+
+            // Rarity bands read as rows of one colour; the name inside a band is stable.
+            _recordsCards.Sort((left, right) =>
+            {
+                var byRarity = left.Card.Rarity.CompareTo(right.Card.Rarity);
+                return byRarity != 0 ? byRarity : string.CompareOrdinal(left.Card.DisplayName, right.Card.DisplayName);
+            });
+        }
+
+        private static void AddAll(System.Collections.Generic.HashSet<string> set, System.Collections.Generic.IReadOnlyList<string> ids)
+        {
+            if (ids == null)
+            {
+                return;
+            }
+
+            for (var index = 0; index < ids.Count; index++)
+            {
+                if (!string.IsNullOrEmpty(ids[index]))
+                {
+                    set.Add(ids[index]);
+                }
+            }
         }
 
         // The rows the route panel draws while the profile panel is open; null for every other
@@ -327,7 +551,8 @@ namespace Corebound.UI.MainMenu
 
                 if (_pendingPanelRoute == MainMenuRoute.Records)
                 {
-                    return BuildRecordLines();
+                    // The Cards tab draws a grid instead of rows.
+                    return _recordsTab == 0 ? BuildRecordLines() : System.Array.Empty<string>();
                 }
 
                 if (_pendingPanelRoute != MainMenuRoute.Profile)
@@ -432,6 +657,12 @@ namespace Corebound.UI.MainMenu
         {
             SetDebugStartStageIndex(stageIndex);
         }
+
+        // Autopilot: open a route exactly as confirming its menu entry would.
+        public void DebugOpenRoute(MainMenuRoute route)
+        {
+            OnRouteConfirmed(route);
+        }
 #endif
 
         private static void SetDebugStartStageIndex(int stageIndex)
@@ -478,6 +709,13 @@ namespace Corebound.UI.MainMenu
             }
 
             var route = _pendingPanelRoute.Value;
+
+            // Records is read-only: Confirm must not close it the way it closes a confirmation
+            // panel, or a mouse click on a card would throw the player back to the menu.
+            if (route == MainMenuRoute.Records)
+            {
+                return true;
+            }
 
             if (route == MainMenuRoute.Profile)
             {
@@ -531,6 +769,9 @@ namespace Corebound.UI.MainMenu
                     OpenTarget(MetaProgressionTarget);
                     return;
                 case MainMenuRoute.Records:
+                    _recordsTab = 0;
+                    _recordsCardIndex = 0;
+                    RefreshRecordsCards();
                     OpenPanel(_executionData != null ? _executionData.RecordsPanelData : null, MainMenuRoute.Records);
                     return;
                 case MainMenuRoute.Profile:
@@ -780,10 +1021,17 @@ namespace Corebound.UI.MainMenu
                         SaveManager.SaveRunSaveData(runSaveData);
                     }
                 }
-                else if (route == MainMenuRoute.NewRun && IsDebugModeAvailable && _debugStartStageIndex > 1)
+                else if (route == MainMenuRoute.NewRun)
                 {
-                    ApplyDebugStageOverride();
+                    ApplyPreferredStartWeapon();
+
+                    if (IsDebugModeAvailable && _debugStartStageIndex > 1)
+                    {
+                        ApplyDebugStageOverride();
+                    }
                 }
+
+                RecordRunStarted(route);
             }
 
             var sceneName = ResolveNewRunSceneName(route);
@@ -794,6 +1042,55 @@ namespace Corebound.UI.MainMenu
             }
 
             SceneManager.LoadScene(sceneName);
+        }
+
+        // Playtest 2026-09-29, third report: "choosing the start weapon still does not work".
+        //
+        // The 2026-09-28 fix stopped a purchased start loadout from overwriting the choice, and was
+        // correct as far as it went - but RunSaveBootstrap_Default itself carries
+        // _equippedWeaponId: weapon_rapid, so every fresh run save already had Rapid in slot 0
+        // before any loadout was considered. PlayerCombatController only consults the preferred
+        // weapon when no slot is filled, so the choice was never read at all.
+        //
+        // The menu is where the choice is made, so the menu now writes it into the run save
+        // directly instead of hoping the combat controller's fallback is reached. The bootstrap
+        // weapon stays as the default for a profile that has never picked one.
+        private void ApplyPreferredStartWeapon()
+        {
+            if (!HasPreferredStartWeapon())
+            {
+                return;
+            }
+
+            var definition = _metaProgressionService.DefinitionData;
+            var saveData = SaveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
+            var runSaveData = SaveManager.LoadRunSaveData();
+
+            if (saveData == null || runSaveData == null)
+            {
+                return;
+            }
+
+            runSaveData.SetEquippedWeaponId(saveData.PreferredStartWeaponId);
+            SaveManager.SaveRunSaveData(runSaveData);
+        }
+
+        // Records showed "runs started: 0" on every profile - RecordRunStarted existed and nothing
+        // called it. The tutorial is excluded for the same reason it is excluded from the history.
+        private void RecordRunStarted(MainMenuRoute route)
+        {
+            if (route == MainMenuRoute.Tutorial)
+            {
+                return;
+            }
+
+            var statistics = SaveManager.LoadStatisticsSaveData(new SaveSystem.StatisticsSaveData());
+
+            if (statistics != null)
+            {
+                statistics.RecordRunStarted();
+                SaveManager.SaveStatisticsSaveData(statistics);
+            }
         }
 
         // See the class-level comment on _debugStartStageIndex. WaveManager.ResolveStageDataForSave()

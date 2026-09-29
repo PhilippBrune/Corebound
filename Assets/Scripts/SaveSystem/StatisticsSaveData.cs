@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Corebound.SaveSystem
@@ -14,6 +15,10 @@ namespace Corebound.SaveSystem
         [SerializeField] private int _highestStageReached;
         [SerializeField] private double _totalPlaytimeSeconds;
 
+        // Card ids this profile has ever taken into a run, for the Records collection. A set in
+        // spirit; a list because JsonUtility cannot serialise a HashSet.
+        [SerializeField] private List<string> _collectedCardIds = new List<string>();
+
         public int SaveFormatVersion => _saveFormatVersion;
 
         public int TotalEnemyKills => _totalEnemyKills;
@@ -28,6 +33,35 @@ namespace Corebound.SaveSystem
 
         public double TotalPlaytimeSeconds => _totalPlaytimeSeconds;
 
+        public IReadOnlyList<string> CollectedCardIds => _collectedCardIds;
+
+        public bool HasCollectedCard(string cardId)
+        {
+            return !string.IsNullOrEmpty(cardId) && _collectedCardIds != null && _collectedCardIds.Contains(cardId);
+        }
+
+        // Returns true when the id was new, so a caller can skip the save write otherwise.
+        public bool RecordCardCollected(string cardId)
+        {
+            if (string.IsNullOrEmpty(cardId))
+            {
+                return false;
+            }
+
+            if (_collectedCardIds == null)
+            {
+                _collectedCardIds = new List<string>();
+            }
+
+            if (_collectedCardIds.Contains(cardId))
+            {
+                return false;
+            }
+
+            _collectedCardIds.Add(cardId);
+            return true;
+        }
+
         public StatisticsSaveData Clone()
         {
             return new StatisticsSaveData
@@ -38,7 +72,8 @@ namespace Corebound.SaveSystem
                 _totalRunsCompleted = _totalRunsCompleted,
                 _totalRunsFailed = _totalRunsFailed,
                 _highestStageReached = _highestStageReached,
-                _totalPlaytimeSeconds = _totalPlaytimeSeconds
+                _totalPlaytimeSeconds = _totalPlaytimeSeconds,
+                _collectedCardIds = _collectedCardIds != null ? new List<string>(_collectedCardIds) : new List<string>()
             };
         }
 

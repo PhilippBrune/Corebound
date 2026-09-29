@@ -91,6 +91,11 @@ namespace Corebound.Gameplay.Towers
             var isActive = _towerService != null && _towerService.IsBuildBrowserActive;
             var upgradeTarget = !isActive && _towerService != null ? _towerService.UpgradeCandidate : null;
 
+            if (isActive || upgradeTarget != null)
+            {
+                HandleCardClick(upgradeTarget != null);
+            }
+
             // Built tower under the player: the same card, showing the upgrade instead of the roster.
             if (upgradeTarget != null)
             {
@@ -133,6 +138,50 @@ namespace Corebound.Gameplay.Towers
                 _lastSelected = selected;
                 _refreshTimer = RefreshIntervalSeconds;
                 Refresh(selected);
+            }
+        }
+
+        // Playtest 2026-09-29: "check that I can click with the mouse everywhere." Clicking a card
+        // selects that tower; clicking the card that is already selected builds it, as Interact
+        // does. On a built tower the one card is the upgrade, and clicking it upgrades. The
+        // gameplay scene has no EventSystem, so the cards are hit-tested here.
+        private void HandleCardClick(bool upgradeMode)
+        {
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+
+            if (!_built || mouse == null || !mouse.leftButton.wasPressedThisFrame)
+            {
+                return;
+            }
+
+            var pointer = mouse.position.ReadValue();
+            var towers = _towerService.CatalogTowers;
+
+            for (var index = 0; index < _cards.Length; index++)
+            {
+                var card = _cards[index];
+
+                if (card == null || !card.Root.gameObject.activeInHierarchy
+                    || !RectTransformUtility.RectangleContainsScreenPoint(card.Root, pointer, null))
+                {
+                    continue;
+                }
+
+                var tower = !upgradeMode && towers != null && index < towers.Length ? towers[index] : null;
+
+                if (upgradeMode || tower == _towerService.SelectedBuildTower)
+                {
+                    if (_towerService.CanHandleInteract)
+                    {
+                        _towerService.HandleInteract();
+                    }
+                }
+                else
+                {
+                    _towerService.TrySelectBuildTower(tower);
+                }
+
+                return;
             }
         }
 
@@ -249,8 +298,8 @@ namespace Corebound.Gameplay.Towers
             }
 
             _hintText.text = LocalizationService.Resolve(
-                _towerService.PreviousTowerTypeKeyLabel + " / " + _towerService.NextTowerTypeKeyLabel + "  choose tower     " + _towerService.BuildInteractKeyLabel + "  build     " + _towerService.LoadoutKeyLabel + "  weapons",
-                _towerService.PreviousTowerTypeKeyLabel + " / " + _towerService.NextTowerTypeKeyLabel + "  Turm wählen     " + _towerService.BuildInteractKeyLabel + "  bauen     " + _towerService.LoadoutKeyLabel + "  Waffen");
+                _towerService.PreviousTowerTypeKeyLabel + " / " + _towerService.NextTowerTypeKeyLabel + " or click  choose tower     " + _towerService.BuildInteractKeyLabel + " or click again  build     " + _towerService.LoadoutKeyLabel + "  weapons",
+                _towerService.PreviousTowerTypeKeyLabel + " / " + _towerService.NextTowerTypeKeyLabel + " oder Klick  Turm wählen     " + _towerService.BuildInteractKeyLabel + " oder erneut klicken  bauen     " + _towerService.LoadoutKeyLabel + "  Waffen");
         }
 
         private void ApplyCard(CardView card, TowerData tower, bool isSelected, bool isUnlocked, float damageFraction, float rangeFraction)

@@ -73,6 +73,21 @@ namespace Corebound.Gameplay.Combat
 
         public float FireCooldownNormalized => ResolvePrimarySlot()?.CooldownNormalized ?? 0f;
 
+        // For the reticle's magazine arc: how full the primary weapon's magazine is, and how far
+        // through a reload it is (0 when not reloading).
+        public float PrimaryAmmoNormalized => ResolvePrimarySlot()?.AmmoNormalized ?? 1f;
+
+        public float PrimaryReloadProgress
+        {
+            get
+            {
+                var slot = ResolvePrimarySlot();
+                return slot != null && slot.IsReloading ? 1f - slot.ReloadNormalized : 0f;
+            }
+        }
+
+        public bool IsPrimaryReloading => ResolvePrimarySlot()?.IsReloading ?? false;
+
         public int ProjectileBudget => (_combatData != null ? _combatData.ProjectileBudget : 60)
             + (_loadout.IsArsenalActive && _combatData != null ? _combatData.ArsenalProjectileBudgetBonus : 0);
 

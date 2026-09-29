@@ -36,6 +36,16 @@ namespace Corebound.UI.MainMenu
         private Font _font;
         private Sprite _frameSprite;
         private UIManagedPanel _managedPanel;
+        private Image _panelImage;
+        private RectTransform _detailRect;
+        private RecordsPanelView _recordsView;
+        private bool _recordsLayoutApplied;
+
+        // Records (playtest 2026-09-29) needs room for a card grid, so it takes almost the whole
+        // screen and draws the frame's border thinner; every other panel keeps the sizes above.
+        private static readonly Vector2 RecordsPanelSize = new Vector2(1800f, 1020f);
+        private const float RecordsFrameScale = 1.6f;
+        private const float RecordsSideInset = 165f;
 
         private IMainMenuRouteTargetController RouteTargetController => _routeTargetControllerSource as IMainMenuRouteTargetController;
 
@@ -101,6 +111,7 @@ namespace Corebound.UI.MainMenu
             StretchToParent(_overlayRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
             var panel = CreateImage("RoutePanel", _presenterRoot, _frameSprite, _skinData != null ? _skinData.SelectedFrameTint : Color.white, ResolvePanelImageType(_frameSprite));
+            _panelImage = panel;
             _panelRect = panel.rectTransform;
             SetAnchoredBox(_panelRect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PanelWidth, PanelHeight));
 
@@ -121,6 +132,7 @@ namespace Corebound.UI.MainMenu
             var detailContainer = new GameObject("DetailContainer", typeof(RectTransform), typeof(VerticalLayoutGroup));
             detailContainer.transform.SetParent(_panelRect, false);
             var detailRect = detailContainer.GetComponent<RectTransform>();
+            _detailRect = detailRect;
             StretchToParent(detailRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(230f, 215f), new Vector2(-230f, -445f));
 
             _detailLayout = detailContainer.GetComponent<VerticalLayoutGroup>();
@@ -133,6 +145,43 @@ namespace Corebound.UI.MainMenu
 
             _footerText = CreateText("Footer", _panelRect, FooterFontSize, FontStyle.Italic, _skinData != null ? _skinData.IdleLabelColor : Color.white, TextAnchor.LowerRight);
             StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(230f, 140f), new Vector2(-230f, 195f));
+
+            _recordsView = new RecordsPanelView(
+                _panelRect,
+                _font,
+                _skinData != null ? _skinData.SelectedLabelColor : Color.white,
+                _skinData != null ? _skinData.IdleLabelColor : Color.white);
+            ApplyDefaultLayout();
+        }
+
+        // The layout every panel used before Records existed. Re-applied when Records closes so
+        // the next panel is exactly as it was.
+        private void ApplyDefaultLayout()
+        {
+            SetAnchoredBox(_panelRect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PanelWidth, PanelHeight));
+            _panelImage.pixelsPerUnitMultiplier = 1f;
+            StretchToParent(_titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -235f), new Vector2(-230f, -165f));
+            StretchToParent(_subtitleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -280f), new Vector2(-230f, -245f));
+            _summaryText.gameObject.SetActive(true);
+            StretchToParent(_detailRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(230f, 215f), new Vector2(-230f, -445f));
+            StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(230f, 140f), new Vector2(-230f, 195f));
+            _recordsLayoutApplied = false;
+        }
+
+        // Title, subtitle, a tab strip, then either the run rows or the card grid with one line
+        // describing the selected card beneath it. Distances are from the panel's top edge.
+        private void ApplyRecordsLayout()
+        {
+            SetAnchoredBox(_panelRect, new Vector2(0.5f, 0.5f), Vector2.zero, RecordsPanelSize);
+            _panelImage.pixelsPerUnitMultiplier = RecordsFrameScale;
+            var side = RecordsSideInset;
+            StretchToParent(_titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(side, -165f), new Vector2(-side, -105f));
+            StretchToParent(_subtitleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(side, -202f), new Vector2(-side, -168f));
+            _summaryText.gameObject.SetActive(false);
+            StretchToParent(_detailRect, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(side, 150f), new Vector2(-side, -280f));
+            StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(side, 100f), new Vector2(-side, 142f));
+            _recordsView.Layout(side, 212f, 262f, 282f, 815f, 822f, 890f);
+            _recordsLayoutApplied = true;
         }
 
         private void Refresh()
@@ -151,11 +200,33 @@ namespace Corebound.UI.MainMenu
                 return;
             }
 
+            var records = RouteTargetController as IRecordsViewSource;
+            var isRecords = records != null && records.ActivePanelRoute == MainMenuRoute.Records;
+
+            if (isRecords && !_recordsLayoutApplied)
+            {
+                ApplyRecordsLayout();
+            }
+            else if (!isRecords && _recordsLayoutApplied)
+            {
+                ApplyDefaultLayout();
+            }
+
             _titleText.text = panelData.Title;
             _subtitleText.text = panelData.Subtitle;
             _summaryText.text = panelData.Summary;
             _footerText.text = panelData.FooterHint;
             RebuildDetailLines(RouteTargetController.ActivePanelDetailLinesOverride ?? panelData.DetailLines);
+
+            if (isRecords)
+            {
+                _recordsView.Show(records);
+            }
+            else
+            {
+                _recordsView.Hide();
+            }
+
             UIManager.NotifyPanelChanged(_managedPanel);
         }
 
@@ -169,7 +240,7 @@ namespace Corebound.UI.MainMenu
         {
             var controller = RouteTargetController;
 
-            if (controller == null || controller.ActivePanelData == null || controller.ActivePanelSelectedIndex < 0)
+            if (controller == null || controller.ActivePanelData == null)
             {
                 return;
             }
@@ -187,6 +258,17 @@ namespace Corebound.UI.MainMenu
             var clicked = mouse.leftButton.wasPressedThisFrame;
 
             if (!moved && !clicked)
+            {
+                return;
+            }
+
+            if (controller is IRecordsViewSource records && records.ActivePanelRoute == MainMenuRoute.Records)
+            {
+                _recordsView.HandlePointer(records, pointer, moved, clicked);
+                return;
+            }
+
+            if (controller.ActivePanelSelectedIndex < 0)
             {
                 return;
             }
@@ -269,7 +351,8 @@ namespace Corebound.UI.MainMenu
                     ? (_skinData != null ? _skinData.SelectedLabelColor : Color.white)
                     : (_skinData != null ? _skinData.IdleLabelColor : Color.white);
                 var detailText = CreateText("Detail" + index, _detailLayout.transform as RectTransform, DetailFontSize, isSelected ? FontStyle.Bold : FontStyle.Normal, color, TextAnchor.UpperLeft);
-                detailText.text = (isSelected ? "> " : "- ") + detailLines[index];
+                // A blank line is a spacer; a bullet on it read as a stray dash (Records, 2026-09-29).
+                detailText.text = string.IsNullOrEmpty(detailLines[index]) ? string.Empty : (isSelected ? "> " : "- ") + detailLines[index];
                 detailText.horizontalOverflow = HorizontalWrapMode.Wrap;
                 detailText.verticalOverflow = VerticalWrapMode.Overflow;
 

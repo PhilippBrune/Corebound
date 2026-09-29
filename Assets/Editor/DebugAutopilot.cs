@@ -599,6 +599,7 @@ namespace Corebound.EditorTools
         private int _progressionStep = -1;
         private float _progressionTimer;
         private Corebound.MetaProgression.MetaProgressionRouteTargetController _progressionRoute;
+        private Corebound.UI.MainMenu.MainMenuRouteTargetController _menuRoute;
 
         private bool _ascensionTest;
 
@@ -697,10 +698,25 @@ namespace Corebound.EditorTools
             switch (action[0])
             {
                 case 'R':
-                    _progressionRoute.TryHandleNavigation(Vector2.right);
+                    // The shoulder-button path. Left/Right on a branch tab moves across the graph
+                    // first and only switches tab at its edge (N3), so it is no longer a reliable
+                    // "next tab" for a script.
+                    _progressionRoute.SwitchTab(1);
                     break;
                 case 'D':
                     _progressionRoute.TryHandleNavigation(Vector2.down);
+                    break;
+                case 'N':
+                    // "N<key>,<sub>": select a graph node directly, as a mouse hover does.
+                    var parts = action.Substring(1).Split(',');
+                    var row = _progressionRoute.FindGraphRow(int.Parse(parts[0]), int.Parse(parts[1]));
+                    _progressionRoute.TrySelectRow(row);
+                    break;
+                case 'M':
+                    // "M<u|d|l|r>": push the stick, and log where the selection landed.
+                    var direction = action[1] == 'u' ? Vector2.up : action[1] == 'd' ? Vector2.down : action[1] == 'l' ? Vector2.left : Vector2.right;
+                    var moved = _progressionRoute.TryHandleNavigation(direction);
+                    Debug.Log(DebugAutopilot.LogPrefix + " PROGRESSION stick " + action[1] + " moved=" + moved + " now on '" + _progressionRoute.SelectedLabel + "'");
                     break;
                 case 'C':
                     var bought = _progressionRoute.TryHandleConfirm();
@@ -716,6 +732,31 @@ namespace Corebound.EditorTools
                 case 'A':
                     // "ASC" is a marker, not an action.
                     break;
+                case 'O':
+                    // "Orecords": open the Records route panel.
+                    _menuRoute = _menuRoute != null ? _menuRoute : FindFirstObjectByType<Corebound.UI.MainMenu.MainMenuRouteTargetController>();
+                    _menuRoute?.DebugOpenRoute(action == "Osettings"
+                        ? Corebound.UI.MainMenu.MainMenuRoute.Settings
+                        : Corebound.UI.MainMenu.MainMenuRoute.Records);
+                    Debug.Log(DebugAutopilot.LogPrefix + " RECORDS opened=" + (_menuRoute != null && _menuRoute.ActivePanelRoute == Corebound.UI.MainMenu.MainMenuRoute.Records)
+                        + " cards=" + (_menuRoute != null ? _menuRoute.RecordsCards.Count : 0)
+                        + " collected=" + (_menuRoute != null ? _menuRoute.RecordsCollectedCount : 0));
+                    break;
+                case 'T':
+                    _menuRoute?.TryHandleTabSwitch(1);
+                    break;
+                case 'V':
+                    // "V<u|d|l|r>": navigate inside a route panel.
+                    var push = action[1] == 'u' ? Vector2.up : action[1] == 'd' ? Vector2.down : action[1] == 'l' ? Vector2.left : Vector2.right;
+                    _menuRoute?.TryHandleNavigation(push);
+                    break;
+                case 'K':
+                    _menuRoute?.TryHandleCancel();
+                    break;
+                case 'Z':
+                    // Close Progression without ending the script ('X' ends it).
+                    _progressionRoute.Close();
+                    break;
             }
 
             return true;
@@ -724,16 +765,19 @@ namespace Corebound.EditorTools
         // Tab order: Unlocks, Upgrades, Combat, Construction, Industry, Command, Ascension.
         // Unlocks: down to "Fifth Weapon Mount" (row 4) and buy it. Upgrades: row 0 is the Rapid
         // header, so the cursor starts on Rapid Damage - buy two ranks. Each branch: the root key
-        // node, three ranks of its first sub node, one of its second.
+        // node, three ranks of its first sub node, one of its second. Combat also walks the stick
+        // around the graph, so the log shows where each push lands.
         private static readonly string[] ProgressionScript =
         {
             "Sunlocks_before", "D", "D", "D", "D", "C", "Sunlocks_after",
             "R", "Supgrades_before", "C", "C", "Supgrades_after",
-            "R", "C", "D", "C", "C", "C", "D", "C", "Scombat",
-            "R", "C", "D", "C", "C", "C", "D", "C", "Sconstruction",
-            "R", "C", "D", "C", "C", "C", "D", "C", "Sindustry",
-            "R", "C", "D", "C", "C", "C", "D", "C", "Scommand",
+            "R", "C", "N0,0", "C", "C", "C", "N0,1", "C", "Scombat",
+            "N0,-1", "Mu", "Mu", "Ml", "Ml", "Mr", "Mr", "Mr", "Md", "Md", "Md", "Scombat_stick", "Mu",
+            "R", "C", "N0,0", "C", "C", "C", "N0,1", "C", "Sconstruction",
+            "R", "C", "N0,0", "C", "C", "C", "N0,1", "C", "Sindustry",
+            "R", "C", "N0,0", "C", "C", "C", "N0,1", "C", "Scommand",
             "R", "Sascension",
+            "Z", "Osettings", "Ssettings", "K", "Orecords", "Srecords_runs", "T", "Vr", "Vr", "Vd", "Srecords_cards", "K",
             "X",
             "ASC", "R", "R", "R", "R", "R", "R", "Sascension_before", "D", "C", "Sascension_after", "X", "Smenu_badge",
         };

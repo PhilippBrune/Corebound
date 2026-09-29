@@ -274,6 +274,7 @@ namespace Corebound.Gameplay.Cards
 
                 if (granted)
                 {
+                    RecordCardCollected(card);
                     _currentOffer.Clear();
                     StateChanged?.Invoke();
                 }
@@ -289,6 +290,7 @@ namespace Corebound.Gameplay.Cards
             _selectedCards.Add(card);
             RebuildModifierSnapshot();
             SaveSelectedCardsToRun();
+            RecordCardCollected(card);
             _currentOffer.Clear();
             StateChanged?.Invoke();
             return true;
@@ -362,6 +364,24 @@ namespace Corebound.Gameplay.Cards
             }
 
             RebuildModifierSnapshot();
+        }
+
+        // The Records collection (playtest 2026-09-29): every card that has ever been taken into
+        // a run on this profile. TryApplyCard is the one path by which a reward pick, a shop buy
+        // and a weapon card all arrive, so recording here covers them all.
+        private void RecordCardCollected(CardData card)
+        {
+            if (SaveManager == null || card == null)
+            {
+                return;
+            }
+
+            var statistics = SaveManager.LoadStatisticsSaveData(new StatisticsSaveData());
+
+            if (statistics != null && statistics.RecordCardCollected(card.CardId))
+            {
+                SaveManager.SaveStatisticsSaveData(statistics);
+            }
         }
 
         private void SaveSelectedCardsToRun()

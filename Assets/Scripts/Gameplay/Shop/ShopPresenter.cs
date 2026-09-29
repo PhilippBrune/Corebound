@@ -215,6 +215,12 @@ namespace Corebound.Gameplay.Shop
             _lastPointer = pointer;
             var clicked = mouse.leftButton.wasPressedThisFrame && Time.unscaledTime - _service.OpenedAtUnscaledTime > ClickGuardSeconds;
 
+            if (mouse.rightButton.wasPressedThisFrame && Time.unscaledTime - _service.OpenedAtUnscaledTime > ClickGuardSeconds)
+            {
+                _service.RequestSkip();
+                return;
+            }
+
             if (!moved && !clicked)
             {
                 return;

@@ -10,8 +10,8 @@ namespace Corebound.Gameplay.Shop
         [SerializeField] private string _titleDe = "Schmiedebörse";
         [SerializeField] [TextArea(2, 3)] private string _summary = "Spend Scrap on one targeted upgrade before tower placement.";
         [SerializeField] [TextArea(2, 3)] private string _summaryDe = "Gib Schrott für ein gezieltes Upgrade aus, bevor du Towers platzierst.";
-        [SerializeField] private string _footerHint = "Confirm buys. Cancel skips the shop.";
-        [SerializeField] private string _footerHintDe = "Bestätigen kauft. Abbrechen überspringt den Shop.";
+        [SerializeField] private string _footerHint = "Confirm or click buys. Cancel or right-click skips the shop.";
+        [SerializeField] private string _footerHintDe = "Bestätigen oder Klick kauft. Abbrechen oder Rechtsklick überspringt den Shop.";
 
         public string Title => LocalizationService.Resolve(_title, _titleDe);
 

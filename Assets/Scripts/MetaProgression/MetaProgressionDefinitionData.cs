@@ -42,6 +42,11 @@ namespace Corebound.MetaProgression
         [SerializeField] private WeaponCatalogData _upgradeWeapons;
         [SerializeField] private TowerCatalogData _upgradeTowers;
 
+        // Every card the Records collection lists, collected or not (playtest 2026-09-29). Lives
+        // here for the same reason as the catalogues above: it is the one asset the main menu
+        // already holds, and the menu otherwise has no route to the gameplay card pool.
+        [SerializeField] private Corebound.Gameplay.Cards.CardPoolData _cardCollection;
+
         public string MetaCurrencyLabel => Corebound.UI.LocalizationService.Resolve(_metaCurrencyLabel, _metaCurrencyLabelDe);
 
         public int BossFirstKillSkillPoints => Mathf.Max(0, _bossFirstKillSkillPoints);
@@ -57,6 +62,8 @@ namespace Corebound.MetaProgression
         public SkillTreeDefinitionData[] SkillTrees => _skillTrees;
 
         public WeaponCatalogData UpgradeWeapons => _upgradeWeapons;
+
+        public Corebound.Gameplay.Cards.CardPoolData CardCollection => _cardCollection;
 
         public TowerCatalogData UpgradeTowers => _upgradeTowers;
 

@@ -396,6 +396,7 @@ namespace Corebound.Gameplay.Waves
         private void Update()
         {
             UpdatePauseHover();
+            UpdateOverlayClicks();
 
             if (_bannerTimer > 0f)
             {
@@ -619,7 +620,7 @@ namespace Corebound.Gameplay.Waves
                     // (WaveManager.OnConfirmPressed no longer gates on RequiresIntermissionTowerAction
                     // - building is optional), so this no longer claims a tower action is required.
                     _stateText.text = _waveManager.RequiresIntermissionShopAction
-                        ? LocalizationService.Resolve("Shop | Confirm buys. Cancel skips.", "Shop | Bestätigen kauft. Abbrechen überspringt.")
+                        ? LocalizationService.Resolve("Shop | Confirm or click buys. Cancel or right-click skips.", "Shop | Bestätigen oder Klick kauft. Abbrechen oder Rechtsklick überspringt.")
                         : _waveManager.RequiresIntermissionTowerAction
                         ? LocalizationService.Resolve("Intermission | Optionally place or upgrade a tower. Confirm to continue.", "Zwischenphase | Optional einen Turm bauen oder verbessern. Bestätigen zum Fortfahren.")
                         : LocalizationService.Resolve("Intermission | ", "Zwischenphase | ") + _waveManager.IntermissionSecondsRemaining.ToString("0.0") + LocalizationService.Resolve("s or Confirm to continue.", "s oder Bestätigen zum Fortfahren.");
@@ -775,6 +776,8 @@ namespace Corebound.Gameplay.Waves
                     _pauseTabText.gameObject.SetActive(false);
                 }
 
+                SetPauseButtonsVisible(false);
+                _pauseBodyText.gameObject.SetActive(true);
                 return;
             }
 
@@ -797,7 +800,232 @@ namespace Corebound.Gameplay.Waves
                 new Vector2(gridInset, top - PauseTabBandHeight - contentHeight), new Vector2(-gridInset, top - PauseTabBandHeight));
             _pauseEffectsGrid.gameObject.SetActive(true);
             _pauseTabText.gameObject.SetActive(true);
-            _pauseTabText.text = BuildPauseTabStrip();
+            _pauseTabText.text = LocalizationService.Resolve("<size=15>(Q / Tab or LB / RB)</size>", "<size=15>(Q / Tab oder LB / RB)</size>");
+            LayoutPauseTabLabels();
+
+            // Resume and Main Menu as buttons in the instruction band; the old two-line
+            // instruction is what they replace, so their labels carry the keys.
+            _pauseBodyText.gameObject.SetActive(false);
+            SetPauseButtonsVisible(true);
+            PlacePauseButton(_pauseResumeButton, LocalizationService.Resolve("Resume   <size=15>(Pause / Cancel)</size>", "Weiter   <size=15>(Pause / Abbrechen)</size>"), -1f);
+            PlacePauseButton(_pauseMenuButton, LocalizationService.Resolve("Main Menu   <size=15>(Confirm)</size>", "Hauptmenü   <size=15>(Bestätigen)</size>"), 1f);
+        }
+
+        // ---- Mouse on the gameplay overlays (playtest 2026-09-29: "check that I can click with
+        // the mouse everywhere"). --------------------------------------------------------------
+        //
+        // The left mouse button is bound to PrimaryFire and nothing else, so no overlay here ever
+        // saw a click: the pause tabs were one line of text, and Resume / Main Menu existed only
+        // as a sentence about keys. The gameplay scene has no EventSystem (MainMenu owns the only
+        // one), so this hit-tests directly, as UpdatePauseHover already does for the perks.
+        //
+        // Start, Run Failed and tutorial beats each have exactly one action, so a click anywhere
+        // performs it - after a short grace, because these open in the middle of combat while the
+        // same button is being used to fire.
+        private const float OverlayClickGraceSeconds = 0.6f;
+        private static readonly Color PauseButtonColor = new Color(0.22f, 0.17f, 0.11f, 0.92f);
+        private static readonly Color PauseButtonHoverColor = new Color(0.55f, 0.33f, 0.08f, 0.96f);
+        private readonly Text[] _pauseTabLabels = new Text[4];
+        private Image _pauseResumeButton;
+        private Image _pauseMenuButton;
+        private float _overlayOpenedAt;
+
+        private void UpdateOverlayClicks()
+        {
+            if (_overlayMode == OverlayMode.None)
+            {
+                return;
+            }
+
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+
+            if (mouse == null)
+            {
+                return;
+            }
+
+            var pointer = mouse.position.ReadValue();
+
+            if (_overlayMode == OverlayMode.Pause)
+            {
+                HighlightPauseButton(_pauseResumeButton, pointer);
+                HighlightPauseButton(_pauseMenuButton, pointer);
+            }
+
+            var leftClick = mouse.leftButton.wasPressedThisFrame;
+            var rightClick = mouse.rightButton.wasPressedThisFrame;
+
+            if ((!leftClick && !rightClick) || Time.unscaledTime - _overlayOpenedAt < OverlayClickGraceSeconds)
+            {
+                return;
+            }
+
+            if (_overlayMode != OverlayMode.Pause)
+            {
+                if (leftClick)
+                {
+                    OnConfirmPressed();
+                }
+
+                return;
+            }
+
+            if (leftClick && HitsPauseButton(_pauseResumeButton, pointer))
+            {
+                OnCancelPressed();
+                return;
+            }
+
+            if (leftClick && HitsPauseButton(_pauseMenuButton, pointer))
+            {
+                OnConfirmPressed();
+                return;
+            }
+
+            for (var index = 0; leftClick && index < _pauseTabLabels.Length; index++)
+            {
+                var label = _pauseTabLabels[index];
+
+                if (label != null && label.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(label.rectTransform, pointer, null))
+                {
+                    if ((int)_pauseTab != index)
+                    {
+                        _pauseTab = (PauseTab)index;
+                        LayoutPauseOverlay(true);
+                    }
+
+                    return;
+                }
+            }
+
+            if (_pauseTab == PauseTab.Settings)
+            {
+                ClickPauseSetting(pointer, leftClick ? 1 : -1);
+            }
+        }
+
+        // The settings list is one multi-line Text, so the row under the pointer comes from the
+        // text generator's own line boxes rather than an assumed line height.
+        private void ClickPauseSetting(Vector2 pointer, int direction)
+        {
+            if (_pauseStatsLeft == null || _pauseSettingsCount == 0
+                || !RectTransformUtility.ScreenPointToLocalPointInRectangle(_pauseStatsLeft.rectTransform, pointer, null, out var local))
+            {
+                return;
+            }
+
+            var generator = _pauseStatsLeft.cachedTextGenerator;
+            var scale = _pauseStatsLeft.pixelsPerUnit;
+
+            for (var line = 0; line < generator.lineCount && line < _pauseSettingsCount; line++)
+            {
+                var info = generator.lines[line];
+                var top = info.topY / scale;
+                var bottom = top - info.height / scale;
+
+                if (local.y > top || local.y < bottom)
+                {
+                    continue;
+                }
+
+                if (line != _pauseSettingsIndex)
+                {
+                    _pauseSettingsIndex = line;
+                    LayoutPauseOverlay(true);
+                    return;
+                }
+
+                AdjustPauseSetting(direction);
+                return;
+            }
+        }
+
+        private void LayoutPauseTabLabels()
+        {
+            var names = new[]
+            {
+                LocalizationService.Resolve("Perks", "Perks"),
+                LocalizationService.Resolve("Player", "Spieler"),
+                LocalizationService.Resolve("Towers", "Türme"),
+                LocalizationService.Resolve("Settings", "Einstellungen"),
+            };
+
+            var widths = new float[names.Length];
+            var total = 0f;
+
+            for (var index = 0; index < names.Length; index++)
+            {
+                var active = index == (int)_pauseTab;
+                _pauseTabLabels[index].text = active ? "<b><color=#8A5200>[" + names[index] + "]</color></b>" : names[index];
+                widths[index] = _pauseTabLabels[index].preferredWidth + 10f;
+                total += widths[index] + (index > 0 ? 36f : 0f);
+            }
+
+            // Centred in the band, as the one-string strip was.
+            var x = (_pauseTabText.rectTransform.rect.width - total) * 0.5f;
+
+            for (var index = 0; index < names.Length; index++)
+            {
+                var rect = _pauseTabLabels[index].rectTransform;
+                rect.sizeDelta = new Vector2(widths[index], 0f);
+                rect.anchoredPosition = new Vector2(x, 0f);
+                x += widths[index] + 36f;
+            }
+        }
+
+        private Image CreatePauseButton(string name, RectTransform parent)
+        {
+            var button = CreateImage(name, parent, null, PauseButtonColor, Image.Type.Simple);
+            button.raycastTarget = false;
+            var label = CreateText(name + "Label", button.rectTransform, 20, TextAnchor.MiddleCenter, new Color(0.98f, 0.92f, 0.8f, 1f));
+            label.supportRichText = true;
+            StretchToParent(label.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            button.gameObject.SetActive(false);
+            return button;
+        }
+
+        // side: -1 left of centre, +1 right of centre, inside the instruction band.
+        private void PlacePauseButton(Image button, string label, float side)
+        {
+            if (button == null)
+            {
+                return;
+            }
+
+            var rect = button.rectTransform;
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(320f, 50f);
+            rect.anchoredPosition = new Vector2(side * 175f, FrameBorderBottom + 14f);
+            button.GetComponentInChildren<Text>().text = label;
+        }
+
+        private void SetPauseButtonsVisible(bool visible)
+        {
+            if (_pauseResumeButton != null)
+            {
+                _pauseResumeButton.gameObject.SetActive(visible);
+            }
+
+            if (_pauseMenuButton != null)
+            {
+                _pauseMenuButton.gameObject.SetActive(visible);
+            }
+        }
+
+        private static bool HitsPauseButton(Image button, Vector2 pointer)
+        {
+            return button != null && button.gameObject.activeInHierarchy
+                && RectTransformUtility.RectangleContainsScreenPoint(button.rectTransform, pointer, null);
+        }
+
+        private static void HighlightPauseButton(Image button, Vector2 pointer)
+        {
+            if (button != null && button.gameObject.activeInHierarchy)
+            {
+                button.color = HitsPauseButton(button, pointer) ? PauseButtonHoverColor : PauseButtonColor;
+            }
         }
 
         private void EnsurePauseContentWidgets(RectTransform panelRect)
@@ -811,8 +1039,21 @@ namespace Corebound.Gameplay.Waves
             _pauseEffectsGrid = gridObject.GetComponent<RectTransform>();
             _pauseEffectsGrid.SetParent(panelRect, false);
 
-            _pauseTabText = CreateText("PauseTabs", panelRect, 20, TextAnchor.MiddleCenter, PauseTextColor);
+            _pauseTabText = CreateText("PauseTabs", panelRect, 20, TextAnchor.MiddleRight, PauseTextColor);
             _pauseTabText.supportRichText = true;
+
+            for (var index = 0; index < _pauseTabLabels.Length; index++)
+            {
+                _pauseTabLabels[index] = CreateText("PauseTab" + index, _pauseTabText.rectTransform, 20, TextAnchor.MiddleLeft, PauseTextColor);
+                _pauseTabLabels[index].supportRichText = true;
+                var rect = _pauseTabLabels[index].rectTransform;
+                rect.anchorMin = new Vector2(0f, 0f);
+                rect.anchorMax = new Vector2(0f, 1f);
+                rect.pivot = new Vector2(0f, 0.5f);
+            }
+
+            _pauseResumeButton = CreatePauseButton("PauseResumeButton", panelRect);
+            _pauseMenuButton = CreatePauseButton("PauseMenuButton", panelRect);
 
             _pauseDescriptionText = CreateText("PauseDescription", _pauseEffectsGrid, 17, TextAnchor.UpperLeft, PauseTextColor);
             _pauseDescriptionText.supportRichText = true;
@@ -832,27 +1073,6 @@ namespace Corebound.Gameplay.Waves
             text.lineSpacing = 1.1f;
             StretchToParent(text.rectTransform, new Vector2(xMin, 0f), new Vector2(xMax, 1f), new Vector2(10f, 0f), new Vector2(-10f, -6f));
             return text;
-        }
-
-        private string BuildPauseTabStrip()
-        {
-            var names = new[]
-            {
-                LocalizationService.Resolve("Perks", "Perks"),
-                LocalizationService.Resolve("Player", "Spieler"),
-                LocalizationService.Resolve("Towers", "Türme"),
-                LocalizationService.Resolve("Settings", "Einstellungen"),
-            };
-            var builder = new System.Text.StringBuilder(96);
-
-            for (var index = 0; index < names.Length; index++)
-            {
-                builder.Append(index > 0 ? "      " : string.Empty);
-                builder.Append(index == (int)_pauseTab ? "<b><color=#8A5200>[" + names[index] + "]</color></b>" : names[index]);
-            }
-
-            builder.Append(LocalizationService.Resolve("      <size=15>(Q / Tab or LB / RB)</size>", "      <size=15>(Q / Tab oder LB / RB)</size>"));
-            return builder.ToString();
         }
 
         private float LayoutPerksTab()
@@ -2088,6 +2308,7 @@ namespace Corebound.Gameplay.Waves
         private void OpenOverlay(OverlayMode overlayMode, string title, string body)
         {
             _overlayMode = overlayMode;
+            _overlayOpenedAt = Time.unscaledTime;
 
             // Ownership of the freeze lives in GameplayTimeScaleGuard now (god-object refactor
             // step 1). The assignment used to sit here bare, a hundred lines from its matching

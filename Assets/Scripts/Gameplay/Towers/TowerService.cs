@@ -67,6 +67,10 @@ namespace Corebound.Gameplay.Towers
 
         public int BuiltTowerCount => _builtTowerIds.Count;
 
+        public IReadOnlyList<string> BuiltTowerIds => _builtTowerIds;
+
+        public IReadOnlyList<int> BuiltTowerUpgradeLevels => _builtTowerUpgradeLevels;
+
         public int CountBuiltTowersById(string towerId)
         {
             if (string.IsNullOrWhiteSpace(towerId))
@@ -789,6 +793,29 @@ namespace Corebound.Gameplay.Towers
 
             _selectedTowerTypeIndex = (_selectedTowerTypeIndex + direction + _unlockedTowerBuffer.Count) % _unlockedTowerBuffer.Count;
             UpdateSlotVisuals();
+        }
+
+        // Mouse on the build browser (playtest 2026-09-29): pick a tower type by clicking its card.
+        // Same rule as cycling - only at an empty slot, and only among unlocked towers.
+        public bool TrySelectBuildTower(TowerData tower)
+        {
+            if (tower == null || !CanHandleBuildInput() || _selectedSlotIndex < 0 || _selectedSlotIndex >= _runtimeSlots.Count
+                || _runtimeSlots[_selectedSlotIndex].HasTower)
+            {
+                return false;
+            }
+
+            ResolveUnlockedTowers(_unlockedTowerBuffer);
+            var index = _unlockedTowerBuffer.IndexOf(tower);
+
+            if (index < 0 || index == _selectedTowerTypeIndex)
+            {
+                return false;
+            }
+
+            _selectedTowerTypeIndex = index;
+            UpdateSlotVisuals();
+            return true;
         }
 
         private void ResolveUnlockedTowers(List<TowerData> buffer)
