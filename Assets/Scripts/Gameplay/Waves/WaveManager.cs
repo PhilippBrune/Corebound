@@ -156,6 +156,11 @@ namespace Corebound.Gameplay.Waves
 
         public ISaveManager SaveManagerSource => SaveManager;
 
+        // So sibling services (PlayerRepairService) can share the reader this component was
+        // wired with, rather than each one hunting for the right CoreboundInputReader - the
+        // MainMenu and gameplay scenes each carry one.
+        public UnityEngine.Object InputReaderSource => _inputReaderSource;
+
         public string StageId => _stageData != null ? _stageData.StageId : string.Empty;
 
         public string StageLabel => _stageData != null ? _stageData.DisplayName : string.Empty;

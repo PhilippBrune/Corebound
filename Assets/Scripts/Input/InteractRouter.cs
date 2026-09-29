@@ -16,6 +16,11 @@ namespace Corebound.Input
     public enum InteractPriority
     {
         CoreGuard = 10,
+
+        // HP recovery (2026-09-28) shares the Core's position and verb, so it needs a rank of its
+        // own: below repairing the Core, because losing the Core ends the run and a player standing
+        // at a damaged Core with damaged health should mend the Core first.
+        PlayerRepair = 15,
         CoreRepair = 20,
         TowerSlot = 30
     }

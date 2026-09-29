@@ -646,6 +646,27 @@ namespace Corebound.Gameplay.Combat
             return true;
         }
 
+        // Adds a fraction of maximum health rather than setting it, which is what a repair means -
+        // RestoreHealthNormalized assigns outright and would *lower* a player who is healthier than
+        // the fraction. Returns false when already full, so the caller can refuse to charge.
+        public bool TryRestoreHealthFraction(float fraction)
+        {
+            if (_runtime == null || fraction <= 0f || !_runtime.IsAlive)
+            {
+                return false;
+            }
+
+            var current = CurrentHealthNormalized;
+
+            if (current >= 0.999f)
+            {
+                return false;
+            }
+
+            _runtime.RestoreHealthNormalized(Mathf.Clamp01(current + fraction));
+            return true;
+        }
+
         private bool ApplyStatusTick(float deltaTime)
         {
             var tickDamage = _runtime.AdvanceStatuses(deltaTime);

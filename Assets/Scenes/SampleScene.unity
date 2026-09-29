@@ -340,6 +340,7 @@ GameObject:
   - component: {fileID: 100002031}
   - component: {fileID: 100002032}
   - component: {fileID: 100002033}
+  - component: {fileID: 100002034}
   m_Layer: 0
   m_Name: CombatRuntime
   m_TagString: Untagged
@@ -1306,6 +1307,28 @@ MonoBehaviour:
   _repairFraction: 0.25
   _baseRepairCost: 14
   _repeatCostMultiplier: 1.5
+--- !u!114 &100002034
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100002000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d15b992482d16a94a96754358f45975b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _waveManager: {fileID: 0}
+  _economyService: {fileID: 0}
+  _playerCombatController: {fileID: 0}
+  _coreRepairService: {fileID: 100002033}
+  _inputReaderSource: {fileID: 100001002}
+  _playerTransform: {fileID: 0}
+  _interactRadius: 2.4
+  _repairFraction: 0.3
+  _baseRepairCost: 10
+  _repeatCostMultiplier: 1.45
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
