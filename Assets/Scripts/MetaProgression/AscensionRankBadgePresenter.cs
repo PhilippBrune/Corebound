@@ -46,7 +46,9 @@ namespace Corebound.MetaProgression
                 return;
             }
 
-            var rank = _service.AscensionRank;
+            // Levelling v3: the medallion marks Paragon levels, the post-cap progress that Ascension
+            // is bought with. Hidden until the first one.
+            var rank = _service.ParagonLevel;
 
             if (rank == _renderedRank)
             {
@@ -56,7 +58,7 @@ namespace Corebound.MetaProgression
             _renderedRank = rank;
             _group.alpha = rank > 0 ? 1f : 0f;
             _rankText.text = rank.ToString();
-            _labelText.text = LocalizationService.Resolve("Ascension", "Aufstieg");
+            _labelText.text = "Paragon";
         }
 
         private void Build()

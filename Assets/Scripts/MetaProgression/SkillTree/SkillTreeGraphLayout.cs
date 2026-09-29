@@ -26,10 +26,23 @@ namespace Corebound.MetaProgression.SkillTree
         public const float SubNodeSize = 46f;
         public const float PortraitSize = 150f;
 
-        // Middle of a branch's key-node chain, for centring the view on it.
+        // The Ascension ring (P7-3) sits one tier past the last key node, its bonuses side by side
+        // across the branch axis.
+        public const float RingNodeSize = 60f;
+        public const float RingSpacing = 120f;
+
+        // Middle of a branch from its first key node to its Ascension ring, for centring the view.
         public static Vector2 BranchCentre(int branchIndex, int branchCount, int keyNodeCount)
         {
-            return BranchAxis(branchIndex, branchCount) * (BranchRadius + Mathf.Max(0, keyNodeCount - 1) * TierStep * 0.5f);
+            return BranchAxis(branchIndex, branchCount) * (BranchRadius + Mathf.Max(0, keyNodeCount) * TierStep * 0.5f);
+        }
+
+        public static Vector2 RingNode(int branchIndex, int branchCount, int keyNodeCount, int slot, int slotCount)
+        {
+            var axis = BranchAxis(branchIndex, branchCount);
+            var across = new Vector2(-axis.y, axis.x);
+            var offset = (slot - (Mathf.Max(1, slotCount) - 1) * 0.5f) * RingSpacing;
+            return axis * (BranchRadius + keyNodeCount * TierStep) + across * offset;
         }
 
         public static Vector2 BranchAxis(int branchIndex, int branchCount)

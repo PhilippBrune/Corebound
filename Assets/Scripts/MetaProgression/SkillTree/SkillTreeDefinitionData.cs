@@ -160,7 +160,13 @@ namespace Corebound.MetaProgression
         [SerializeField] private string _displayNameDe = "+2 % Waffenschaden";
         [SerializeField] private SkillEffectData _effect = new SkillEffectData();
 
+        // Which branch's Ascension ring this bonus sits on (P7-3, 2026-09-29). The ring is the
+        // repeatable half of Ascension, bought with Ascension Points past the level cap.
+        [SerializeField] private string _branchId = string.Empty;
+
         public string BonusId => _bonusId;
+
+        public string BranchId => _branchId;
 
         public string DisplayName => LocalizationService.Resolve(_displayName, _displayNameDe);
 
@@ -183,7 +189,6 @@ namespace Corebound.MetaProgression
         [SerializeField] private int _treeVersion = 1;
         [SerializeField] private SkillBranchData[] _branches = Array.Empty<SkillBranchData>();
         [SerializeField] private AscensionBonusData[] _ascensionPool = Array.Empty<AscensionBonusData>();
-        [SerializeField] private int _ascensionBaseCost = 5;
         [SerializeField] private int _ascensionOfferCount = 3;
 
         // Price of every respec after the free one per tree version. Not specified by the owner;
@@ -204,10 +209,30 @@ namespace Corebound.MetaProgression
 
         public int PaidRespecAlloyCost => Mathf.Max(0, _paidRespecAlloyCost);
 
-        // SkillTree.md: rank n costs 5 + floor(n / 10), so the curve stretches rather than walls.
-        public int AscensionCostForRank(int currentRank)
+        // A Keystone (the choice of three every tenth Paragon level) applies its bonus this many
+        // times: "the existing choice-of-three offer, with stronger bonuses" (P7-3).
+        [SerializeField] private int _keystoneStrength = 5;
+
+        public int KeystoneStrength => Mathf.Max(1, _keystoneStrength);
+
+        // A ring rank costs 1 Ascension Point, rising by one every ten ranks of the same bonus: the
+        // track stays endless, as the vision asks, but no single bonus runs away from the others.
+        public static int AscensionNodeCost(int currentRank)
         {
-            return Mathf.Max(1, _ascensionBaseCost) + Mathf.Max(0, currentRank) / 10;
+            return 1 + Mathf.Max(0, currentRank) / 10;
+        }
+
+        public void CollectAscensionBonuses(string branchId, System.Collections.Generic.List<AscensionBonusData> into)
+        {
+            into.Clear();
+
+            for (var index = 0; _ascensionPool != null && index < _ascensionPool.Length; index++)
+            {
+                if (_ascensionPool[index] != null && _ascensionPool[index].BranchId == branchId)
+                {
+                    into.Add(_ascensionPool[index]);
+                }
+            }
         }
 
         public AscensionBonusData FindAscensionBonus(string bonusId)

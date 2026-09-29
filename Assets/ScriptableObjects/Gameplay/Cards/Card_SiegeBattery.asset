@@ -20,7 +20,7 @@ MonoBehaviour:
   _rarity: 2
   _requiredUnlockId:
   _tags:
-  - 2
+  - 0
   _effects: []
   _weaponModifiers:
   - {fileID: 11400000, guid: f3ea4ffc0083c3f43ad3ceab6fee6df7, type: 2}

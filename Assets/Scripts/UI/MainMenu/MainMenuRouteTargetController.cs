@@ -465,9 +465,8 @@ namespace Corebound.UI.MainMenu
             return step != 0 && next >= 0 && next < _recordsCards.Count && TrySelectRecordsCard(next);
         }
 
-        // "Collected" is the union of the new per-profile record and everything the profile could
-        // already prove before it existed: cards in any history entry and in the run in progress.
-        // Without the backfill every existing profile would open onto a wall of blurred cards.
+        // "Collected" comes from CardCollectionRecord, the same source the "collect every card"
+        // quest reads, so the grid and the quest can never disagree.
         private void RefreshRecordsCards()
         {
             _recordsCards.Clear();
@@ -480,24 +479,7 @@ namespace Corebound.UI.MainMenu
             }
 
             var collected = new System.Collections.Generic.HashSet<string>();
-            var statistics = SaveManager != null ? SaveManager.LoadStatisticsSaveData(new SaveSystem.StatisticsSaveData()) : null;
-            AddAll(collected, statistics != null ? statistics.CollectedCardIds : null);
-            var history = SaveManager != null ? SaveManager.LoadRunHistorySaveData() : null;
-
-            if (history != null && history.Entries != null)
-            {
-                for (var index = 0; index < history.Entries.Count; index++)
-                {
-                    AddAll(collected, history.Entries[index] != null ? history.Entries[index].CardIds : null);
-                }
-            }
-
-            var runSaveData = SaveManager != null ? SaveManager.LoadRunSaveData() : null;
-
-            if (runSaveData != null && runSaveData.HasActiveRun)
-            {
-                AddAll(collected, runSaveData.SelectedCardIds);
-            }
+            CardCollectionRecord.ResolveCollectedIds(SaveManager, collected);
 
             for (var index = 0; index < pool.Cards.Length; index++)
             {
@@ -515,22 +497,6 @@ namespace Corebound.UI.MainMenu
                 var byRarity = left.Card.Rarity.CompareTo(right.Card.Rarity);
                 return byRarity != 0 ? byRarity : string.CompareOrdinal(left.Card.DisplayName, right.Card.DisplayName);
             });
-        }
-
-        private static void AddAll(System.Collections.Generic.HashSet<string> set, System.Collections.Generic.IReadOnlyList<string> ids)
-        {
-            if (ids == null)
-            {
-                return;
-            }
-
-            for (var index = 0; index < ids.Count; index++)
-            {
-                if (!string.IsNullOrEmpty(ids[index]))
-                {
-                    set.Add(ids[index]);
-                }
-            }
         }
 
         // The rows the route panel draws while the profile panel is open; null for every other
@@ -572,7 +538,7 @@ namespace Corebound.UI.MainMenu
 
                     var detail = !summary.IsUsed
                         ? LocalizationService.Resolve("empty", "leer")
-                        : LocalizationService.Resolve("Ascension ", "Aufstieg ") + summary.AscensionRank
+                        : summary.ProgressLabel
                             + "  ·  " + summary.Alloy + LocalizationService.Resolve(" Alloy", " Legierung")
                             + "  ·  " + summary.SkillPoints + " SP"
                             + (summary.HasRun

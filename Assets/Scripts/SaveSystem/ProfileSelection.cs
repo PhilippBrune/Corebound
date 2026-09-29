@@ -65,10 +65,12 @@ namespace Corebound.SaveSystem
         // What the menu shows per row, so three profiles are told apart without opening them.
         public readonly struct ProfileSummary
         {
-            public ProfileSummary(bool isUsed, int ascensionRank, int alloy, int skillPoints, bool hasRun, int runStageIndex)
+            public ProfileSummary(bool isUsed, int ascensionRank, int alloy, int skillPoints, bool hasRun, int runStageIndex, int level = 1, int paragonLevel = 0)
             {
                 IsUsed = isUsed;
                 AscensionRank = ascensionRank;
+                Level = level;
+                ParagonLevel = paragonLevel;
                 Alloy = alloy;
                 SkillPoints = skillPoints;
                 HasRun = hasRun;
@@ -86,6 +88,16 @@ namespace Corebound.SaveSystem
             public bool HasRun { get; }
 
             public int RunStageIndex { get; }
+
+            public int Level { get; }
+
+            public int ParagonLevel { get; }
+
+            // "Level 12", or "Paragon 3" past the cap - how far a profile has come, which is what
+            // the old "Ascension N" label stood for before Ascension moved behind the cap.
+            public string ProgressLabel => Level >= MetaProgressionSaveData.MaxLevel
+                ? "Paragon " + ParagonLevel
+                : Corebound.UI.LocalizationService.Resolve("Level ", "Stufe ") + Level;
         }
 
         // Wipes a profile's four save files. The folder is kept so the next run writes into a
@@ -134,7 +146,9 @@ namespace Corebound.SaveSystem
                 meta != null ? meta.AlloyBalance : 0,
                 meta != null ? meta.SkillPointsAvailable : 0,
                 run != null,
-                run != null ? run.StageIndex : 0);
+                run != null ? run.StageIndex : 0,
+                meta != null ? meta.Level : 1,
+                meta != null ? meta.ParagonLevel : 0);
         }
 
         private static T ReadJson<T>(string path) where T : class

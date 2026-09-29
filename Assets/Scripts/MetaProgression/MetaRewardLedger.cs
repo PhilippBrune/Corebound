@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Corebound.SaveSystem;
 
@@ -22,8 +23,9 @@ namespace Corebound.MetaProgression
         public bool IsEmpty => SkillPoints <= 0 && Alloy <= 0;
     }
 
-    // The single place Skill Points and Alloy are paid (owner decision 2026-09-22: both come from
-    // bosses and elites, SP from bosses only, on a curve that grows with stage depth).
+    // The single place XP and Alloy are paid during a run. Alloy comes from bosses and elites
+    // (owner decision 2026-09-22). Skill Points come only from levels and quests since 2026-09-29
+    // (P3-2): bosses pay an XP lump instead, and a boss's first kill completes its quest.
     //
     // Written straight to the save at the moment of the kill rather than at run end, so a run that
     // beats the Stage 2 boss and then dies keeps what it earned - that is what makes going deeper
@@ -33,8 +35,9 @@ namespace Corebound.MetaProgression
     {
         public static event Action<MetaRewardGrant> RewardGranted;
 
-        // See GrantBossDefeat: levels supply the difference.
-        private const float BossSkillPointScale = 0.67f;
+        // P3-2: "a repeat kill pays a large XP lump (suggested 300 x stage)". Every kill pays it,
+        // the first one too, so the bar visibly jumps when a boss falls.
+        public const int BossExperiencePerStage = 300;
 
         // What the current run has earned so far, for the Run Failed screen (playtest 2026-09-22:
         // "add to Run Failed the earned resources"). Reset by WaveManager when a run's scene loads;
@@ -101,8 +104,12 @@ namespace Corebound.MetaProgression
         public const int ExperiencePerWaveCleared = 18;
         public const int ExperiencePerStageCleared = 140;
 
-        // Fired once per level crossed so the HUD can toast without the save layer knowing about UI.
-        public static event Action<int> LevelGained;
+        // Fired once per level crossed, with the Skill Points that level paid (2, or 5 on a tenth
+        // level), so the HUD can toast without the save layer knowing about UI.
+        public static event Action<int, int> LevelGained;
+
+        // Fired once per Paragon level crossed past the cap; each pays one Ascension Point.
+        public static event Action<int> ParagonLevelGained;
 
         public static void GrantExperience(ISaveManager saveManager, MetaProgressionDefinitionData definition, int amount)
         {
@@ -118,12 +125,44 @@ namespace Corebound.MetaProgression
                 return;
             }
 
-            var levelsGained = saveData.GrantExperience(amount);
+            var result = saveData.GrantExperience(amount);
             saveManager.SaveMetaProgressionSaveData(saveData);
+            AnnounceExperience(saveData, result);
+        }
 
-            for (var index = 0; index < levelsGained; index++)
+        // One enemy kill: its XP and, when a player weapon landed the blow, that weapon's kill quest.
+        // One load and one write for both - this runs on every kill of every wave.
+        public static void RecordEnemyKill(ISaveManager saveManager, MetaProgressionDefinitionData definition, string weaponId)
+        {
+            if (saveManager == null || definition == null || IsTutorialRun(saveManager))
             {
-                LevelGained?.Invoke(saveData.Level - levelsGained + index + 1);
+                return;
+            }
+
+            var saveData = saveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
+
+            if (saveData == null)
+            {
+                return;
+            }
+
+            var result = saveData.GrantExperience(ExperiencePerKill);
+            QuestLedger.RecordWeaponKill(saveData, definition, weaponId);
+            saveManager.SaveMetaProgressionSaveData(saveData);
+            AnnounceExperience(saveData, result);
+        }
+
+        private static void AnnounceExperience(MetaProgressionSaveData saveData, MetaProgressionSaveData.ExperienceResult result)
+        {
+            for (var index = 0; index < result.LevelsGained; index++)
+            {
+                var level = saveData.Level - result.LevelsGained + index + 1;
+                LevelGained?.Invoke(level, MetaProgressionSaveData.ResolveSkillPointsForLevel(level));
+            }
+
+            for (var index = 0; index < result.ParagonLevelsGained; index++)
+            {
+                ParagonLevelGained?.Invoke(saveData.ParagonLevel - result.ParagonLevelsGained + index + 1);
             }
         }
 
@@ -136,19 +175,23 @@ namespace Corebound.MetaProgression
 
             var saveData = saveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
             var isFirstKill = saveData.RecordBossDefeated(bossId);
-            // The balance note in the levelling design, applied: levels are now a second SP source,
-            // so boss SP comes down by a third rather than the two stacking and trivialising the
-            // tree. The total across a run should stay near what it was; the distribution is what
-            // changes, from one lump per boss to a steadier trickle.
-            var skillPoints = Mathf.RoundToInt(
-                (definition.ResolveBossSkillPoints(stageIndex) + (isFirstKill ? definition.BossFirstKillSkillPoints : 0)) * BossSkillPointScale);
             var alloy = definition.ResolveBossAlloy(stageIndex) + (isFirstKill ? definition.BossFirstKillAlloy : 0);
-            saveData.GrantSkillPoints(skillPoints);
             saveData.GrantAlloy(alloy);
 
-            var grant = new MetaRewardGrant(skillPoints, alloy, isFirstKill);
+            // P3-2: no SP from the boss itself. The first kill completes "Defeat the Stage N boss",
+            // which pays its SP and toasts on its own; every kill pays an XP lump.
+            var skillPointsBefore = saveData.SkillPointsEarned;
+
+            if (isFirstKill)
+            {
+                QuestLedger.RecordBossFirstKill(saveData, definition, stageIndex);
+            }
+
+            var experience = saveData.GrantExperience(BossExperiencePerStage * Mathf.Max(1, stageIndex));
+            var grant = new MetaRewardGrant(saveData.SkillPointsEarned - skillPointsBefore, alloy, isFirstKill);
             TryShowMetaCurrencyHint(saveManager, saveData, grant);
             saveManager.SaveMetaProgressionSaveData(saveData);
+            AnnounceExperience(saveData, experience);
             Record(grant);
             return grant;
         }
@@ -171,7 +214,9 @@ namespace Corebound.MetaProgression
         }
 
         // WeaponLoadout.md: weapon slot 2 unlocks permanently on the first stage cleared in any run.
-        public static void RecordStageCleared(ISaveManager saveManager, MetaProgressionDefinitionData definition, bool completedFullRun)
+        // slotWeaponIds is the loadout at the moment of clearing, for the "clear the game carrying
+        // six of one weapon" quests; only read when the run is complete.
+        public static void RecordStageCleared(ISaveManager saveManager, MetaProgressionDefinitionData definition, bool completedFullRun, IReadOnlyList<string> slotWeaponIds = null)
         {
             if (saveManager == null)
             {
@@ -184,6 +229,11 @@ namespace Corebound.MetaProgression
             if (completedFullRun)
             {
                 saveData.MarkFullRunCompleted();
+
+                if (!IsTutorialRun(saveManager))
+                {
+                    QuestLedger.RecordGameCleared(saveData, definition, slotWeaponIds);
+                }
             }
 
             saveManager.SaveMetaProgressionSaveData(saveData);

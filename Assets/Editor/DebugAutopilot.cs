@@ -679,8 +679,13 @@ namespace Corebound.EditorTools
                     }
 
                     service.Commit();
+
+                    // Levelling v3: Ascension opens at the level cap and a Keystone needs ten
+                    // Paragon levels. 168,360 XP reaches level 70; 25,000 more is ten Paragon levels.
+                    service.DebugGrantExperience(168360 + 25000);
                     Debug.Log(DebugAutopilot.LogPrefix + " ASCENSION tree filled: " + bought + " purchases, complete="
-                        + Corebound.MetaProgression.SkillTreeRules.IsTreeComplete(save, tree) + " SP left=" + save.SkillPointsAvailable);
+                        + Corebound.MetaProgression.SkillTreeRules.IsTreeComplete(save, tree) + " SP left=" + save.SkillPointsAvailable
+                        + " level=" + save.Level + " paragon=" + save.ParagonLevel + " AP=" + save.AscensionPointsAvailable + " keystones=" + save.KeystonesAvailable);
                     _progressionRoute.Open();
                     _progressionStep = System.Array.IndexOf(ProgressionScript, "ASC");
                     return true;
@@ -779,7 +784,7 @@ namespace Corebound.EditorTools
             "R", "Sascension",
             "Z", "Osettings", "Ssettings", "K", "Orecords", "Srecords_runs", "T", "Vr", "Vr", "Vd", "Srecords_cards", "K",
             "X",
-            "ASC", "R", "R", "R", "R", "R", "R", "Sascension_before", "D", "C", "Sascension_after", "X", "Smenu_badge",
+            "ASC", "R", "R", "N4,0", "C", "Scombat_ring", "R", "R", "R", "R", "Sascension_before", "D", "C", "Sascension_after", "R", "Squests", "X", "Smenu_badge",
         };
 
         private void TickWaitForMainMenu()

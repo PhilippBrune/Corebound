@@ -257,6 +257,10 @@ namespace Corebound.Gameplay.Waves
             EnsureRunTimer();
             MetaRewardLedger.LevelGained -= OnLevelGained;
             MetaRewardLedger.LevelGained += OnLevelGained;
+            MetaRewardLedger.ParagonLevelGained -= OnParagonLevelGained;
+            MetaRewardLedger.ParagonLevelGained += OnParagonLevelGained;
+            CardService.CardCollectedFirstTime -= OnCardCollectedFirstTime;
+            CardService.CardCollectedFirstTime += OnCardCollectedFirstTime;
             InitializeFromSave();
         }
 
@@ -300,6 +304,8 @@ namespace Corebound.Gameplay.Waves
         private void OnDisable()
         {
             MetaRewardLedger.LevelGained -= OnLevelGained;
+            MetaRewardLedger.ParagonLevelGained -= OnParagonLevelGained;
+            CardService.CardCollectedFirstTime -= OnCardCollectedFirstTime;
             CombatEvents.CombatantDied -= OnCombatantDied;
 
             if (InputReader != null)
@@ -818,7 +824,7 @@ namespace Corebound.Gameplay.Waves
             StageEvents.RaiseStageCompleted(CreateStageEventArgs(WaveEncounterLabelResolver.ResolveStageCompletionLabel(_stageData)));
             StageEvents.RaiseStageTransitioned(CreateStageEventArgs(WaveEncounterLabelResolver.ResolveStageTransitionLabel(_stageData)));
 
-            MetaRewardLedger.RecordStageCleared(SaveManager, _metaProgressionDefinitionData, ShouldEndRunOnCompletion());
+            MetaRewardLedger.RecordStageCleared(SaveManager, _metaProgressionDefinitionData, ShouldEndRunOnCompletion(), CaptureLoadoutSlots());
             MetaRewardLedger.GrantExperience(SaveManager, _metaProgressionDefinitionData, MetaRewardLedger.ExperiencePerStageCleared);
 
             if (ShouldEndRunOnCompletion())
@@ -1010,7 +1016,7 @@ namespace Corebound.Gameplay.Waves
                 if (helperEnemy != null)
                 {
                     SpawnResourcePickup(ResolveKillScrap(helperEnemy), eventArgs.Victim.transform.position);
-                    RecordEnemyKillStatistic();
+                    RecordEnemyKillStatistic(eventArgs.DamageContext);
                     GrantEliteKillReward(helperEnemy);
 
                     if (helperEnemy.IsRangedPressureRole)
@@ -1037,7 +1043,7 @@ namespace Corebound.Gameplay.Waves
             }
 
             SpawnResourcePickup(ResolveKillScrap(enemy), eventArgs.Victim.transform.position);
-            RecordEnemyKillStatistic();
+            RecordEnemyKillStatistic(eventArgs.DamageContext);
             GrantEliteKillReward(enemy);
 
             if (enemy.IsRangedPressureRole)
@@ -1072,7 +1078,9 @@ namespace Corebound.Gameplay.Waves
                 }
 
                 SpawnResourcePickup(enemy.ResourceRewardAmount, enemy.transform.position);
-                RecordEnemyKillStatistic();
+
+                // No weapon landed these; they fell with the boss, so no kill quest advances.
+                RecordEnemyKillStatistic(default);
                 enemy.gameObject.SetActive(false);
             }
 
@@ -1109,20 +1117,56 @@ namespace Corebound.Gameplay.Waves
             pickup.Initialize(amount, position, _playerTarget, _resourceWalletService);
         }
 
-        private void RecordEnemyKillStatistic()
+        private void RecordEnemyKillStatistic(DamageContext killingBlow)
         {
             WaveStatisticsRecorder.RecordEnemyKill(SaveManager);
             _runEnemiesKilled += 1;
-            MetaRewardLedger.GrantExperience(SaveManager, _metaProgressionDefinitionData, MetaRewardLedger.ExperiencePerKill);
+
+            // The weapon-kill quests count only what a player weapon finished; towers and the Core
+            // do not advance them.
+            var weaponId = killingBlow.SourceType == DamageSourceType.Player ? killingBlow.SourceId : null;
+            MetaRewardLedger.RecordEnemyKill(SaveManager, _metaProgressionDefinitionData, weaponId);
         }
 
         // A toast, never an overlay: levelling up mid-combat must not touch Time.timeScale
         // (levelling L4, and Vision section 19's readability boundary).
-        private void OnLevelGained(int newLevel)
+        private void OnLevelGained(int newLevel, int skillPoints)
         {
             Corebound.UI.NotificationPresenter.Show(LocalizationService.Resolve(
-                "Level " + newLevel + " - +1 Skill Point",
-                "Level " + newLevel + " - +1 Skillpunkt"));
+                "Level " + newLevel + " - +" + skillPoints + " Skill Points",
+                "Level " + newLevel + " - +" + skillPoints + " Skillpunkte")
+                + (newLevel >= MetaProgressionSaveData.MaxLevel
+                    ? LocalizationService.Resolve(" - level cap reached, Ascension unlocked", " - Höchststufe erreicht, Aufstieg freigeschaltet")
+                    : string.Empty));
+        }
+
+        private void OnCardCollectedFirstTime(string cardId)
+        {
+            if (SaveManager == null || _metaProgressionDefinitionData == null)
+            {
+                return;
+            }
+
+            var runSaveData = SaveManager.LoadRunSaveData();
+
+            if (runSaveData != null && runSaveData.IsTutorialRun)
+            {
+                return;
+            }
+
+            var saveData = SaveManager.LoadMetaProgressionSaveData(_metaProgressionDefinitionData.CreateDefaultSaveData());
+            QuestLedger.EvaluateCardCollection(saveData, _metaProgressionDefinitionData, SaveManager);
+            SaveManager.SaveMetaProgressionSaveData(saveData);
+        }
+
+        private void OnParagonLevelGained(int paragonLevel)
+        {
+            Corebound.UI.NotificationPresenter.Show(LocalizationService.Resolve(
+                "Paragon " + paragonLevel + " - +1 Ascension Point",
+                "Paragon " + paragonLevel + " - +1 Aufstiegspunkt")
+                + (paragonLevel % MetaProgressionSaveData.MilestoneLevelInterval == 0
+                    ? LocalizationService.Resolve(" - a Keystone is ready", " - ein Schlüsselstein ist bereit")
+                    : string.Empty));
         }
 
         private void RecordRunOutcomeStatistic(bool completed)
@@ -1190,6 +1234,29 @@ namespace Corebound.Gameplay.Waves
         private readonly List<string> _historyWeaponIds = new List<string>();
         private readonly List<int> _historyWeaponTiers = new List<int>();
         private PlayerCombatController _historyPlayer;
+
+        // Every slot's weapon id, empty ones included, for the "clear the game carrying six" quests.
+        private readonly List<string> _slotWeaponIds = new List<string>();
+
+        private IReadOnlyList<string> CaptureLoadoutSlots()
+        {
+            _slotWeaponIds.Clear();
+
+            if (_historyPlayer == null && _playerTarget != null)
+            {
+                _historyPlayer = _playerTarget.GetComponentInParent<PlayerCombatController>();
+            }
+
+            var loadout = _historyPlayer != null ? _historyPlayer.Loadout : null;
+
+            for (var index = 0; loadout != null && index < Corebound.Gameplay.Weapons.WeaponLoadoutRuntime.Capacity; index++)
+            {
+                var slot = loadout.GetSlot(index);
+                _slotWeaponIds.Add(slot != null && !slot.IsEmpty ? slot.Weapon.WeaponId : string.Empty);
+            }
+
+            return _slotWeaponIds;
+        }
 
         // The loadout and towers as they are at the moment the run ends, from the live objects.
         private RunHistoryRecorder.RunBuild CaptureRunBuild()

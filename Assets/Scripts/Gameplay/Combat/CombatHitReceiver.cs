@@ -163,6 +163,10 @@ namespace Corebound.Gameplay.Combat
             UpdateFlash(Time.deltaTime);
         }
 
+        // The weapon behind the latest player hit, so a burn or freeze tick that finishes the
+        // target is credited to that weapon's kill quest (2026-09-29).
+        private string _lastPlayerSourceId;
+
         public void ReceiveHit(GameObject source, DamageContext damageContext)
         {
             if (_healthRuntime == null || !_healthRuntime.IsAlive)
@@ -188,13 +192,7 @@ namespace Corebound.Gameplay.Combat
 
             if (!Mathf.Approximately(incomingMultiplier, 1f))
             {
-                damageContext = new DamageContext(
-                    damageContext.SourceType,
-                    damageContext.DamageKind,
-                    damageContext.Amount * incomingMultiplier,
-                    damageContext.HitPoint,
-                    damageContext.HitDirection,
-                    damageContext.StatusEffect, damageContext.IsCritical);
+                damageContext = damageContext.WithAmount(damageContext.Amount * incomingMultiplier);
             }
 
             // Owner 2026-09-22: "let bosses take 90% less damage from the towers". A boss is a
@@ -202,13 +200,7 @@ namespace Corebound.Gameplay.Combat
             // the player dodges. Set on the boss receiver only, so normal enemies are unaffected.
             if (_towerDamageMultiplier < 1f && damageContext.SourceType == DamageSourceType.Tower)
             {
-                damageContext = new DamageContext(
-                    damageContext.SourceType,
-                    damageContext.DamageKind,
-                    damageContext.Amount * _towerDamageMultiplier,
-                    damageContext.HitPoint,
-                    damageContext.HitDirection,
-                    damageContext.StatusEffect, damageContext.IsCritical);
+                damageContext = damageContext.WithAmount(damageContext.Amount * _towerDamageMultiplier);
             }
 
             // Skill tree Executioner: the player's shots hit harder on a nearly dead enemy.
@@ -218,8 +210,13 @@ namespace Corebound.Gameplay.Combat
 
                 if (executeMultiplier > 1f)
                 {
-                    damageContext = new DamageContext(damageContext.SourceType, damageContext.DamageKind, damageContext.Amount * executeMultiplier, damageContext.HitPoint, damageContext.HitDirection, damageContext.StatusEffect, damageContext.IsCritical);
+                    damageContext = damageContext.WithAmount(damageContext.Amount * executeMultiplier);
                 }
+            }
+
+            if (damageContext.SourceType == DamageSourceType.Player && !string.IsNullOrEmpty(damageContext.SourceId))
+            {
+                _lastPlayerSourceId = damageContext.SourceId;
             }
 
             var remainingHealth = _healthRuntime.ApplyDamage(damageContext.Amount);
@@ -315,13 +312,16 @@ namespace Corebound.Gameplay.Combat
 
                 if (tickDamage > 0f)
                 {
+                    // A burn or freeze kill belongs to the weapon that last hit this target.
                     var context = new DamageContext(
                         DamageSourceType.Player,
                         pair.Key == StatusEffectType.Burn ? DamageKind.Burn : DamageKind.Freeze,
                         tickDamage,
                         transform.position,
                         Vector2.zero,
-                        null);
+                        null,
+                        false,
+                        _lastPlayerSourceId);
 
                     var remainingHealth = _healthRuntime.ApplyDamage(tickDamage);
                     CombatEvents.RaiseDamageTaken(new DamageEventArgs(gameObject, gameObject, context, remainingHealth));

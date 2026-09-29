@@ -86,7 +86,8 @@ namespace Corebound.Gameplay.Combat
                 transform.position,
                 _direction,
                 _damageContext.StatusEffect,
-                _damageContext.IsCritical);
+                _damageContext.IsCritical,
+                _damageContext.SourceId);
 
             for (var index = 0; index < count; index++)
             {
@@ -154,14 +155,7 @@ namespace Corebound.Gameplay.Combat
             // rendered at the shooter's position instead of the actual impact point. Rebuilding
             // with the projectile's real position at the moment of collision fixes this for every
             // projectile (enemy and player alike) without needing to touch the VFX spawner itself.
-            var impactContext = new DamageContext(
-                _damageContext.SourceType,
-                _damageContext.DamageKind,
-                _damageContext.Amount,
-                transform.position,
-                _damageContext.HitDirection,
-                _damageContext.StatusEffect,
-                _damageContext.IsCritical);
+            var impactContext = _damageContext.WithHitPoint(transform.position);
 
             hitbox.ReceiveHit(_owner, impactContext);
 

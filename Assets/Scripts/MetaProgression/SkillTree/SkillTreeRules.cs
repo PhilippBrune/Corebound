@@ -276,9 +276,51 @@ namespace Corebound.MetaProgression
             return save.PendingAscensionOffer;
         }
 
+        // ---- Ascension (P7-3, 2026-09-29) -----------------------------------------------------
+        //
+        // Unlocked at the level cap, not at tree completion ("after reaching max level ... for
+        // unlocking Ascension"). Two halves: the ring - repeatable ranks of each branch's bonuses,
+        // bought with Ascension Points - and the Keystone, a choice of three every tenth Paragon
+        // level, applied KeystoneStrength times.
+
+        public static bool IsAscensionUnlocked(MetaProgressionSaveData save)
+        {
+            return save != null && save.IsAtLevelCap;
+        }
+
+        public static SkillNodeState ResolveAscensionNodeState(MetaProgressionSaveData save, AscensionBonusData bonus)
+        {
+            if (save == null || bonus == null || !IsAscensionUnlocked(save))
+            {
+                return SkillNodeState.LockedPrerequisite;
+            }
+
+            var cost = SkillTreeDefinitionData.AscensionNodeCost(save.GetAscensionNodeRank(bonus.BonusId));
+            return save.AscensionPointsAvailable >= cost ? SkillNodeState.Available : SkillNodeState.Unaffordable;
+        }
+
+        public static bool TryPurchaseAscensionNode(MetaProgressionSaveData save, AscensionBonusData bonus)
+        {
+            if (ResolveAscensionNodeState(save, bonus) != SkillNodeState.Available)
+            {
+                return false;
+            }
+
+            var rank = save.GetAscensionNodeRank(bonus.BonusId);
+
+            if (!save.TrySpendAscensionPoints(SkillTreeDefinitionData.AscensionNodeCost(rank)))
+            {
+                return false;
+            }
+
+            save.SetAscensionNodeRank(bonus.BonusId, rank + 1);
+            return true;
+        }
+
+        // A Keystone costs nothing; it is the reward for every tenth Paragon level.
         public static bool TryPurchaseAscension(MetaProgressionSaveData save, SkillTreeDefinitionData tree, int offerIndex)
         {
-            if (!IsTreeComplete(save, tree))
+            if (!IsAscensionUnlocked(save) || save.KeystonesAvailable <= 0)
             {
                 return false;
             }
@@ -286,13 +328,6 @@ namespace Corebound.MetaProgression
             var offer = EnsureAscensionOffer(save, tree);
 
             if (offerIndex < 0 || offerIndex >= offer.Count)
-            {
-                return false;
-            }
-
-            var cost = tree.AscensionCostForRank(save.AscensionRank);
-
-            if (!save.TrySpendSkillPoints(cost))
             {
                 return false;
             }
@@ -350,15 +385,27 @@ namespace Corebound.MetaProgression
                 }
             }
 
-            // Ascension choices are account-wide numbers; they are stored as bonus ids in the order
-            // chosen, so each entry is one rank of that bonus.
+            // Keystones are stored as bonus ids in the order chosen; each applies its bonus
+            // KeystoneStrength times.
             for (var index = 0; index < save.AscensionChoices.Count; index++)
             {
                 var bonus = tree.FindAscensionBonus(save.AscensionChoices[index]);
 
                 if (bonus != null)
                 {
-                    snapshot.Apply(bonus.Effect, 1);
+                    snapshot.Apply(bonus.Effect, tree.KeystoneStrength);
+                }
+            }
+
+            // Ring ranks: the bonus once per rank bought.
+            for (var index = 0; index < save.AscensionNodeRanks.Count; index++)
+            {
+                var entry = save.AscensionNodeRanks[index];
+                var bonus = tree.FindAscensionBonus(entry.BonusId);
+
+                if (bonus != null)
+                {
+                    snapshot.Apply(bonus.Effect, entry.Rank);
                 }
             }
 

@@ -178,11 +178,43 @@ namespace Corebound.MetaProgression
 
         public int AscensionRank => EnsureLoaded().AscensionRank;
 
+        public int ParagonLevel => EnsureLoaded().ParagonLevel;
+
         public SkillTreeDefinitionData ActiveSkillTree => _definitionData != null ? _definitionData.FindSkillTree(EnsureLoaded().SelectedCharacterId) : null;
+
+        // Cards of the pool this profile has taken at least once, for the collection quest's
+        // progress on the Quests tab.
+        public int CountCollectedCards()
+        {
+            var cards = _definitionData != null && _definitionData.CardCollection != null ? _definitionData.CardCollection.Cards : null;
+
+            if (cards == null)
+            {
+                return 0;
+            }
+
+            var collected = new HashSet<string>();
+            CardCollectionRecord.ResolveCollectedIds(SaveManager, collected);
+            var count = 0;
+
+            for (var index = 0; index < cards.Length; index++)
+            {
+                if (cards[index] != null && collected.Contains(cards[index].CardId))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
 
         public void Commit()
         {
             var saveData = EnsureLoaded();
+
+            // An upgrade purchase can finish a weapon's mastery quest; every purchase path ends
+            // here, so this is the one check it needs.
+            QuestLedger.EvaluateMastery(saveData, _definitionData);
 
             if (SaveManager != null)
             {
@@ -199,6 +231,14 @@ namespace Corebound.MetaProgression
             var saveData = EnsureLoaded();
             saveData.GrantSkillPoints(skillPoints);
             saveData.GrantAlloy(alloy);
+            Commit();
+        }
+
+        // Editor-only: XP as a run would pay it, so the level cap, Paragon and the Ascension ring
+        // can be reached without seventy hours of play.
+        public void DebugGrantExperience(int amount)
+        {
+            EnsureLoaded().GrantExperience(amount);
             Commit();
         }
 #endif
@@ -233,7 +273,16 @@ namespace Corebound.MetaProgression
             _saveData = SaveManager != null ? SaveManager.LoadMetaProgressionSaveData(defaults) : defaults;
 
             // SkillTree.md: a content update that changes the tree grants a free respec.
-            if (_definitionData != null && SkillTreeRules.ApplyTreeVersion(_saveData, _definitionData.FindSkillTree(_saveData.SelectedCharacterId)) && SaveManager != null)
+            var changed = _definitionData != null && SkillTreeRules.ApplyTreeVersion(_saveData, _definitionData.FindSkillTree(_saveData.SelectedCharacterId));
+
+            // Quests that can be judged from what the profile already has: bosses killed before the
+            // quests existed (done, not paid again), weapons already fully upgraded and a card
+            // collection already complete (both paid now - they never were).
+            changed |= QuestLedger.MigrateLegacy(_saveData, _definitionData);
+            changed |= QuestLedger.EvaluateMastery(_saveData, _definitionData);
+            changed |= QuestLedger.EvaluateCardCollection(_saveData, _definitionData, SaveManager);
+
+            if (changed && SaveManager != null)
             {
                 SaveManager.SaveMetaProgressionSaveData(_saveData);
             }

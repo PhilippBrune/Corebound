@@ -10,7 +10,9 @@ namespace Corebound.SaveSystem
         // v2 (2026-09-22): the meta currency became Alloy (Upgrades.md) and three progression
         // systems were added - Skill Points and the per-character skill tree (SkillTree.md), Alloy
         // stat upgrades (Upgrades.md) and weapon slot unlocks (WeaponLoadout.md).
-        public const int CurrentSaveFormatVersion = 2;
+        // v3 (2026-09-29): level cap 70 on a new curve, 2 SP per level, Paragon levels past the cap
+        // paying Ascension Points, SP quests (LEVELLING_QUESTS_PARAGON_2026-09-29.md).
+        public const int CurrentSaveFormatVersion = 3;
 
         public const string DefaultCharacterId = "vanguard";
 
@@ -142,6 +144,9 @@ namespace Corebound.SaveSystem
             clone._pendingAscensionOffer = new List<string>(_pendingAscensionOffer ?? new List<string>());
             clone._upgradeRanks = CloneList(_upgradeRanks);
             clone._defeatedBossIds = new List<string>(_defeatedBossIds ?? new List<string>());
+            clone._discoveredWeaponIds = new List<string>(_discoveredWeaponIds ?? new List<string>());
+            clone._quests = CloneList(_quests);
+            clone._ascensionNodeRanks = CloneList(_ascensionNodeRanks);
             return clone;
         }
 
@@ -156,6 +161,8 @@ namespace Corebound.SaveSystem
             _pendingAscensionOffer ??= new List<string>();
             _upgradeRanks ??= new List<UpgradeRank>();
             _defeatedBossIds ??= new List<string>();
+            _quests ??= new List<QuestProgress>();
+            _ascensionNodeRanks ??= new List<AscensionNodeRank>();
 
             if (_saveFormatVersion < 2)
             {
@@ -169,7 +176,80 @@ namespace Corebound.SaveSystem
                 changed = true;
             }
 
+            if (_saveFormatVersion < 3)
+            {
+                MigrateLevellingToV3();
+                _saveFormatVersion = 3;
+                changed = true;
+            }
+
+            // Every load, not only the migrating one: a brand-new profile is owed its level-1
+            // Skill Points too, and this is idempotent once they are paid.
+            changed |= SyncLevelSkillPoints();
             return changed;
+        }
+
+        // v2 -> v3. The old curve (x1.15, 1 SP per level-up, no cap) is replaced; the XP the player
+        // earned is kept and re-read against the new curve. Two promises from the concept's
+        // "Existing profiles" section are kept here:
+        //  - a level is never taken away (the old curve was cheaper for the first few levels), and
+        //  - Ascension ranks bought with SP under the old rules become Ascension ring ranks, with
+        //    the SP they cost refunded - Ascension is paid in Ascension Points now, and leaving the
+        //    SP spent would make the tree impossible to complete on that profile.
+        private void MigrateLevellingToV3()
+        {
+            var oldLevel = Mathf.Max(1, _level);
+            long totalExperience = Mathf.Max(0, _experience);
+
+            for (var level = 1; level < oldLevel; level++)
+            {
+                totalExperience += LegacyLevelCost(level);
+            }
+
+            _level = 1;
+            _experience = 0;
+            _paragonLevel = 0;
+            _paragonExperience = 0;
+            AddExperienceWithoutPaying(totalExperience);
+
+            if (_level < oldLevel)
+            {
+                _level = Mathf.Min(oldLevel, MaxLevel);
+                _experience = 0;
+            }
+
+            // What the old rules already paid: one SP per level-up. SyncLevelSkillPoints tops this
+            // up to the new entitlement.
+            _levelSkillPointsPaid = oldLevel - 1;
+
+            var legacyRanks = _ascensionChoices != null ? _ascensionChoices.Count : 0;
+
+            if (legacyRanks > 0)
+            {
+                var refund = 0;
+
+                for (var rank = 0; rank < legacyRanks; rank++)
+                {
+                    refund += LegacyAscensionBaseCost + rank / 10;
+
+                    if (!string.IsNullOrEmpty(_ascensionChoices[rank]))
+                    {
+                        SetAscensionNodeRank(_ascensionChoices[rank], GetAscensionNodeRank(_ascensionChoices[rank]) + 1);
+                    }
+                }
+
+                _skillPointsSpent = Mathf.Max(0, _skillPointsSpent - refund);
+                _ascensionChoices.Clear();
+                _pendingAscensionOffer.Clear();
+                _ascensionRank = 0;
+            }
+        }
+
+        private const int LegacyAscensionBaseCost = 5;
+
+        private static int LegacyLevelCost(int level)
+        {
+            return Mathf.Max(1, Mathf.RoundToInt(120f * Mathf.Pow(1.15f, Mathf.Max(0, level - 1))));
         }
 
         // ---- Starting values -------------------------------------------------------------------
@@ -219,46 +299,277 @@ namespace Corebound.SaveSystem
         [SerializeField] private int _level;
         [SerializeField] private int _experience;
 
-        // L3: gentle geometric, x1.15 per level, so early levels land fast and later ones are a
-        // commitment. BaseLevelCost is tuned so a cleared stage is roughly a level early on.
-        private const int BaseLevelCost = 120;
-        private const float LevelCostGrowth = 1.15f;
+        // ---- Levelling v3 (owner 2026-09-29, LEVELLING_QUESTS_PARAGON_2026-09-29.md) ------------
+        //
+        // "Max level == the SP there are to spend." The tree costs 212 SP. Quests pay 51 of them,
+        // levels the other 161: 2 SP for every level reached, level 1 included, plus 3 more at every
+        // tenth level - 70 x 2 + 7 x 3 = 161. So at the cap, with every quest done, the tree is
+        // exactly complete and can never be over-funded.
+        //
+        // Past the cap, XP keeps flowing into Paragon levels, each paying one Ascension Point.
+        public const int MaxLevel = 70;
+        public const int SkillPointsPerLevel = 2;
+        public const int MilestoneLevelInterval = 10;
+        public const int MilestoneSkillPoints = 3;
+
+        // P2: linear-growing rather than geometric, so the cap is reachable at all. 400 XP is about
+        // one cleared stage for the first level; the 69th level-up costs 4,480, and the whole road
+        // to 70 is 168,360 XP - about 68 full runs, the ~70 hours the concept aimed at. The XP per
+        // run behind that estimate has not been measured yet.
+        private const int FirstLevelCost = 400;
+        private const int LevelCostStep = 60;
+
+        // About one full run per Ascension Point, so Paragon keeps paying at a steady pace instead
+        // of at the price of the most expensive level (4,480), which would halve it.
+        public const int ParagonLevelCost = 2500;
+
+        // Levels are per profile today; the vision's per-character levelling arrives with the
+        // second character. Quest progress is already keyed by character (P6).
+        [SerializeField] private int _levelSkillPointsPaid;
+        [SerializeField] private int _paragonLevel;
+        [SerializeField] private int _paragonExperience;
+        [SerializeField] private int _ascensionPointsEarned;
+        [SerializeField] private int _ascensionPointsSpent;
 
         public int Level => Mathf.Max(1, _level);
 
-        public int Experience => Mathf.Max(0, _experience);
+        public bool IsAtLevelCap => Level >= MaxLevel;
 
-        public int ExperienceForNextLevel => ResolveLevelCost(Level);
+        // At the cap this is progress towards the next Paragon level instead.
+        public int Experience => IsAtLevelCap ? Mathf.Max(0, _paragonExperience) : Mathf.Max(0, _experience);
+
+        public int ExperienceForNextLevel => IsAtLevelCap ? ParagonLevelCost : ResolveLevelCost(Level);
+
+        public int ParagonLevel => Mathf.Max(0, _paragonLevel);
+
+        public int AscensionPointsAvailable => Mathf.Max(0, _ascensionPointsEarned - _ascensionPointsSpent);
 
         public static int ResolveLevelCost(int level)
         {
-            return Mathf.Max(1, Mathf.RoundToInt(BaseLevelCost * Mathf.Pow(LevelCostGrowth, Mathf.Max(0, level - 1))));
+            return FirstLevelCost + LevelCostStep * Mathf.Max(0, level - 1);
         }
 
-        // Returns how many levels were crossed, so the caller can grant one Skill Point per level
-        // and toast once per level rather than once per XP grant.
-        public int GrantExperience(int amount)
+        // Every SP levels will ever have paid by the time this level is reached.
+        public static int ResolveLevelSkillPoints(int level)
+        {
+            var clamped = Mathf.Clamp(level, 0, MaxLevel);
+            return clamped * SkillPointsPerLevel + clamped / MilestoneLevelInterval * MilestoneSkillPoints;
+        }
+
+        // What one level-up to this level pays: 2, or 5 on a tenth level.
+        public static int ResolveSkillPointsForLevel(int level)
+        {
+            return ResolveLevelSkillPoints(level) - ResolveLevelSkillPoints(level - 1);
+        }
+
+        public readonly struct ExperienceResult
+        {
+            public ExperienceResult(int levelsGained, int paragonLevelsGained, int skillPointsGranted)
+            {
+                LevelsGained = levelsGained;
+                ParagonLevelsGained = paragonLevelsGained;
+                SkillPointsGranted = skillPointsGranted;
+            }
+
+            public int LevelsGained { get; }
+
+            public int ParagonLevelsGained { get; }
+
+            public int SkillPointsGranted { get; }
+        }
+
+        public ExperienceResult GrantExperience(int amount)
         {
             if (amount <= 0)
             {
-                return 0;
+                return default;
             }
 
             EnsureLevelFloor();
-            _experience += amount;
-            var levelsGained = 0;
+            var levelBefore = Level;
+            var paragonBefore = ParagonLevel;
+            var paid = _levelSkillPointsPaid;
+            AddExperienceWithoutPaying(amount);
+            SyncLevelSkillPoints();
 
-            // A while loop, not an if: a stage clear can be worth more than one level on a fresh
-            // profile, and swallowing the surplus would quietly lose Skill Points.
-            while (_experience >= ResolveLevelCost(_level))
+            var paragonGained = ParagonLevel - paragonBefore;
+            _ascensionPointsEarned += paragonGained;
+            return new ExperienceResult(Level - levelBefore, paragonGained, _levelSkillPointsPaid - paid);
+        }
+
+        // A while loop, not an if: a stage clear can be worth more than one level on a fresh
+        // profile, and swallowing the surplus would quietly lose Skill Points.
+        private void AddExperienceWithoutPaying(long amount)
+        {
+            EnsureLevelFloor();
+
+            while (amount > 0 && _level < MaxLevel)
             {
-                _experience -= ResolveLevelCost(_level);
+                var needed = ResolveLevelCost(_level) - _experience;
+
+                if (amount < needed)
+                {
+                    _experience += (int)amount;
+                    return;
+                }
+
+                amount -= needed;
+                _experience = 0;
                 _level += 1;
-                levelsGained += 1;
-                GrantSkillPoints(1);
             }
 
-            return levelsGained;
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            // At the cap: the level bar is full and everything else is Paragon.
+            _experience = 0;
+            var paragonTotal = _paragonExperience + amount;
+            _paragonLevel += (int)(paragonTotal / ParagonLevelCost);
+            _paragonExperience = (int)(paragonTotal % ParagonLevelCost);
+        }
+
+        // Pays whatever the current level is owed and has not been paid yet. Idempotent.
+        private bool SyncLevelSkillPoints()
+        {
+            EnsureLevelFloor();
+            var owed = ResolveLevelSkillPoints(Level) - _levelSkillPointsPaid;
+
+            if (owed <= 0)
+            {
+                return false;
+            }
+
+            GrantSkillPoints(owed);
+            _levelSkillPointsPaid += owed;
+            return true;
+        }
+
+        public bool TrySpendAscensionPoints(int cost)
+        {
+            if (cost < 0 || AscensionPointsAvailable < cost)
+            {
+                return false;
+            }
+
+            _ascensionPointsSpent += cost;
+            return true;
+        }
+
+        // ---- Ascension ring (P7-3) ---------------------------------------------------------------
+        //
+        // Repeatable ranks of the Ascension pool's bonuses, bought with Ascension Points on the
+        // outer ring of the skill graph. Keystones - the choice of three every tenth Paragon level -
+        // stay in _ascensionChoices, and _ascensionRank counts how many were taken.
+        [SerializeField] private List<AscensionNodeRank> _ascensionNodeRanks = new List<AscensionNodeRank>();
+
+        public IReadOnlyList<AscensionNodeRank> AscensionNodeRanks => _ascensionNodeRanks;
+
+        public int GetAscensionNodeRank(string bonusId)
+        {
+            var index = FindAscensionNode(bonusId);
+            return index >= 0 ? _ascensionNodeRanks[index].Rank : 0;
+        }
+
+        public void SetAscensionNodeRank(string bonusId, int rank)
+        {
+            if (string.IsNullOrEmpty(bonusId))
+            {
+                return;
+            }
+
+            _ascensionNodeRanks ??= new List<AscensionNodeRank>();
+            var index = FindAscensionNode(bonusId);
+
+            if (index >= 0)
+            {
+                _ascensionNodeRanks[index] = new AscensionNodeRank(bonusId, rank);
+                return;
+            }
+
+            _ascensionNodeRanks.Add(new AscensionNodeRank(bonusId, rank));
+        }
+
+        // One Keystone per ten Paragon levels, minus those already taken.
+        public int KeystonesAvailable => Mathf.Max(0, ParagonLevel / MilestoneLevelInterval - _ascensionRank);
+
+        private int FindAscensionNode(string bonusId)
+        {
+            if (_ascensionNodeRanks == null)
+            {
+                return -1;
+            }
+
+            for (var index = 0; index < _ascensionNodeRanks.Count; index++)
+            {
+                if (string.Equals(_ascensionNodeRanks[index].BonusId, bonusId, StringComparison.Ordinal))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        // ---- Quests (P4 as amended by the owner, P6: per character) -----------------------------
+        [SerializeField] private List<QuestProgress> _quests = new List<QuestProgress>();
+
+        public int GetQuestProgress(string characterId, string questId)
+        {
+            var index = FindQuest(characterId, questId);
+            return index >= 0 ? _quests[index].Progress : 0;
+        }
+
+        public bool IsQuestCompleted(string characterId, string questId)
+        {
+            var index = FindQuest(characterId, questId);
+            return index >= 0 && _quests[index].Completed;
+        }
+
+        public void SetQuestProgress(string characterId, string questId, int progress, bool completed)
+        {
+            _quests ??= new List<QuestProgress>();
+            var index = FindQuest(characterId, questId);
+            var entry = new QuestProgress(characterId, questId, Mathf.Max(0, progress), completed);
+
+            if (index >= 0)
+            {
+                _quests[index] = entry;
+                return;
+            }
+
+            _quests.Add(entry);
+        }
+
+        // Set once the legacy boss kills have been carried over into boss quests.
+        [SerializeField] private bool _questsMigrated;
+
+        public bool QuestsMigrated => _questsMigrated;
+
+        public void MarkQuestsMigrated()
+        {
+            _questsMigrated = true;
+        }
+
+        private int FindQuest(string characterId, string questId)
+        {
+            if (_quests == null)
+            {
+                return -1;
+            }
+
+            for (var index = 0; index < _quests.Count; index++)
+            {
+                var entry = _quests[index];
+
+                if (string.Equals(entry.QuestId, questId, StringComparison.Ordinal) && string.Equals(entry.CharacterId, characterId, StringComparison.Ordinal))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
         }
 
         public void EnsureLevelFloor()
@@ -489,6 +800,37 @@ namespace Corebound.SaveSystem
             CharacterId = characterId;
             NodeId = nodeId;
             Rank = rank;
+        }
+    }
+
+    [Serializable]
+    public struct AscensionNodeRank
+    {
+        public string BonusId;
+        public int Rank;
+
+        public AscensionNodeRank(string bonusId, int rank)
+        {
+            BonusId = bonusId;
+            Rank = rank;
+        }
+    }
+
+    // Keyed by character (P6): quests pay SP, and SP is spent in a character's own tree.
+    [Serializable]
+    public struct QuestProgress
+    {
+        public string CharacterId;
+        public string QuestId;
+        public int Progress;
+        public bool Completed;
+
+        public QuestProgress(string characterId, string questId, int progress, bool completed)
+        {
+            CharacterId = characterId;
+            QuestId = questId;
+            Progress = progress;
+            Completed = completed;
         }
     }
 

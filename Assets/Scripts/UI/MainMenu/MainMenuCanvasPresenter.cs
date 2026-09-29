@@ -405,7 +405,7 @@ namespace Corebound.UI.MainMenu
                 var summary = Corebound.SaveSystem.ProfileSelection.Summarize(index);
                 _profileText.text = LocalizationService.Resolve("Profile ", "Profil ") + index
                     + (summary.IsUsed
-                        ? "  ·  " + LocalizationService.Resolve("Ascension ", "Aufstieg ") + summary.AscensionRank
+                        ? "  ·  " + summary.ProgressLabel
                         : "  ·  " + LocalizationService.Resolve("empty", "leer"));
             }
 

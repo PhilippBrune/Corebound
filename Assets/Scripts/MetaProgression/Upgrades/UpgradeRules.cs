@@ -57,5 +57,49 @@ namespace Corebound.MetaProgression
             save.SetUpgradeRank(itemId, (int)track.Stat, rank + 1);
             return UpgradePurchaseResult.Purchased;
         }
+
+        // A weapon with no spread has nothing for Accuracy to narrow, so that track is not offered
+        // for it. One rule, used by the Upgrades tab and the weapon-mastery quest alike: a quest that
+        // counted a track the tab never shows could not be finished.
+        public static bool IsTrackApplicable(UpgradeTrackData track, Corebound.Gameplay.Weapons.WeaponData weapon)
+        {
+            if (track == null || weapon == null || track.AppliesTo != UpgradeTargetKind.Weapon)
+            {
+                return false;
+            }
+
+            if (track.Stat == UpgradableStat.Accuracy)
+            {
+                return weapon.AttackPattern != null && weapon.AttackPattern.SpreadAngleDegrees > 0f;
+            }
+
+            return true;
+        }
+
+        // Ranks bought and ranks available across every track that applies to this weapon, for the
+        // mastery quest's progress bar and completion check.
+        public static void ResolveWeaponMastery(MetaProgressionSaveData save, UpgradeCatalogData catalog, Corebound.Gameplay.Weapons.WeaponData weapon, out int bought, out int total)
+        {
+            bought = 0;
+            total = 0;
+
+            if (save == null || catalog == null || catalog.Tracks == null || weapon == null)
+            {
+                return;
+            }
+
+            for (var index = 0; index < catalog.Tracks.Length; index++)
+            {
+                var track = catalog.Tracks[index];
+
+                if (!IsTrackApplicable(track, weapon))
+                {
+                    continue;
+                }
+
+                total += track.MaxRank;
+                bought += UnityEngine.Mathf.Min(track.MaxRank, save.GetUpgradeRank(weapon.WeaponId, (int)track.Stat));
+            }
+        }
     }
 }

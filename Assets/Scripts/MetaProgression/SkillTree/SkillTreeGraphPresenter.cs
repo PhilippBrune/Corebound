@@ -201,6 +201,48 @@ namespace Corebound.MetaProgression.SkillTree
                     DrawKeyName(keyPosition, keyNode.DisplayName, keyIndex == selectedKey && selectedSub < 0);
                 }
             }
+
+            DrawAscensionRing(tree, save, branchIndex, branch, previous, alpha, active, selectedKey, selectedSub);
+        }
+
+        // P7-3: the branch's Ascension bonuses one tier past its last key node, in gold. Dimmed and
+        // showing the level cap until Ascension unlocks; afterwards each shows its rank, or its
+        // price when it can be bought.
+        private readonly List<AscensionBonusData> _ringBuffer = new List<AscensionBonusData>();
+        private static readonly Color AscensionAccent = new Color(1f, 0.82f, 0.36f, 1f);
+
+        private void DrawAscensionRing(SkillTreeDefinitionData tree, MetaProgressionSaveData save, int branchIndex, SkillBranchData branch,
+            Vector2 lastKeyPosition, float alpha, bool active, int selectedKey, int selectedSub)
+        {
+            tree.CollectAscensionBonuses(branch.BranchId, _ringBuffer);
+            var ringKey = branch.KeyNodes.Length;
+
+            for (var slot = 0; slot < _ringBuffer.Count; slot++)
+            {
+                var bonus = _ringBuffer[slot];
+                var position = SkillTreeGraphLayout.RingNode(branchIndex, tree.Branches.Length, ringKey, slot, _ringBuffer.Count);
+                var state = SkillTreeRules.ResolveAscensionNodeState(save, bonus);
+                var rank = save != null ? save.GetAscensionNodeRank(bonus.BonusId) : 0;
+                var unlocked = state != SkillNodeState.LockedPrerequisite;
+                DrawLink(lastKeyPosition, position, AscensionAccent, unlocked ? SkillNodeState.Available : SkillNodeState.LockedPrerequisite, alpha, 5f);
+
+                if (selectedKey == ringKey && selectedSub == slot)
+                {
+                    DrawSelectionRing(position, SkillTreeGraphLayout.RingNodeSize, KeyFramePath);
+                }
+
+                // Rank when owned, price when it can be bought now, "70" while still locked by level.
+                var caption = !unlocked
+                    ? MetaProgressionSaveData.MaxLevel.ToString()
+                    : rank > 0 ? rank.ToString() : SkillTreeDefinitionData.AscensionNodeCost(rank) + "AP";
+                var rect = DrawNode(position, SkillTreeGraphLayout.RingNodeSize, KeyFramePath, AscensionAccent,
+                    rank > 0 ? SkillNodeState.Purchased : state, alpha, 0, 0, 0, caption);
+
+                if (active)
+                {
+                    _hitTargets.Add(new HitTarget(rect, ringKey, slot));
+                }
+            }
         }
 
         // Screen point to node, for the mouse. Only the active branch answers: a click on a dimmed
@@ -288,7 +330,8 @@ namespace Corebound.MetaProgression.SkillTree
             float alpha,
             int cost,
             int rank,
-            int maxRank)
+            int maxRank,
+            string captionOverride = null)
         {
             var sprite = LoadCropped(framePath);
             var image = ProceduralUIBuilder.CreateImage("Node_" + _spawned.Count, _root, sprite, WithAlpha(ResolveStateColor(accent, state, false), alpha));
@@ -318,7 +361,7 @@ namespace Corebound.MetaProgression.SkillTree
             ProceduralUIBuilder.StretchToParent(label.rectTransform);
             // Captions only on the active branch: on a dimmed one they are noise at the edge of
             // the view, and the node's tint already says owned, open or locked.
-            label.text = alpha >= 0.99f ? caption : string.Empty;
+            label.text = alpha >= 0.99f ? captionOverride ?? caption : string.Empty;
             return rect;
         }
 

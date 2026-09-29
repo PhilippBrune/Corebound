@@ -11,7 +11,8 @@ namespace Corebound.Gameplay.Combat
             Vector2 hitPoint,
             Vector2 hitDirection,
             StatusEffectType? statusEffect,
-            bool isCritical = false)
+            bool isCritical = false,
+            string sourceId = null)
         {
             SourceType = sourceType;
             DamageKind = damageKind;
@@ -20,6 +21,7 @@ namespace Corebound.Gameplay.Combat
             HitDirection = hitDirection;
             StatusEffect = statusEffect;
             IsCritical = isCritical;
+            SourceId = sourceId;
         }
 
         public DamageSourceType SourceType { get; }
@@ -35,7 +37,24 @@ namespace Corebound.Gameplay.Combat
         public StatusEffectType? StatusEffect { get; }
 
         // Carried from the volley that rolled it to the hit, for crit feedback (playtest 2026-09-22).
-        // Every rebuild of a context must pass it on.
         public bool IsCritical { get; }
+
+        // Which weapon (WeaponData.WeaponId) dealt a player hit; null for everything else. The
+        // weapon-kill quests (2026-09-29) need to know which weapon landed the killing blow, and
+        // until then a hit only knew it came from "the player".
+        public string SourceId { get; }
+
+        // Every rebuild of a context used to repeat all seven constructor arguments by hand, which
+        // is how a new field gets silently dropped at one of the six rebuild sites. These copy
+        // everything and change one thing.
+        public DamageContext WithAmount(float amount)
+        {
+            return new DamageContext(SourceType, DamageKind, amount, HitPoint, HitDirection, StatusEffect, IsCritical, SourceId);
+        }
+
+        public DamageContext WithHitPoint(Vector2 hitPoint)
+        {
+            return new DamageContext(SourceType, DamageKind, Amount, hitPoint, HitDirection, StatusEffect, IsCritical, SourceId);
+        }
     }
 }

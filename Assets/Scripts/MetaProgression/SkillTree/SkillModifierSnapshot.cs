@@ -8,7 +8,10 @@ namespace Corebound.MetaProgression
     // 1, additive ones at 0; a node's effect is applied once per purchased rank.
     public sealed class SkillModifierSnapshot
     {
-        private const int TargetCount = 29;
+        // Sized from the enum, not a literal. It was the literal 29 while PickupMagnetRange (29) and
+        // RewardRerolls (30) were appended on 2026-09-22, so both fell outside the array, read as 0,
+        // and the two tree nodes that grant them did nothing at all (found 2026-09-29).
+        private static readonly int TargetCount = System.Enum.GetValues(typeof(SkillEffectTarget)).Length;
 
         private readonly float[] _values = new float[TargetCount];
 

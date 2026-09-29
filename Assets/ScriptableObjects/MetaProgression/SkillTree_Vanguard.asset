@@ -979,6 +979,7 @@ MonoBehaviour:
       _target: 0
       _operation: 0
       _value: 0.02
+    _branchId: combat
   - _bonusId: asc_tower_damage
     _displayName: '+2% tower damage'
     _displayNameDe: '+2 % Turmschaden'
@@ -986,6 +987,7 @@ MonoBehaviour:
       _target: 6
       _operation: 0
       _value: 0.02
+    _branchId: construction
   - _bonusId: asc_scrap
     _displayName: '+2% Scrap from all sources'
     _displayNameDe: '+2 % Schrott aus allen Quellen'
@@ -993,6 +995,7 @@ MonoBehaviour:
       _target: 10
       _operation: 0
       _value: 0.02
+    _branchId: industry
   - _bonusId: asc_move_speed
     _displayName: '+1% move speed'
     _displayNameDe: '+1 % Bewegungstempo'
@@ -1000,6 +1003,7 @@ MonoBehaviour:
       _target: 5
       _operation: 0
       _value: 0.01
+    _branchId: command
   - _bonusId: asc_core_health
     _displayName: '+1% Core max health'
     _displayNameDe: '+1 % maximales Kernleben'
@@ -1007,6 +1011,7 @@ MonoBehaviour:
       _target: 9
       _operation: 0
       _value: 0.01
+    _branchId: construction
   - _bonusId: asc_crit_chance
     _displayName: '+0.5% critical chance'
     _displayNameDe: '+0,5 % kritische Chance'
@@ -1014,5 +1019,22 @@ MonoBehaviour:
       _target: 2
       _operation: 0
       _value: 0.005
-  _ascensionBaseCost: 5
+    _branchId: combat
+  - _bonusId: asc_stage_scrap
+    _displayName: '+2 Scrap at the start of every stage'
+    _displayNameDe: '+2 Schrott zu Beginn jeder Stage'
+    _effect:
+      _target: 19
+      _operation: 0
+      _value: 2
+    _branchId: industry
+  - _bonusId: asc_purchase_cost
+    _displayName: '-1% tower and shop prices'
+    _displayNameDe: '-1 % Turm- und Shoppreise'
+    _effect:
+      _target: 13
+      _operation: 0
+      _value: -0.01
+    _branchId: command
+  _keystoneStrength: 5
   _ascensionOfferCount: 3

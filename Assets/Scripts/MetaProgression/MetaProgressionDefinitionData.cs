@@ -18,14 +18,12 @@ namespace Corebound.MetaProgression
         [SerializeField] private int _startingCurrencyAmount;
         [SerializeField] private bool _startingTutorialSeen;
 
-        // Owner decision 2026-09-22: Skill Points and Alloy come from bosses and elites only. A run
-        // that ends without beating a boss pays nothing; going deeper pays more. The old flat
-        // run-completion/run-failure payouts are gone - they paid for simply finishing, which is
-        // exactly what "only after defeating a boss" rules out.
+        // Owner decision 2026-09-22: Alloy comes from bosses and elites only, more for deeper
+        // bosses. Skill Points no longer come from bosses at all (P3-2, 2026-09-29): every SP is paid
+        // by a level or a quest, so the tree's 212 SP can be reached exactly and never exceeded. A
+        // boss's first kill is a quest worth 1 SP; every kill pays an XP lump.
         //
         // Indexed by stage index - 1; stages beyond the array use its last entry.
-        [SerializeField] private int[] _bossSkillPointsByStage = { 1, 1, 2, 2, 3 };
-        [SerializeField] private int _bossFirstKillSkillPoints = 2;
         [SerializeField] private int[] _bossAlloyByStage = { 6, 8, 10, 12, 14 };
         [SerializeField] private int _bossFirstKillAlloy = 10;
         [SerializeField] private int _eliteKillAlloy = 1;
@@ -47,9 +45,12 @@ namespace Corebound.MetaProgression
         // already holds, and the menu otherwise has no route to the gameplay card pool.
         [SerializeField] private Corebound.Gameplay.Cards.CardPoolData _cardCollection;
 
+        // The stages, for the boss quests: one per stage boss, titled by stage and boss name.
+        [SerializeField] private Corebound.Gameplay.Waves.StageProgressionData _stageProgression;
+
         public string MetaCurrencyLabel => Corebound.UI.LocalizationService.Resolve(_metaCurrencyLabel, _metaCurrencyLabelDe);
 
-        public int BossFirstKillSkillPoints => Mathf.Max(0, _bossFirstKillSkillPoints);
+        public Corebound.Gameplay.Waves.StageProgressionData StageProgression => _stageProgression;
 
         public int BossFirstKillAlloy => Mathf.Max(0, _bossFirstKillAlloy);
 
@@ -116,11 +117,6 @@ namespace Corebound.MetaProgression
             }
 
             return _skillTrees[0];
-        }
-
-        public int ResolveBossSkillPoints(int stageIndex)
-        {
-            return ResolveByStage(_bossSkillPointsByStage, stageIndex);
         }
 
         public int ResolveBossAlloy(int stageIndex)

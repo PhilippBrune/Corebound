@@ -493,7 +493,8 @@ namespace Corebound.Gameplay.Combat
                 hitPoint,
                 direction,
                 statusEffect,
-                isCritical);
+                isCritical,
+                weapon.WeaponId);
         }
 
         // Pause menu Player tab: every stat as base (+ what perks, skills, upgrades, tiers and set
@@ -776,13 +777,7 @@ namespace Corebound.Gameplay.Combat
                 return damageContext;
             }
 
-            return new DamageContext(
-                damageContext.SourceType,
-                damageContext.DamageKind,
-                damageContext.Amount * incomingMultiplier,
-                damageContext.HitPoint,
-                damageContext.HitDirection,
-                damageContext.StatusEffect, damageContext.IsCritical);
+            return damageContext.WithAmount(damageContext.Amount * incomingMultiplier);
         }
 
         private void RestoreRuntimeStateFromSave()

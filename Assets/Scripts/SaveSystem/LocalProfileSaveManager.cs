@@ -246,6 +246,10 @@ namespace Corebound.SaveSystem
             }
 
             _metaProgressionSaveData = defaults != null ? defaults.Clone() : new MetaProgressionSaveData();
+
+            // A new profile goes through the same pass as a loaded one: it is owed its level-1
+            // Skill Points (levelling v3), which only the migration pass pays.
+            _metaProgressionSaveData.MigrateToCurrentFormat();
             SaveMetaProgressionSaveData(_metaProgressionSaveData);
             return _metaProgressionSaveData;
         }

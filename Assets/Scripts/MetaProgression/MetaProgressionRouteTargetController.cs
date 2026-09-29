@@ -38,7 +38,8 @@ namespace Corebound.MetaProgression
             Unlocks,
             Upgrades,
             Branch,
-            Ascension
+            Ascension,
+            Quests
         }
 
         private readonly List<DisplayRow> _rows = new List<DisplayRow>();
@@ -81,7 +82,7 @@ namespace Corebound.MetaProgression
                 var alloyName = _metaProgressionService.DefinitionData != null ? _metaProgressionService.DefinitionData.MetaCurrencyLabel : "Alloy";
                 return alloyName + ": " + _metaProgressionService.AlloyBalance
                     + "     " + LocalizationService.Resolve("Skill Points: ", "Fertigkeitspunkte: ") + _metaProgressionService.SkillPointsAvailable
-                    + (_metaProgressionService.AscensionRank > 0 ? "     " + LocalizationService.Resolve("Ascension ", "Aufstieg ") + _metaProgressionService.AscensionRank : string.Empty);
+                    + "     " + AscensionText;
             }
         }
 
@@ -93,8 +94,23 @@ namespace Corebound.MetaProgression
         public string SkillPointText => _metaProgressionService == null ? string.Empty
             : LocalizationService.Resolve("Skill Points: ", "Fertigkeitspunkte: ") + _metaProgressionService.SkillPointsAvailable;
 
-        public string AscensionText => _metaProgressionService == null || _metaProgressionService.AscensionRank <= 0 ? string.Empty
-            : LocalizationService.Resolve("Ascension ", "Aufstieg ") + _metaProgressionService.AscensionRank;
+        // Level until the cap, then Paragon level and the Ascension Points it has paid.
+        public string AscensionText
+        {
+            get
+            {
+                var save = _metaProgressionService != null ? _metaProgressionService.SaveData : null;
+
+                if (save == null)
+                {
+                    return string.Empty;
+                }
+
+                return save.IsAtLevelCap
+                    ? "Paragon " + save.ParagonLevel + "   " + save.AscensionPointsAvailable + LocalizationService.Resolve(" AP", " AP")
+                    : LocalizationService.Resolve("Level ", "Stufe ") + save.Level + " / " + MetaProgressionSaveData.MaxLevel;
+            }
+        }
 
         // 0-3 while a skill branch tab is shown (the branch icon sheet's order), otherwise -1.
         // Every tab shows an emblem, not only the four branches (playtest 2026-09-22). Unlocks,
@@ -111,6 +127,8 @@ namespace Corebound.MetaProgression
                         return "Assets/Art/UI/HUD/weapon_icon_sheet.png";
                     case Tab.Ascension:
                         return "Assets/Art/UI/SkillTree/ascension_rank_badge.png";
+                    case Tab.Quests:
+                        return "Assets/Art/Resources/resource_skill_point_icon.png";
                     default:
                         return string.Empty;
                 }
@@ -343,9 +361,17 @@ namespace Corebound.MetaProgression
             var branch = tree.Branches[branchIndex];
             var keyIndex = _commands[rowIndex].GraphKey;
 
-            if (branch == null || branch.KeyNodes == null || keyIndex >= branch.KeyNodes.Length)
+            if (branch == null || branch.KeyNodes == null || keyIndex > branch.KeyNodes.Length)
             {
                 return false;
+            }
+
+            // One past the last key node is the Ascension ring.
+            if (keyIndex == branch.KeyNodes.Length)
+            {
+                tree.CollectAscensionBonuses(branch.BranchId, _ringBuffer);
+                position = SkillTreeGraphLayout.RingNode(branchIndex, tree.Branches.Length, branch.KeyNodes.Length, _commands[rowIndex].GraphSub, _ringBuffer.Count);
+                return true;
             }
 
             var keyPosition = SkillTreeGraphLayout.KeyNode(branch.KeyNodes[keyIndex], branchIndex, tree.Branches.Length, keyIndex);
@@ -470,11 +496,11 @@ namespace Corebound.MetaProgression
             TargetChanged?.Invoke();
         }
 
-        // Tabs: Unlocks, Upgrades, one per skill branch, Ascension.
+        // Tabs: Unlocks, Upgrades, one per skill branch, Ascension, Quests.
         private int ResolveTabCount()
         {
             var tree = _metaProgressionService != null ? _metaProgressionService.ActiveSkillTree : null;
-            return 3 + (tree != null && tree.Branches != null ? tree.Branches.Length : 0);
+            return 4 + (tree != null && tree.Branches != null ? tree.Branches.Length : 0);
         }
 
         // Same shoulder-button switch as every other tabbed screen; Left/Right still works too.
@@ -500,7 +526,7 @@ namespace Corebound.MetaProgression
             branch = null;
             var tree = _metaProgressionService.ActiveSkillTree;
             var branchCount = tree != null && tree.Branches != null ? tree.Branches.Length : 0;
-            _tabIndex = Mathf.Clamp(_tabIndex, 0, 2 + branchCount);
+            _tabIndex = Mathf.Clamp(_tabIndex, 0, 3 + branchCount);
 
             if (_tabIndex == 0)
             {
@@ -518,7 +544,7 @@ namespace Corebound.MetaProgression
                 return Tab.Branch;
             }
 
-            return Tab.Ascension;
+            return _tabIndex == 2 + branchCount ? Tab.Ascension : Tab.Quests;
         }
 
         private string BuildTabStrip()
@@ -542,6 +568,7 @@ namespace Corebound.MetaProgression
             }
 
             _tabNames.Add(LocalizationService.Resolve("Ascension", "Aufstieg"));
+            _tabNames.Add(LocalizationService.Resolve("Quests", "Quests"));
             _builder.Clear();
 
             for (var index = 0; index < _tabNames.Count; index++)
@@ -593,8 +620,11 @@ namespace Corebound.MetaProgression
                 case Tab.Branch:
                     BuildBranchRows(branch);
                     break;
-                default:
+                case Tab.Ascension:
                     BuildAscensionRows();
+                    break;
+                default:
+                    BuildQuestRows();
                     break;
             }
 
@@ -745,8 +775,8 @@ namespace Corebound.MetaProgression
                 }
 
                 // A weapon with no spread has nothing for Accuracy to narrow; a track that cannot
-                // change anything would be a trap for Alloy.
-                if (track.Stat == UpgradableStat.Accuracy && kind == UpgradeTargetKind.Weapon && baseValue(track.Stat) <= 0f)
+                // change anything would be a trap for Alloy. Same rule as the mastery quest.
+                if (kind == UpgradeTargetKind.Weapon && track.Stat == UpgradableStat.Accuracy && baseValue(track.Stat) <= 0f)
                 {
                     continue;
                 }
@@ -945,6 +975,8 @@ namespace Corebound.MetaProgression
                 }
             }
 
+            AddAscensionRingRows(tree, branch, save);
+
             // Respec: full only, from the main menu only, confirm twice (SkillTree.md).
             var refund = SkillTreeRules.ResolveTotalTreeSpend(save, tree);
             var respecFree = SkillTreeRules.IsNextRespecFree(save, tree);
@@ -1060,7 +1092,14 @@ namespace Corebound.MetaProgression
             return nodeId;
         }
 
-        // ---- Ascension (Skill Points, numbers only) -------------------------------------------------
+        // ---- Ascension (P7-3, 2026-09-29) -------------------------------------------------------
+        //
+        // Unlocked at the level cap. XP past it fills Paragon levels, each paying one Ascension
+        // Point, spent on the ring of repeatable bonuses (here and on each branch's graph). Every
+        // tenth Paragon level also grants a Keystone: a choice of three, applied KeystoneStrength
+        // times.
+
+        private readonly List<AscensionBonusData> _ringBuffer = new List<AscensionBonusData>();
 
         private void BuildAscensionRows()
         {
@@ -1072,42 +1111,219 @@ namespace Corebound.MetaProgression
                 return;
             }
 
-            var complete = SkillTreeRules.IsTreeComplete(save, tree);
-            var cost = tree.AscensionCostForRank(save.AscensionRank);
+            if (!SkillTreeRules.IsAscensionUnlocked(save))
+            {
+                _commands.Add(new RowCommand(
+                    LocalizationService.Resolve("Ascension unlocks at level ", "Aufstieg wird freigeschaltet auf Stufe ") + MetaProgressionSaveData.MaxLevel,
+                    LocalizationService.Resolve("Level ", "Stufe ") + save.Level,
+                    RowState.Header,
+                    string.Empty,
+                    null));
+                _commands.Add(new RowCommand(
+                    LocalizationService.Resolve(
+                        "Past the cap, experience keeps filling Paragon levels. Each pays one Ascension Point for the ring below; every tenth pays a Keystone.",
+                        "Nach der Höchststufe füllt Erfahrung Paragon-Stufen. Jede zahlt einen Aufstiegspunkt für den Ring unten; jede zehnte einen Schlüsselstein."),
+                    string.Empty,
+                    RowState.Locked,
+                    LocalizationService.Resolve("Every Skill Point comes from levels and quests - see the Quests tab.", "Jeder Skillpunkt kommt aus Stufen und Quests - siehe den Reiter Quests."),
+                    null));
+            }
+            else
+            {
+                _commands.Add(new RowCommand(
+                    "Paragon " + save.ParagonLevel + "   " + save.Experience + " / " + save.ExperienceForNextLevel + " XP",
+                    save.AscensionPointsAvailable + LocalizationService.Resolve(" Ascension Points", " Aufstiegspunkte"),
+                    RowState.Header,
+                    string.Empty,
+                    null));
+
+                var keystones = save.KeystonesAvailable;
+                var nextKeystone = (save.ParagonLevel / MetaProgressionSaveData.MilestoneLevelInterval + 1) * MetaProgressionSaveData.MilestoneLevelInterval;
+                _commands.Add(new RowCommand(
+                    keystones > 0
+                        ? LocalizationService.Resolve("Keystone ready - choose one", "Schlüsselstein bereit - wähle einen")
+                        : LocalizationService.Resolve("Next Keystone at Paragon ", "Nächster Schlüsselstein bei Paragon ") + nextKeystone,
+                    LocalizationService.Resolve("taken: ", "gewählt: ") + save.AscensionRank,
+                    RowState.Header,
+                    string.Empty,
+                    null));
+
+                if (keystones > 0)
+                {
+                    var offer = SkillTreeRules.EnsureAscensionOffer(save, tree);
+
+                    for (var index = 0; index < offer.Count; index++)
+                    {
+                        var bonus = tree.FindAscensionBonus(offer[index]);
+                        var offerIndex = index;
+                        _commands.Add(new RowCommand(
+                            "    " + (bonus != null ? bonus.DisplayName : offer[index]) + "  x" + tree.KeystoneStrength,
+                            LocalizationService.Resolve("Keystone", "Schlüsselstein"),
+                            RowState.Available,
+                            LocalizationService.Resolve(
+                                "Take this bonus " + tree.KeystoneStrength + " times over. The other two are rerolled for the next Keystone.",
+                                "Nimm diesen Bonus " + tree.KeystoneStrength + "-fach. Die anderen beiden werden für den nächsten Schlüsselstein neu gewürfelt."),
+                            () => SkillTreeRules.TryPurchaseAscension(save, tree, offerIndex)));
+                    }
+                }
+            }
+
             _commands.Add(new RowCommand(
-                LocalizationService.Resolve("Ascension rank ", "Aufstiegsrang ") + save.AscensionRank,
-                complete ? LocalizationService.Resolve("Next: ", "Nächster: ") + cost + " SP" : LocalizationService.Resolve("Locked", "Gesperrt"),
+                "<b>" + LocalizationService.Resolve("Ascension ring", "Aufstiegsring") + "</b>",
+                string.Empty,
                 RowState.Header,
                 string.Empty,
                 null));
 
-            if (!complete)
+            for (var branchIndex = 0; tree.Branches != null && branchIndex < tree.Branches.Length; branchIndex++)
             {
+                var branch = tree.Branches[branchIndex];
+
+                if (branch != null)
+                {
+                    AddAscensionRingRows(tree, branch, save, "    " + branch.DisplayName + ":  ", false);
+                }
+            }
+        }
+
+        // The ring bonuses of one branch. On a branch tab they are graph nodes past the last key
+        // node; on the Ascension tab the same rows appear as a list.
+        private void AddAscensionRingRows(SkillTreeDefinitionData tree, SkillBranchData branch, MetaProgressionSaveData save, string prefix = "", bool asGraphNodes = true)
+        {
+            tree.CollectAscensionBonuses(branch.BranchId, _ringBuffer);
+
+            for (var index = 0; index < _ringBuffer.Count; index++)
+            {
+                var bonus = _ringBuffer[index];
+                var rank = save.GetAscensionNodeRank(bonus.BonusId);
+                var state = SkillTreeRules.ResolveAscensionNodeState(save, bonus);
+                var cost = SkillTreeDefinitionData.AscensionNodeCost(rank);
+                var captured = bonus;
+                var reason = state == SkillNodeState.LockedPrerequisite
+                    ? LocalizationService.Resolve("Unlocks at level " + MetaProgressionSaveData.MaxLevel + " (you are level " + save.Level + ").",
+                        "Wird auf Stufe " + MetaProgressionSaveData.MaxLevel + " freigeschaltet (du bist Stufe " + save.Level + ").")
+                    : state == SkillNodeState.Unaffordable
+                        ? LocalizationService.Resolve("Not enough Ascension Points - each Paragon level pays one.", "Nicht genug Aufstiegspunkte - jede Paragon-Stufe zahlt einen.")
+                        : string.Empty;
+
                 _commands.Add(new RowCommand(
-                    LocalizationService.Resolve("Complete every node of the tree to begin Ascending.", "Schließe jeden Knoten des Baums ab, um aufzusteigen."),
-                    (SkillTreeRules.ResolveTotalTreeSpend(save, tree)) + " SP " + LocalizationService.Resolve("spent", "ausgegeben"),
-                    RowState.Locked,
-                    LocalizationService.Resolve(
-                        "Ascension is an endless list of small numeric bonuses, one choice of three per rank.",
-                        "Aufstieg ist eine endlose Liste kleiner Zahlenboni, eine Wahl aus drei pro Rang."),
+                    prefix + LocalizationService.Resolve("Ascension: ", "Aufstieg: ") + bonus.DisplayName + "  " + LocalizationService.Resolve("rank ", "Rang ") + rank,
+                    state == SkillNodeState.LockedPrerequisite ? LocalizationService.Resolve("Level ", "Stufe ") + MetaProgressionSaveData.MaxLevel : cost + " AP",
+                    state == SkillNodeState.LockedPrerequisite ? RowState.Locked : ToRowState(state),
+                    bonus.DisplayName + LocalizationService.Resolve(" per rank, repeatable. The price rises by one every ten ranks.", " pro Rang, wiederholbar. Der Preis steigt alle zehn Ränge um eins.")
+                        + (reason.Length > 0 ? "\n" + reason : string.Empty),
+                    () => SkillTreeRules.TryPurchaseAscensionNode(save, captured),
+                    asGraphNodes ? branch.KeyNodes.Length : -1,
+                    asGraphNodes ? index : -1));
+            }
+        }
+
+        // ---- Quests (P8-1, 2026-09-29) -----------------------------------------------------------
+        //
+        // The 33 Skill Point quests with their progress. Information only: a quest completes by
+        // playing, never by pressing Confirm here.
+        private void BuildQuestRows()
+        {
+            var definition = _metaProgressionService.DefinitionData;
+            var save = _metaProgressionService.SaveData;
+            var catalog = QuestLedger.BuildCatalog(definition);
+            var collected = _metaProgressionService.CountCollectedCards();
+            var done = 0;
+            var earned = 0;
+            var total = 0;
+
+            for (var index = 0; index < catalog.Count; index++)
+            {
+                total += catalog[index].RewardSkillPoints;
+
+                if (save.IsQuestCompleted(save.SelectedCharacterId, catalog[index].QuestId))
+                {
+                    done++;
+                    earned += catalog[index].RewardSkillPoints;
+                }
+            }
+
+            _commands.Add(new RowCommand(
+                LocalizationService.Resolve("Quests done: ", "Quests erledigt: ") + done + " / " + catalog.Count,
+                earned + " / " + total + " SP",
+                RowState.Header,
+                string.Empty,
+                null));
+
+            QuestGroup? group = null;
+
+            for (var index = 0; index < catalog.Count; index++)
+            {
+                var quest = catalog[index];
+
+                if (group != quest.Group)
+                {
+                    group = quest.Group;
+                    _commands.Add(new RowCommand("<b>" + DescribeQuestGroup(quest.Group) + "</b>", string.Empty, RowState.Header, string.Empty, null));
+                }
+
+                var completed = save.IsQuestCompleted(save.SelectedCharacterId, quest.QuestId);
+                var target = quest.Group == QuestGroup.WeaponMastery ? QuestLedger.ResolveMasteryTarget(definition, quest) : quest.Target;
+                var progress = QuestLedger.ResolveProgress(save, definition, quest, collected);
+
+                _commands.Add(new RowCommand(
+                    "    " + quest.Title + "  " + BuildProgressBar(progress, target) + "  " + progress + " / " + target,
+                    completed ? LocalizationService.Resolve("Done", "Erledigt") : "+" + quest.RewardSkillPoints + " SP",
+                    completed ? RowState.Owned : RowState.Locked,
+                    DescribeQuest(quest, progress, target),
                     null));
-                return;
             }
+        }
 
-            var offer = SkillTreeRules.EnsureAscensionOffer(save, tree);
-
-            for (var index = 0; index < offer.Count; index++)
+        private static string DescribeQuestGroup(QuestGroup group)
+        {
+            switch (group)
             {
-                var bonus = tree.FindAscensionBonus(offer[index]);
-                var offerIndex = index;
-                var affordable = save.SkillPointsAvailable >= cost;
-                _commands.Add(new RowCommand(
-                    "    " + (bonus != null ? bonus.DisplayName : offer[index]),
-                    cost + " SP",
-                    affordable ? RowState.Available : RowState.Unaffordable,
-                    LocalizationService.Resolve("Take this bonus for the next Ascension rank. The other two are rerolled.", "Nimm diesen Bonus für den nächsten Aufstiegsrang. Die anderen beiden werden neu gewürfelt."),
-                    () => SkillTreeRules.TryPurchaseAscension(save, tree, offerIndex)));
+                case QuestGroup.WeaponKills:
+                    return LocalizationService.Resolve("Weapon kills - 1 SP each", "Waffen-Kills - je 1 SP");
+                case QuestGroup.WeaponArsenal:
+                    return LocalizationService.Resolve("Arsenal - clear the game with six of one weapon - 1 SP each", "Arsenal - schließe das Spiel mit sechs gleichen Waffen ab - je 1 SP");
+                case QuestGroup.WeaponMastery:
+                    return LocalizationService.Resolve("Weapon mastery - every Alloy upgrade - 3 SP each", "Waffenmeisterschaft - jede Legierungs-Verbesserung - je 3 SP");
+                case QuestGroup.Collection:
+                    return LocalizationService.Resolve("Collection - 1 SP", "Sammlung - 1 SP");
+                default:
+                    return LocalizationService.Resolve("Bosses - first kill - 1 SP each", "Bosse - erster Sieg - je 1 SP");
             }
+        }
+
+        private static string DescribeQuest(QuestDefinition quest, int progress, int target)
+        {
+            var weaponName = quest.Weapon != null ? quest.Weapon.DisplayName : string.Empty;
+
+            switch (quest.Group)
+            {
+                case QuestGroup.WeaponKills:
+                    return LocalizationService.Resolve(
+                        "Kills by " + weaponName + "'s shots, burns and freezes count. Towers do not.",
+                        "Es zählen Kills durch Schüsse, Brand und Frost von " + weaponName + ". Türme zählen nicht.");
+                case QuestGroup.WeaponArsenal:
+                    return LocalizationService.Resolve(
+                        "Win the final stage with all six weapon slots holding " + weaponName + ". Needs all six slots unlocked.",
+                        "Gewinne die letzte Stage, während alle sechs Waffenplätze " + weaponName + " tragen. Braucht alle sechs Plätze.");
+                case QuestGroup.WeaponMastery:
+                    return LocalizationService.Resolve(
+                        "Buy every Alloy upgrade for " + weaponName + " on the Upgrades tab: " + progress + " of " + target + " ranks.",
+                        "Kaufe jede Legierungs-Verbesserung für " + weaponName + " im Reiter Verbesserungen: " + progress + " von " + target + " Rängen.");
+                case QuestGroup.Collection:
+                    return LocalizationService.Resolve(
+                        "Take every card at least once, from a reward or the shop. Records shows which are still missing.",
+                        "Nimm jede Karte mindestens einmal, aus einer Belohnung oder dem Shop. Aufzeichnungen zeigen, welche fehlen.");
+                default:
+                    return LocalizationService.Resolve("The first defeat of this boss, on any run.", "Der erste Sieg über diesen Boss, in irgendeinem Run.");
+            }
+        }
+
+        private static string BuildProgressBar(int progress, int target)
+        {
+            const int Segments = 10;
+            var filled = target > 0 ? Mathf.Clamp(Mathf.FloorToInt(Segments * (float)progress / target), 0, Segments) : 0;
+            return BuildPips(filled, Segments);
         }
 
         private readonly struct RowCommand

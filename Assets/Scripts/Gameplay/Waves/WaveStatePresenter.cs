@@ -1843,7 +1843,8 @@ namespace Corebound.Gameplay.Waves
             }
 
             metaSaveData.EnsureLevelFloor();
-            _runTimerText.text = elapsed + "   Lv " + metaSaveData.Level
+            // Past the cap the bar is the next Paragon level (levelling v3).
+            _runTimerText.text = elapsed + (metaSaveData.IsAtLevelCap ? "   Paragon " + metaSaveData.ParagonLevel : "   Lv " + metaSaveData.Level)
                 + "  " + metaSaveData.Experience + "/" + metaSaveData.ExperienceForNextLevel;
         }
 

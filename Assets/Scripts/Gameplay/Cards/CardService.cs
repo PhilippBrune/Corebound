@@ -381,8 +381,13 @@ namespace Corebound.Gameplay.Cards
             if (statistics != null && statistics.RecordCardCollected(card.CardId))
             {
                 SaveManager.SaveStatisticsSaveData(statistics);
+                CardCollectedFirstTime?.Invoke(card.CardId);
             }
         }
+
+        // A card this profile has never taken before. WaveManager listens and checks the "collect
+        // every card" quest - it holds the progression definition this service does not.
+        public static event Action<string> CardCollectedFirstTime;
 
         private void SaveSelectedCardsToRun()
         {
