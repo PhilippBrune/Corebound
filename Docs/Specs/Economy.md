@@ -171,7 +171,7 @@ verweisen hierher.
 | Währung | Reichweite | Verdient durch | Ausgegeben für |
 | --- | --- | --- | --- |
 | Scrap | ein Run | Enemy-Kills, Wave-Abschluss, Factory-Produktion, Waffenverkauf, Skill-Tree-Startboni | Towers, Tower-Upgrades, Shop-Angebote, Waffen, Waffen-Tier-Upgrades, Core-Reparatur |
-| Skill Points | dauerhaft | **nur Boss-Siege**: Stage 1-5 = 1 / 1 / 2 / 2 / 3, plus 2 beim ersten Sieg über eine Boss-Id | Skill-Tree-Knoten, danach Ascension-Ränge |
+| Skill Points | dauerhaft | **Stufen und Quests** (seit 2026-09-29): 2 pro Stufe, +3 jede zehnte, Höchststufe 70; 33 einmalige Quests, darunter der erste Sieg über jeden Stage-Boss | Skill-Tree-Knoten (212 SP gesamt) |
 | Alloy | dauerhaft | **nur Boss- und Elite-Kills**: Boss Stage 1-5 = 6 / 8 / 10 / 12 / 14, plus 10 beim ersten Sieg; Elite = 1 | Unlocks, permanente Stat-Upgrades, bezahlter Respec (30) |
 
 Weder das Abschließen noch das Scheitern eines Runs zahlt an sich etwas. Die Werte stehen in

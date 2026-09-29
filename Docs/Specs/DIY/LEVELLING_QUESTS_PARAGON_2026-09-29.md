@@ -1,221 +1,207 @@
-# Levelling cap, Skill Point quests and Paragon — Concept for review, 2026-09-29
+# Levelling cap, Skill Point quests and Paragon — decided and implemented 2026-09-29
 
 **Owner request:** *"Each level gives 1 SP. Current max level == max amount to spend SP. After
 reaching max level a mechanic similar to Paragon level from Diablo 4 is for unlocking Ascension.
-Vision: define a quest system for unlocking SP, e.g. one quest for each weapon to defeat 500 of each
-enemy, and each of those quests grants 1 SP. Another quest for each weapon to equip 6 weapons of the
-same kind, and so on. I would need to know: what is the current max level? I have in mind that 10%
-of SP are done via quests."*
+Vision: define a quest system for unlocking SP [...] I have in mind that 10% of SP are done via
+quests."*
 
-This is a design document. Nothing in it is implemented. Answer each decision with its code, e.g.
-`P1-1, P2-1, P3-2 ...`, the same way as the node-graph concept.
-
----
-
-## The answer first: what is the current max level?
-
-**There is none.** `MetaProgressionSaveData.ResolveLevelCost` is `120 × 1.15^(level − 1)` with no
-cap, so the level is unbounded in code. In practice the curve becomes a wall:
-
-| Level | XP for the next level | Total XP to reach it | Full runs to reach it (est.) |
-| --- | --- | --- | --- |
-| 10 | 422 | 2,015 | ~1 |
-| 20 | 1,708 | 10,584 | ~4 |
-| 30 | 6,909 | 45,259 | ~18 |
-| 40 | 27,951 | 185,538 | ~74 |
-| 50 | 113,077 | 753,046 | ~300 |
-
-So the **practical** cap is **around level 30–35**, which is 30–35 SP from levels. The skill tree
-costs **212 SP** (Combat 55, Construction 53, Industry 52, Command 52). Today the rest has to come
-from bosses: repeat kills pay about **6 SP per full run** (stage 1–5: 1, 1, 1, 1, 2 after the ×0.67
-scale), first kills about **13 SP once**.
-
-> **Unmeasured:** "full run" above assumes about **2,500 XP per complete five-stage run** (kills × 2,
-> waves × 18, stages × 140). A full run has never been timed or counted (vision §10, open point 2).
-> Every run-count estimate in this document scales with that number. It should be measured with a
-> `god5`-style autopilot run before the curve is committed.
+**Owner decisions (2026-09-29):** every recommendation P1–P8 taken, with the level cap, the SP per
+level and the quest list replaced by the owner's own numbers below. The second half of this document,
+**Alloy quests**, is a new proposal for review.
 
 ---
 
-## Decisions at a glance
+## Part 1 — What was built
 
-| Code | Question | Recommendation |
-| --- | --- | --- |
-| P1 | What does "max level == max SP" mean? | **1** — levels + quests together pay exactly the tree cost |
-| P2 | Level cap and curve | **1** — cap **190**, linear-growing cost `150 + 8 × (level − 1)` |
-| P3 | What happens to boss Skill Points? | **2** — first kills become quests, repeat kills pay XP instead of SP |
-| P4 | Which quests pay SP? | **The 23 listed below** (weapon kills, weapon sets, boss first kills) |
-| P5 | Quests beyond the SP budget ("and so on") | **2** — they pay Alloy or Ascension Points, never SP |
-| P6 | Quest progress per character or per profile? | **1** — per character, like the tree |
-| P7 | What happens after the cap (Paragon)? | **3** — Paragon levels fund an Ascension ring on the existing graph |
-| P8 | Where quests are shown | **1** — a Quests tab on the Progression screen, plus an in-run toast |
+### The budget
 
----
+The skill tree costs **212 SP** (Combat 55, Construction 53, Industry 52, Command 52). This was
+re-counted from the asset and from `SkillTreeRules.ResolveTotalTreeSpend`, which agree. The 211 seen in
+play was the balance on Profile 2 after test grants, not the tree's cost, so the card collection quest
+stays.
 
-## P1 — What "max level == max amount to spend SP" means
+| Source | SP |
+| --- | --- |
+| Levels 1–70: 2 SP per level, level 1 included | 140 |
+| Every tenth level (10, 20 … 70): 3 SP more | 21 |
+| **Levels total** | **161** |
+| 33 quests (below) | 51 |
+| **Total = tree cost** | **212** |
 
-1. **Levels plus quests pay exactly the tree cost.** 212 SP in total: about 90% from levels, about
-   10% from quests. At the cap with every quest done, the tree is complete; nothing is left over.
-2. **Levels alone pay the whole tree, quests are extra.** Cap = 212. Quests then add about 10% on
-   top, which would finish the tree before the cap and leave 23 SP with nowhere to go but Ascension.
-3. **The cap equals the tree cost, and quests speed it up.** Same as 2, described differently.
+At the cap with every quest done, the tree is exactly complete and can never be over-funded (P1-1).
 
-**Recommendation: 1.** It is the only reading where both of your statements hold at once — "max level
-== max SP" and "10% via quests". It also keeps one invariant forever: *the tree can be completed,
-and it can never be over-funded*, which is what stops the tree trivialising when SP sources are added.
+### Levelling (P2, owner numbers)
 
-## P2 — Level cap and curve
+- **Cap: level 70.** A level-up pays 2 SP, a tenth level 5 SP. A new profile starts at level 1 with
+  its 2 SP already paid.
+- **Curve:** linear-growing, `400 + 60 × (level − 1)` XP per level-up (P2-1's shape, retuned for the
+  lower cap). The 69 level-ups cost **168,360 XP** in total — about **68 full runs, ~70 hours**, the
+  same pace the recommendation aimed at.
+- **XP sources:** kill 2, wave cleared 18, stage cleared 140, and now **boss kill 300 × stage**.
 
-With P1-1 and the 23 quest SP of P4: **cap = 212 − 23 + 1 = level 190** (a new character starts at
-level 1 with 0 SP; each of the 189 level-ups pays 1 SP). 189 + 23 = 212.
+> **Still unmeasured:** the run estimates assume about 2,500 XP per complete five-stage run. No full
+> run has been counted yet (Open Topics 2.9).
 
-1. **Linear-growing:** each level costs `150 + 8 × (level − 1)` XP.
-2. **Keep ×1.15 and raise the XP income** so level 190 becomes reachable.
-3. **Banded:** fast first 20 levels, then flat.
+### Bosses (P3-2)
 
-**Recommendation: 1.** The ×1.15 curve cannot reach 190 at any sane income (level 60 alone needs
-three million XP). A linear-growing cost is still front-loaded where it matters and bounded at the top:
+Bosses pay **no SP** any more. Each boss's first kill completes its quest (1 SP); every kill pays an
+XP lump of 300 × stage, and Alloy exactly as before.
 
-| Level | XP for the next level | Total XP to reach it | Full runs (est.) |
-| --- | --- | --- | --- |
-| 2 | 158 | 150 | a third of a stage |
-| 10 | 222 | 1,638 | < 1 |
-| 20 | 302 | 4,218 | ~2 |
-| 50 | 542 | 16,758 | ~7 |
-| 100 | 942 | 53,658 | ~21 |
-| 150 | 1,342 | 110,558 | ~44 |
-| **190 (cap)** | — | **170,478** | **~68** |
-
-At 60–70 minutes per full run (vision §10) that is **about 70 hours to the cap**, which leaves the
-vision's "reasons to continue after 100 hours" to Paragon (P7). A new player who dies in Stage 1 or 2
-still gains 2–4 levels per run, which keeps the "a failed run bought nothing" fix from the levelling
-concept intact.
-
-## P3 — Boss Skill Points
-
-Today bosses pay SP directly. Under P1-1 every SP must come from a level or a quest, or the budget
-leaks.
-
-1. **Keep boss SP** and lower the cap by the expected boss SP. The cap would then depend on how
-   often a player kills bosses, so "max level == max SP" stops being exact.
-2. **First kills become quests; repeat kills pay XP.** "Defeat the Stage N boss" ×5 are quests worth
-   1 SP each. A repeat kill pays a large XP lump (suggested 300 × stage) and its Alloy as today.
-3. **Remove boss SP entirely** and pay only XP.
-
-**Recommendation: 2.** The first kill of each boss is already special-cased
-(`RecordBossDefeated`), so it maps onto a quest cleanly, and repeat kills still feel rewarding
-because a big XP lump visibly moves the bar.
-
-## P4 — The SP quest catalogue (23 SP, 10.8%)
-
-Each quest pays **1 SP once**. With 9 weapons and 5 stages today:
+### Quests (P4, owner list; P6-1; P8-1)
 
 | Group | Quest | Count | SP |
 | --- | --- | --- | --- |
-| Weapon mastery | Defeat 500 enemies with **{weapon}** | 9 | 9 |
-| Weapon arsenal | Carry six **{weapon}** at once (a full Set Bonus loadout) | 9 | 9 |
-| Boss firsts | Defeat the **Stage N** boss | 5 | 5 |
-| | | **23** | **23** |
+| Weapon kills | Defeat **1,000** enemies with {weapon} — any enemy type | 9 | 9 |
+| Arsenal | Clear the game carrying six {weapon} (all six slots at the final win) | 9 | 9 |
+| Weapon mastery | Every Alloy upgrade for {weapon} at its maximum | 9 | 27 |
+| Collection | Collect every card | 1 | 1 |
+| Bosses | Defeat the Stage N boss (first time) | 5 | 5 |
+| | | **33** | **51** |
 
-Notes:
+- **Kill credit:** a kill counts for the weapon whose shot, burn or freeze finished the enemy. Towers,
+  the Core and adds that die with their boss count for nothing. `DamageContext` gained a `SourceId`
+  for this.
+- **Mastery** counts only the tracks the Upgrades tab offers that weapon (no Accuracy on a weapon
+  without spread), using one shared rule in `UpgradeRules.IsTrackApplicable`.
+- **Collection** reads the same "ever collected" record as the Records card grid.
+- Quest progress is stored **per character** (P6-1). Levels are still per profile until a second
+  character exists.
+- **Shown** on a new **Quests** tab on the Progression screen, with progress bars. A completion
+  toasts in-run and never pauses (P8-1).
 
-- "Defeat 500 of each enemy" in your message: this reads it as **500 enemies of any kind with that
-  weapon**. If you meant 500 of *each enemy type* per weapon, that is 5 × 500 = 2,500 kills per weapon
-  — about 20 full runs per weapon, and 180 runs for the set. The quest count stays the same; only the
-  grind changes. Say which you meant.
-- **Adding content changes the budget.** A tenth weapon adds two SP quests. Under P1-1 the cap would
-  have to drop by two, which players would notice. The clean rule: *the SP quest list is fixed to the
-  launch roster; new weapons get P5-style quests.* Alternatively the tree grows by the same amount.
+### Paragon and Ascension (P7-3)
 
-## P5 — Quests beyond the SP budget ("and so on")
+- Past level 70, XP fills **Paragon levels** at a flat **2,500 XP** each (about one full run). Each
+  pays **1 Ascension Point (AP)**. The 4,480 XP of the last level-up would have halved the pace, so
+  the flat cost is set per full run instead.
+- **Ascension unlocks at the cap**, no longer at tree completion.
+- **Ascension ring:** each branch's graph gains two gold nodes past its last key node. They are
+  repeatable bonuses bought with AP: 1 AP per rank, one more per ten ranks. The pool grew from six to
+  eight bonuses, so every branch has two: Industry gained "+2 Scrap at the start of every stage",
+  Command "−1% tower and shop prices".
+- **Keystone:** every tenth Paragon level grants a free choice of three from the pool, applied
+  **×5**. This is the old Ascension offer, kept as the milestone reward.
+- The main menu medallion and the profile rows now show **Level N** or **Paragon N**.
 
-There are many more good quests than 23 SP can pay for:
+### Existing profiles
 
-- Towers: build each tower to its maximum upgrade level; defeat 300 enemies with each tower type.
-- Enemies: defeat 1,000 of each enemy type; defeat each elite affix 50 times.
-- Factory: reach chain tier 4 in a run.
-- Collection: collect every card of a rarity (ties into the new Records card grid).
-- Runs: clear a stage without the Core taking damage; clear a stage with one weapon type only.
+- Old XP is re-read against the new curve, and **a level is never taken away**. The old curve was
+  cheaper for the first levels, so most profiles keep their level. Level SP are topped up to the new
+  entitlement: Profile 2 went from 4 to 10.
+- Bosses killed before the quests existed are marked **done, not paid again**.
+- A weapon already fully upgraded, or a card collection already complete, is paid on first load.
+  Profile 2's Rapid mastery paid 3 SP this way.
+- Ascension ranks bought with SP under the old rules become ring ranks, and their SP are refunded.
+- Profiles holding more SP than the budget (test grants) keep them.
 
-1. **Pay SP**, and let the SP share grow past 10%.
-2. **Pay Alloy or Ascension Points (P7)**, never SP.
-3. **Pay cosmetics / titles only.**
+### Also fixed on the way
 
-**Recommendation: 2.** It keeps P1's invariant exact and still makes every quest worth doing. Alloy
-early (it funds unlocks and upgrades), Ascension Points once the player is past the cap.
-
-## P6 — Per character or per profile?
-
-The vision says each playable character has its own tree and is levelled separately.
-
-1. **Per character.** Quest progress and rewards belong to the character that earned them.
-2. **Per profile.** A quest done once pays every character.
-
-**Recommendation: 1.** SP is spent in a character's tree, so it must be earned by that character, or
-a second character starts with a pre-filled tree and the vision's "a second character starts at zero"
-breaks. There is only one character today, so this costs nothing yet — it only decides where the
-counters are stored.
-
-## P7 — After the cap: Paragon
-
-In Diablo 4, experience keeps flowing after the level cap into Paragon levels, and each Paragon level
-pays a point that is spent on a board. Here the target is Ascension, which already exists: today it
-unlocks when the tree is complete and costs SP per rank (5 + rank / 10), offering a choice of three
-small bonuses.
-
-In every option below, XP past level 190 fills **Paragon levels** at a **flat 1,650 XP each** (the
-cost of the last normal level-up, about two thirds of a full run). Each pays **1 Ascension Point (AP)**.
-Ascension unlocks at the level cap, as you described, not at tree completion.
-
-1. **Ascension as it is, paid in AP.** One rank per AP, choice of three per rank. Smallest change.
-2. **A Diablo 4 style board.** A grid per character, entered from one edge, with normal, magic and
-   rare nodes and glyph sockets; a new board every 20 Paragon levels. The most faithful, and by far
-   the most authoring and UI work.
-3. **An Ascension ring on the existing graph.** Past each branch's last key node, the radial graph
-   gains an outer ring: repeatable small nodes (1 AP per rank, soft-capped per node), and every 10th
-   Paragon level a **Keystone** — the existing choice-of-three offer, with stronger bonuses.
-
-**Recommendation: 3.** It keeps the Paragon *feel* — spending points on a board, choosing where to
-grow — on the graph that was just built, instead of a second board screen. It keeps Ascension's
-choice-of-three as the Keystone rather than throwing it away, and it stays inside the vision's
-"endless track of small numeric bonuses".
-
-## P8 — Where quests are shown
-
-1. **A Quests tab on the Progression screen**, grouped as in P4, with progress bars (`312 / 500`) and
-   the reward, plus a `NotificationPresenter` toast in-run when one completes.
-2. **A Quests tab in Records.**
-3. **Both.**
-
-**Recommendation: 1.** Quests pay SP, and SP is spent on the Progression screen, so that is where a
-player looks for "how do I get more". The toast must not pause the game (vision: nothing touches
-`Time.timeScale` mid-combat).
+`SkillModifierSnapshot` sized its array with the literal 29 while the enum had grown to 31, so the
+two tree nodes granting **pickup magnet range** and **reward rerolls** have never done anything.
+The array is now sized from the enum.
 
 ---
 
-## Existing profiles
+## Part 2 — Alloy quests (proposal for review, 2026-09-29)
 
-- Level and XP are re-evaluated against the new curve. If the new level is higher, the difference is
-  paid in SP. A level is never taken away.
-- Bosses already killed count as their first-kill quests, **done but not paid again** — that SP was
-  paid when they died.
-- A profile holding more SP than the new budget (debug grants, Profile 2) keeps it. The invariant is
-  for real play, not for test profiles.
+P5-2 decided that quests beyond the SP budget pay Alloy or AP, never SP. Pricing them uncovered a
+problem the mastery quests make urgent, so that comes first.
 
-## What the code needs
+### The problem: mastery is priced far beyond what runs pay
 
-- `MetaProgressionSaveData`: level cap, new `ResolveLevelCost`, Paragon level and XP, AP balance,
-  quest counters and completion flags per character (fields appended, never inserted).
-- **Kill attribution.** `DamageContext` knows only `SourceType` (Player, Tower, ...), not *which*
-  weapon fired. Weapon mastery needs a source id on it, set where projectiles are fired. This is the
-  one change that touches combat code.
-- `MetaRewardLedger`: boss first kill routes to the quest, repeat kill pays XP; Paragon XP past the
-  cap; a single `QuestLedger.Record(...)` chokepoint in the same shape.
-- Loadout change event for the "six of one weapon" quests.
-- Progression screen: Quests tab (P8), Ascension ring on the graph (P7-3).
+An upgrade rank costs `base × rank`, so a track costs `base × n(n+1)/2`:
 
-## Rough size
+| Sink | Alloy |
+| --- | --- |
+| One weapon, every track (with / without Accuracy) | 1,565 / 1,460 |
+| **All nine weapons** (the 27 SP of mastery quests) | **~13,100–14,100** |
+| One tower, every track | 1,002 |
+| All four towers | 4,008 |
+| Every unlock | 460 |
+| **Everything** | **~18,000** |
 
-Half a day for the curve, cap, migration and boss change. One day for the quest ledger, kill
-attribution and the Quests tab. Two days for the Ascension ring on the graph, most of it navigation
-and the Keystone offer.
+Income today is bosses at 6 / 8 / 10 / 12 / 14 per stage, so **50 per full run**, plus 1 per elite
+and 50 once for first kills. That is roughly **60 Alloy per full run**, and **~4,100 by the level
+cap** at 68 runs.
+
+So by the time a player reaches level 70, they can afford the unlocks and **about two and a half
+weapon masteries**. All nine would take **~225 full runs**. The 27 mastery SP are effectively out of
+reach, which means the tree cannot be completed anywhere near the cap. That breaks the promise of
+Part 1.
+
+> The income figure is an estimate. The only recorded runs are short autopilot deaths, which earned
+> 0–2 Alloy each. Measure it together with the XP per run.
+
+### A1 — How to close the gap
+
+Target: all nine masteries and every unlock affordable by about the level cap, which is ~14,000 Alloy
+by run 68 against ~4,100 earned.
+
+1. **Alloy quests pay the whole gap:** about 10,000 Alloy across the quests below. Large lumps, and
+   the quests become mandatory rather than a bonus.
+2. **Cheaper weapon tracks plus modest quests:** weapon track base cost 5 → 3. A weapon then costs
+   876–939 and all nine ~8,200. Alloy quests worth ~4,000 on top of ~4,100 from runs then cover the
+   unlocks and eight of the nine masteries by the cap, and the ninth a few runs later. Tower tracks
+   become the long tail.
+3. **More Alloy from bosses (×2.5) plus modest quests.** It works, but it inflates every other Alloy
+   price too, and first-run players would afford everything at once.
+
+**Recommendation: 2.** It fixes the cause, which is the price of mastery, rather than paying around
+it. It keeps Alloy quests an enjoyable extra rather than a chore, and it leaves towers as the thing a
+long-term player still saves for. Tower tracks stay at base 6.
+
+### A2 — The Alloy quest catalogue (one-time, ~4,000 Alloy)
+
+| Group | Quest | Count | Alloy each | Alloy |
+| --- | --- | --- | --- | --- |
+| Towers | Upgrade {tower} to its highest level in one run | 4 | 150 | 600 |
+| Towers | Defeat 300 enemies with {tower} | 4 | 100 | 400 |
+| Enemies | Defeat 1,000 {enemy type} | 5 | 150 | 750 |
+| Elites | Defeat 50 elites with the {affix} affix | 3 | 100 | 300 |
+| Factory | Reach chain tier 4 in a run | 1 | 200 | 200 |
+| Collection | Collect every Common / Rare / Epic / Legendary card | 4 | 100 / 150 / 200 / 300 | 750 |
+| Runs | Clear Stage N without the Core taking damage | 5 | 100 | 500 |
+| Runs | Clear Stage N using only one weapon type | 5 | 100 | 500 |
+| | | **31** | | **4,000** |
+
+The rarity collection quests do not overlap the SP quest "collect every card". They are the
+milestones on the way to it.
+
+### A3 — One-time or repeatable?
+
+1. **One-time**, like the SP quests.
+2. **Repeatable** (weekly-style rotations).
+3. **One-time, plus a repeatable tail after the level cap** paying AP.
+
+**Recommendation: 1.** A singleplayer offline game has no reason for rotations, and repeatables turn
+quests into a checklist of chores. After the cap, Paragon already pays AP per run.
+
+### A4 — Where Alloy quests are shown
+
+1. **The same Quests tab**, as a second section below the SP quests, rewards shown in Alloy.
+2. **A separate tab.**
+
+**Recommendation: 1.** One place for "what can I work towards", one list to scroll.
+
+### A5 — Past the level cap
+
+1. **Alloy quests keep paying Alloy.**
+2. **Past the cap, they pay AP instead.**
+
+**Recommendation: 1.** Alloy still has sinks past the cap (tower tracks, any unmastered weapon), and
+AP should stay tied to Paragon so its pace is predictable.
+
+### What A2 needs in code
+
+- **Tower kill credit:** the new `DamageContext.SourceId` carries the tower id for tower shots. It is
+  currently null for them.
+- **Enemy-type and elite-affix kill counters,** from the victim in the same death handler that
+  already feeds the weapon quests.
+- **Stage-level checks** at stage clear: Core damage taken this stage, and distinct weapon ids in the
+  loadout.
+- **Factory tier:** `FactoryService.HighestChainTier` at stage clear.
+- **Tower upgrade level:** checked when a tower is upgraded.
+- The ledger gets an Alloy reward type. The Quests tab gets a second section.
+
+**Rough size:** half a day for the cost change and the counters, half a day for the catalogue and the
+second Quests section.

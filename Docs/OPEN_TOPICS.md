@@ -5,6 +5,10 @@ history holds what was fixed and why. Do not start a new report file; add here.
 
 `08_IMPLEMENTATION_BACKLOG.md` is the plan. This is the punch list.
 
+**Closed 2026-09-29:** mouse everywhere (owner: "working, can be closed"). **Fixed on the way:** the
+skill tree's pickup-magnet and reward-reroll nodes never did anything, because the modifier snapshot
+array was one enum growth too short.
+
 **Closed 2026-09-28** and removed from this file: balance of the 2026-09-22/23 additions, features
 no automated run reaches, the arena work being unplayed, Shop/Reward looking alike, and the open
 vision questions. Also settled: a weapon pending across a stage change stays as it is — **no** short
@@ -96,15 +100,26 @@ save is wiped on death before the history is written - so the build is now read 
 loadout and tower service, and the tutorial flag is cached at run start for the same reason.
 Records gained a **Cards** tab: every card in the pool, blurred until collected once.
 
-### 2.5 Levelling — **done**
+### 2.5 Levelling, SP quests and Paragon — **done (v3, 2026-09-29)**
 
-Per-profile level on a x1.15 curve from weighted kills, wave clears and stage clears; one Skill Point
-per level; boss SP reduced to two thirds so the two sources sum to roughly what bosses alone paid.
-HUD bar shares the run-timer Settings toggle.
+Owner decisions on `Specs/DIY/LEVELLING_QUESTS_PARAGON_2026-09-29.md`, built the same day:
+- level cap **70**, 2 SP per level plus 3 at every tenth level (161 SP);
+- **33 quests for 51 SP**: weapon kills (1,000), six-of-one-weapon game clear, weapon mastery,
+  collect every card, boss first kills;
+- bosses pay XP instead of SP;
+- a **Quests** tab;
+- past the cap, Paragon levels pay Ascension Points for a ring of repeatable bonuses on the graph,
+  and a Keystone every ten.
 
-**Next: decide** the level cap, SP quests and Paragon concept,
-`Specs/DIY/LEVELLING_QUESTS_PARAGON_2026-09-29.md` (P1-P8). There is no level cap today; the x1.15
-curve walls out around level 30-35 against a 212 SP tree.
+161 + 51 = the tree's 212 SP exactly.
+
+Profile 2 migrated as specified: level 5 kept, SP topped up, old boss kills marked done and not paid
+again. The Ascension variant of the autopilot reached level 70 and Paragon 10 and bought a ring rank
+and a Keystone.
+
+**Next: decide** Part 2 of that document, **Alloy quests** (A1-A5). Pricing it showed that
+maxing all nine weapons costs ~13,500 Alloy against ~4,100 earned by the cap. The 27 mastery SP are
+out of reach until A1 is settled.
 
 ### 2.6 Skill tree node graph — **done, one deviation**
 
@@ -134,14 +149,12 @@ pool lacked. The five cards I had flagged as possibly doing nothing were fine - 
 Single-stage verification runs were used throughout this pass, but the five-run campaign has not
 been done.
 
-### 2.10 Mouse everywhere — **done, clicks unverified**
+### 2.10 New card mechanics — **decide**
 
-Added 2026-09-29: Progression tabs, rows and graph nodes; Settings tabs, rows (click steps forward,
-right-click back) and Apply / Cancel buttons; Records tabs and card grid; pause tabs, settings rows
-and Resume / Main Menu buttons; a click dismisses Start, Run Failed and tutorial beats after a 0.6 s
-grace; build-browser cards (click selects, click again builds or upgrades); right-click skips the
-shop. Every element was screenshotted, but **no click was made** - synthetic OS input does not
-reach the Input System, so each needs one real mouse pass.
+`Specs/DIY/NEW_CARD_MECHANICS_2026-09-29.md` (C1-C6): replace the ten cards that were repurposed with
+Set Bonus rules. The proposal adds Poison (stacking), Shock, Vulnerable, four support cards
+(heal, shield, tower aura, Core aura) and a Sentry Drone. Their leftover tags were corrected
+meanwhile, so the icons match what the cards do today.
 
 ### 2.11 Aim reticle — **second design**
 

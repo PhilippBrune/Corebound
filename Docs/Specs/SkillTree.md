@@ -36,11 +36,11 @@ The Skill Tree is the between-run growth spine. It answers "what did I get out o
 | Refundable | yes, full respec (see Respec) |
 | Paid | at the moment the boss dies, straight into the save - a run that beats the Stage 2 boss and then fails keeps those points |
 | Persisted in | `MetaProgressionSaveData` |
-| Cap | none; see Ascension for what happens past the tree's own maximum |
+| Cap | level 70 pays the last level SP; see Ascension for what happens past it |
 
 ### Earning rates
 
-**Owner decision 2026-09-22:** a Stage 1 failure pays 0; Skill Points come only from defeating a boss, and deeper bosses pay more. Values live on `MetaProgressionDefinitionData` (`_bossSkillPointsByStage`, `_bossFirstKillSkillPoints`), not in code.
+**Superseded 2026-09-29** (Specs/DIY/LEVELLING_QUESTS_PARAGON_2026-09-29.md): Skill Points come from the profile level (2 per level, 3 more at every tenth, cap 70: 161 SP) and from 33 one-time quests (51 SP). The total is exactly the tree's 212 SP. Bosses no longer pay SP; a boss's first kill is one of the quests. The level rules live in `MetaProgressionSaveData`, the quests in `QuestLedger`.
 
 | Event | SP |
 | --- | --- |
@@ -121,7 +121,7 @@ A Key Node becomes purchasable when **both** hold:
 
 ## Ascension (the Paragon equivalent)
 
-When every Key Node and every Sub Node rank has been purchased, the tree is **complete**. Further SP goes into **Ascension**.
+**Changed 2026-09-29:** Ascension unlocks at the **level cap (70)**, not at tree completion. Past the cap, experience fills Paragon levels (2,500 XP each); each pays one **Ascension Point**. Points buy ranks on the **Ascension ring**, two repeatable bonuses per branch drawn on the skill graph, at 1 AP per rank plus one per ten ranks. Every tenth Paragon level grants a **Keystone**: the choice of three below, applied ×5. The original list rules follow, as they still govern the Keystone offer.
 
 - Ascension is a flat, endless list of **Ascension Ranks**, not a second tree.
 - Each rank costs `5 + floor(rank / 10)` SP, so the curve stretches slowly rather than walling.

@@ -514,16 +514,16 @@ The game runs on three currencies, each with one job:
 | Currency | Scope | Earned by | Spent on |
 | --- | --- | --- | --- |
 | **Scrap** | one run | enemies, waves, the Factory | towers, shop offers, weapons, Core repair |
-| **Skill Points** | permanent | defeating bosses (more for deeper bosses) | the skill tree |
+| **Skill Points** | permanent | levels (2 per level, 3 more every tenth, cap 70) and one-time quests | the skill tree |
 | **Alloy** | permanent | bosses and elites | unlocks, and weapon/tower stat upgrades |
 
-Skill Points shape the character; Alloy improves the equipment. Neither is paid for simply finishing or failing a run: a run earns what its boss and elite kills earned, paid at the moment of the kill, so going deeper is what progresses the player (owner decision 2026-09-22). Scrap never crosses between runs, and neither permanent currency can buy anything a run itself can buy.
+Skill Points shape the character; Alloy improves the equipment. Neither is paid for simply finishing or failing a run. Alloy is what a run's boss and elite kills earned, paid at the moment of the kill (owner decision 2026-09-22). Skill Points come from the profile level, which every kill, wave and stage moves, and from one-time quests. Levels and quests together pay exactly what the tree costs (owner decision 2026-09-29, Specs/DIY/LEVELLING_QUESTS_PARAGON_2026-09-29.md). Scrap never crosses between runs, and neither permanent currency can buy anything a run itself can buy.
 
 ## Meta Progression
 
 Between runs, the player spends Skill Points on a branching **skill tree** of key nodes and their sub-nodes, and Alloy on **unlocks** and **permanent stat upgrades** to individual weapons and towers.
 
-The skill tree is finite. Once it is complete, further Skill Points go into an endless **Ascension** track of small numeric bonuses, so a player at 100 hours still has somewhere for progress to go without the game becoming a categorically different one.
+The skill tree is finite. Past the level cap, experience keeps filling **Paragon** levels, which pay Ascension Points into an endless **Ascension** track of small numeric bonuses, so a player at 100 hours still has somewhere for progress to go without the game becoming a categorically different one.
 
 Full requirements: [SkillTree.md](Specs/SkillTree.md) and [Upgrades.md](Specs/Upgrades.md).
 

@@ -171,8 +171,8 @@ anderen Dokumente behalten ihre Zahlen und verweisen hierher.
 
 | Teil | Wert | Quelle der Zahlen |
 | --- | --- | --- |
-| Skill Points | Stage 1-5: 1 / 1 / 2 / 2 / 3 | [Economy.md](Economy.md), Währungstabelle |
-| Skill Points, erster Sieg über diese Boss-Id | +2 | dito |
+| Skill Points | keine mehr pro Sieg (seit 2026-09-29: SP kommen aus Stufen und Quests) | [Economy.md](Economy.md), Währungstabelle |
+| Skill Points, erster Sieg über diese Boss-Id | +1 über die Quest "Besiege den Boss von Stage N" (seit 2026-09-29); jeder Sieg zahlt 300 × Stage XP | dito |
 | Alloy | Stage 1-5: 6 / 8 / 10 / 12 / 14 | dito |
 | Alloy, erster Sieg über diese Boss-Id | +10 | dito |
 | Card-Reward | ein reguläres Drei-Karten-Angebot | [Cards.md](Cards.md) |
