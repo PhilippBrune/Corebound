@@ -245,6 +245,9 @@ namespace Corebound.Gameplay.Waves
                 _bossRuntimeController.HeavyAttackStarted += OnBossHeavyAttackStarted;
             }
 
+            // A scene change or domain reload can destroy an overlay without it releasing the
+            // freeze, which would strand the new run at timeScale 0 with no way back.
+            GameplayTimeScaleGuard.ForceRelease();
             EnsureRunTimer();
             MetaRewardLedger.LevelGained -= OnLevelGained;
             MetaRewardLedger.LevelGained += OnLevelGained;

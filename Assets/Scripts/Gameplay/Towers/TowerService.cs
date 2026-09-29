@@ -539,7 +539,11 @@ namespace Corebound.Gameplay.Towers
         }
 
         // One seed per run, so re-entering a stage in the same run reproduces its traits.
-        private readonly int _slotTraitSeed = UnityEngine.Random.Range(1, 100000);
+        //
+        // Assigned lazily rather than in a field initializer: Unity forbids Random.Range in a
+        // MonoBehaviour constructor and throws when it is called there, which is exactly what the
+        // first version of this did.
+        private int _slotTraitSeed;
 
         private void CreateSlotRuntimes()
         {
@@ -555,6 +559,11 @@ namespace Corebound.Gameplay.Towers
             // Seeded per stage so the traits are stable for the whole stage - a slot must not
             // change what it offers while the player is deciding - but different next run and on
             // the next stage, which is the point of rolling them at all.
+            if (_slotTraitSeed == 0)
+            {
+                _slotTraitSeed = UnityEngine.Random.Range(1, 100000);
+            }
+
             var stageIndex = _waveManager != null ? _waveManager.StageIndex : 1;
             var traitRandom = new System.Random(_slotTraitSeed * 31 + stageIndex);
 

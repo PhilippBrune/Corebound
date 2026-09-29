@@ -2088,7 +2088,11 @@ namespace Corebound.Gameplay.Waves
         private void OpenOverlay(OverlayMode overlayMode, string title, string body)
         {
             _overlayMode = overlayMode;
-            Time.timeScale = 0f;
+
+            // Ownership of the freeze lives in GameplayTimeScaleGuard now (god-object refactor
+            // step 1). The assignment used to sit here bare, a hundred lines from its matching
+            // restore, with every overlay path able to route between them.
+            GameplayTimeScaleGuard.TryAcquire(this);
             LayoutPauseOverlay(overlayMode == OverlayMode.Pause);
 
             if (_pausePanel != null)
@@ -2116,7 +2120,7 @@ namespace Corebound.Gameplay.Waves
             }
 
             _overlayMode = OverlayMode.None;
-            Time.timeScale = 1f;
+            GameplayTimeScaleGuard.Release(this);
 
             if (_pausePanel != null)
             {
