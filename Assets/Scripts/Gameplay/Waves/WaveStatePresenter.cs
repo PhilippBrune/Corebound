@@ -1587,9 +1587,12 @@ namespace Corebound.Gameplay.Waves
             }
         }
 
+        // The XP a wave pays, on the banner that announces it (playtest 2026-09-29: "I want to get
+        // EXP per wave") - the one moment the player is already looking at the result of the wave.
         private void OnWaveCompleted(WaveProgressEventArgs eventArgs)
         {
-            ShowBanner(LocalizationService.Resolve("Wave Clear", "Welle geschafft"), new Color(0.84f, 0.97f, 0.9f, 0.98f));
+            var experience = Corebound.MetaProgression.MetaRewardLedger.ResolveWaveExperience(_waveManager != null ? _waveManager.StageIndex : 1);
+            ShowBanner(LocalizationService.Resolve("Wave Clear", "Welle geschafft") + "   +" + experience + " XP", new Color(0.84f, 0.97f, 0.9f, 0.98f));
         }
 
         private void OnIntermissionStarted(WaveProgressEventArgs eventArgs)
@@ -1649,22 +1652,28 @@ namespace Corebound.Gameplay.Waves
             }
         }
 
-        // Skill Points and Alloy are paid at the kill, so a failed run keeps them - the screen says
-        // so, and says how to earn them when there is nothing to show.
+        // Everything a run pays is banked at the moment it is earned, so a failed run keeps it - the
+        // screen says so. XP comes first: it is what every run earns, and the old line, which
+        // counted only Skill Points and Alloy, told a player who died at the Stage 1 boss that the
+        // run had earned "nothing" (playtest 2026-09-29).
         private static string ResolveRunEarningsLine()
         {
+            var experience = Corebound.MetaProgression.MetaRewardLedger.RunExperience;
+            var levels = Corebound.MetaProgression.MetaRewardLedger.RunLevelsGained;
             var skillPoints = Corebound.MetaProgression.MetaRewardLedger.RunSkillPoints;
             var alloy = Corebound.MetaProgression.MetaRewardLedger.RunAlloy;
 
-            if (skillPoints <= 0 && alloy <= 0)
+            if (experience <= 0 && skillPoints <= 0 && alloy <= 0)
             {
                 return LocalizationService.Resolve(
-                    "Earned this run: nothing - bosses pay Skill Points and Alloy, elites pay Alloy.",
-                    "In diesem Run verdient: nichts - Bosse geben Fertigkeitspunkte und Legierung, Elite-Gegner Legierung.");
+                    "Earned this run: nothing yet - every wave cleared pays XP, and bosses pay the most.",
+                    "In diesem Run verdient: noch nichts - jede geschaffte Welle gibt EP, Bosse am meisten.");
             }
 
             return LocalizationService.Resolve("Earned this run (kept): ", "In diesem Run verdient (bleibt erhalten): ")
-                + "+" + skillPoints + LocalizationService.Resolve(" Skill Points", " Fertigkeitspunkte")
+                + "+" + experience + LocalizationService.Resolve(" XP", " EP")
+                + (levels > 0 ? LocalizationService.Resolve("  (+" + levels + (levels == 1 ? " level)" : " levels)"), "  (+" + levels + (levels == 1 ? " Stufe)" : " Stufen)")) : string.Empty)
+                + "   +" + skillPoints + LocalizationService.Resolve(" Skill Points", " Fertigkeitspunkte")
                 + "   +" + alloy + LocalizationService.Resolve(" Alloy", " Legierung");
         }
 

@@ -54,9 +54,6 @@ namespace Corebound.MetaProgression
         private Text _respecLabel;
         private Vector2 _lastPointer;
 
-        // One row per notch: a wheel detent reports +-1 (or +-120 on some drivers), so the
-        // step is a row height rather than a multiplier on the raw value.
-        private const float WheelScrollStep = 44f;
         private Text _titleText;
         private Text _currencyText;
         private Text _skillPointText;
@@ -94,6 +91,7 @@ namespace Corebound.MetaProgression
                 return;
             }
 
+            UIPanelFit.Fit(_panelRect, new Vector2(PanelWidth, PanelHeight));
             var mouse = UnityEngine.InputSystem.Mouse.current;
 
             if (mouse == null)
@@ -133,26 +131,23 @@ namespace Corebound.MetaProgression
             }
         }
 
+#if UNITY_EDITOR
+        // Autopilot: a wheel event without a real mouse, raw value as the Input System reports it.
+        public void DebugScrollWheel(float rawScroll)
+        {
+            UIScrollUtility.ScrollBy(_scrollRect, UIScrollUtility.WheelToPixels(rawScroll));
+        }
+#endif
+
         private void HandleWheel(float scroll, Vector2 pointer)
         {
-            if (Mathf.Abs(scroll) < 0.01f || _scrollRect == null || _scrollRect.content == null || !_scrollRect.gameObject.activeInHierarchy)
+            if (_scrollRect == null || !_scrollRect.gameObject.activeInHierarchy || _scrollRect.viewport == null
+                || !RectTransformUtility.RectangleContainsScreenPoint(_scrollRect.viewport, pointer, null))
             {
                 return;
             }
 
-            var viewport = _scrollRect.viewport;
-
-            if (viewport != null && !RectTransformUtility.RectangleContainsScreenPoint(viewport, pointer, null))
-            {
-                return;
-            }
-
-            var content = _scrollRect.content;
-            var viewportHeight = viewport != null ? viewport.rect.height : 0f;
-            var maxScroll = Mathf.Max(0f, content.rect.height - viewportHeight);
-            var position = content.anchoredPosition;
-            position.y = Mathf.Clamp(position.y - Mathf.Sign(scroll) * WheelScrollStep, 0f, maxScroll);
-            content.anchoredPosition = position;
+            UIScrollUtility.ScrollBy(_scrollRect, UIScrollUtility.WheelToPixels(scroll));
         }
 
         private bool TryClickTab(Vector2 pointer)
@@ -619,26 +614,7 @@ namespace Corebound.MetaProgression
 
         private void ScrollToShow(RectTransform rowRect)
         {
-            if (_scrollRect == null || _scrollRect.viewport == null || _scrollRect.content == null)
-            {
-                return;
-            }
-
-            Canvas.ForceUpdateCanvases();
-
-            var content = _scrollRect.content;
-            var viewportHeight = _scrollRect.viewport.rect.height;
-            var rowTop = -rowRect.anchoredPosition.y;
-            var rowBottom = rowTop + rowRect.rect.height;
-            var currentOffset = -content.anchoredPosition.y;
-
-            var minOffset = rowBottom - viewportHeight;
-            var maxOffset = rowTop;
-            var targetOffset = Mathf.Clamp(currentOffset, minOffset, maxOffset);
-            var maxScrollable = Mathf.Max(0f, content.rect.height - viewportHeight);
-            targetOffset = Mathf.Clamp(targetOffset, 0f, maxScrollable);
-
-            content.anchoredPosition = new Vector2(content.anchoredPosition.x, targetOffset);
+            UIScrollUtility.ScrollToShow(_scrollRect, rowRect);
         }
 
         private Color ResolveStateColor(MetaProgressionRouteTargetController.RowState state, bool isSelected, bool isUnlocked)

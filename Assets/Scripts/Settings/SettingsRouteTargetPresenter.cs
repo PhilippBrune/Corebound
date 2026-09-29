@@ -14,7 +14,6 @@ namespace Corebound.Settings
         private const float PanelHeight = 940f;
         private const float FrameScale = 1.6f;
         private const float SideInset = 165f;
-        private const float WheelScrollStep = 44f;
         private static readonly Color ActiveTabColor = new Color(1f, 0.78f, 0.35f, 1f);
         private static readonly Color ButtonTint = new Color(0.16f, 0.2f, 0.26f, 0.92f);
         private static readonly Color ButtonHoverTint = new Color(0.45f, 0.3f, 0.12f, 0.95f);
@@ -59,6 +58,7 @@ namespace Corebound.Settings
                 return;
             }
 
+            UIPanelFit.Fit(_panelRect, new Vector2(PanelWidth, PanelHeight));
             var mouse = UnityEngine.InputSystem.Mouse.current;
 
             if (mouse == null)
@@ -130,17 +130,13 @@ namespace Corebound.Settings
 
         private void HandleWheel(float scroll, Vector2 pointer)
         {
-            if (Mathf.Abs(scroll) < 0.01f || _scrollRect == null || _scrollRect.content == null || _scrollRect.viewport == null
+            if (_scrollRect == null || _scrollRect.viewport == null
                 || !RectTransformUtility.RectangleContainsScreenPoint(_scrollRect.viewport, pointer, null))
             {
                 return;
             }
 
-            var content = _scrollRect.content;
-            var maxScroll = Mathf.Max(0f, content.rect.height - _scrollRect.viewport.rect.height);
-            var position = content.anchoredPosition;
-            position.y = Mathf.Clamp(position.y - Mathf.Sign(scroll) * WheelScrollStep, 0f, maxScroll);
-            content.anchoredPosition = position;
+            UIScrollUtility.ScrollBy(_scrollRect, UIScrollUtility.WheelToPixels(scroll));
         }
 
         private void UpdateButtonHover(Vector2 pointer)
@@ -444,26 +440,7 @@ namespace Corebound.Settings
         // helps a pointer-driven player, not someone navigating by Up/Down.
         private void ScrollToShow(RectTransform rowRect)
         {
-            if (_scrollRect == null || _scrollRect.viewport == null || _scrollRect.content == null)
-            {
-                return;
-            }
-
-            Canvas.ForceUpdateCanvases();
-
-            var content = _scrollRect.content;
-            var viewportHeight = _scrollRect.viewport.rect.height;
-            var rowTop = -rowRect.anchoredPosition.y;
-            var rowBottom = rowTop + rowRect.rect.height;
-            var currentOffset = -content.anchoredPosition.y;
-
-            var minOffset = rowBottom - viewportHeight;
-            var maxOffset = rowTop;
-            var targetOffset = Mathf.Clamp(currentOffset, minOffset, maxOffset);
-            var maxScrollable = Mathf.Max(0f, content.rect.height - viewportHeight);
-            targetOffset = Mathf.Clamp(targetOffset, 0f, maxScrollable);
-
-            content.anchoredPosition = new Vector2(content.anchoredPosition.x, targetOffset);
+            UIScrollUtility.ScrollToShow(_scrollRect, rowRect);
         }
 
         private Color ResolveRowColor(SettingsRouteTargetController.DisplayRow row)

@@ -182,8 +182,13 @@ namespace Corebound.MetaProgression
 
         public SkillTreeDefinitionData ActiveSkillTree => _definitionData != null ? _definitionData.FindSkillTree(EnsureLoaded().SelectedCharacterId) : null;
 
-        // Cards of the pool this profile has taken at least once, for the collection quest's
-        // progress on the Quests tab.
+        // Every card id this profile has taken at least once, for the collection quests' progress.
+        public void ResolveCollectedCardIds(HashSet<string> into)
+        {
+            CardCollectionRecord.ResolveCollectedIds(SaveManager, into);
+        }
+
+        // Cards of the pool this profile has taken at least once.
         public int CountCollectedCards()
         {
             var cards = _definitionData != null && _definitionData.CardCollection != null ? _definitionData.CardCollection.Cards : null;

@@ -118,3 +118,13 @@ MonoBehaviour:
   _upgradeTowers: {fileID: 11400000, guid: f00e66737b3d4134b5f58af5e91cf548, type: 2}
   _cardCollection: {fileID: 11400000, guid: 0d2f5a23a0b84d18a878d57f56aa57b9, type: 2}
   _stageProgression: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}
+  _questEnemies:
+  - {fileID: 11400000, guid: 9c061785ab0041f1ba5b63011a3964d2, type: 2}
+  - {fileID: 11400000, guid: 211e102329f949c7bed27392178e3990, type: 2}
+  - {fileID: 11400000, guid: 030d7cf4ef604a11825a2663933c43e5, type: 2}
+  - {fileID: 11400000, guid: ba9032da71a140dbadcbe916f71a17f0, type: 2}
+  - {fileID: 11400000, guid: 0e4c2df98f104b6b9c2eb88fe4f25927, type: 2}
+  _questEliteAffixes:
+  - {fileID: 11400000, guid: 90f344bd072d44c785d2b135a0aa5dbd, type: 2}
+  - {fileID: 11400000, guid: 2da3f78513e543ad9eb7790e195c3e1c, type: 2}
+  - {fileID: 11400000, guid: a07fa4c7902f4106ac26253c85c8f7e3, type: 2}

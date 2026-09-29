@@ -48,6 +48,14 @@ namespace Corebound.MetaProgression
         // The stages, for the boss quests: one per stage boss, titled by stage and boss name.
         [SerializeField] private Corebound.Gameplay.Waves.StageProgressionData _stageProgression;
 
+        // The enemy types and elite affixes the Alloy kill quests are about (A2, 2026-09-29).
+        [SerializeField] private Corebound.Gameplay.Enemies.EnemyData[] _questEnemies = Array.Empty<Corebound.Gameplay.Enemies.EnemyData>();
+        [SerializeField] private Corebound.Gameplay.Enemies.EnemyEliteModifierData[] _questEliteAffixes = Array.Empty<Corebound.Gameplay.Enemies.EnemyEliteModifierData>();
+
+        public Corebound.Gameplay.Enemies.EnemyData[] QuestEnemies => _questEnemies;
+
+        public Corebound.Gameplay.Enemies.EnemyEliteModifierData[] QuestEliteAffixes => _questEliteAffixes;
+
         public string MetaCurrencyLabel => Corebound.UI.LocalizationService.Resolve(_metaCurrencyLabel, _metaCurrencyLabelDe);
 
         public Corebound.Gameplay.Waves.StageProgressionData StageProgression => _stageProgression;

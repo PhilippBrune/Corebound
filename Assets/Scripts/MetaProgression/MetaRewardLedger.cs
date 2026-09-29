@@ -35,21 +35,38 @@ namespace Corebound.MetaProgression
     {
         public static event Action<MetaRewardGrant> RewardGranted;
 
-        // P3-2: "a repeat kill pays a large XP lump (suggested 300 x stage)". Every kill pays it,
-        // the first one too, so the bar visibly jumps when a boss falls.
-        public const int BossExperiencePerStage = 300;
-
         // What the current run has earned so far, for the Run Failed screen (playtest 2026-09-22:
         // "add to Run Failed the earned resources"). Reset by WaveManager when a run's scene loads;
         // a resumed run therefore shows what it earned since the resume.
+        //
+        // Playtest 2026-09-29: "I died in stage one at the boss and got no EXP." The waves had paid
+        // XP, but the screen only counted Skill Points and Alloy, found both zero and said "Earned
+        // this run: nothing". XP, levels and the SP that levels and quests pay are counted here too.
         public static int RunSkillPoints { get; private set; }
 
         public static int RunAlloy { get; private set; }
+
+        public static int RunExperience { get; private set; }
+
+        public static int RunLevelsGained { get; private set; }
 
         public static void ResetRunTotals()
         {
             RunSkillPoints = 0;
             RunAlloy = 0;
+            RunExperience = 0;
+            RunLevelsGained = 0;
+        }
+
+        // What a quest paid while a run was going on (QuestLedger calls these on completion).
+        public static void NoteQuestSkillPoints(int skillPoints)
+        {
+            RunSkillPoints += Mathf.Max(0, skillPoints);
+        }
+
+        public static void NoteQuestAlloy(int alloy)
+        {
+            RunAlloy += Mathf.Max(0, alloy);
         }
 
         private static void Record(MetaRewardGrant grant)
@@ -100,9 +117,20 @@ namespace Corebound.MetaProgression
         // Kills alone reward grinding a wave already beaten and punish a build that lets towers do
         // the work; weighting the clears makes XP track progress, which is what a level is supposed
         // to represent, while kills keep the bar moving so it never looks stuck.
+        //
+        // Retuned 2026-09-29 ("I want to get EXP per wave, and the boss gives extra"). A wave paid
+        // a flat 18, so a Stage 1 run that died at the boss earned ~100 XP against a 400 XP first
+        // level - nothing visible. A wave now pays 25 per stage of depth, and the boss is the lump:
+        // 250 per stage, which replaces the old separate stage-clear payment (a stage is only ever
+        // cleared by killing its boss). A Stage 1 death at the boss now crosses the first level.
         public const int ExperiencePerKill = 2;
-        public const int ExperiencePerWaveCleared = 18;
-        public const int ExperiencePerStageCleared = 140;
+        public const int ExperiencePerWavePerStage = 25;
+        public const int BossExperiencePerStage = 250;
+
+        public static int ResolveWaveExperience(int stageIndex)
+        {
+            return ExperiencePerWavePerStage * Mathf.Max(1, stageIndex);
+        }
 
         // Fired once per level crossed, with the Skill Points that level paid (2, or 5 on a tenth
         // level), so the HUD can toast without the save layer knowing about UI.
@@ -127,12 +155,14 @@ namespace Corebound.MetaProgression
 
             var result = saveData.GrantExperience(amount);
             saveManager.SaveMetaProgressionSaveData(saveData);
-            AnnounceExperience(saveData, result);
+            AnnounceExperience(saveData, result, amount);
         }
 
-        // One enemy kill: its XP and, when a player weapon landed the blow, that weapon's kill quest.
-        // One load and one write for both - this runs on every kill of every wave.
-        public static void RecordEnemyKill(ISaveManager saveManager, MetaProgressionDefinitionData definition, string weaponId)
+        // One enemy kill: its XP, and the kill quests it advances - the weapon or tower that landed
+        // the blow, the enemy type and the elite affix. One load and one write for all of it; this
+        // runs on every kill of every wave.
+        public static void RecordEnemyKill(ISaveManager saveManager, MetaProgressionDefinitionData definition,
+            string weaponId, string towerId = null, string enemyId = null, string eliteAffixKey = null)
         {
             if (saveManager == null || definition == null || IsTutorialRun(saveManager))
             {
@@ -147,13 +177,17 @@ namespace Corebound.MetaProgression
             }
 
             var result = saveData.GrantExperience(ExperiencePerKill);
-            QuestLedger.RecordWeaponKill(saveData, definition, weaponId);
+            QuestLedger.RecordKill(saveData, definition, weaponId, towerId, enemyId, eliteAffixKey);
             saveManager.SaveMetaProgressionSaveData(saveData);
-            AnnounceExperience(saveData, result);
+            AnnounceExperience(saveData, result, ExperiencePerKill);
         }
 
-        private static void AnnounceExperience(MetaProgressionSaveData saveData, MetaProgressionSaveData.ExperienceResult result)
+        private static void AnnounceExperience(MetaProgressionSaveData saveData, MetaProgressionSaveData.ExperienceResult result, int amount)
         {
+            RunExperience += Mathf.Max(0, amount);
+            RunLevelsGained += result.LevelsGained;
+            RunSkillPoints += result.SkillPointsGranted;
+
             for (var index = 0; index < result.LevelsGained; index++)
             {
                 var level = saveData.Level - result.LevelsGained + index + 1;
@@ -179,19 +213,19 @@ namespace Corebound.MetaProgression
             saveData.GrantAlloy(alloy);
 
             // P3-2: no SP from the boss itself. The first kill completes "Defeat the Stage N boss",
-            // which pays its SP and toasts on its own; every kill pays an XP lump.
-            var skillPointsBefore = saveData.SkillPointsEarned;
-
+            // which pays its SP, counts it for the run and toasts on its own; every kill pays the
+            // XP lump. The grant therefore carries Alloy only, so nothing is counted twice.
             if (isFirstKill)
             {
                 QuestLedger.RecordBossFirstKill(saveData, definition, stageIndex);
             }
 
-            var experience = saveData.GrantExperience(BossExperiencePerStage * Mathf.Max(1, stageIndex));
-            var grant = new MetaRewardGrant(saveData.SkillPointsEarned - skillPointsBefore, alloy, isFirstKill);
+            var bossExperience = BossExperiencePerStage * Mathf.Max(1, stageIndex);
+            var experience = saveData.GrantExperience(bossExperience);
+            var grant = new MetaRewardGrant(0, alloy, isFirstKill);
             TryShowMetaCurrencyHint(saveManager, saveData, grant);
             saveManager.SaveMetaProgressionSaveData(saveData);
-            AnnounceExperience(saveData, experience);
+            AnnounceExperience(saveData, experience, bossExperience);
             Record(grant);
             return grant;
         }

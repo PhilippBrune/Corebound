@@ -212,6 +212,11 @@ namespace Corebound.Gameplay.Waves
             var runSaveData = SaveManager != null ? SaveManager.LoadRunSaveData() : null;
             RestoreCoreHealthFromSave(runSaveData);
 
+            if (GetComponent<GameplayQuestTracker>() == null)
+            {
+                gameObject.AddComponent<GameplayQuestTracker>().Bind(this);
+            }
+
             // Captured now because the run save is wiped the moment the run is lost, before the
             // history is written (see RunHistoryRecorder.RunBuild).
             _isTutorialRun = runSaveData != null && runSaveData.IsTutorialRun;
@@ -674,7 +679,7 @@ namespace Corebound.Gameplay.Waves
             _arenaObjectiveService.EndWave();
             _resourcePickupPool?.ForceCollectAll();
             _cardService?.NotifyWaveCleared();
-            MetaRewardLedger.GrantExperience(SaveManager, _metaProgressionDefinitionData, MetaRewardLedger.ExperiencePerWaveCleared);
+            MetaRewardLedger.GrantExperience(SaveManager, _metaProgressionDefinitionData, MetaRewardLedger.ResolveWaveExperience(StageIndex));
             WaveEvents.RaiseWaveCompleted(CreateEventArgs(CurrentWaveNumber, WaveEncounterLabelResolver.ResolveCurrentEncounterLabel(_stageData, _currentWaveIndex, _state, _bossRuntimeController), WaveEncounterLabelResolver.ResolveCurrentEncounterIsElite(_stageData, _currentWaveIndex, _state)));
 
             if (_runPersistenceController != null)
@@ -825,7 +830,6 @@ namespace Corebound.Gameplay.Waves
             StageEvents.RaiseStageTransitioned(CreateStageEventArgs(WaveEncounterLabelResolver.ResolveStageTransitionLabel(_stageData)));
 
             MetaRewardLedger.RecordStageCleared(SaveManager, _metaProgressionDefinitionData, ShouldEndRunOnCompletion(), CaptureLoadoutSlots());
-            MetaRewardLedger.GrantExperience(SaveManager, _metaProgressionDefinitionData, MetaRewardLedger.ExperiencePerStageCleared);
 
             if (ShouldEndRunOnCompletion())
             {
@@ -1016,7 +1020,7 @@ namespace Corebound.Gameplay.Waves
                 if (helperEnemy != null)
                 {
                     SpawnResourcePickup(ResolveKillScrap(helperEnemy), eventArgs.Victim.transform.position);
-                    RecordEnemyKillStatistic(eventArgs.DamageContext);
+                    RecordEnemyKillStatistic(eventArgs.DamageContext, helperEnemy);
                     GrantEliteKillReward(helperEnemy);
 
                     if (helperEnemy.IsRangedPressureRole)
@@ -1043,7 +1047,7 @@ namespace Corebound.Gameplay.Waves
             }
 
             SpawnResourcePickup(ResolveKillScrap(enemy), eventArgs.Victim.transform.position);
-            RecordEnemyKillStatistic(eventArgs.DamageContext);
+            RecordEnemyKillStatistic(eventArgs.DamageContext, enemy);
             GrantEliteKillReward(enemy);
 
             if (enemy.IsRangedPressureRole)
@@ -1117,15 +1121,18 @@ namespace Corebound.Gameplay.Waves
             pickup.Initialize(amount, position, _playerTarget, _resourceWalletService);
         }
 
-        private void RecordEnemyKillStatistic(DamageContext killingBlow)
+        private void RecordEnemyKillStatistic(DamageContext killingBlow, EnemyRuntimeController enemy = null)
         {
             WaveStatisticsRecorder.RecordEnemyKill(SaveManager);
             _runEnemiesKilled += 1;
 
-            // The weapon-kill quests count only what a player weapon finished; towers and the Core
-            // do not advance them.
+            // The weapon-kill quests count only what a player weapon finished, the tower-kill quests
+            // only what a tower finished; the Core counts for neither.
             var weaponId = killingBlow.SourceType == DamageSourceType.Player ? killingBlow.SourceId : null;
-            MetaRewardLedger.RecordEnemyKill(SaveManager, _metaProgressionDefinitionData, weaponId);
+            var towerId = killingBlow.SourceType == DamageSourceType.Tower ? killingBlow.SourceId : null;
+            var enemyId = enemy != null && enemy.Data != null ? enemy.Data.EnemyId : null;
+            var eliteKey = enemy != null && enemy.EliteModifier != null ? QuestLedger.EliteAffixKey(enemy.EliteModifier) : null;
+            MetaRewardLedger.RecordEnemyKill(SaveManager, _metaProgressionDefinitionData, weaponId, towerId, enemyId, eliteKey);
         }
 
         // A toast, never an overlay: levelling up mid-combat must not touch Time.timeScale

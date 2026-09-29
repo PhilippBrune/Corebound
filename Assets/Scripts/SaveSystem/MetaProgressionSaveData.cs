@@ -312,15 +312,16 @@ namespace Corebound.SaveSystem
         public const int MilestoneLevelInterval = 10;
         public const int MilestoneSkillPoints = 3;
 
-        // P2: linear-growing rather than geometric, so the cap is reachable at all. 400 XP is about
-        // one cleared stage for the first level; the 69th level-up costs 4,480, and the whole road
-        // to 70 is 168,360 XP - about 68 full runs, the ~70 hours the concept aimed at. The XP per
-        // run behind that estimate has not been measured yet.
-        private const int FirstLevelCost = 400;
-        private const int LevelCostStep = 60;
+        // P2: linear-growing rather than geometric, so the cap is reachable at all. Retuned with the
+        // XP sources on 2026-09-29: the first level costs 250, which a Stage 1 run that dies at the
+        // boss now reaches (6 waves x 25 plus its kills). The 69th level-up costs 5,690, and the road
+        // to 70 is 204,930 XP - about 30 full runs at the ~7,000 XP a full run should now pay. That
+        // figure is still an estimate; no full run has been counted.
+        private const int FirstLevelCost = 250;
+        private const int LevelCostStep = 80;
 
-        // About one full run per Ascension Point, so Paragon keeps paying at a steady pace instead
-        // of at the price of the most expensive level (4,480), which would halve it.
+        // About a third of a full run per Ascension Point, so Paragon keeps paying at a steady pace
+        // instead of at the price of the most expensive level (5,690).
         public const int ParagonLevelCost = 2500;
 
         // Levels are per profile today; the vision's per-character levelling arrives with the
@@ -347,6 +348,19 @@ namespace Corebound.SaveSystem
         public static int ResolveLevelCost(int level)
         {
             return FirstLevelCost + LevelCostStep * Mathf.Max(0, level - 1);
+        }
+
+        // Total XP from a fresh level 1 to the start of this level.
+        public static int ExperienceToReachLevel(int level)
+        {
+            var total = 0;
+
+            for (var index = 1; index < Mathf.Clamp(level, 1, MaxLevel); index++)
+            {
+                total += ResolveLevelCost(index);
+            }
+
+            return total;
         }
 
         // Every SP levels will ever have paid by the time this level is reached.

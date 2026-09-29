@@ -57,6 +57,11 @@ namespace Corebound.Gameplay.Enemies
 
         // Elite kills pay Alloy (owner decision 2026-09-22), so WaveManager needs to know.
         public bool IsElite => _eliteModifierData != null;
+
+        // What died, for the enemy-type and elite-affix quests.
+        public EnemyData Data => _enemyData;
+
+        public EnemyEliteModifierData EliteModifier => _eliteModifierData;
         private Transform _playerTarget;
         private Transform _coreTarget;
         private CombatProjectile _projectilePrototype;

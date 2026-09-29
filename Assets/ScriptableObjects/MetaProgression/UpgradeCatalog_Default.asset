@@ -20,7 +20,7 @@ MonoBehaviour:
     _appliesTo: 0
     _valuePerRank: 0.06
     _maxRank: 10
-    _baseCost: 5
+    _baseCost: 3
   - _trackId: weapon_fire_speed
     _displayName: 'Fire Speed'
     _displayNameDe: 'Feuerrate'
@@ -28,7 +28,7 @@ MonoBehaviour:
     _appliesTo: 0
     _valuePerRank: -0.04
     _maxRank: 10
-    _baseCost: 5
+    _baseCost: 3
   - _trackId: weapon_magazine
     _displayName: 'Magazine'
     _displayNameDe: 'Magazin'
@@ -36,7 +36,7 @@ MonoBehaviour:
     _appliesTo: 0
     _valuePerRank: 1
     _maxRank: 8
-    _baseCost: 5
+    _baseCost: 3
   - _trackId: weapon_reload
     _displayName: 'Reload Speed'
     _displayNameDe: 'Nachladen'
@@ -44,7 +44,7 @@ MonoBehaviour:
     _appliesTo: 0
     _valuePerRank: -0.05
     _maxRank: 8
-    _baseCost: 5
+    _baseCost: 3
   - _trackId: weapon_accuracy
     _displayName: 'Accuracy'
     _displayNameDe: 'Präzision'
@@ -52,7 +52,7 @@ MonoBehaviour:
     _appliesTo: 0
     _valuePerRank: -0.05
     _maxRank: 6
-    _baseCost: 5
+    _baseCost: 3
   - _trackId: weapon_crit_chance
     _displayName: 'Critical Chance'
     _displayNameDe: 'Kritische Chance'
@@ -60,7 +60,7 @@ MonoBehaviour:
     _appliesTo: 0
     _valuePerRank: 0.015
     _maxRank: 10
-    _baseCost: 5
+    _baseCost: 3
   - _trackId: weapon_crit_damage
     _displayName: 'Critical Damage'
     _displayNameDe: 'Kritischer Schaden'
@@ -68,7 +68,7 @@ MonoBehaviour:
     _appliesTo: 0
     _valuePerRank: 0.08
     _maxRank: 10
-    _baseCost: 5
+    _baseCost: 3
   - _trackId: tower_damage
     _displayName: 'Damage'
     _displayNameDe: 'Schaden'

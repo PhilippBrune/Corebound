@@ -148,13 +148,16 @@ namespace Corebound.Gameplay.Towers
                 ? _towerData.DamageProfile.BaseDamage * _towerService.TowerDamageMultiplier * ResolveDamageMultiplier(_currentUpgradeLevel) * ResolveProgressionDamageMultiplier()
                 : 1f;
             var statusEffect = _towerData.DamageProfile != null && _towerData.DamageProfile.ApplyStatusEffect ? _towerData.DamageProfile.StatusEffectType : (StatusEffectType?)null;
+            // The tower's id rides on the shot so a kill can advance that tower's kill quest.
             var damageContext = new DamageContext(
                 DamageSourceType.Tower,
                 _towerData.DamageProfile != null ? _towerData.DamageProfile.DamageKind : DamageKind.Direct,
                 damageAmount,
                 transform.position,
                 direction,
-                statusEffect);
+                statusEffect,
+                false,
+                _towerData.TowerId);
 
             projectile.Launch(gameObject, _towerData.Projectile, transform.position, direction, damageContext);
         }
@@ -174,6 +177,11 @@ namespace Corebound.Gameplay.Towers
             transform.rotation = Quaternion.Euler(0f, 0f, angle);
         }
 
+        // A player upgrade that took a tower to its top level, for the "upgrade a tower to its
+        // highest level in one run" quests. Only TryUpgrade raises it - restoring a saved tower's
+        // levels on resume goes through ApplyUpgrade directly and is not an upgrade made this run.
+        public static event System.Action<TowerData> ReachedMaxLevel;
+
         public bool TryUpgrade()
         {
             if (!CanUpgrade)
@@ -182,6 +190,12 @@ namespace Corebound.Gameplay.Towers
             }
 
             ApplyUpgrade();
+
+            if (!CanUpgrade)
+            {
+                ReachedMaxLevel?.Invoke(_towerData);
+            }
+
             return true;
         }
 

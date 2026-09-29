@@ -1218,34 +1218,56 @@ namespace Corebound.MetaProgression
             }
         }
 
-        // ---- Quests (P8-1, 2026-09-29) -----------------------------------------------------------
+        // ---- Quests (P8-1 and A4-1, 2026-09-29) --------------------------------------------------
         //
-        // The 33 Skill Point quests with their progress. Information only: a quest completes by
-        // playing, never by pressing Confirm here.
+        // The Skill Point quests, then the Alloy quests below them on the same tab (A4-1). Information
+        // only: a quest completes by playing, never by pressing Confirm here.
+        private readonly HashSet<string> _collectedCards = new HashSet<string>();
+
         private void BuildQuestRows()
         {
             var definition = _metaProgressionService.DefinitionData;
             var save = _metaProgressionService.SaveData;
             var catalog = QuestLedger.BuildCatalog(definition);
-            var collected = _metaProgressionService.CountCollectedCards();
+            _metaProgressionService.ResolveCollectedCardIds(_collectedCards);
+
+            AddQuestSection(definition, save, catalog, false,
+                LocalizationService.Resolve("Skill Point quests", "Skillpunkt-Quests"), " SP");
+            AddQuestSection(definition, save, catalog, true,
+                LocalizationService.Resolve("Alloy quests", "Legierungs-Quests"), LocalizationService.Resolve(" Alloy", " Legierung"));
+        }
+
+        private void AddQuestSection(MetaProgressionDefinitionData definition, MetaProgressionSaveData save,
+            IReadOnlyList<QuestDefinition> catalog, bool alloy, string title, string unit)
+        {
+            var count = 0;
             var done = 0;
             var earned = 0;
             var total = 0;
 
             for (var index = 0; index < catalog.Count; index++)
             {
-                total += catalog[index].RewardSkillPoints;
+                var quest = catalog[index];
 
-                if (save.IsQuestCompleted(save.SelectedCharacterId, catalog[index].QuestId))
+                if (quest.PaysAlloy != alloy)
+                {
+                    continue;
+                }
+
+                var reward = alloy ? quest.RewardAlloy : quest.RewardSkillPoints;
+                count++;
+                total += reward;
+
+                if (save.IsQuestCompleted(save.SelectedCharacterId, quest.QuestId))
                 {
                     done++;
-                    earned += catalog[index].RewardSkillPoints;
+                    earned += reward;
                 }
             }
 
             _commands.Add(new RowCommand(
-                LocalizationService.Resolve("Quests done: ", "Quests erledigt: ") + done + " / " + catalog.Count,
-                earned + " / " + total + " SP",
+                "<b>" + title + "</b>   " + done + " / " + count,
+                earned + " / " + total + unit,
                 RowState.Header,
                 string.Empty,
                 null));
@@ -1256,19 +1278,24 @@ namespace Corebound.MetaProgression
             {
                 var quest = catalog[index];
 
+                if (quest.PaysAlloy != alloy)
+                {
+                    continue;
+                }
+
                 if (group != quest.Group)
                 {
                     group = quest.Group;
-                    _commands.Add(new RowCommand("<b>" + DescribeQuestGroup(quest.Group) + "</b>", string.Empty, RowState.Header, string.Empty, null));
+                    _commands.Add(new RowCommand("  " + DescribeQuestGroup(quest.Group), string.Empty, RowState.Header, string.Empty, null));
                 }
 
                 var completed = save.IsQuestCompleted(save.SelectedCharacterId, quest.QuestId);
                 var target = quest.Group == QuestGroup.WeaponMastery ? QuestLedger.ResolveMasteryTarget(definition, quest) : quest.Target;
-                var progress = QuestLedger.ResolveProgress(save, definition, quest, collected);
+                var progress = QuestLedger.ResolveProgress(save, definition, quest, _collectedCards);
 
                 _commands.Add(new RowCommand(
                     "    " + quest.Title + "  " + BuildProgressBar(progress, target) + "  " + progress + " / " + target,
-                    completed ? LocalizationService.Resolve("Done", "Erledigt") : "+" + quest.RewardSkillPoints + " SP",
+                    completed ? LocalizationService.Resolve("Done", "Erledigt") : quest.RewardLabel,
                     completed ? RowState.Owned : RowState.Locked,
                     DescribeQuest(quest, progress, target),
                     null));
@@ -1287,8 +1314,24 @@ namespace Corebound.MetaProgression
                     return LocalizationService.Resolve("Weapon mastery - every Alloy upgrade - 3 SP each", "Waffenmeisterschaft - jede Legierungs-Verbesserung - je 3 SP");
                 case QuestGroup.Collection:
                     return LocalizationService.Resolve("Collection - 1 SP", "Sammlung - 1 SP");
-                default:
+                case QuestGroup.Bosses:
                     return LocalizationService.Resolve("Bosses - first kill - 1 SP each", "Bosse - erster Sieg - je 1 SP");
+                case QuestGroup.TowerMastery:
+                    return LocalizationService.Resolve("Towers - highest level in one run - 150 Alloy each", "Türme - höchste Stufe in einem Run - je 150 Legierung");
+                case QuestGroup.TowerKills:
+                    return LocalizationService.Resolve("Tower kills - 100 Alloy each", "Turm-Kills - je 100 Legierung");
+                case QuestGroup.EnemyKills:
+                    return LocalizationService.Resolve("Enemy types - 150 Alloy each", "Gegnerarten - je 150 Legierung");
+                case QuestGroup.EliteKills:
+                    return LocalizationService.Resolve("Elites - 100 Alloy each", "Elite-Gegner - je 100 Legierung");
+                case QuestGroup.Factory:
+                    return LocalizationService.Resolve("Factory - 200 Alloy", "Fabrik - 200 Legierung");
+                case QuestGroup.RarityCollection:
+                    return LocalizationService.Resolve("Card sets by rarity - 100 to 300 Alloy", "Kartensätze nach Seltenheit - 100 bis 300 Legierung");
+                case QuestGroup.StageUntouchedCore:
+                    return LocalizationService.Resolve("Untouched Core - 100 Alloy each", "Unversehrter Kern - je 100 Legierung");
+                default:
+                    return LocalizationService.Resolve("One weapon type - 100 Alloy each", "Eine Waffenart - je 100 Legierung");
             }
         }
 
@@ -1311,11 +1354,31 @@ namespace Corebound.MetaProgression
                         "Buy every Alloy upgrade for " + weaponName + " on the Upgrades tab: " + progress + " of " + target + " ranks.",
                         "Kaufe jede Legierungs-Verbesserung für " + weaponName + " im Reiter Verbesserungen: " + progress + " von " + target + " Rängen.");
                 case QuestGroup.Collection:
+                case QuestGroup.RarityCollection:
                     return LocalizationService.Resolve(
                         "Take every card at least once, from a reward or the shop. Records shows which are still missing.",
                         "Nimm jede Karte mindestens einmal, aus einer Belohnung oder dem Shop. Aufzeichnungen zeigen, welche fehlen.");
-                default:
+                case QuestGroup.Bosses:
                     return LocalizationService.Resolve("The first defeat of this boss, on any run.", "Der erste Sieg über diesen Boss, in irgendeinem Run.");
+                case QuestGroup.TowerMastery:
+                    return LocalizationService.Resolve(
+                        "Build it and buy every upgrade level within one run.",
+                        "Baue ihn und kaufe in einem Run jede Verbesserungsstufe.");
+                case QuestGroup.TowerKills:
+                    return LocalizationService.Resolve("Kills landed by this tower's shots.", "Kills durch die Schüsse dieses Turms.");
+                case QuestGroup.EnemyKills:
+                case QuestGroup.EliteKills:
+                    return LocalizationService.Resolve("Every kill counts, whoever lands it.", "Jeder Kill zählt, egal wer ihn landet.");
+                case QuestGroup.Factory:
+                    return LocalizationService.Resolve(
+                        "Grow one production chain to tier 4 before the run ends - it counts even if the run is lost afterwards.",
+                        "Baue eine Produktionskette bis Stufe 4 aus, bevor der Run endet - zählt auch, wenn der Run danach verloren geht.");
+                case QuestGroup.StageUntouchedCore:
+                    return LocalizationService.Resolve("From the stage's first wave to its boss, not a single hit on the Core.", "Von der ersten Welle bis zum Boss kein einziger Treffer auf den Kern.");
+                default:
+                    return LocalizationService.Resolve(
+                        "Clear the stage while every weapon you carry is the same type - at every moment of it.",
+                        "Schließe die Stage ab, während jede getragene Waffe dieselbe Art ist - die ganze Stage lang.");
             }
         }
 

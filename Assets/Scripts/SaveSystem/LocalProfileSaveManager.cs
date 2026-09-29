@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Corebound.SaveSystem
 {
@@ -51,6 +53,82 @@ namespace Corebound.SaveSystem
         // scene's references pointing at a destroyed component with its own, separate caches.
         private LocalProfileSaveManager _forwardTo;
 
+        // ---- Write batching (playtest 2026-09-29, "the aim jumps for some frames") -------------
+        //
+        // Every enemy kill wrote meta.json and statistics.json, and every hit on the player or Core
+        // wrote run.json - each a JSON serialise, a temp file and an atomic File.Replace, on the
+        // main thread. With antivirus scanning every write that is milliseconds per file, several
+        // times a second in a busy wave, and the frame hitches were what made the software-drawn
+        // reticle jump.
+        //
+        // The caches were already the source of truth for every reader, so a Save now updates the
+        // cache at once and only the disk write waits: all pending files go out together at most
+        // WriteCoalesceSeconds later, and immediately on a scene change, a profile switch or
+        // delete, pause and quit. A crash loses at most that window. The path is captured when the
+        // write is queued, so a profile switch can never send one profile's data to another.
+        private const float WriteCoalesceSeconds = 1.5f;
+        private readonly Dictionary<string, object> _pendingWrites = new Dictionary<string, object>();
+        private float _flushDueAt;
+
+        private void QueueWrite(string path, object data)
+        {
+            if (_pendingWrites.Count == 0)
+            {
+                _flushDueAt = Time.unscaledTime + WriteCoalesceSeconds;
+            }
+
+            _pendingWrites[path] = data;
+        }
+
+        // Writes everything queued. Safe to call at any time; readers never need it, because they
+        // read the caches, but anything that reads the files directly does.
+        public void FlushPendingWrites()
+        {
+            if (_forwardTo != null)
+            {
+                _forwardTo.FlushPendingWrites();
+                return;
+            }
+
+            if (_pendingWrites.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var pair in _pendingWrites)
+            {
+                _saveStore.Save(pair.Key, pair.Value);
+            }
+
+            _pendingWrites.Clear();
+        }
+
+        private void Update()
+        {
+            if (_forwardTo == null && _pendingWrites.Count > 0 && Time.unscaledTime >= _flushDueAt)
+            {
+                FlushPendingWrites();
+            }
+        }
+
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused)
+            {
+                FlushPendingWrites();
+            }
+        }
+
+        private void OnApplicationQuit()
+        {
+            FlushPendingWrites();
+        }
+
+        private void OnActiveSceneChanged(Scene from, Scene to)
+        {
+            FlushPendingWrites();
+        }
+
         private static string _hostProfileFolderName;
         private static RunSaveBootstrapData _hostRunBootstrapData;
         private static bool _creatingHost;
@@ -86,6 +164,8 @@ namespace Corebound.SaveSystem
             Instance = this;
             DontDestroyOnLoad(gameObject);
             ProfileSelection.ActiveProfileChanged += OnActiveProfileChanged;
+            ProfileSelection.FlushPendingWritesRequested += FlushPendingWrites;
+            SceneManager.activeSceneChanged += OnActiveSceneChanged;
             _saveStore.SaveFailed += (path, message) => SaveFailed?.Invoke(path, message);
             _saveStore.LoadFailed += (path, message) => LoadFailed?.Invoke(path, message);
         }
@@ -109,7 +189,10 @@ namespace Corebound.SaveSystem
 
         private void OnDestroy()
         {
+            FlushPendingWrites();
             ProfileSelection.ActiveProfileChanged -= OnActiveProfileChanged;
+            ProfileSelection.FlushPendingWritesRequested -= FlushPendingWrites;
+            SceneManager.activeSceneChanged -= OnActiveSceneChanged;
 
             if (Instance == this)
             {
@@ -156,7 +239,7 @@ namespace Corebound.SaveSystem
 
             _runSaveData = saveData ?? RunSaveData.CreateBootstrap(_runBootstrapData);
             _runSaveData.Touch();
-            _saveStore.Save(GetRunPath(), _runSaveData);
+            QueueWrite(GetRunPath(), _runSaveData);
         }
 
         public void ResetRunSaveDataToBootstrap()
@@ -181,7 +264,7 @@ namespace Corebound.SaveSystem
 
             _runSaveData = new RunSaveData();
             _runSaveData.SetInactive();
-            _saveStore.Save(GetRunPath(), _runSaveData);
+            QueueWrite(GetRunPath(), _runSaveData);
         }
 
         public SettingsSaveData LoadSettingsSaveData(SettingsSaveData defaults)
@@ -216,7 +299,7 @@ namespace Corebound.SaveSystem
             }
 
             _settingsSaveData = saveData != null ? saveData.Clone() : new SettingsSaveData();
-            _saveStore.Save(GetSettingsPath(), _settingsSaveData);
+            QueueWrite(GetSettingsPath(), _settingsSaveData);
         }
 
         public MetaProgressionSaveData LoadMetaProgressionSaveData(MetaProgressionSaveData defaults)
@@ -263,7 +346,7 @@ namespace Corebound.SaveSystem
             }
 
             _metaProgressionSaveData = saveData != null ? saveData.Clone() : new MetaProgressionSaveData();
-            _saveStore.Save(GetMetaPath(), _metaProgressionSaveData);
+            QueueWrite(GetMetaPath(), _metaProgressionSaveData);
         }
 
         public StatisticsSaveData LoadStatisticsSaveData(StatisticsSaveData defaults)
@@ -298,7 +381,7 @@ namespace Corebound.SaveSystem
             }
 
             _statisticsSaveData = saveData != null ? saveData.Clone() : new StatisticsSaveData();
-            _saveStore.Save(GetStatisticsPath(), _statisticsSaveData);
+            QueueWrite(GetStatisticsPath(), _statisticsSaveData);
         }
 
         public RunHistorySaveData LoadRunHistorySaveData()
@@ -334,7 +417,7 @@ namespace Corebound.SaveSystem
             }
 
             _runHistorySaveData = saveData != null ? saveData.Clone() : new RunHistorySaveData();
-            _saveStore.Save(GetRunHistoryPath(), _runHistorySaveData);
+            QueueWrite(GetRunHistoryPath(), _runHistorySaveData);
         }
 
         private static void WarnIfVersionMismatch(string saveName, int loadedVersion, int expectedVersion = CurrentSaveFormatVersion)

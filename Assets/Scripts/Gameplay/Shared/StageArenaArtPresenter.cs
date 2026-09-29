@@ -939,8 +939,74 @@ namespace Corebound.Gameplay.Shared
 
             if (_walkableInteriorPositions.Count > 0)
             {
-                _coreTarget.position = _walkableInteriorPositions[random.Next(_walkableInteriorPositions.Count)];
+                _coreTarget.position = ResolveCorePosition(random);
             }
+        }
+
+        // Playtest 2026-09-29: "the Core can spawn too close to a gate." Any walkable interior cell
+        // used to be eligible, so a Core could stand a step from where a wave arrives and take hits
+        // before the player had even seen the enemies. Cells within MinCoreGateDistance of a spawn
+        // gate are now excluded. On a layout where no cell qualifies, the cell farthest from every
+        // gate is used rather than none.
+        private const float MinCoreGateDistance = 4.5f;
+        private readonly List<Vector2> _coreCandidates = new List<Vector2>();
+
+        private Vector2 ResolveCorePosition(System.Random random)
+        {
+            var gates = ResolveSpawnGatePositions();
+            _coreCandidates.Clear();
+            var bestFallback = _walkableInteriorPositions[0];
+            var bestFallbackDistance = -1f;
+
+            for (var index = 0; index < _walkableInteriorPositions.Count; index++)
+            {
+                var candidate = _walkableInteriorPositions[index];
+                var nearestGate = float.MaxValue;
+
+                for (var gateIndex = 0; gateIndex < gates.Count; gateIndex++)
+                {
+                    nearestGate = Mathf.Min(nearestGate, Vector2.Distance(candidate, gates[gateIndex]));
+                }
+
+                if (nearestGate >= MinCoreGateDistance)
+                {
+                    _coreCandidates.Add(candidate);
+                }
+
+                if (nearestGate > bestFallbackDistance)
+                {
+                    bestFallbackDistance = nearestGate;
+                    bestFallback = candidate;
+                }
+            }
+
+            return _coreCandidates.Count > 0 ? _coreCandidates[random.Next(_coreCandidates.Count)] : bestFallback;
+        }
+
+        // Where waves enter: every StageData spawn point, or the single spawn origin of a stage that
+        // has none - the same positions the gate art is drawn at.
+        private List<Vector2> ResolveSpawnGatePositions()
+        {
+            var positions = new List<Vector2>();
+            var stageData = ResolveStageData();
+            var spawnPoints = stageData != null ? stageData.SpawnPoints : null;
+
+            if (spawnPoints != null && spawnPoints.Length > 0)
+            {
+                for (var index = 0; index < spawnPoints.Length; index++)
+                {
+                    if (spawnPoints[index] != null)
+                    {
+                        positions.Add(spawnPoints[index].Position);
+                    }
+                }
+            }
+            else if (stageData != null)
+            {
+                positions.Add(stageData.EnemySpawnOrigin);
+            }
+
+            return positions;
         }
 
         private Sprite CreateAtlasSprite(Texture2D texture, AtlasCell atlasCell, int atlasRows, int atlasColumns)

@@ -27,6 +27,11 @@ namespace Corebound.SaveSystem
 
         public static event Action ActiveProfileChanged;
 
+        // Fired before the active profile changes, before a profile's files are deleted and before
+        // they are read directly, so batched save writes (LocalProfileSaveManager) reach the disk
+        // first. A delete that ran before the flush would have its files written straight back.
+        public static event Action FlushPendingWritesRequested;
+
         // 1-based, so it matches the folder name and what the player sees.
         public static int ActiveIndex
         {
@@ -57,6 +62,7 @@ namespace Corebound.SaveSystem
                 return;
             }
 
+            FlushPendingWritesRequested?.Invoke();
             _activeIndex = index;
             Save();
             ActiveProfileChanged?.Invoke();
@@ -105,6 +111,8 @@ namespace Corebound.SaveSystem
         // and simply comes back empty.
         public static void DeleteProfile(int index)
         {
+            FlushPendingWritesRequested?.Invoke();
+
             var folder = Path.Combine(Application.persistentDataPath, FolderName(index));
 
             try
@@ -129,6 +137,9 @@ namespace Corebound.SaveSystem
 
         public static ProfileSummary Summarize(int index)
         {
+            // Summaries read the files directly, so anything still queued has to land first.
+            FlushPendingWritesRequested?.Invoke();
+
             var folder = Path.Combine(Application.persistentDataPath, FolderName(index));
 
             if (!Directory.Exists(folder))

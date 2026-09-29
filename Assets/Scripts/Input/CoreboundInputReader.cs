@@ -420,8 +420,28 @@ namespace Corebound.Input
 
         private void OnMovePerformed(InputAction.CallbackContext context)
         {
-            UpdateInputDevice(context);
-            Move = context.ReadValue<Vector2>();
+            var value = context.ReadValue<Vector2>();
+
+            // Playtest 2026-09-29: "the new aim jumps for some frames when moving." Move is a Value
+            // action over WASD and the left stick. Releasing a key hands the action to whichever
+            // control is still actuated, and a pad resting on the desk reports a little stick drift
+            // above the default deadzone - so every key release flipped the reader to gamepad, Aim
+            // switched from the mouse to the stick, and the reticle jumped to the stick orbit until
+            // the mouse moved 4 px again. A stick now claims the device only with a real push,
+            // the same threshold the aim stick already used.
+            if (context.control?.device is Gamepad)
+            {
+                if (value.sqrMagnitude >= StickTakeoverMagnitude * StickTakeoverMagnitude)
+                {
+                    _isUsingGamepad = true;
+                }
+            }
+            else
+            {
+                _isUsingGamepad = false;
+            }
+
+            Move = value;
         }
 
         private void OnMoveCanceled(InputAction.CallbackContext context)

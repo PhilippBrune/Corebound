@@ -245,6 +245,7 @@ namespace Corebound.UI.MainMenu
                 return;
             }
 
+            UIPanelFit.Fit(_panelRect, _recordsLayoutApplied ? RecordsPanelSize : new Vector2(PanelWidth, PanelHeight));
             var mouse = UnityEngine.InputSystem.Mouse.current;
 
             if (mouse == null)

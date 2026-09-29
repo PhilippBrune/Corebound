@@ -24,6 +24,17 @@ namespace Corebound.UI.Gameplay
     // While a menu is open (pause, reward, shop, loadout) the reticle hides and the Windows pointer
     // comes back. The world-space version stayed hidden under those overlays with the OS pointer
     // also hidden, which left a mouse player clicking blind.
+    //
+    // Third step, playtest 2026-09-29 ("the aim jumps for some frames"), owner chose OPEN_TOPICS 3.1
+    // option 1: with a mouse the reticle is a *hardware* cursor. A canvas image is placed once per
+    // rendered frame, so any frame hitch shows as the reticle lagging and then jumping; Windows draws
+    // a hardware cursor itself at the display's refresh rate, whatever the game's frame time. The
+    // weapon state survives: the cursor image is swapped between pre-drawn variants (magazine arc in
+    // MagazineSteps steps, ready / on target / reloading), and only when the variant changes.
+    // With a gamepad there is no pointer to replace, so the canvas reticle orbits the player as
+    // before. The two root causes of the jumps are fixed at the source as well: stick drift no longer
+    // flips the input device (CoreboundInputReader), and save writes no longer block the frame on
+    // every kill (LocalProfileSaveManager).
     public sealed class AimReticlePresenter : MonoBehaviour
     {
         private const float OrbitRadius = 1.35f;
@@ -59,6 +70,14 @@ namespace Corebound.UI.Gameplay
         private Camera _camera;
         private bool _cursorHidden;
 
+        // Hardware cursor variants, built on first use. 32 px is the size every Windows cursor path
+        // accepts without rescaling.
+        private const int CursorSize = 32;
+        private const int MagazineSteps = 12;
+        private readonly System.Collections.Generic.Dictionary<int, Texture2D> _cursorTextures =
+            new System.Collections.Generic.Dictionary<int, Texture2D>();
+        private int _appliedCursorKey = -1;
+
         private IInputReader InputReader => _inputReaderSource as IInputReader;
 
         private void Awake()
@@ -78,6 +97,7 @@ namespace Corebound.UI.Gameplay
 
         private void OnDisable()
         {
+            ApplyDefaultCursor();
             RestoreCursor();
 
             if (_canvas != null)
@@ -96,6 +116,7 @@ namespace Corebound.UI.Gameplay
 
         private void OnDestroy()
         {
+            ApplyDefaultCursor();
             RestoreCursor();
 
             if (_canvas != null)
@@ -112,6 +133,16 @@ namespace Corebound.UI.Gameplay
             {
                 Destroy(_dotTexture);
             }
+
+            foreach (var texture in _cursorTextures.Values)
+            {
+                if (texture != null)
+                {
+                    Destroy(texture);
+                }
+            }
+
+            _cursorTextures.Clear();
         }
 
         private void BuildReticle()
@@ -216,29 +247,40 @@ namespace Corebound.UI.Gameplay
             }
 
             var menuOpen = IsPointerMenuOpen();
+            var reader = InputReader;
+            var usingGamepad = reader != null && reader.IsUsingGamepad;
 
-            _root.gameObject.SetActive(!menuOpen);
+            // The canvas reticle is the gamepad's; the mouse gets the hardware cursor below.
+            _root.gameObject.SetActive(!menuOpen && usingGamepad);
 
             if (menuOpen)
             {
+                ApplyDefaultCursor();
                 RestoreCursor();
                 return;
             }
 
-            HideCursor();
-
-            var reader = InputReader;
-            var usingGamepad = reader != null && reader.IsUsingGamepad;
             var origin = (Vector2)_playerCombatController.transform.position;
             var screenPoint = ResolveAimScreenPoint(reader, usingGamepad, origin, out var worldPoint);
+            var reloading = _playerCombatController.IsPrimaryReloading;
+            var onTarget = !reloading && IsAimingAtEnemy(worldPoint);
+
+            if (!usingGamepad)
+            {
+                RestoreCursor();
+                var fraction = reloading ? _playerCombatController.PrimaryReloadProgress : _playerCombatController.PrimaryAmmoNormalized;
+                ApplyHardwareCursor(reloading ? 2 : onTarget ? 1 : 0, Mathf.RoundToInt(Mathf.Clamp01(fraction) * MagazineSteps));
+                return;
+            }
+
+            ApplyDefaultCursor();
+            HideCursor();
 
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(_canvasRect, screenPoint, null, out var local))
             {
                 _root.anchoredPosition = local;
             }
 
-            var reloading = _playerCombatController.IsPrimaryReloading;
-            var onTarget = !reloading && IsAimingAtEnemy(worldPoint);
             var accent = onTarget ? TargetColor : ReadyColor;
 
             _ammoArc.fillAmount = reloading ? _playerCombatController.PrimaryReloadProgress : _playerCombatController.PrimaryAmmoNormalized;
@@ -248,6 +290,100 @@ namespace Corebound.UI.Gameplay
             var ringScale = onTarget ? TargetRingScale : 1f;
             _ammoArc.rectTransform.localScale = Vector3.one * ringScale;
             _ringBacking.rectTransform.localScale = Vector3.one * ringScale;
+        }
+
+        // state: 0 ready, 1 on target, 2 reloading. step: 0..MagazineSteps of the arc.
+        private void ApplyHardwareCursor(int state, int step)
+        {
+            var key = state * 100 + step;
+
+            if (key == _appliedCursorKey)
+            {
+                return;
+            }
+
+            if (!_cursorTextures.TryGetValue(key, out var texture) || texture == null)
+            {
+                texture = CreateCursorTexture(state == 2 ? ReloadColor : state == 1 ? TargetColor : ReadyColor, step / (float)MagazineSteps, state == 1);
+                _cursorTextures[key] = texture;
+            }
+
+            Cursor.SetCursor(texture, new Vector2(CursorSize * 0.5f, CursorSize * 0.5f), CursorMode.Auto);
+            _appliedCursorKey = key;
+        }
+
+        private void ApplyDefaultCursor()
+        {
+            if (_appliedCursorKey == -1)
+            {
+                return;
+            }
+
+            Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+            _appliedCursorKey = -1;
+        }
+
+        // The same picture as the canvas reticle, drawn into a cursor-sized texture: a dark backing
+        // ring, the bright magazine arc from the top counter-clockwise, and the centre dot. On target
+        // the ring is drawn tighter, as the canvas version scales it.
+        private static Texture2D CreateCursorTexture(Color accent, float fill, bool tight)
+        {
+            var size = CursorSize;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Point;
+            var pixels = new Color32[size * size];
+            var centre = (size - 1) * 0.5f;
+            var outer = tight ? 12.5f : 14.5f;
+            var inner = outer - 3.2f;
+            var backingOuter = outer + 1.2f;
+            var backingInner = inner - 1.2f;
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var dx = x - centre;
+                    var dy = y - centre;
+                    var distance = Mathf.Sqrt(dx * dx + dy * dy);
+                    var color = new Color(0f, 0f, 0f, 0f);
+
+                    var backing = Mathf.Min(Mathf.Clamp01(backingOuter - distance + 0.5f), Mathf.Clamp01(distance - backingInner + 0.5f));
+                    color = Color.Lerp(color, BackingColor, backing * BackingColor.a / Mathf.Max(0.001f, BackingColor.a));
+                    color.a = Mathf.Max(color.a, backing * BackingColor.a);
+
+                    // Angle measured from the top, counter-clockwise, 0..1 - the Image fill origin
+                    // and direction the canvas reticle uses.
+                    var angle = Mathf.Atan2(-dx, dy) / (Mathf.PI * 2f);
+
+                    if (angle < 0f)
+                    {
+                        angle += 1f;
+                    }
+
+                    var ring = Mathf.Min(Mathf.Clamp01(outer - distance + 0.5f), Mathf.Clamp01(distance - inner + 0.5f));
+
+                    if (ring > 0f && angle <= fill)
+                    {
+                        color = Color.Lerp(color, accent, ring);
+                        color.a = Mathf.Max(color.a, ring * accent.a);
+                    }
+
+                    var dotBacking = Mathf.Clamp01(3.6f - distance + 0.5f);
+                    color = Color.Lerp(color, BackingColor, dotBacking);
+                    color.a = Mathf.Max(color.a, dotBacking * BackingColor.a);
+                    var dot = Mathf.Clamp01(2.2f - distance + 0.5f);
+                    color = Color.Lerp(color, accent, dot);
+                    color.a = Mathf.Max(color.a, dot);
+
+                    pixels[y * size + x] = color;
+                }
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply(false, false);
+            texture.hideFlags = HideFlags.DontSave;
+            return texture;
         }
 
         // Menus that are driven by the pointer. Pause, run-end and tutorial beats hold the
