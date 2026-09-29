@@ -250,6 +250,58 @@ namespace Corebound.Gameplay.Factory
         // Deliberately reports the *next* tier's requirement too: knowing a chain is at tier 1
         // is much less useful than knowing two more towers would take it to tier 2, which is the
         // investment decision the Factory exists to create.
+        // OPEN_TOPICS 2.2: the amplifier paid out with nothing on screen to say it existed, let
+        // alone that it was working. Vision section 5.5 asks that a player can recognise a system
+        // is running, so the HUD needs two numbers - the chain's tier, and the live bonus.
+        //
+        // Both are derived on demand rather than cached: they change when a tower is built or lost,
+        // which has no event of its own, and the readout only asks a few times a second.
+        public int HighestChainTier
+        {
+            get
+            {
+                var highest = 0;
+
+                foreach (var pair in _lastReportedTierByChain)
+                {
+                    if (pair.Value > highest)
+                    {
+                        highest = pair.Value;
+                    }
+                }
+
+                return highest;
+            }
+        }
+
+        // The multiplier a producing node would currently receive, i.e. 1.4 for a live +40%.
+        // Matches ApplyAmplifiers exactly: bonuses add rather than multiply, and an amplifier never
+        // counts itself.
+        public float ActiveAmplifierMultiplier
+        {
+            get
+            {
+                var totalBonus = 0f;
+
+                for (var chainIndex = 0; _chains != null && chainIndex < _chains.Length; chainIndex++)
+                {
+                    var chain = _chains[chainIndex];
+
+                    for (var index = 0; chain != null && chain.Nodes != null && index < chain.Nodes.Length; index++)
+                    {
+                        var candidate = chain.Nodes[index];
+
+                        if (candidate != null && candidate.IsAmplifier && IsAmplifierActive(candidate))
+                        {
+                            totalBonus += candidate.AmplifierOutputBonus;
+                        }
+                    }
+                }
+
+                return 1f + totalBonus;
+            }
+        }
+
         public string DescribeActiveProduction()
         {
             if (_chains == null || _chains.Length == 0)

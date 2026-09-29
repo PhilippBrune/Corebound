@@ -14,6 +14,7 @@ namespace Corebound.Gameplay.Factory
         [SerializeField] private float _minNoticeIntervalSeconds = 4f;
 
         private float _cooldownTimer;
+        private FactoryService _factoryService;
 
         private void OnEnable()
         {
@@ -41,7 +42,33 @@ namespace Corebound.Gameplay.Factory
             }
 
             _cooldownTimer = Mathf.Max(0f, _minNoticeIntervalSeconds);
-            NotificationPresenter.Show("+" + eventArgs.Amount + " · " + eventArgs.NodeDisplayName);
+
+            // OPEN_TOPICS 2.2, half two: "did it just pay?". The amount already *was* amplified -
+            // FactoryService applies amplifiers before raising this - but the toast never said so,
+            // so a player saw a bigger number with no reason attached and could not connect it to
+            // the towers they had built. Naming the multiplier is what closes that loop.
+            if (_factoryService == null)
+            {
+                _factoryService = FindFirstObjectByType<FactoryService>();
+            }
+
+            var multiplier = _factoryService != null ? _factoryService.ActiveAmplifierMultiplier : 1f;
+            var amplified = multiplier > 1.001f;
+
+            NotificationPresenter.Show("+" + eventArgs.Amount + " · " + eventArgs.NodeDisplayName
+                + (amplified ? "  (x" + multiplier.ToString("0.0#") + ")" : string.Empty));
+
+            if (amplified)
+            {
+                // A short pulse at the Core ties the payout to a place in the arena, so the system
+                // is visible even when the toast is missed.
+                var core = GameObject.Find(Corebound.Gameplay.Combat.CombatHitReceiver.CoreAnchorObjectName);
+
+                if (core != null)
+                {
+                    Corebound.Gameplay.Combat.CombatVfxSpawner.SpawnTowerActivationPulse(core.transform.position);
+                }
+            }
         }
     }
 }

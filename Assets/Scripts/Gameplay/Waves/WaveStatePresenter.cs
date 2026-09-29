@@ -497,6 +497,14 @@ namespace Corebound.Gameplay.Waves
             ConfigureResponsiveHudText(_runTimerText, 9, 13);
             _runTimerText.gameObject.SetActive(false);
 
+            // The Factory's tier and live amplifier bonus (OPEN_TOPICS 2.2). Built here because
+            // this presenter already owns the HUD canvas and its font; the indicator hides itself
+            // when there is nothing to report, so a run that ignores the Factory sees nothing.
+            var indicatorHost = new GameObject("FactoryChainIndicatorHost");
+            indicatorHost.transform.SetParent(rectTransform, false);
+            indicatorHost.AddComponent<Corebound.UI.Gameplay.FactoryChainIndicatorPresenter>()
+                .Build(rectTransform, ResolveFont());
+
             var bannerPanel = CreateImage("WaveBanner", rectTransform, _waveBannerSprite != null ? _waveBannerSprite : _statusPanelSprite, new Color(1f, 1f, 1f, 0.98f), ResolveBannerImageType());
             var bannerRect = bannerPanel.rectTransform;
             bannerRect.anchorMin = new Vector2(0.5f, 1f);
