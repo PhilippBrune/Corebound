@@ -1,6 +1,6 @@
 # Open Topics — Corebound
 
-Version 2.0 · 2026-09-28 · **The single live list.** Closed topics are deleted, not archived — git
+Version 2.1 · 2026-09-29 · **The single live list.** Closed topics are deleted, not archived — git
 history holds what was fixed and why. Do not start a new report file; add here.
 
 `08_IMPLEMENTATION_BACKLOG.md` is the plan. This is the punch list.
@@ -88,7 +88,13 @@ stage-transition orchestration out of `WaveManager`) are still open.
 
 Both clocks, persisted across sessions; per-profile `history.json` keeping 50 recent plus the best
 per stage; a Records route on the main menu showing lifetime totals, the best run and recent runs.
-`StatisticsSaveData.AddPlaytimeSeconds` is finally called.
+
+Playtest 2026-09-29 fixes: playtime now counts continuously (`PlaytimeTracker`, menus included)
+instead of only when a run was won or lost, which is why it read 0:00; "runs started" is counted;
+each run line lists its weapons. **Lost runs had recorded no weapons or towers at all** - the run
+save is wiped on death before the history is written - so the build is now read from the live
+loadout and tower service, and the tutorial flag is cached at run start for the same reason.
+Records gained a **Cards** tab: every card in the pool, blurred until collected once.
 
 ### 2.5 Levelling — **done**
 
@@ -96,12 +102,21 @@ Per-profile level on a x1.15 curve from weighted kills, wave clears and stage cl
 per level; boss SP reduced to two thirds so the two sources sum to roughly what bosses alone paid.
 HUD bar shares the run-timer Settings toggle.
 
-### 2.6 Skill tree node graph — **visual half done**
+**Next: decide** the level cap, SP quests and Paragon concept,
+`Specs/DIY/LEVELLING_QUESTS_PARAGON_2026-09-29.md` (P1-P8). There is no level cap today; the x1.15
+curve walls out around level 30-35 against a 212 SP tree.
 
-Radial, authored positions with an even-fan fallback, node state readable in greyscale, drawn behind
-the existing rows. **Still open:** the interaction pass (N3 navigation, and replacing the list), and
-authored `_graphPosition` values - every node is currently at its fallback, which is why labels
-crowd.
+### 2.6 Skill tree node graph — **done, one deviation**
+
+On a branch tab the graph *is* the screen now (playtest 2026-09-29: "I see the old and the new
+system - it should be only one"). The view pans to the active branch at a readable size, the other
+branches and the portrait stay visible dimmed at the edges, a details column shows the selected
+node, and Respec is a button. Stick and arrows move across the graph (nearest node in a cone); the
+mouse hovers to select and clicks to buy; tabs are clickable.
+
+**Deviation from N3:** LB/RB switch *branch*, as on every other tabbed screen, rather than jump
+tiers - Up/Down along the branch does the tier move. Authored `_graphPosition` values are still
+unset; the computed layout is readable without them.
 
 ### 2.7 HP recovery — **done**
 
@@ -119,29 +134,27 @@ pool lacked. The five cards I had flagged as possibly doing nothing were fine - 
 Single-stage verification runs were used throughout this pass, but the five-run campaign has not
 been done.
 
+### 2.10 Mouse everywhere — **done, clicks unverified**
+
+Added 2026-09-29: Progression tabs, rows and graph nodes; Settings tabs, rows (click steps forward,
+right-click back) and Apply / Cancel buttons; Records tabs and card grid; pause tabs, settings rows
+and Resume / Main Menu buttons; a click dismisses Start, Run Failed and tutorial beats after a 0.6 s
+grace; build-browser cards (click selects, click again builds or upgrades); right-click skips the
+shop. Every element was screenshotted, but **no click was made** - synthetic OS input does not
+reach the Input System, so each needs one real mouse pass.
+
+### 2.11 Aim reticle — **second design**
+
+The four-dash reticle "looked strange" (playtest 2026-09-29). Replaced by a dot inside a ring whose
+bright arc is the magazine (refills grey during a reload), red over an enemy, on its own screen-space
+canvas. It hides and the Windows pointer returns while any pointer menu is open - pause, reward,
+shop, loadout. The first version stayed hidden under those overlays with the OS pointer also hidden.
+
 ---
 
 ## 3 · Decide — second round of suggestions
 
 The first round is in git history; these are fresh takes, not a re-print.
-
-### 3.1 What to draw instead of the OS mouse cursor
-
-1. **Hardware cursor swap.** `Cursor.SetCursor()` with an amber reticle. One call at startup, no
-   per-frame cost, and it still tracks at OS refresh rate rather than framerate. *An hour.*
-2. **Device-aware:** hardware cursor while the mouse is active, hidden the moment `IsUsingGamepad`
-   flips. The project is controller-first and already tracks that flag, and today a gamepad player
-   still has a Windows arrow parked in the arena.
-3. **A cursor that reports weapon state.** Hidden OS cursor, world-space reticle that opens while
-   reloading, closes when ready, and tints on a valid target. This is the one that earns its place —
-   it replaces information the HUD currently has to carry, rather than adding decoration. Costs a
-   frame of latency, which matters at low framerate.
-4. **Contextual cursor.** As 3, plus it changes shape over a tower slot, the Core, and a salvage
-   cache — so "you can interact here" is readable without reading text.
-
-**Recommendation: 2 now, then 3.** Start with the swap and the gamepad hide, which is an hour and
-removes an obvious wart. 3 is worth doing once the reticle art exists, because it pays for its
-latency by moving reload state to where the player is already looking.
 
 ### 3.2 Wave → Boss and Stage → Stage transitions
 
