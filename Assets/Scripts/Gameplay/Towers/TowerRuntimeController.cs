@@ -219,6 +219,28 @@ namespace Corebound.Gameplay.Towers
             return ResolveRange(_currentUpgradeLevel);
         }
 
+        // The slot this tower stands on (OPEN_TOPICS 3.3). Elevated extends reach; Shielded makes
+        // the tower immune. Held here rather than looked up through the service so a tower keeps
+        // its slot's character even if the slot list is rebuilt around it.
+        private TowerSlotTrait _slotTrait = TowerSlotTrait.Standard;
+
+        public TowerSlotTrait SlotTrait => _slotTrait;
+
+        public void ApplySlotTrait(TowerSlotTrait trait)
+        {
+            _slotTrait = trait;
+
+            if (TowerSlotTraitRules.IsImmuneToDamage(trait))
+            {
+                var receiver = GetComponent<Corebound.Gameplay.Combat.CombatHitReceiver>();
+
+                if (receiver != null)
+                {
+                    receiver.enabled = false;
+                }
+            }
+        }
+
         private float ResolveRange(int level)
         {
             var progression = Corebound.MetaProgression.RunProgressionSnapshot.Current;
@@ -231,6 +253,7 @@ namespace Corebound.Gameplay.Towers
             return ResolveBaseRange(level)
                 * progression.Upgrades.GetIncreaseMultiplier(towerId, Corebound.MetaProgression.UpgradableStat.Range)
                 * progression.Skills[Corebound.MetaProgression.SkillEffectTarget.TowerRangeMultiplier]
+                * TowerSlotTraitRules.RangeMultiplier(_slotTrait)
                 * bossRange;
         }
 

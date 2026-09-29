@@ -128,6 +128,17 @@ namespace Corebound.Gameplay.Towers
             builder.Append("  ").Append(Corebound.UI.LocalizationService.Resolve("Range ", "Reichweite "));
             builder.Append(towerData.Range.ToString("0.#"));
 
+            // The selected slot's own character, in words. The pad tint alone would be colour-only,
+            // which SkillTree.md already forbids for node states and which is no more readable here.
+            var selectedSlot = _selectedSlotIndex >= 0 && _selectedSlotIndex < _runtimeSlots.Count
+                ? _runtimeSlots[_selectedSlotIndex]
+                : null;
+
+            if (selectedSlot != null && selectedSlot.Trait != TowerSlotTrait.Standard)
+            {
+                builder.Append("  ·  ").Append(TowerSlotTraitRules.Describe(selectedSlot.Trait));
+            }
+
             if (!string.IsNullOrWhiteSpace(towerData.Strengths))
             {
                 builder.Append(nlSeparator).Append(Corebound.UI.LocalizationService.Resolve("+ ", "+ "));
@@ -527,6 +538,9 @@ namespace Corebound.Gameplay.Towers
             UpdateSlotVisuals();
         }
 
+        // One seed per run, so re-entering a stage in the same run reproduces its traits.
+        private readonly int _slotTraitSeed = UnityEngine.Random.Range(1, 100000);
+
         private void CreateSlotRuntimes()
         {
             _runtimeSlots.Clear();
@@ -537,6 +551,12 @@ namespace Corebound.Gameplay.Towers
             {
                 return;
             }
+
+            // Seeded per stage so the traits are stable for the whole stage - a slot must not
+            // change what it offers while the player is deciding - but different next run and on
+            // the next stage, which is the point of rolling them at all.
+            var stageIndex = _waveManager != null ? _waveManager.StageIndex : 1;
+            var traitRandom = new System.Random(_slotTraitSeed * 31 + stageIndex);
 
             for (var index = 0; index < slotPositions.Length; index++)
             {
@@ -552,7 +572,8 @@ namespace Corebound.Gameplay.Towers
                 var baseScale = ResolveSlotMarkerBaseScale(sprite);
                 slotObject.transform.localScale = new Vector3(baseScale, baseScale, 1f);
 
-                _runtimeSlots.Add(new TowerSlotRuntime(slotObject.transform, spriteRenderer, baseScale));
+                _runtimeSlots.Add(new TowerSlotRuntime(
+                    slotObject.transform, spriteRenderer, baseScale, TowerSlotTraitRules.Roll(traitRandom)));
             }
         }
 
@@ -837,6 +858,13 @@ namespace Corebound.Gameplay.Towers
             var fullCost = ResolveTowerCost(ResolveDiscountedBuildCost(towerData));
             var cost = ApplyFirstTowerDiscount(fullCost);
 
+            // A Cramped slot is cheaper to build on. Applied after the other discounts so it reads
+            // as a property of the place rather than of the tower.
+            var selectedTrait = _selectedSlotIndex >= 0 && _selectedSlotIndex < _runtimeSlots.Count
+                ? _runtimeSlots[_selectedSlotIndex].Trait
+                : TowerSlotTrait.Standard;
+            cost = Mathf.Max(1, Mathf.RoundToInt(cost * TowerSlotTraitRules.CostMultiplier(selectedTrait)));
+
             if (!TryCommitPurchase(cost))
             {
                 return;
@@ -1009,6 +1037,7 @@ namespace Corebound.Gameplay.Towers
             towerObject.transform.position = slot.Position;
             var towerController = towerObject.AddComponent<TowerRuntimeController>();
             towerController.Initialize(towerData, this, _projectilePrototype, _projectileParent, upgradeLevel);
+            towerController.ApplySlotTrait(slot.Trait);
             _runtimeTowers.Add(towerController);
             slot.AssignTower(towerController);
 
@@ -1178,12 +1207,15 @@ namespace Corebound.Gameplay.Towers
             private readonly SpriteRenderer _spriteRenderer;
             private readonly float _baseScale;
 
-            public TowerSlotRuntime(Transform transform, SpriteRenderer spriteRenderer, float baseScale)
+            public TowerSlotRuntime(Transform transform, SpriteRenderer spriteRenderer, float baseScale, TowerSlotTrait trait)
             {
                 Transform = transform;
                 _spriteRenderer = spriteRenderer;
                 _baseScale = baseScale;
+                Trait = trait;
             }
+
+            public TowerSlotTrait Trait { get; }
 
             public Transform Transform { get; }
 
@@ -1228,7 +1260,13 @@ namespace Corebound.Gameplay.Towers
                     return;
                 }
 
-                _spriteRenderer.color = new Color(0.78f, 0.9f, 1f, 0.66f);
+                // The trait tint only shows on an idle, empty pad: a selected or occupied slot has
+                // its own state to communicate, and that has to win. Never colour alone - the slot
+                // summary names the trait in words as well.
+                var idle = new Color(0.78f, 0.9f, 1f, 0.66f);
+                var traitTint = TowerSlotTraitRules.Tint(Trait);
+                _spriteRenderer.color = new Color(
+                    idle.r * traitTint.r, idle.g * traitTint.g, idle.b * traitTint.b, idle.a);
                 Transform.localScale = new Vector3(_baseScale, _baseScale, 1f);
             }
         }
