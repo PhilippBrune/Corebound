@@ -20,3 +20,4 @@ MonoBehaviour:
   _settingsPanelData: {fileID: 11400000, guid: 44c2d95a5b8141378ef6b8ab3679f76f, type: 2}
   _metaProgressionPanelData: {fileID: 11400000, guid: c2bde1c39c4f4a34ae8e4a1b64a47605, type: 2}
   _profilePanelData: {fileID: 11400000, guid: c0853631997446e79a50b7ac4615ac2f, type: 2}
+  _recordsPanelData: {fileID: 11400000, guid: bba6fa17cf587fc49ad12168ee54627c, type: 2}

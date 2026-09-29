@@ -242,6 +242,73 @@ namespace Corebound.UI.MainMenu
             return lines;
         }
 
+        // The Records screen (run history D7-1). Read-only, so it reuses the route panel rather
+        // than needing its own canvas and interactive target: a title, a summary and a list of rows
+        // is exactly what a history screen is.
+        //
+        // The first rows are the aggregate totals StatisticsSaveData has been collecting invisibly
+        // since it was written - runs started, completed, failed, enemies killed, total playtime -
+        // followed by the last runs newest first.
+        private string[] BuildRecordLines()
+        {
+            var history = SaveManager != null ? SaveManager.LoadRunHistorySaveData() : null;
+            var statistics = SaveManager != null ? SaveManager.LoadStatisticsSaveData(new SaveSystem.StatisticsSaveData()) : null;
+            var lines = new System.Collections.Generic.List<string>();
+
+            if (statistics != null)
+            {
+                lines.Add(LocalizationService.Resolve("Runs started", "Runs gestartet") + "   " + statistics.TotalRunsStarted
+                    + "     " + LocalizationService.Resolve("completed", "abgeschlossen") + "   " + statistics.TotalRunsCompleted
+                    + "     " + LocalizationService.Resolve("lost", "verloren") + "   " + statistics.TotalRunsFailed);
+                lines.Add(LocalizationService.Resolve("Enemies defeated", "Gegner besiegt") + "   " + statistics.TotalEnemyKills
+                    + "     " + LocalizationService.Resolve("Deepest stage", "Tiefste Stage") + "   " + statistics.HighestStageReached
+                    + "     " + LocalizationService.Resolve("Playtime", "Spielzeit") + "   "
+                    + Corebound.Gameplay.Waves.RunTimerService.Format((float)statistics.TotalPlaytimeSeconds));
+            }
+
+            if (history == null || history.RunCount == 0)
+            {
+                lines.Add(string.Empty);
+                lines.Add(LocalizationService.Resolve(
+                    "No finished runs yet - a run is recorded when it is won or lost.",
+                    "Noch keine beendeten Runs - ein Run wird aufgezeichnet, wenn er gewonnen oder verloren ist."));
+                return lines.ToArray();
+            }
+
+            var best = history.BestRun;
+
+            if (best != null)
+            {
+                lines.Add(string.Empty);
+                lines.Add(LocalizationService.Resolve("Best", "Bester") + "   "
+                    + LocalizationService.Resolve("Stage ", "Stage ") + best.StageReached
+                    + LocalizationService.Resolve(", wave ", ", Welle ") + best.WaveReached
+                    + "   " + Corebound.Gameplay.Waves.RunTimerService.Format(best.ElapsedActiveSeconds));
+            }
+
+            lines.Add(string.Empty);
+            var entries = history.Entries;
+            var shown = Mathf.Min(entries.Count, 12);
+
+            for (var index = 0; index < shown; index++)
+            {
+                var entry = entries[index];
+                var outcome = entry.Outcome == SaveSystem.RunOutcome.Completed
+                    ? LocalizationService.Resolve("Won ", "Gewonnen ")
+                    : LocalizationService.Resolve("Lost", "Verloren");
+
+                lines.Add(entry.StartedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                    + "   " + outcome
+                    + "   " + LocalizationService.Resolve("Stage ", "Stage ") + entry.StageReached
+                    + LocalizationService.Resolve(" wave ", " Welle ") + entry.WaveReached
+                    + "   " + Corebound.Gameplay.Waves.RunTimerService.Format(entry.ElapsedActiveSeconds)
+                    + "   " + entry.EnemiesKilled + LocalizationService.Resolve(" kills", " Kills")
+                    + (string.IsNullOrEmpty(entry.EndedByLabel) ? string.Empty : "   " + entry.EndedByLabel));
+            }
+
+            return lines.ToArray();
+        }
+
         // The rows the route panel draws while the profile panel is open; null for every other
         // panel, which keeps showing its authored text.
         public string[] ActivePanelDetailLinesOverride
@@ -256,6 +323,11 @@ namespace Corebound.UI.MainMenu
                 if (_pendingPanelRoute == MainMenuRoute.NewRun)
                 {
                     return BuildStartWeaponLines();
+                }
+
+                if (_pendingPanelRoute == MainMenuRoute.Records)
+                {
+                    return BuildRecordLines();
                 }
 
                 if (_pendingPanelRoute != MainMenuRoute.Profile)
@@ -457,6 +529,9 @@ namespace Corebound.UI.MainMenu
                     return;
                 case MainMenuRoute.MetaProgression:
                     OpenTarget(MetaProgressionTarget);
+                    return;
+                case MainMenuRoute.Records:
+                    OpenPanel(_executionData != null ? _executionData.RecordsPanelData : null, MainMenuRoute.Records);
                     return;
                 case MainMenuRoute.Profile:
                     _profileRowIndex = ProfileSelection.ActiveIndex - 1;

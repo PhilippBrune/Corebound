@@ -546,6 +546,8 @@ namespace Corebound.UI.MainMenu
                     return LocalizationService.Resolve("Adjust controls, audio and presentation.", "Steuerung, Audio und Darstellung anpassen.");
                 case MainMenuRoute.MetaProgression:
                     return LocalizationService.Resolve("Inspect permanent upgrades and unlocks.", "Dauerhafte Upgrades und Freischaltungen ansehen.");
+                case MainMenuRoute.Records:
+                    return LocalizationService.Resolve("Review finished runs and lifetime totals.", "Beendete Runs und Gesamtwerte ansehen.");
                 case MainMenuRoute.Quit:
                     return LocalizationService.Resolve("Close the current session.", "Beendet die aktuelle Sitzung.");
                 default:
@@ -567,6 +569,8 @@ namespace Corebound.UI.MainMenu
                     return LocalizationService.Resolve("Opening settings.", "Einstellungen werden geoeffnet.");
                 case MainMenuRoute.MetaProgression:
                     return LocalizationService.Resolve("Opening meta progression.", "Meta-Progression wird geoeffnet.");
+                case MainMenuRoute.Records:
+                    return LocalizationService.Resolve("Opening records.", "Aufzeichnungen werden geoeffnet.");
                 case MainMenuRoute.Quit:
                     return LocalizationService.Resolve("Closing the current session.", "Sitzung wird beendet.");
                 default:
