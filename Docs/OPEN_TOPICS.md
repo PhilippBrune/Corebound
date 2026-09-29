@@ -63,102 +63,61 @@ Both are blocked on a feature rather than on wiring.
 
 ---
 
-## 2 · Agreed work, not yet done
+## 2 · Agreed work — status after the 2026-09-29 pass
 
-### 2.1 Unify the UI theme — *"make it similar"*
+### 2.1 UI theme unification — **started**
 
-`UIThemeData.Font` reaches eleven presenters through `UIFontResolver`, but `PrimaryTextColor`,
-`SecondaryTextColor`, `AccentColor` and `PanelFrameSprite` are read by nothing. Every presenter
-hardcodes its own colours, and `CreateText`/`CreateImage` are duplicated across at least six of them
-and have drifted apart.
+`ProceduralUIBuilder` exists and resolves `UIThemeData`'s colours and panel frame, which nothing had
+ever read. **One presenter migrated** (the factory chain indicator). The remaining five-plus are the
+job, one at a time with a screenshot between each - a single sweep is how the 2026-09-22 canvas
+regressions happened.
 
-**Approach:** build one `ProceduralUIBuilder` owning `CreateText` / `CreateImage` /
-`StretchToParent` and reading `UIThemeData`, then migrate presenters onto it **one at a time**,
-verifying each against a screenshot before the next. A single sweeping replacement across six
-presenters, with no EventSystem and scene-authored layouts, is how the 2026-09-22 canvas regressions
-happened.
+### 2.2 Factory amplification visibility — **done**
 
-### 2.2 Make factory amplification visible — *"make it visible"*
+HUD readout (pip per chain tier, live multiplier) answers "is it on?"; the toast now names the
+multiplier and an amplified tick pulses the Core, answering "did it just pay?". Wires
+`factory_chain_tier_indicator.png`.
 
-The amplifier pays out with no on-screen sign; Vision §5.5 asks that a player can recognise a system
-is working. Both halves, indicator first:
+### 2.3 God-object refactors — **step 1 done**
 
-1. `factory_chain_tier_indicator.png` in the HUD as a tier readout — a pip per chain tier, with the
-   live amplifier bonus as a `×1.4` chip beside it. Answers *"is it on?"*
-2. A brief pulse along the Core when an amplified tick lands, and the existing
-   `NotificationPresenter` toast carrying the **amplified** figure rather than the base one. Answers
-   *"did it just pay?"*
+`GameplayTimeScaleGuard` owns the pause freeze, which is the invariant that seam was chosen for.
+Steps 2-4 (HUD bars out of `WaveStatePresenter`, spawn-gate visuals out of `StageArenaArtPresenter`,
+stage-transition orchestration out of `WaveManager`) are still open.
 
-### 2.3 God-object refactors — *"start implementing"*
+### 2.4 Run timer and history — **done**
 
-Agreed order, smallest blast radius first, verifying with an autopilot run between each:
+Both clocks, persisted across sessions; per-profile `history.json` keeping 50 recent plus the best
+per stage; a Records route on the main menu showing lifetime totals, the best run and recent runs.
+`StatisticsSaveData.AddPlaytimeSeconds` is finally called.
 
-1. `WaveStatePresenter` → extract the **pause/overlay**. It is the only thing in the codebase that
-   touches `Time.timeScale`, so it is a clean seam with exactly one invariant.
-2. `WaveStatePresenter` → extract the **HUD bars and labels** (pure render-from-state, no input).
-3. `StageArenaArtPresenter` → extract **spawn-gate visuals** (already a self-contained list plus a
-   pulse timer).
-4. `WaveManager` → extract **stage-transition orchestration**.
+### 2.5 Levelling — **done**
 
-`WaveStatePresenter` is ~1600 lines across five responsibilities; `StageArenaArtPresenter` ~1000.
-`WaveSpawnPlacement` was split out successfully and is the pattern to copy.
+Per-profile level on a x1.15 curve from weighted kills, wave clears and stage clears; one Skill Point
+per level; boss SP reduced to two thirds so the two sources sum to roughly what bosses alone paid.
+HUD bar shares the run-timer Settings toggle.
 
-### 2.4 Run timer and history
+### 2.6 Skill tree node graph — **visual half done**
 
-Answered in full — see
-[`Specs/DIY/RUN_TIMER_AND_HISTORY_2026-09-27.md`](Specs/DIY/RUN_TIMER_AND_HISTORY_2026-09-27.md).
-Both clocks stored, HUD readout behind a Settings toggle, per-profile `history.json` keeping the last
-50 plus the best run per stage, a new Records route, no entry for abandoned or tutorial runs. Not
-implemented.
+Radial, authored positions with an even-fan fallback, node state readable in greyscale, drawn behind
+the existing rows. **Still open:** the interaction pass (N3 navigation, and replacing the list), and
+authored `_graphPosition` values - every node is currently at its fallback, which is why labels
+crowd.
 
-### 2.5 Five-run test campaign
+### 2.7 HP recovery — **done**
 
-Requested and not yet done. One progression run verified the purchase path and the visual fixes, but
-the autopilot's combat is slow enough that five full runs needs its own session.
+Repair yourself at the Core during an Intermission for Scrap, rising 1.45x per use, at an interact
+priority below repairing the Core itself.
 
----
+### 2.8 Duplicate cards — **done**
 
-## 2.6 Duplicate cards — audited 2026-09-28, **Decide**
+Nine duplicate groups resolved to zero by repurposing the weaker card of each into a mechanic the
+pool lacked. The five cards I had flagged as possibly doing nothing were fine - they use
+`WeaponModifierData`, which that scan did not read.
 
-Owner asked for a review of cards that differ only by a number. Scanning all 43 cards by their
-*effect signature* (target + operation, ignoring magnitude) found **nine groups, 19 cards**, where
-two or more cards at the same rarity do the same thing:
+### 2.9 Five-run test campaign — **still open**
 
-| Rarity | Effect | Cards (value) |
-| --- | --- | --- |
-| Common | Weapon damage | Overcharged Rounds (1.10) · Rapid Chamber (1.15) |
-| Common | Resource gain | Scrap Magnet (1.10) · Salvage Protocol (1.15) |
-| Rare | Fire interval | Rapid Cycler (0.85) · Twin Barrel (0.88) |
-| Rare | Resource gain | Assembly Line (1.20) · Harvest Protocol (1.25) |
-| **Rare** | **Tower damage** | **Relay Overclock (1.15) · Fortified Relay (1.20) · Reinforced Emitters (1.22)** |
-| Epic | Weapon damage | Status Archive (1.15) · Volatile Payload (1.40) |
-| Epic | Resource gain | Bulk Salvage (1.40) · Endless Supply Line (1.45) |
-| Epic | Tower damage | Siege Battery (1.35) · Twin Turret Array (1.40) |
-| Legendary | Weapon + tower damage | Apex Overload (1.30/1.30) · Reactor Bleed (1.25/1.25) |
-
-The three Rare tower-damage cards are the worst: 1.15 / 1.20 / 1.22 is not a choice, it is a lottery
-for the best number. The Epic weapon-damage pair is the other extreme — 1.15 against 1.40 at the
-same rarity is not a duplicate so much as one card being strictly worse.
-
-Three ways to resolve, and this needs an owner call because it is content design:
-
-1. **Differentiate.** Give one card of each pair a second axis — Relay Overclock becomes tower *fire
-   rate*, Twin Barrel becomes *projectile count*, Status Archive leans on status duration. Most work,
-   best result, and it uses effect targets that already exist.
-2. **Merge and replace.** Delete the weaker of each pair and author new cards in the gaps the pool
-   has (there is nothing at all for pierce, crit rate on towers, or Core repair).
-3. **Make them stack deliberately.** Keep them, rename them as an explicit family, and let the
-   duplication be the point — the deckbuilding equivalent of two copies.
-
-**Recommendation: 1 for the three Rare tower cards and the Epic weapon pair** (the two that read
-worst), **2 for the rest**. Not started — say which and it is a data-only change.
-
-Separately, the same scan found **14 cards with no resolvable effects**. Nine are weapon-grant cards,
-which is correct — they hand over a weapon rather than a modifier. The other five are not:
-**Cooling Array, Critical Focus, Critical Amplifier, Split Barrel and Unstable Payload** reference
-effect assets the scan could not read as a target/operation pair, which means either they use a
-mechanism the audit does not understand or they genuinely do nothing. Worth a look before the
-duplicate work, since a card that does nothing outranks a card that duplicates.
+Single-stage verification runs were used throughout this pass, but the five-run campaign has not
+been done.
 
 ---
 
