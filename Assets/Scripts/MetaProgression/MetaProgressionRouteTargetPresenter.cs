@@ -298,7 +298,46 @@ namespace Corebound.MetaProgression
             _summaryText.text = _controller.Summary;
             _footerText.text = _controller.FooterHint;
             RebuildRows();
+            RefreshSkillGraph();
             UIManager.NotifyPanelChanged(_managedPanel);
+        }
+
+        // The node graph (SKILL_TREE_NODE_GRAPH_2026-09-28) drawn beside the existing rows while a
+        // skill branch tab is showing, and hidden on every other tab.
+        //
+        // Additive on purpose. The rows still own selection and purchasing, which are the parts of
+        // this screen that must not regress and which could not be interactively playtested before
+        // shipping. The graph is the visual half - complete, judgeable, and safe to look at - with
+        // replacing the list left as the reviewable next step.
+        private SkillTree.SkillTreeGraphPresenter _skillGraph;
+
+        private void RefreshSkillGraph()
+        {
+            if (_controller == null || _panelRect == null)
+            {
+                return;
+            }
+
+            var show = _controller.IsSkillBranchTabActive;
+
+            if (_skillGraph == null)
+            {
+                if (!show)
+                {
+                    return;
+                }
+
+                _skillGraph = gameObject.AddComponent<SkillTree.SkillTreeGraphPresenter>();
+            }
+
+            _skillGraph.SetVisible(show);
+
+            if (!show)
+            {
+                return;
+            }
+
+            _skillGraph.Build(_panelRect, _controller.ActiveSkillTree, _controller.SkillSaveData);
         }
 
         private void RebuildRows()

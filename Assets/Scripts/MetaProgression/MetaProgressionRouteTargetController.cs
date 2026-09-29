@@ -116,6 +116,19 @@ namespace Corebound.MetaProgression
             }
         }
 
+        // True while a skill branch tab is showing, which is when the node graph is worth
+        // drawing. Exposed so SkillTreeGraphPresenter can follow the tab without owning it -
+        // selection and purchasing stay here, where they already work.
+        public bool IsSkillBranchTabActive => ResolveTab(out _) == Tab.Branch;
+
+        // The save the graph reads node state from. Exposed rather than re-loaded so the graph
+        // and the rows can never disagree about what is bought.
+        public SaveSystem.MetaProgressionSaveData SkillSaveData =>
+            _metaProgressionService != null ? _metaProgressionService.SaveData : null;
+
+        public SkillTreeDefinitionData ActiveSkillTree =>
+            _metaProgressionService != null ? _metaProgressionService.ActiveSkillTree : null;
+
         // The Upgrades icon is one cell of the weapon sheet; everything else is a whole file.
         public bool ActiveTabIconIsWeaponSheet => ResolveTab(out _) == Tab.Upgrades;
 

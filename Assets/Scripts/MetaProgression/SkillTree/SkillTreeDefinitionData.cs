@@ -102,6 +102,16 @@ namespace Corebound.MetaProgression
         [SerializeField] private SkillSubNodeData[] _subNodes = Array.Empty<SkillSubNodeData>();
         [SerializeField] private string _iconSpritePath = string.Empty;
 
+        // N1 (owner 2026-09-28): node positions are authored, not computed. A skill tree's shape
+        // is content - where two chains converge, or a keystone sits deliberately far out, is a
+        // design statement and should not be a side effect of a layout algorithm. Measured in
+        // graph units from the centre portrait; sub-nodes are placed on an arc around their key
+        // node automatically, so only key nodes carry one.
+        //
+        // Left at zero the radial presenter falls back to an even fan for that branch, so an
+        // unauthored tree still draws rather than piling every node on the portrait.
+        [SerializeField] private Vector2 _graphPosition;
+
         public string NodeId => _nodeId;
 
         public string DisplayName => LocalizationService.Resolve(_displayName, _displayNameDe);
@@ -119,6 +129,8 @@ namespace Corebound.MetaProgression
         public SkillSubNodeData[] SubNodes => _subNodes;
 
         public string IconSpritePath => _iconSpritePath;
+
+        public Vector2 GraphPosition => _graphPosition;
     }
 
     [Serializable]
