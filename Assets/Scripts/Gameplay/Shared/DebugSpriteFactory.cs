@@ -9,6 +9,13 @@ namespace Corebound.Gameplay.Shared
         private static readonly Dictionary<string, Sprite> SpriteCache = new Dictionary<string, Sprite>();
         private static readonly Dictionary<string, Texture2D> AtlasTextureCache = new Dictionary<string, Texture2D>();
 
+        // NOTE on pixelsPerUnit: Texture2D.whiteTexture is 4x4, so CreateSquare(100f) is 0.04
+        // world units, not 1. Callers that then apply a localScale meant to read as world size end
+        // up with something invisible - which is exactly what happened to the aim reticle on
+        // 2026-09-29. Use CreateSquare(UnitPixelsPerUnit) when you want a one-unit quad and to
+        // treat localScale as world size.
+        public const float UnitPixelsPerUnit = 4f;
+
         public static Sprite CreateSquare(float pixelsPerUnit)
         {
             var sprite = Sprite.Create(

@@ -104,6 +104,13 @@ namespace Corebound.Gameplay.Combat
             {
                 gameObject.AddComponent<Corebound.UI.Gameplay.WeaponLoadoutPanelPresenter>().Bind(this);
             }
+
+            // Attached the same way the loadout panel is, so the reticle exists wherever a player
+            // does without needing a scene edit per scene.
+            if (GetComponent<Corebound.UI.Gameplay.AimReticlePresenter>() == null)
+            {
+                gameObject.AddComponent<Corebound.UI.Gameplay.AimReticlePresenter>();
+            }
         }
 
         private void OnEnable()

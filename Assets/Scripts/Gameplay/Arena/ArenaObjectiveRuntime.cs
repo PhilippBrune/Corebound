@@ -97,7 +97,7 @@ namespace Corebound.Gameplay.Arena
             }
             else
             {
-                _body.sprite = DebugSpriteFactory.CreateSquare(100f);
+                _body.sprite = DebugSpriteFactory.CreateSquare(DebugSpriteFactory.UnitPixelsPerUnit);
                 _body.color = tint;
                 transform.localScale = new Vector3(size, size, 1f);
             }
@@ -111,7 +111,7 @@ namespace Corebound.Gameplay.Arena
             _ring = ringObject.AddComponent<SpriteRenderer>();
             var ringTexture = DebugSpriteFactory.LoadTextureFromProjectFile(RingSpritePath);
             var ringSprite = ringTexture != null ? DebugSpriteFactory.CreateSprite(ringTexture, 100f) : null;
-            _ring.sprite = ringSprite != null ? ringSprite : DebugSpriteFactory.CreateSquare(100f);
+            _ring.sprite = ringSprite != null ? ringSprite : DebugSpriteFactory.CreateSquare(DebugSpriteFactory.UnitPixelsPerUnit);
             _ring.color = new Color(1f, 1f, 1f, 0.85f);
             _ring.sortingOrder = -4;
 
