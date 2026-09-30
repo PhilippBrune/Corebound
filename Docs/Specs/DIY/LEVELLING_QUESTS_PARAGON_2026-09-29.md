@@ -6,8 +6,12 @@ Vision: define a quest system for unlocking SP [...] I have in mind that 10% of 
 quests."*
 
 **Owner decisions (2026-09-29):** every recommendation P1–P8 taken, with the level cap, the SP per
-level and the quest list replaced by the owner's own numbers below. The second half of this document,
-**Alloy quests**, is a new proposal for review.
+level and the quest list replaced by the owner's own numbers below. Part 2, **Alloy quests**, was
+decided the same night — **A1-2, A2 approved, A3-1, A4-1, A5-1** — and built on 2026-09-29/30 (see
+"As built" at the end of Part 2).
+
+**XP retuned 2026-09-29** after the playtest *"I died in stage one at the boss and got no EXP — I want
+EXP per wave and the boss gives extra EXP"*. The numbers below are the retuned ones.
 
 ---
 
@@ -34,18 +38,25 @@ At the cap with every quest done, the tree is exactly complete and can never be 
 
 - **Cap: level 70.** A level-up pays 2 SP, a tenth level 5 SP. A new profile starts at level 1 with
   its 2 SP already paid.
-- **Curve:** linear-growing, `400 + 60 × (level − 1)` XP per level-up (P2-1's shape, retuned for the
-  lower cap). The 69 level-ups cost **168,360 XP** in total — about **68 full runs, ~70 hours**, the
-  same pace the recommendation aimed at.
-- **XP sources:** kill 2, wave cleared 18, stage cleared 140, and now **boss kill 300 × stage**.
+- **Curve:** linear-growing, `250 + 80 × (level − 1)` XP per level-up (P2-1's shape). The 69
+  level-ups cost **204,930 XP** in total.
+- **XP sources (retuned):** kill 2, **every wave cleared 25 × stage**, **boss kill 250 × stage**. The
+  stage-clear lump is gone: it was paid only for surviving a whole stage, so a death at the boss —
+  the most common way a run ends early — paid almost nothing, and the Run Failed screen did not even
+  show the XP that had been earned. Both now appear on the wave banner and the run-end screen.
+- **What that pays:** a death at the Stage 1 boss ≈ 150 (waves) + ~60 (kills) ≈ **210 XP**, most of
+  the first level. A complete five-stage run ≈ 2,250 (waves) + 3,750 (bosses) + ~500 (kills) ≈
+  **6,500 XP**, so the cap is about **32 complete runs**; early runs end sooner, which is where the
+  rest of the originally intended ~70 hours goes.
 
-> **Still unmeasured:** the run estimates assume about 2,500 XP per complete five-stage run. No full
-> run has been counted yet (Open Topics 2.9).
+> **Still unmeasured:** these per-run figures are arithmetic, not a count. No complete run has been
+> recorded yet (Open Topics, five-run campaign). The Paragon cost below was set against the old
+> 2,500-XP estimate of a full run and is now about 0.4 of one; revisit it once runs are measured.
 
 ### Bosses (P3-2)
 
 Bosses pay **no SP** any more. Each boss's first kill completes its quest (1 SP); every kill pays an
-XP lump of 300 × stage, and Alloy exactly as before.
+XP lump of 250 × stage, and Alloy exactly as before.
 
 ### Quests (P4, owner list; P6-1; P8-1)
 
@@ -102,7 +113,7 @@ The array is now sized from the enum.
 
 ---
 
-## Part 2 — Alloy quests (proposal for review, 2026-09-29)
+## Part 2 — Alloy quests (decided 2026-09-29: A1-2, A2, A3-1, A4-1, A5-1; built)
 
 P5-2 decided that quests beyond the SP budget pay Alloy or AP, never SP. Pricing them uncovered a
 problem the mastery quests make urgent, so that comes first.
@@ -205,3 +216,25 @@ AP should stay tied to Paragon so its pace is predictable.
 
 **Rough size:** half a day for the cost change and the counters, half a day for the catalogue and the
 second Quests section.
+
+### As built (2026-09-29/30)
+
+- **A1-2:** every weapon track's `_baseCost` in `UpgradeCatalog_Default` is **3** (was 5). One weapon
+  now costs 876–939 Alloy, all nine about 8,200. Tower tracks stay at 6. `Upgrades.md` updated.
+- **A2:** the catalogue exactly as tabled — 31 quests, 4,000 Alloy. Enemy types and elite affixes
+  are the assets listed on `MetaProgressionDefinitionData` (`_questEnemies`, `_questEliteAffixes`),
+  so adding an enemy type is data, not code.
+- **A3-1:** one-time. **A5-1:** they pay Alloy at any level.
+- **A4-1:** the Quests tab has two sections, Skill Point quests and Alloy quests, each with
+  progress bars. The list scrolls with the wheel, the stick and the arrows (the scroll was broken
+  in the first build: `ScrollToShow` had its sign inverted; now one shared `UIScrollUtility`).
+- **Counters:** tower shots carry the tower id, so tower kills are credited; enemy-type and elite
+  kills come from the victim in the same death handler as the weapon kills. A new
+  `GameplayQuestTracker` watches each stage for Core damage and for more than one weapon type in the
+  loadout, checks the factory's chain tier, and hears `TowerRuntimeController.ReachedMaxLevel`.
+- **Verified:** compiles; the Quests tab renders both sections and scrolls (autopilot screenshots at
+  15 and 30 steps down and after wheel notches); migration on Profile 2.
+- **Not verified in play:** that each counter advances in a real run. The per-run Alloy income
+  (estimated ~60) is still unmeasured, so whether "all nine masteries by about the cap" holds is
+  arithmetic until the five-run campaign counts it.
+

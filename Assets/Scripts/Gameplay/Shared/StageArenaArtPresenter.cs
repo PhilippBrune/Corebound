@@ -187,9 +187,42 @@ namespace Corebound.Gameplay.Shared
         // the new stage's theme automatically once WaveManager's active StageData changes.
         public void RebuildForNewStage()
         {
-            var existingRoot = GameObject.Find("ArenaVisualsRoot");
+            RebuildForNewStage(false);
+        }
 
-            if (existingRoot != null)
+        // Owner decision 2026-09-29 (Open Topics 3.2, option 3): with crossfade, the old arena
+        // fades out over the new one and the Core keeps its place (ArenaStageCrossfade). Used for
+        // a Stage -> Stage change inside a run; resuming a save still rebuilds instantly, because
+        // there is no "previous stage" on screen to fade from.
+        private const float StageCrossfadeSeconds = 1.6f;
+        private Vector2? _keepCoreNear;
+
+        public void RebuildForNewStage(bool crossfade)
+        {
+            var existingRoot = GameObject.Find("ArenaVisualsRoot");
+            var fade = crossfade && Application.isPlaying && existingRoot != null;
+            Transform core = null;
+            SpriteRenderer oldCore = null;
+            var coreFrom = Vector3.zero;
+
+            if (fade)
+            {
+                var coreObject = _coreTarget != null ? _coreTarget.gameObject : GameObject.Find(CombatHitReceiver.CoreAnchorObjectName);
+                core = coreObject != null ? coreObject.transform : null;
+                coreFrom = core != null ? core.position : Vector3.zero;
+                oldCore = core != null ? core.GetComponent<SpriteRenderer>() : null;
+                _keepCoreNear = core != null ? (Vector2?)coreFrom : null;
+
+                // Captured before the rebuild swaps the Core's sprite and scale.
+                if (oldCore != null)
+                {
+                    oldCore = CreateCoreSnapshot(oldCore);
+                }
+
+                ArenaStageCrossfade.Detach(existingRoot);
+            }
+
+            if (existingRoot != null && !fade)
             {
                 if (Application.isPlaying)
                 {
@@ -214,12 +247,30 @@ namespace Corebound.Gameplay.Shared
                 }
             }
 
-            CleanupSprites();
-            CleanupTexture(_runtimeGroundTexture);
-            CleanupTexture(_runtimeBoundaryTexture);
-            CleanupTexture(_runtimePropTexture);
-            CleanupTexture(_runtimeCoreTexture);
-            CleanupTexture(_runtimeSpawnGateTexture);
+            List<UnityEngine.Object> deferredCleanup = null;
+
+            if (fade)
+            {
+                // The outgoing arena still draws with these until the fade ends.
+                deferredCleanup = new List<UnityEngine.Object>(_runtimeSprites.Count + 5);
+                deferredCleanup.AddRange(_runtimeSprites);
+                deferredCleanup.Add(_runtimeGroundTexture);
+                deferredCleanup.Add(_runtimeBoundaryTexture);
+                deferredCleanup.Add(_runtimePropTexture);
+                deferredCleanup.Add(_runtimeCoreTexture);
+                deferredCleanup.Add(_runtimeSpawnGateTexture);
+                _runtimeSprites.Clear();
+            }
+            else
+            {
+                CleanupSprites();
+                CleanupTexture(_runtimeGroundTexture);
+                CleanupTexture(_runtimeBoundaryTexture);
+                CleanupTexture(_runtimePropTexture);
+                CleanupTexture(_runtimeCoreTexture);
+                CleanupTexture(_runtimeSpawnGateTexture);
+            }
+
             _runtimeGroundTexture = null;
             _runtimeBoundaryTexture = null;
             _runtimePropTexture = null;
@@ -227,6 +278,31 @@ namespace Corebound.Gameplay.Shared
             _runtimeSpawnGateTexture = null;
 
             BuildArenaVisuals();
+            _keepCoreNear = null;
+
+            if (fade)
+            {
+                ArenaStageCrossfade.Begin(existingRoot, StageCrossfadeSeconds, deferredCleanup, core, coreFrom, oldCore);
+
+                if (oldCore != null)
+                {
+                    Destroy(oldCore.gameObject);
+                }
+            }
+        }
+
+        // A detached, invisible copy of the Core's renderer as it looked before the rebuild, so
+        // the crossfade can draw the old Core over the new one.
+        private static SpriteRenderer CreateCoreSnapshot(SpriteRenderer source)
+        {
+            var snapshot = new GameObject("CoreSnapshot");
+            snapshot.SetActive(false);
+            snapshot.transform.SetPositionAndRotation(source.transform.position, source.transform.rotation);
+            snapshot.transform.localScale = source.transform.lossyScale;
+            var renderer = snapshot.AddComponent<SpriteRenderer>();
+            renderer.sprite = source.sprite;
+            renderer.color = source.color;
+            return renderer;
         }
 
         private void OnDestroy()
@@ -939,7 +1015,7 @@ namespace Corebound.Gameplay.Shared
 
             if (_walkableInteriorPositions.Count > 0)
             {
-                _coreTarget.position = ResolveCorePosition(random);
+                _coreTarget.position = ResolveCorePosition(random, _keepCoreNear);
             }
         }
 
@@ -951,7 +1027,10 @@ namespace Corebound.Gameplay.Shared
         private const float MinCoreGateDistance = 4.5f;
         private readonly List<Vector2> _coreCandidates = new List<Vector2>();
 
-        private Vector2 ResolveCorePosition(System.Random random)
+        // keepNear (a crossfaded stage change): of the cells that qualify, the one closest to where
+        // the Core already stands, so it holds its place - or moves the least - instead of jumping
+        // to a random cell while the room changes around it.
+        private Vector2 ResolveCorePosition(System.Random random, Vector2? keepNear = null)
         {
             var gates = ResolveSpawnGatePositions();
             _coreCandidates.Clear();
@@ -978,6 +1057,21 @@ namespace Corebound.Gameplay.Shared
                     bestFallbackDistance = nearestGate;
                     bestFallback = candidate;
                 }
+            }
+
+            if (_coreCandidates.Count > 0 && keepNear.HasValue)
+            {
+                var nearest = _coreCandidates[0];
+
+                for (var index = 1; index < _coreCandidates.Count; index++)
+                {
+                    if ((_coreCandidates[index] - keepNear.Value).sqrMagnitude < (nearest - keepNear.Value).sqrMagnitude)
+                    {
+                        nearest = _coreCandidates[index];
+                    }
+                }
+
+                return nearest;
             }
 
             return _coreCandidates.Count > 0 ? _coreCandidates[random.Next(_coreCandidates.Count)] : bestFallback;

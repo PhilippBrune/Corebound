@@ -48,6 +48,7 @@ Skill Points shape *the character*. Alloy improves *the equipment*. Keeping them
 | First-time kill of a boss (once per boss id) | +10 |
 | Kill an elite enemy | 1 |
 | Complete or fail a run | 0 |
+| Alloy quests (31, one-time, 2026-09-29) | 100–300 each, 4,000 in total |
 
 A full run pays 50 Alloy plus its elites (the first full run about 100), inside the 60-90 target once a typical run's 10-20 elites are counted. Values live on `MetaProgressionDefinitionData`.
 
@@ -101,7 +102,9 @@ Each stat upgrades independently, per `TowerId`.
 
 ### Cost curve
 
-Rank *n* of any stat costs `BaseCost * n` Alloy, where `BaseCost` is 5 for weapons and 6 for towers. Rank 1 costs 5, rank 2 costs 10, rank 10 costs 50 — a fully upgraded weapon stat is 275 Alloy, and all seven stats on one weapon is roughly 1,900.
+Rank *n* of any stat costs `BaseCost * n` Alloy, where `BaseCost` is **3 for weapons** and 6 for towers. Rank 1 costs 3, rank 2 costs 6, rank 10 costs 30 — a fully upgraded ten-rank weapon stat is 165 Alloy, and every track on one weapon is 876–939 (without / with Accuracy).
+
+Weapons were 5 until 2026-09-29: at that price mastering all nine weapons cost ~13,500 Alloy against ~4,100 earned by the level cap, which put the 27 Skill Points of the weapon mastery quests out of reach (LEVELLING_QUESTS_PARAGON Part 2, owner decision A1-2).
 
 That is deliberately a long-term goal. A player should fully upgrade one favourite weapon long before they broadly upgrade several.
 

@@ -872,8 +872,10 @@ namespace Corebound.Gameplay.Waves
             _requiresIntermissionShopAction = false;
             _requiresIntermissionTowerAction = false;
 
+            // Crossfaded (Open Topics 3.2, option 3): the old stage fades away around a Core that
+            // holds its place, instead of a hard cut to a different room.
             var arenaPresenter = FindFirstObjectByType<StageArenaArtPresenter>();
-            arenaPresenter?.RebuildForNewStage();
+            arenaPresenter?.RebuildForNewStage(true);
             _towerService?.RebuildSlotsForNewStage();
 
             StartCurrentWave();
