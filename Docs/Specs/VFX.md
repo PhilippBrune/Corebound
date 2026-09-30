@@ -9,7 +9,7 @@ Atlas-Aufteilungen stehen in den drei Detaildokumenten.
 
 | Dokument | Inhalt |
 | --- | --- |
-| [VFX_combat_vfx_sheet_essentials.md](VFX_combat_vfx_sheet_essentials.md) | der gemeinsame Combat-Atlas `Assets/Art/Combat/VFX/combat_vfx_sheet_essentials.png`: Treffer-Funken, Death-Burst, Burn- und Freeze-Layer, Core-Flare, Reward-Flash, Tower-Aktivierungspuls |
+| [VFX_combat_vfx_sheet_essentials.md](VFX_combat_vfx_sheet_essentials.md) | **historisch** — der frühere Combat-Atlas `combat_vfx_sheet_essentials.png` (2026-09-08 durch Einzeldateien ersetzt, 2026-09-30 gelöscht); die Effektfamilien gelten weiter: Treffer-Funken, Death-Burst, Burn- und Freeze-Layer, Core-Flare, Reward-Flash, Tower-Aktivierungspuls |
 | [VFX_stage1_ground_tileset.md](VFX_stage1_ground_tileset.md) | Boden-Atlas der Stage 1, Zellenzuordnung und Kantenregeln |
 | [VFX_stage1_prop_set.md](VFX_stage1_prop_set.md) | Prop-Atlas der Stage 1, Platzierung und Sortierung |
 

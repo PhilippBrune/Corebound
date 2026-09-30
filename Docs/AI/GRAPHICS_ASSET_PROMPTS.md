@@ -266,7 +266,7 @@ Create a Stage 1 boss sprite for a top-down sci-fantasy action-defense roguelite
 
 Target: Assets/Art/Combat/Projectiles/weapon_rapid_sprite.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELETED 2026-09-30 with the owner's OK - superseded by `projectile_sheet_core.png` and `projectile_sheet_weapons_02.png`; git history has the file.
 
 Prompt:
 
@@ -276,7 +276,7 @@ Create a weapon sprite or top-down held-device visual for the rapid projectile s
 
 Target: Assets/Art/Combat/Projectiles/weapon_spread_sprite.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELETED 2026-09-30 with the owner's OK - superseded by `projectile_sheet_core.png` and `projectile_sheet_weapons_02.png`; git history has the file.
 
 Prompt:
 
@@ -286,7 +286,7 @@ Create a weapon sprite or top-down held-device visual for a spread-shot starter 
 
 Target: Assets/Art/Combat/Projectiles/weapon_beam_sprite.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELETED 2026-09-30 with the owner's OK - superseded by `projectile_sheet_core.png` and `projectile_sheet_weapons_02.png`; git history has the file.
 
 Prompt:
 
@@ -304,7 +304,7 @@ Create a 2D projectile sprite sheet for a top-down sci-fantasy roguelite contain
 
 ## Asset 24 - Combat VFX Essentials (Einzelbilder)
 
-Der ursprüngliche Sammel-Prompt für ein einziges `combat_vfx_sheet_essentials.png`-Sheet erzeugte in der Praxis ein unregelmäßiges Layout (unterschiedliche Effektgrößen, keine gleichmäßigen Zellen), das sich nicht zuverlässig automatisch in Unity zuschneiden lässt (`DebugSpriteFactory.LoadProjectAtlasCellSprite` setzt ein gleichmäßiges Spalten/Zeilen-Raster voraus). Die folgenden sieben Prompts erzeugen daher je ein einzelnes, freistehendes Effektbild statt eines Sheets. Jedes Bild wird einzeln in Unitys Sprite-Modus (kein Multiple/Grid-Slicing nötig) importiert und direkt referenziert.
+(`combat_vfx_sheet_essentials.png` wurde am 2026-09-30 mit dem OK des Owners gelöscht.) Der ursprüngliche Sammel-Prompt für ein einziges `combat_vfx_sheet_essentials.png`-Sheet erzeugte in der Praxis ein unregelmäßiges Layout (unterschiedliche Effektgrößen, keine gleichmäßigen Zellen), das sich nicht zuverlässig automatisch in Unity zuschneiden lässt (`DebugSpriteFactory.LoadProjectAtlasCellSprite` setzt ein gleichmäßiges Spalten/Zeilen-Raster voraus). Die folgenden sieben Prompts erzeugen daher je ein einzelnes, freistehendes Effektbild statt eines Sheets. Jedes Bild wird einzeln in Unitys Sprite-Modus (kein Multiple/Grid-Slicing nötig) importiert und direkt referenziert.
 
 ### Asset 24a - Hit Spark
 
