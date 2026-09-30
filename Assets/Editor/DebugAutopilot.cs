@@ -295,10 +295,21 @@ namespace Corebound.EditorTools
                 contents = contents.Substring("cards".Length).Trim();
             }
 
-            var godMode = contents.StartsWith("god", System.StringComparison.OrdinalIgnoreCase);
+            // "boss2": god mode, and every stage from 2 on skips straight to its boss. Each phase
+            // change is logged, and when a fight ends the phases reached are compared with the
+            // phases the boss has (Open Topics 4, owner decision (a), 2026-09-29).
+            var bossTest = contents.StartsWith("boss", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(BossTestSessionKey, bossTest);
+
+            if (bossTest)
+            {
+                contents = contents.Substring("boss".Length).Trim();
+            }
+
+            var godMode = bossTest || contents.StartsWith("god", System.StringComparison.OrdinalIgnoreCase);
             SessionState.SetBool(GodModeSessionKey, godMode);
 
-            if (godMode)
+            if (godMode && contents.StartsWith("god", System.StringComparison.OrdinalIgnoreCase))
             {
                 contents = contents.Substring("god".Length).Trim();
             }
@@ -341,6 +352,7 @@ namespace Corebound.EditorTools
         public const string AscensionTestSessionKey = "Corebound.Autopilot.AscensionTest";
         public const string GodModeSessionKey = "Corebound.Autopilot.GodMode";
         public const string CardsTestSessionKey = "Corebound.Autopilot.CardsTest";
+        public const string BossTestSessionKey = "Corebound.Autopilot.BossTest";
 
         private static string ReadCommand()
         {
@@ -935,6 +947,7 @@ namespace Corebound.EditorTools
             ApplyCardsTestOnce();
             NoteShopVisibility();
             NoteStateTransition();
+            TickBossTest();
             TickVisualProbes();
 
             _reportTimer += Time.deltaTime;
@@ -965,6 +978,66 @@ namespace Corebound.EditorTools
                     DriveNonCombat();
                     return;
             }
+        }
+
+        private int _bossSkipStage = -1;
+        private int _loggedBossPhase = -1;
+        private int _bossStage = -1;
+        private int _bossPhaseCount;
+        private float _bossStartTime;
+        private readonly StringBuilder _bossSequence = new StringBuilder(32);
+
+        private void TickBossTest()
+        {
+            var state = _waveManager.State;
+
+            if (SessionState.GetBool(DebugAutopilot.BossTestSessionKey, false)
+                && state == WaveState.Combat
+                && _bossSkipStage != _waveManager.StageIndex
+                && _waveManager.DebugSkipToBoss())
+            {
+                _bossSkipStage = _waveManager.StageIndex;
+                Debug.Log(DebugAutopilot.LogPrefix + " BOSS skip: stage " + _waveManager.StageIndex + " straight to its boss");
+                return;
+            }
+
+            // Logged for every run, not only bossN: a phase change is as short-lived as a Reward
+            // state and just as easy to miss between samples.
+            var boss = _waveManager.DebugBoss;
+            var inFight = state == WaveState.BossCombat && boss != null && boss.isActiveAndEnabled;
+            var phase = inFight ? boss.CurrentPhaseIndex : -1;
+
+            if (phase == _loggedBossPhase)
+            {
+                return;
+            }
+
+            if (phase >= 0)
+            {
+                if (_loggedBossPhase < 0)
+                {
+                    _bossStage = _waveManager.StageIndex;
+                    _bossPhaseCount = boss.PhaseCount;
+                    _bossStartTime = Time.time;
+                    _bossSequence.Length = 0;
+                }
+
+                _bossSequence.Append(_bossSequence.Length > 0 ? ">" : string.Empty).Append(phase);
+                Debug.Log(DebugAutopilot.LogPrefix + " BOSS PHASE stage=" + _waveManager.StageIndex + " phase=" + phase
+                    + " '" + boss.CurrentPhaseLabel + "' hp=" + boss.CurrentHealthNormalized.ToString("0.00")
+                    + " t=" + (Time.time - _bossStartTime).ToString("0.0") + "s");
+            }
+            else if (_loggedBossPhase >= 0)
+            {
+                var reached = _bossSequence.ToString().Split('>').Length;
+                var defeated = state != WaveState.Failed;
+                Debug.Log(DebugAutopilot.LogPrefix + " BOSS END stage=" + _bossStage + " phases=" + _bossSequence
+                    + " reached " + reached + "/" + _bossPhaseCount + " outcome=" + state
+                    + " in " + (Time.time - _bossStartTime).ToString("0.0") + "s"
+                    + (defeated && reached < _bossPhaseCount ? "  <-- UNEXPECTED: defeated before its last phase" : string.Empty));
+            }
+
+            _loggedBossPhase = phase;
         }
 
         // The shop is open for a fraction of a run, so a two-second sample can miss it entirely.
@@ -1836,6 +1909,22 @@ namespace Corebound.EditorTools
 
                 nearestDistanceSquared = distanceSquared;
                 nearest = enemy.transform;
+            }
+
+            // The boss is not an EnemyRuntimeController. Normal runs got away with that because a
+            // boss fight always had adds to shoot at; the bossN skip arrives before any exist, and
+            // the first run of it stood still for 420 s with the boss at full health.
+            var boss = _waveManager != null ? _waveManager.DebugBoss : null;
+
+            if (boss != null && boss.isActiveAndEnabled && _waveManager.State == WaveState.BossCombat)
+            {
+                var receiver = boss.GetComponent<Corebound.Gameplay.Combat.CombatHitReceiver>();
+
+                if (receiver != null && receiver.IsAlive
+                    && ((Vector2)boss.transform.position - origin).sqrMagnitude < nearestDistanceSquared)
+                {
+                    nearest = boss.transform;
+                }
             }
 
             return nearest;

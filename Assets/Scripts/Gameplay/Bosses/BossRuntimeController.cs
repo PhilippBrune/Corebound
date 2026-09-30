@@ -75,6 +75,8 @@ namespace Corebound.Gameplay.Bosses
 
         public int CurrentPhaseIndex => _currentPhaseIndex;
 
+        public int PhaseCount => _bossData != null && _bossData.Phases != null ? _bossData.Phases.Length : 0;
+
         public string BossName => _bossData != null ? _bossData.DisplayName : string.Empty;
 
         public string CurrentPhaseLabel => ResolvePhase() != null ? ResolvePhase().PhaseLabel : string.Empty;

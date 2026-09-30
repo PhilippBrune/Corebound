@@ -1067,6 +1067,25 @@ namespace Corebound.Gameplay.Waves
             StateChanged?.Invoke();
         }
 
+#if UNITY_EDITOR
+        // Open Topics 4, owner decision (a): the autopilot's bossN variant goes straight into the
+        // stage's boss fight, so boss phases are reached in seconds instead of after six waves.
+        // Only from Combat, so it cannot cut into a reward, shop or intermission.
+        public bool DebugSkipToBoss()
+        {
+            if (_state != WaveState.Combat)
+            {
+                return false;
+            }
+
+            DespawnRemainingEnemies();
+            StartBossEncounter(0);
+            return true;
+        }
+
+        public BossRuntimeController DebugBoss => _bossRuntimeController;
+#endif
+
         // Kills rather than merely despawns, so every enemy still pays its reward and its kill
         // statistic - a player who cleared the wave down to two adds should not lose that Scrap
         // because the boss happened to die first.
