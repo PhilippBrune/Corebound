@@ -20,6 +20,13 @@ namespace Corebound.Gameplay.Waves
         [SerializeField] private string _boundaryTexturePath = "Assets/Art/Environment/Arena/stage1_boundary_set.png";
         [SerializeField] private Texture2D _propTexture;
         [SerializeField] private string _propTexturePath = "Assets/Art/Environment/Arena/stage1_prop_set.png";
+
+        // Open Topics 3.4 (2026-09-30): how the ground tileset and the prop sheet are cut - the
+        // ground grid and every prop's measured pixel rect - as data next to the file paths, instead
+        // of constants and a 47-entry dictionary in StageArenaArtPresenter. Validate Art Pipeline
+        // checks every cell against the file.
+        [SerializeField] private SpriteSheetData _groundSheet;
+        [SerializeField] private SpriteSheetData _propSheet;
         [SerializeField] private Texture2D _coreTexture;
         [SerializeField] private string _coreTexturePath = "Assets/Art/Environment/Arena/core_main_sprite.png";
         [SerializeField] private Texture2D _spawnGateTexture;
@@ -51,6 +58,10 @@ namespace Corebound.Gameplay.Waves
         public Texture2D PropTexture => _propTexture;
 
         public string PropTexturePath => _propTexturePath;
+
+        public SpriteSheetData GroundSheet => _groundSheet;
+
+        public SpriteSheetData PropSheet => _propSheet;
 
         public Texture2D CoreTexture => _coreTexture;
 

@@ -23,10 +23,13 @@ namespace Corebound.Gameplay.Shared
     // further needs Editor access to see the result before risking it.
     public sealed class StageArenaArtPresenter : MonoBehaviour
     {
-        private const int GroundAtlasColumns = 8;
-        private const int GroundAtlasRows = 4;
-        private const int PropAtlasColumns = 7;
-        private const int PropAtlasRows = 3;
+        // Open Topics 3.4: the ground grid and the prop cells come from the stage theme's sheets.
+        // A theme without them (a test scene) falls back to Stage 1's, which is also what the
+        // texture paths below fall back to.
+        private const string FallbackGroundSheetName = "SpriteSheet_StageGround1";
+        private const string FallbackPropSheetName = "SpriteSheet_StageProps1";
+        private SpriteSheetData _groundSheet;
+        private SpriteSheetData _propSheet;
         private const float DefaultGroundTileWorldSize = 2f;
         private const string GroundTexturePath = "Assets/Art/Environment/Arena/stage1_ground_tileset.png";
         private const string BoundaryTexturePath = "Assets/Art/Environment/Arena/stage1_boundary_set.png";
@@ -338,6 +341,8 @@ namespace Corebound.Gameplay.Shared
             var openCells = BuildOpenMazeCells(layoutData, layoutRandom);
             var visualsRoot = EnsureWorldRoot("ArenaVisualsRoot");
             visualsRoot.position = Vector3.zero;
+            _groundSheet = stageThemeData != null && stageThemeData.GroundSheet != null ? stageThemeData.GroundSheet : SpriteSheetData.Find(FallbackGroundSheetName);
+            _propSheet = stageThemeData != null && stageThemeData.PropSheet != null ? stageThemeData.PropSheet : SpriteSheetData.Find(FallbackPropSheetName);
             var groundTexture = ResolveTexture(_groundTexture, stageThemeData != null ? stageThemeData.GroundTexture : null, ref _runtimeGroundTexture, stageThemeData != null ? stageThemeData.GroundTexturePath : null, GroundTexturePath);
             var groundTint = stageThemeData != null ? stageThemeData.GroundTint : Color.white;
             CreateBackdropTiles(visualsRoot, groundTexture, arenaSize, groundTint);
@@ -402,7 +407,7 @@ namespace Corebound.Gameplay.Shared
                 for (var column = 0; column < layoutColumns; column++)
                 {
                     var atlasCell = ResolveGroundCell(row, column, layoutRows, layoutColumns);
-                    var sprite = CreateAtlasSprite(groundTexture, atlasCell, GroundAtlasRows, GroundAtlasColumns);
+                    var sprite = CreateAtlasSprite(groundTexture, atlasCell, _groundSheet != null ? _groundSheet.Rows : 4, _groundSheet != null ? _groundSheet.Columns : 8);
                     var localPosition = new Vector2(
                         -arenaSize.x * 0.5f + tileSize.x * 0.5f + column * tileSize.x,
                         arenaSize.y * 0.5f - tileSize.y * 0.5f - row * tileSize.y);
@@ -1132,83 +1137,17 @@ namespace Corebound.Gameplay.Shared
             return TrackSprite(Sprite.Create(texture, pixelRect, new Vector2(0.5f, 0.5f), 100f));
         }
 
-        // stage1_prop_set.png looks like a uniform PropAtlasRows x PropAtlasColumns grid at a
-        // glance, but it's hand-composed like the boundary sheet: items vary in size and aren't
-        // centered in equal-sized cells, so several items are wider/taller than their nominal cell
-        // and bleed into the next one, while some cells sit empty. Dividing the texture rigidly
-        // (CreateAtlasSprite) crops straight through those items or merges a neighbor's bleed into
-        // the crop - confirmed directly by connected-component analysis of the texture's alpha
-        // channel, which found 19 cleanly separated items whose actual pixel bounds don't line up
-        // with the assumed 159x202 grid cells at all. This table maps each AtlasCell (Row, Column)
-        // that Stage1PropPlacements/MazeBlockerCells actually reference to that item's real,
-        // precisely measured pixel rect instead, the same explicit-rect approach already used for
-        // the equally non-uniform boundary sheet (see CreateExplicitRectSprite/BoundaryWallPixelRect).
-        private static readonly Dictionary<(int Row, int Column), Rect> PropPixelRects = new Dictionary<(int, int), Rect>
+        // The prop sheets are hand-composed collages, not grids: items vary in size and bleed across
+        // any nominal cell, so a rigid division crops straight through them. Each item's real pixel
+        // rect was measured by connected-component analysis of the sheet's alpha channel (Stage 1
+        // 2026-09-17, Stage 2 -09-19, Stages 3-5 -09-20) and now lives in the stage's
+        // SpriteSheet_StageProps asset as a cell named after its AtlasCell ("r20c1" is Row 20,
+        // Column 1). The row numbers 20/30/40/50 only ever kept the stages' keys apart; the layout
+        // assets reference them, so they stay.
+        private static string PropCellName(AtlasCell atlasCell)
         {
-            { (1, 1), new Rect(52f, 422f, 59f, 151f) },
-            { (1, 2), new Rect(174f, 424f, 69f, 152f) },
-            { (1, 3), new Rect(300f, 425f, 76f, 148f) },
-            { (1, 4), new Rect(432f, 415f, 112f, 158f) },
-            { (1, 5), new Rect(608f, 400f, 145f, 135f) },
-            { (1, 6), new Rect(800f, 407f, 98f, 176f) },
-            { (1, 7), new Rect(945f, 418f, 116f, 159f) },
-            { (2, 2), new Rect(37f, 237f, 170f, 140f) },
-            { (2, 4), new Rect(244f, 234f, 150f, 140f) },
-            { (2, 5), new Rect(427f, 229f, 132f, 155f) },
-            { (2, 6), new Rect(615f, 195f, 311f, 174f) },
-            { (2, 7), new Rect(931f, 145f, 137f, 231f) },
-            { (3, 1), new Rect(34f, 28f, 189f, 177f) },
-            { (3, 2), new Rect(248f, 28f, 151f, 132f) },
-            { (3, 4), new Rect(634f, 31f, 131f, 53f) },
-            { (3, 5), new Rect(629f, 135f, 290f, 32f) },
-            { (3, 6), new Rect(797f, 28f, 150f, 80f) },
-
-            // stage2_prop_set.png (Stage2PropPlacements above) - 9 items, measured the same way:
-            // connected-component analysis of the sheet's alpha channel, converted from image-space
-            // (Y down from top) to Unity texture pixel-space (Y up from bottom) via
-            // unity_y = image_height - (image_y + height). Row 20 is an otherwise-unused AtlasCell
-            // row, chosen only to keep these keys distinct from Stage 1's (rows 1-3) in this shared
-            // dictionary - it has no meaning beyond that.
-            { (20, 1), new Rect(51f, 360f, 415f, 347f) },
-            { (20, 2), new Rect(201f, 367f, 274f, 160f) },
-            { (20, 3), new Rect(531f, 424f, 215f, 273f) },
-            { (20, 4), new Rect(756f, 504f, 566f, 202f) },
-            { (20, 5), new Rect(507f, 212f, 272f, 160f) },
-            { (20, 6), new Rect(520f, 48f, 279f, 169f) },
-            { (20, 7), new Rect(283f, 39f, 194f, 294f) },
-            { (20, 8), new Rect(817f, 42f, 222f, 458f) },
-            { (20, 9), new Rect(1067f, 41f, 220f, 456f) },
-
-            // stage3/4/5_prop_set.png, measured 2026-09-20 by the same alpha connected-component
-            // pass. Each sheet is another hand-composed collage with its own item count (6, 8 and
-            // 7 usable pieces respectively), so like Stage 2 they cannot share Stage 1's grid
-            // coordinates. Rows 30/40/50 keep the keys distinct in this shared dictionary and
-            // carry no meaning beyond that. Without these, Stages 3-5 fell back to Stage 1's
-            // coordinates and cropped unrelated or empty regions of their own sheets.
-            { (30, 1), new Rect(34f, 35f, 547f, 287f) },
-            { (30, 2), new Rect(55f, 352f, 433f, 348f) },
-            { (30, 3), new Rect(447f, 380f, 236f, 286f) },
-            { (30, 4), new Rect(683f, 33f, 233f, 209f) },
-            { (30, 5), new Rect(709f, 359f, 592f, 337f) },
-            { (30, 6), new Rect(961f, 31f, 359f, 314f) },
-
-            { (40, 1), new Rect(44f, 524f, 378f, 184f) },
-            { (40, 2), new Rect(50f, 62f, 390f, 236f) },
-            { (40, 3), new Rect(55f, 339f, 306f, 170f) },
-            { (40, 4), new Rect(463f, 396f, 198f, 312f) },
-            { (40, 5), new Rect(496f, 49f, 172f, 231f) },
-            { (40, 6), new Rect(732f, 506f, 380f, 196f) },
-            { (40, 7), new Rect(761f, 44f, 174f, 216f) },
-            { (40, 8), new Rect(1161f, 379f, 152f, 314f) },
-
-            { (50, 1), new Rect(22f, 45f, 365f, 662f) },
-            { (50, 2), new Rect(419f, 377f, 214f, 324f) },
-            { (50, 3), new Rect(433f, 43f, 189f, 313f) },
-            { (50, 4), new Rect(679f, 394f, 302f, 281f) },
-            { (50, 5), new Rect(680f, 52f, 300f, 281f) },
-            { (50, 6), new Rect(1034f, 400f, 282f, 286f) },
-            { (50, 7), new Rect(1039f, 47f, 267f, 298f) },
-        };
+            return "r" + atlasCell.Row + "c" + atlasCell.Column;
+        }
 
         private Sprite CreatePropSprite(Texture2D texture, AtlasCell atlasCell)
         {
@@ -1217,15 +1156,17 @@ namespace Corebound.Gameplay.Shared
                 return null;
             }
 
-            if (PropPixelRects.TryGetValue((atlasCell.Row, atlasCell.Column), out var pixelRect))
+            var cell = _propSheet != null ? _propSheet.FindCell(PropCellName(atlasCell)) : null;
+
+            if (cell != null && cell.HasPixelRect)
             {
-                return CreateExplicitRectSprite(texture, pixelRect);
+                return CreateExplicitRectSprite(texture, cell.PixelRect);
             }
 
-            // Fallback for any (Row, Column) not in the measured table above (e.g. a stage theme
-            // override using a differently laid-out prop texture) - the old rigid-grid crop is
-            // wrong for THIS sheet but is still a reasonable guess for an arbitrary uniform one.
-            return CreateAtlasSprite(texture, atlasCell, PropAtlasRows, PropAtlasColumns);
+            // A cell the sheet does not name (a theme override with a genuinely uniform sheet): the
+            // sheet's own grid, which is a reasonable guess for a uniform sheet and wrong for a
+            // collage - Validate Art Pipeline is where a missing cell shows up.
+            return CreateAtlasSprite(texture, atlasCell, _propSheet != null ? _propSheet.Rows : 3, _propSheet != null ? _propSheet.Columns : 7);
         }
 
         private static AtlasCell ResolveGroundCell(int row, int column, int layoutRows, int layoutColumns)

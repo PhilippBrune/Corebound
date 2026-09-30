@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b1e0c7a9d2f4e6b8a3c1d0e9f7a6b52, type: 3}
+  m_Name: SpriteSheet_StageProps3
+  m_EditorClassIdentifier: 
+  _sheetPath: Assets/Art/Environment/Arena/stage3_prop_set.png
+  _columns: 1
+  _rows: 1
+  _cellAspect: 0
+  _cells:
+  - _name: r30c1
+    _column: 0
+    _row: 0
+    _pixelRect:
+      serializedVersion: 2
+      x: 34
+      y: 35
+      width: 547
+      height: 287
+  - _name: r30c2
+    _column: 0
+    _row: 0
+    _pixelRect:
+      serializedVersion: 2
+      x: 55
+      y: 352
+      width: 433
+      height: 348
+  - _name: r30c3
+    _column: 0
+    _row: 0
+    _pixelRect:
+      serializedVersion: 2
+      x: 447
+      y: 380
+      width: 236
+      height: 286
+  - _name: r30c4
+    _column: 0
+    _row: 0
+    _pixelRect:
+      serializedVersion: 2
+      x: 683
+      y: 33
+      width: 233
+      height: 209
+  - _name: r30c5
+    _column: 0
+    _row: 0
+    _pixelRect:
+      serializedVersion: 2
+      x: 709
+      y: 359
+      width: 592
+      height: 337
+  - _name: r30c6
+    _column: 0
+    _row: 0
+    _pixelRect:
+      serializedVersion: 2
+      x: 961
+      y: 31
+      width: 359
+      height: 314

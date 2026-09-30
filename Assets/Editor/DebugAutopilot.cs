@@ -2481,9 +2481,11 @@ namespace Corebound.EditorTools
             var classId = ClassTestId;
             Corebound.MetaProgression.CharacterUnlockRules.DebugUnlockAll = classId.Length > 0;
 
+            // No class asked for: the Vanguard, so a plain run measures the same class every time
+            // instead of whichever one the last class probe left selected on the test profile.
             if (classId.Length == 0)
             {
-                return;
+                classId = Corebound.SaveSystem.MetaProgressionSaveData.DefaultCharacterId;
             }
 
             var service = FindFirstObjectByType<Corebound.MetaProgression.MetaProgressionService>();

@@ -34,3 +34,5 @@ MonoBehaviour:
   _coreScale: 1
   _spawnGateWorldSize: {x: 3.2, y: 1.8}
   _spawnGateLocalPosition: {x: 0, y: -5}
+  _groundSheet: {fileID: 11400000, guid: 9c082a5ade2f43f1b3e3fa179fa9c326, type: 2}
+  _propSheet: {fileID: 11400000, guid: c518a68fe82e49b8a10188442f44a116, type: 2}
