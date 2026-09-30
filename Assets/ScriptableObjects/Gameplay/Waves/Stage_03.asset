@@ -15,6 +15,7 @@ MonoBehaviour:
   _stageId: stage_03
   _stageIndex: 3
   _displayName: Salvage Fields
+  _displayNameDe: Schrottfelder
   _themeData: {fileID: 11400000, guid: c1a8c39ef29e4b0aaf49b80c502c4818, type: 2}
   _stageRewardData: {fileID: 11400000, guid: 36acba42f2ad405b8800d39b19161002, type: 2}
   _progressionData: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}

@@ -131,7 +131,7 @@ namespace Corebound.Gameplay.Combat
                 gameObject.AddComponent<Corebound.UI.Gameplay.AimReticlePresenter>();
             }
 
-            _supportEffects = GetComponent<PlayerSupportEffects>() ?? gameObject.AddComponent<PlayerSupportEffects>();
+            _supportEffects = gameObject.GetOrAdd<PlayerSupportEffects>();
             _supportEffects.Bind(this, _cardService);
         }
 

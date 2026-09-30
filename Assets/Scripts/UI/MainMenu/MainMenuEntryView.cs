@@ -152,7 +152,7 @@ namespace Corebound.UI.MainMenu
                     cornerObject.transform.SetParent(transform, false);
                 }
 
-                var image = cornerObject.GetComponent<Image>() ?? cornerObject.AddComponent<Image>();
+                var image = cornerObject.GetOrAdd<Image>();
                 image.raycastTarget = false;
                 image.sprite = focusCornerSprites != null && index < focusCornerSprites.Length ? focusCornerSprites[index] : null;
                 image.type = Image.Type.Simple;

@@ -791,7 +791,7 @@ namespace Corebound.Gameplay.Shop
             var shopRoot = EnsureEditorUiChild(canvasTransform, ShopRootName, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _authoredPresenterRoot = shopRoot;
             var isNewCanvasGroup = shopRoot.GetComponent<CanvasGroup>() == null;
-            _authoredCanvasGroup = shopRoot.GetComponent<CanvasGroup>() ?? shopRoot.gameObject.AddComponent<CanvasGroup>();
+            _authoredCanvasGroup = shopRoot.gameObject.GetOrAdd<CanvasGroup>();
 
             if (isNewCanvasGroup)
             {
@@ -822,7 +822,7 @@ namespace Corebound.Gameplay.Shop
             for (var index = 0; index < 3; index++)
             {
                 var slotRect = EnsureEditorUiChild(panelRect, "ShopSlot" + index, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2((index - 1) * SlotSpacing, SlotCenterY), new Vector2(SlotWidth, SlotHeight));
-                var slotImage = slotRect.GetComponent<Image>() ?? slotRect.gameObject.AddComponent<Image>();
+                var slotImage = slotRect.gameObject.GetOrAdd<Image>();
                 slotImage.color = Color.clear;
                 slotImage.raycastTarget = false;
                 EnsureEditorImage(slotRect, "SlotFrame", CommonFramePath, null, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
@@ -860,8 +860,8 @@ namespace Corebound.Gameplay.Shop
         private Image EnsureEditorImage(RectTransform parent, string name, string primarySpritePath, string fallbackSpritePath, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta)
         {
             var child = EnsureEditorUiChild(parent, name, anchorMin, anchorMax, pivot, anchoredPosition, sizeDelta);
-            _ = child.GetComponent<CanvasRenderer>() ?? child.gameObject.AddComponent<CanvasRenderer>();
-            var image = child.GetComponent<Image>() ?? child.gameObject.AddComponent<Image>();
+            _ = child.gameObject.GetOrAdd<CanvasRenderer>();
+            var image = child.gameObject.GetOrAdd<Image>();
             image.sprite = ResolveEditorSprite(primarySpritePath, fallbackSpritePath);
             image.color = Color.white;
             image.raycastTarget = false;
@@ -873,8 +873,8 @@ namespace Corebound.Gameplay.Shop
         {
             var child = EnsureEditorUiChild(parent, name, anchorMin, anchorMax, pivot, Vector2.zero, Vector2.zero);
             StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
-            _ = child.GetComponent<CanvasRenderer>() ?? child.gameObject.AddComponent<CanvasRenderer>();
-            var text = child.GetComponent<Text>() ?? child.gameObject.AddComponent<Text>();
+            _ = child.gameObject.GetOrAdd<CanvasRenderer>();
+            var text = child.gameObject.GetOrAdd<Text>();
             text.font = _font != null ? _font : ResolveFont();
             text.fontSize = fontSize;
             text.fontStyle = FontStyle.Normal;

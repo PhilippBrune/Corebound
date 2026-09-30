@@ -1035,7 +1035,7 @@ namespace Corebound.Gameplay.Cards
             var rewardRoot = EnsureEditorUiChild(canvasTransform, RewardRootName, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             _authoredPresenterRoot = rewardRoot;
             var isNewCanvasGroup = rewardRoot.GetComponent<CanvasGroup>() == null;
-            _authoredCanvasGroup = rewardRoot.GetComponent<CanvasGroup>() ?? rewardRoot.gameObject.AddComponent<CanvasGroup>();
+            _authoredCanvasGroup = rewardRoot.gameObject.GetOrAdd<CanvasGroup>();
 
             if (isNewCanvasGroup)
             {
@@ -1065,7 +1065,7 @@ namespace Corebound.Gameplay.Cards
             for (var index = 0; index < 3; index++)
             {
                 var slotRect = EnsureEditorUiChild(panelRect, "RewardSlot" + index, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2((index - 1) * SlotSpacing, SlotCenterY), new Vector2(SlotWidth, SlotHeight));
-                var slotImage = slotRect.GetComponent<Image>() ?? slotRect.gameObject.AddComponent<Image>();
+                var slotImage = slotRect.gameObject.GetOrAdd<Image>();
                 slotImage.color = Color.clear;
                 slotImage.raycastTarget = false;
                 EnsureEditorImage(slotRect, "RevealFlash", RevealFlashSpritePath, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(60f, 60f));
@@ -1108,8 +1108,8 @@ namespace Corebound.Gameplay.Cards
         private Image EnsureEditorImage(RectTransform parent, string name, string spritePath, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta)
         {
             var child = EnsureEditorUiChild(parent, name, anchorMin, anchorMax, pivot, anchoredPosition, sizeDelta);
-            var renderer = child.GetComponent<CanvasRenderer>() ?? child.gameObject.AddComponent<CanvasRenderer>();
-            var image = child.GetComponent<Image>() ?? child.gameObject.AddComponent<Image>();
+            var renderer = child.gameObject.GetOrAdd<CanvasRenderer>();
+            var image = child.gameObject.GetOrAdd<Image>();
             image.sprite = string.IsNullOrWhiteSpace(spritePath) ? null : AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
             image.color = Color.white;
             image.raycastTarget = false;
@@ -1120,8 +1120,8 @@ namespace Corebound.Gameplay.Cards
         {
             var child = EnsureEditorUiChild(parent, name, anchorMin, anchorMax, pivot, Vector2.zero, Vector2.zero);
             StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
-            var renderer = child.GetComponent<CanvasRenderer>() ?? child.gameObject.AddComponent<CanvasRenderer>();
-            var text = child.GetComponent<Text>() ?? child.gameObject.AddComponent<Text>();
+            var renderer = child.gameObject.GetOrAdd<CanvasRenderer>();
+            var text = child.gameObject.GetOrAdd<Text>();
             text.font = ResolveFont();
             text.fontSize = fontSize;
             text.alignment = alignment;

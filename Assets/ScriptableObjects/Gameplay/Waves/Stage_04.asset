@@ -15,6 +15,7 @@ MonoBehaviour:
   _stageId: stage_04
   _stageIndex: 4
   _displayName: Cryo Vaults
+  _displayNameDe: Kryo-Gewölbe
   _themeData: {fileID: 11400000, guid: 45b025fc479643f1b647383c1c7bdb49, type: 2}
   _stageRewardData: {fileID: 11400000, guid: 3467bfc60aed467e823aa70f0ee8dcb0, type: 2}
   _progressionData: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}

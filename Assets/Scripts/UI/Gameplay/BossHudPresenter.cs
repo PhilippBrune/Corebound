@@ -95,6 +95,8 @@ namespace Corebound.UI.Gameplay
                 }
             }
 
+            BossEncounterState.IsDefeatNoticeShowing = _noticeKind == BossNoticeKind.BossDefeated && _noticeTimer > 0f;
+
             RefreshHealth();
         }
 
@@ -169,6 +171,7 @@ namespace Corebound.UI.Gameplay
             _noticeKind = kind;
             _noticeMessage = message;
             _noticeTimer = duration;
+            BossEncounterState.IsDefeatNoticeShowing = kind == BossNoticeKind.BossDefeated && duration > 0f;
 
             if (_warningText != null)
             {

@@ -34,6 +34,9 @@ namespace Corebound.Gameplay.Relics
         private float _timer;
         private bool _isShowing;
 
+        // A relic granted while "Boss Defeated" is still on screen waits here until it fades.
+        private RelicGrantedEventArgs? _pendingReveal;
+
         private void Awake()
         {
             TryBind();
@@ -53,6 +56,13 @@ namespace Corebound.Gameplay.Relics
 
         private void Update()
         {
+            if (_pendingReveal.HasValue && !Corebound.Gameplay.Bosses.BossEncounterState.IsDefeatNoticeShowing)
+            {
+                var pending = _pendingReveal.Value;
+                _pendingReveal = null;
+                Reveal(pending);
+            }
+
             if (!_isShowing || _canvasGroup == null)
             {
                 return;
@@ -81,6 +91,19 @@ namespace Corebound.Gameplay.Relics
         }
 
         private void OnRelicGranted(RelicGrantedEventArgs eventArgs)
+        {
+            // The boss's relic is granted in the same call that defeats the boss, a frame before
+            // the Boss HUD raises its notice, so this also checks the encounter flag itself.
+            if (Corebound.Gameplay.Bosses.BossEncounterState.IsDefeatNoticeShowing || Corebound.Gameplay.Bosses.BossEncounterState.IsActive)
+            {
+                _pendingReveal = eventArgs;
+                return;
+            }
+
+            Reveal(eventArgs);
+        }
+
+        private void Reveal(RelicGrantedEventArgs eventArgs)
         {
             if (eventArgs.Relic == null || _canvasGroup == null || _nameText == null || _descriptionText == null || _kindText == null)
             {

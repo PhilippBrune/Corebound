@@ -30,7 +30,7 @@ namespace Corebound.UI
                 gameObject.transform.SetParent(parent, false);
             }
 
-            var text = gameObject.GetComponent<Text>() ?? gameObject.AddComponent<Text>();
+            var text = gameObject.GetOrAdd<Text>();
             text.font = font;
             text.fontSize = fontSize;
             text.fontStyle = fontStyle;
@@ -52,7 +52,7 @@ namespace Corebound.UI
                 gameObject.transform.SetParent(parent, false);
             }
 
-            var image = gameObject.GetComponent<Image>() ?? gameObject.AddComponent<Image>();
+            var image = gameObject.GetOrAdd<Image>();
             image.sprite = sprite;
             image.color = color;
             image.type = imageType;

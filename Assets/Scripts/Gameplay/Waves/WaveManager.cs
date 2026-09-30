@@ -278,7 +278,7 @@ namespace Corebound.Gameplay.Waves
                 return;
             }
 
-            _runTimer = GetComponent<RunTimerService>() ?? gameObject.AddComponent<RunTimerService>();
+            _runTimer = gameObject.GetOrAdd<RunTimerService>();
             var runSaveData = SaveManager != null ? SaveManager.LoadRunSaveData() : null;
 
             // A resumed run continues its clocks instead of restarting them, so a run played across

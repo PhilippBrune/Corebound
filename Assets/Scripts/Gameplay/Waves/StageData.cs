@@ -30,7 +30,10 @@ namespace Corebound.Gameplay.Waves
     {
         [SerializeField] private string _stageId = "stage_01";
         [SerializeField] private int _stageIndex = 1;
-        [SerializeField] private string _displayName = "Stage 1";
+        [SerializeField] private string _displayName = "Foundry";
+
+        // Owner decision 2026-09-30 (Open Topics 5 (a)): every stage has a name, Stage 1 included.
+        [SerializeField] private string _displayNameDe = "Gießerei";
         [SerializeField] private StageThemeData _themeData;
         [SerializeField] private StageRewardData _stageRewardData;
         [SerializeField] private StageProgressionData _progressionData;
@@ -52,7 +55,7 @@ namespace Corebound.Gameplay.Waves
 
         public int StageIndex => Mathf.Max(1, _stageIndex);
 
-        public string DisplayName => _displayName;
+        public string DisplayName => Corebound.UI.LocalizationService.Resolve(_displayName, _displayNameDe);
 
         public StageThemeData ThemeData => _themeData;
 

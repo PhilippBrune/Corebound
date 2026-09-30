@@ -15,6 +15,7 @@ MonoBehaviour:
   _stageId: stage_02
   _stageIndex: 2
   _displayName: Reactor Depths
+  _displayNameDe: Reaktortiefen
   _themeData: {fileID: 11400000, guid: f288852992664113b552e532e6b95ec6, type: 2}
   _stageRewardData: {fileID: 11400000, guid: 9900066b286d40d3b6ba36ce8b15dd9d, type: 2}
   _progressionData: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}

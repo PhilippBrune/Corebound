@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _stageId: stage_01
   _stageIndex: 1
-  _displayName: Stage 1
+  _displayName: Foundry
+  _displayNameDe: Gießerei
   _themeData: {fileID: 11400000, guid: b4830fcd680847a69741c368c2a65c3e, type: 2}
   _stageRewardData: {fileID: 11400000, guid: 889ae94d2fc34d61b5ea4da28a0c5118, type: 2}
   _progressionData: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}

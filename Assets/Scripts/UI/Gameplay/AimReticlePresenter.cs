@@ -84,7 +84,8 @@ namespace Corebound.UI.Gameplay
         {
             if (_playerCombatController == null)
             {
-                _playerCombatController = GetComponent<PlayerCombatController>() ?? FindFirstObjectByType<PlayerCombatController>();
+                var own = GetComponent<PlayerCombatController>();
+                _playerCombatController = own != null ? own : FindFirstObjectByType<PlayerCombatController>();
             }
 
             if (_inputReaderSource == null)

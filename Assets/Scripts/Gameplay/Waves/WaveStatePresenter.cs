@@ -2579,8 +2579,8 @@ namespace Corebound.Gameplay.Waves
         private Image EnsureEditorImage(RectTransform parent, string name, string spritePath, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta)
         {
             var child = EnsureEditorUiChild(parent, name, anchorMin, anchorMax, pivot, anchoredPosition, sizeDelta);
-            var renderer = child.GetComponent<CanvasRenderer>() ?? child.gameObject.AddComponent<CanvasRenderer>();
-            var image = child.GetComponent<Image>() ?? child.gameObject.AddComponent<Image>();
+            var renderer = child.gameObject.GetOrAdd<CanvasRenderer>();
+            var image = child.gameObject.GetOrAdd<Image>();
             image.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
             image.color = Color.white;
             image.raycastTarget = false;
@@ -2591,8 +2591,8 @@ namespace Corebound.Gameplay.Waves
         {
             var child = EnsureEditorUiChild(parent, name, anchorMin, anchorMax, pivot, Vector2.zero, Vector2.zero);
             StretchToParent(child, anchorMin, anchorMax, offsetMin, offsetMax);
-            var renderer = child.GetComponent<CanvasRenderer>() ?? child.gameObject.AddComponent<CanvasRenderer>();
-            var text = child.GetComponent<Text>() ?? child.gameObject.AddComponent<Text>();
+            var renderer = child.gameObject.GetOrAdd<CanvasRenderer>();
+            var text = child.gameObject.GetOrAdd<Text>();
             text.font = _font != null ? _font : ResolveFont();
             text.fontSize = 22;
             text.alignment = alignment;

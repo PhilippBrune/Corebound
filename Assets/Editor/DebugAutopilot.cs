@@ -186,6 +186,7 @@ namespace Corebound.EditorTools
 
             SessionState.SetBool(ActiveSessionKey, true);
             TargetStage = stageIndex;
+            SwitchToTestProfile();
 
             // Always from MainMenu: opening SampleScene directly pre-loads the additive canvas
             // scenes and hides a whole class of binding bug (see CLAUDE.md).
@@ -390,8 +391,55 @@ namespace Corebound.EditorTools
             return null;
         }
 
+        // Owner 2026-09-29: "For all of your testing you can take profile 2." On 2026-09-30 a run
+        // still played on the owner's Profile 3, because the active profile had been switched
+        // back for them and nothing switched it again before the next run - and a god-mode boss
+        // run paid 1,101 Alloy, 19 SP and ten quests into a real save. The autopilot now always
+        // plays on the test profile and puts the owner's choice back when it returns to Edit Mode.
+        public const int TestProfileIndex = 2;
+        private const string RestoreProfileSessionKey = "Corebound.Autopilot.RestoreProfile";
+
+        private static void SwitchToTestProfile()
+        {
+            var previous = Corebound.SaveSystem.ProfileSelection.ActiveIndex;
+
+            if (previous == TestProfileIndex)
+            {
+                return;
+            }
+
+            // Only the first switch of a series remembers the owner's profile.
+            if (SessionState.GetInt(RestoreProfileSessionKey, 0) == 0)
+            {
+                SessionState.SetInt(RestoreProfileSessionKey, previous);
+            }
+
+            Corebound.SaveSystem.ProfileSelection.SetActive(TestProfileIndex);
+            Debug.Log(LogPrefix + " switched to test Profile " + TestProfileIndex + " for the run (was " + previous + ")");
+        }
+
+        private static void RestoreOwnerProfile()
+        {
+            var restore = SessionState.GetInt(RestoreProfileSessionKey, 0);
+
+            if (restore <= 0)
+            {
+                return;
+            }
+
+            SessionState.SetInt(RestoreProfileSessionKey, 0);
+            Corebound.SaveSystem.ProfileSelection.SetActive(restore);
+            Debug.Log(LogPrefix + " restored the active profile to " + restore);
+        }
+
         private static void OnPlayModeStateChanged(PlayModeStateChange change)
         {
+            if (change == PlayModeStateChange.EnteredEditMode)
+            {
+                RestoreOwnerProfile();
+                return;
+            }
+
             if (change != PlayModeStateChange.EnteredPlayMode
                 || !Enabled
                 || !SessionState.GetBool(ActiveSessionKey, false))

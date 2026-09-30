@@ -15,6 +15,7 @@ MonoBehaviour:
   _stageId: stage_05
   _stageIndex: 5
   _displayName: Core Nexus
+  _displayNameDe: Kern-Nexus
   _themeData: {fileID: 11400000, guid: 1087de0a14564d73aa8c816028ebe01c, type: 2}
   _stageRewardData: {fileID: 11400000, guid: 15c4a9672ae544f8b91ebc3437c8542c, type: 2}
   _progressionData: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}
