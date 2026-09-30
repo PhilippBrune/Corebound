@@ -1,4 +1,5 @@
 using Corebound.Gameplay.Bosses;
+using Corebound.Gameplay.Shared;
 using Corebound.Gameplay.Waves;
 using Corebound.UI;
 using UnityEngine;
@@ -32,7 +33,6 @@ namespace Corebound.UI.Gameplay
         private RectTransform _warningPanel;
         private Text _warningText;
 
-        private Font _font;
         private float _noticeTimer;
         private string _noticeMessage = string.Empty;
         private BossNoticeKind _noticeKind = BossNoticeKind.None;
@@ -44,15 +44,12 @@ namespace Corebound.UI.Gameplay
 
         private void Awake()
         {
-            _font = ResolveFont();
-            BuildCanvas();
-            RegisterWithUIManager();
-            SetBossPanelVisible(false);
-            SetWarningVisible(false);
+            TryBind();
         }
 
         private void OnEnable()
         {
+            AdditiveCanvasSceneLoader.CanvasSceneReady += OnCanvasSceneReady;
             BossEvents.OnBossSpawned += OnBossSpawned;
             BossEvents.OnBossPhaseChanged += OnBossPhaseChanged;
             BossEvents.OnBossDefeated += OnBossDefeated;
@@ -68,6 +65,7 @@ namespace Corebound.UI.Gameplay
 
         private void OnDisable()
         {
+            AdditiveCanvasSceneLoader.CanvasSceneReady -= OnCanvasSceneReady;
             BossEvents.OnBossSpawned -= OnBossSpawned;
             BossEvents.OnBossPhaseChanged -= OnBossPhaseChanged;
             BossEvents.OnBossDefeated -= OnBossDefeated;
@@ -102,6 +100,12 @@ namespace Corebound.UI.Gameplay
 
         private void OnBossSpawned(BossEventArgs args)
         {
+            // The moment a missing overlay scene actually costs something.
+            if (_canvasRoot == null)
+            {
+                Debug.LogWarning("[BossHud] a boss spawned but OverlayCanvas is not loaded - no boss bar. Is the scene in the build settings?");
+            }
+
             _isBossActive = true;
             SetBossPanelVisible(true);
 
@@ -248,166 +252,69 @@ namespace Corebound.UI.Gameplay
             }
         }
 
-        private void BuildCanvas()
+        // Open Topics 4 (b), 2026-09-30: the layout lives in OverlayCanvas.unity. This only finds
+        // the elements - it never sets anchors, positions or sizes (CLAUDE.md, canvas layout is
+        // scene-file-driven). Called at Awake when the scene is already open (Editor) and again
+        // when it finishes loading (MainMenu -> New Run, where LoadScene completes at frame end).
+        private void TryBind()
         {
-            // BossHudPresenter shares its GameObject (CombatRuntime) with world-space gameplay
-            // services such as TowerService. Adding Canvas/CanvasScaler/RectTransform directly to
-            // gameObject converts CombatRuntime's plain Transform into a Canvas-scaled RectTransform,
-            // which silently corrupts the world position of any sibling's children parented under
-            // that same transform (e.g. TowerService's slot markers ended up scaled/offset by the
-            // CanvasScaler and rendered far outside the camera). Build the HUD under its own child
-            // GameObject instead, matching NotificationPresenter/TutorialService.
-            // Find-existing-first: this presenter is not [ExecuteAlways] (Awake only runs on real
-            // instantiation, not editor recompiles) but it also has no authored-scene-layout fallback
-            // like ShopPresenter/CardRewardPresenter to bind to instead - if CombatRuntime's Awake
-            // ever runs more than once on the same GameObject (e.g. a future singleton bug like the
-            // one already found and fixed on LocalProfileSaveManager this session), this rebuild had
-            // no guard at all and would silently duplicate the whole BossHudCanvas hierarchy. Cheap
-            // insurance against that class of bug, matching the fix already applied to ShopPresenter.
-            var existingCanvasTransform = transform.Find("BossHudCanvas");
-            var canvasObject = existingCanvasTransform != null ? existingCanvasTransform.gameObject : new GameObject("BossHudCanvas");
-
-            if (existingCanvasTransform == null)
+            if (_canvasRoot != null)
             {
-                canvasObject.transform.SetParent(transform, false);
+                return;
             }
 
-            _canvas = canvasObject.GetComponent<Canvas>();
+            var root = AdditiveCanvasSceneLoader.FindRoot(AdditiveCanvasSceneLoader.OverlayCanvasSceneName, "BossHudCanvas");
 
-            if (_canvas == null)
+            // Not an error at Awake: the loader only requests the scene once SampleScene has
+            // finished loading, which is after every Awake in it. CanvasSceneReady retries.
+            if (root == null)
             {
-                _canvas = canvasObject.AddComponent<Canvas>();
+                return;
             }
 
-            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            _canvas = root.GetComponent<Canvas>();
+            _canvasRoot = root.GetComponent<RectTransform>();
+            _bossPanel = _canvasRoot.Find("BossPanel") as RectTransform;
+            _bossNameText = FindText(_bossPanel, "BossNameText");
+            _phaseText = FindText(_bossPanel, "PhaseText");
+            _healthBarBg = _bossPanel != null ? _bossPanel.Find("HealthBarBg") as RectTransform : null;
+            _healthBarFill = _healthBarBg != null ? _healthBarBg.Find("HealthBarFill") as RectTransform : null;
+            _healthText = FindText(_healthBarBg, "HealthText");
+            _warningPanel = _canvasRoot.Find("WarningPanel") as RectTransform;
+            _warningText = FindText(_warningPanel, "WarningText");
 
-            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            RegisterWithUIManager();
+            SetBossPanelVisible(_isBossActive);
+            SetWarningVisible(_noticeTimer > 0f);
 
-            if (scaler == null)
+            if (_warningText != null && _noticeTimer > 0f)
             {
-                scaler = canvasObject.AddComponent<CanvasScaler>();
+                _warningText.text = _noticeMessage;
             }
 
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-
-            if (canvasObject.GetComponent<GraphicRaycaster>() == null)
-            {
-                canvasObject.AddComponent<GraphicRaycaster>();
-            }
-
-            var rootRect = canvasObject.GetComponent<RectTransform>();
-            _canvasRoot = rootRect;
-
-            rootRect.anchorMin = Vector2.zero;
-            rootRect.anchorMax = Vector2.one;
-            rootRect.offsetMin = Vector2.zero;
-            rootRect.offsetMax = Vector2.zero;
-
-            // Boss Panel
-            var existingBossPanel = rootRect.Find("BossPanel");
-            var bossPanelObj = existingBossPanel != null ? existingBossPanel.gameObject : new GameObject("BossPanel", typeof(RectTransform), typeof(Image));
-            _bossPanel = bossPanelObj.GetComponent<RectTransform>();
-            _bossPanel.SetParent(rootRect, false);
-            _bossPanel.anchorMin = new Vector2(0.5f, 0f);
-            _bossPanel.anchorMax = new Vector2(0.5f, 0f);
-            _bossPanel.pivot = new Vector2(0.5f, 0f);
-            _bossPanel.anchoredPosition = new Vector2(0f, 28f);
-            _bossPanel.sizeDelta = new Vector2(720f, 75f);
-
-            var panelBg = bossPanelObj.GetComponent<Image>();
-            panelBg.color = new Color(0.08f, 0.08f, 0.12f, 0.85f);
-            panelBg.raycastTarget = false;
-
-            _bossNameText = CreateText("BossNameText", _bossPanel, 24, TextAnchor.MiddleLeft, new Color(1f, 0.85f, 0.3f, 1f));
-            _bossNameText.rectTransform.anchorMin = new Vector2(0f, 1f);
-            _bossNameText.rectTransform.anchorMax = new Vector2(0f, 1f);
-            _bossNameText.rectTransform.pivot = new Vector2(0f, 1f);
-            _bossNameText.rectTransform.anchoredPosition = new Vector2(20f, -8f);
-            _bossNameText.rectTransform.sizeDelta = new Vector2(400f, 30f);
-            _bossNameText.text = "BOSS";
-
-            _phaseText = CreateText("PhaseText", _bossPanel, 20, TextAnchor.MiddleRight, new Color(0.4f, 0.85f, 1f, 1f));
-            _phaseText.rectTransform.anchorMin = new Vector2(1f, 1f);
-            _phaseText.rectTransform.anchorMax = new Vector2(1f, 1f);
-            _phaseText.rectTransform.pivot = new Vector2(1f, 1f);
-            _phaseText.rectTransform.anchoredPosition = new Vector2(-20f, -8f);
-            _phaseText.rectTransform.sizeDelta = new Vector2(260f, 30f);
-            _phaseText.text = "Phase 1";
-
-            // Health Bar Bg
-            var existingHealthBg = _bossPanel.Find("HealthBarBg");
-            var healthBgObj = existingHealthBg != null ? existingHealthBg.gameObject : new GameObject("HealthBarBg", typeof(RectTransform), typeof(Image));
-            _healthBarBg = healthBgObj.GetComponent<RectTransform>();
-            _healthBarBg.SetParent(_bossPanel, false);
-            _healthBarBg.anchorMin = new Vector2(0f, 0f);
-            _healthBarBg.anchorMax = new Vector2(1f, 0f);
-            _healthBarBg.pivot = new Vector2(0.5f, 0f);
-            _healthBarBg.anchoredPosition = new Vector2(0f, 12f);
-            _healthBarBg.sizeDelta = new Vector2(-40f, 22f);
-
-            var healthBgImg = healthBgObj.GetComponent<Image>();
-            healthBgImg.color = new Color(0.2f, 0.05f, 0.05f, 0.9f);
-            healthBgImg.raycastTarget = false;
-
-            // Health Bar Fill
-            var existingHealthFill = _healthBarBg.Find("HealthBarFill");
-            var healthFillObj = existingHealthFill != null ? existingHealthFill.gameObject : new GameObject("HealthBarFill", typeof(RectTransform), typeof(Image));
-            _healthBarFill = healthFillObj.GetComponent<RectTransform>();
-            _healthBarFill.SetParent(_healthBarBg, false);
-            _healthBarFill.anchorMin = new Vector2(0f, 0f);
-            _healthBarFill.anchorMax = new Vector2(0f, 1f);
-            _healthBarFill.pivot = new Vector2(0f, 0.5f);
-            _healthBarFill.anchoredPosition = Vector2.zero;
-            _healthBarFill.sizeDelta = new Vector2(_healthBarBg.rect.width, 0f);
-
-            var healthFillImg = healthFillObj.GetComponent<Image>();
-            healthFillImg.color = new Color(0.85f, 0.15f, 0.15f, 1f);
-            healthFillImg.raycastTarget = false;
-
-            _healthText = CreateText("HealthText", _healthBarBg, 16, TextAnchor.MiddleCenter, Color.white);
-            _healthText.rectTransform.anchorMin = Vector2.zero;
-            _healthText.rectTransform.anchorMax = Vector2.one;
-            _healthText.rectTransform.offsetMin = Vector2.zero;
-            _healthText.rectTransform.offsetMax = Vector2.zero;
-            _healthText.text = "100%";
-
-            // Warning Panel
-            var existingWarningPanel = rootRect.Find("WarningPanel");
-            var warningPanelObj = existingWarningPanel != null ? existingWarningPanel.gameObject : new GameObject("WarningPanel", typeof(RectTransform), typeof(Image));
-            _warningPanel = warningPanelObj.GetComponent<RectTransform>();
-            _warningPanel.SetParent(rootRect, false);
-            _warningPanel.anchorMin = new Vector2(0.5f, 0.82f);
-            _warningPanel.anchorMax = new Vector2(0.5f, 0.82f);
-            _warningPanel.pivot = new Vector2(0.5f, 0.5f);
-            _warningPanel.anchoredPosition = Vector2.zero;
-            _warningPanel.sizeDelta = new Vector2(650f, 60f);
-
-            var warningBgImg = warningPanelObj.GetComponent<Image>();
-            warningBgImg.color = new Color(0.4f, 0.02f, 0.02f, 0.88f);
-            warningBgImg.raycastTarget = false;
-
-            _warningText = CreateText("WarningText", _warningPanel, 32, TextAnchor.MiddleCenter, new Color(1f, 0.9f, 0.2f, 1f));
-            _warningText.rectTransform.anchorMin = Vector2.zero;
-            _warningText.rectTransform.anchorMax = Vector2.one;
-            _warningText.rectTransform.offsetMin = Vector2.zero;
-            _warningText.rectTransform.offsetMax = Vector2.zero;
-            _warningText.text = "WARNING";
+            Refresh();
         }
 
-        private Text CreateText(string name, RectTransform parent, int fontSize, TextAnchor anchor, Color color)
+        private static Text FindText(Transform parent, string childName)
         {
-            return ProceduralUIFactory.CreateText(name, parent, _font, fontSize, FontStyle.Normal, color, anchor);
+            var child = parent != null ? parent.Find(childName) : null;
+            return child != null ? child.GetComponent<Text>() : null;
         }
 
-        private static Font ResolveFont()
+        private void OnCanvasSceneReady(string sceneName)
         {
-            return UIFontResolver.Resolve();
+            if (sceneName == AdditiveCanvasSceneLoader.OverlayCanvasSceneName)
+            {
+                TryBind();
+            }
         }
 
         private void RegisterWithUIManager()
         {
-            _managedPanel = UIManager.RegisterPanel(_canvasRoot, "boss_hud", UIPanelLayer.HUD, false, false);
+            if (_canvasRoot != null && _managedPanel == null)
+            {
+                _managedPanel = UIManager.RegisterPanel(_canvasRoot, "boss_hud", UIPanelLayer.HUD, false, false);
+            }
         }
     }
 }

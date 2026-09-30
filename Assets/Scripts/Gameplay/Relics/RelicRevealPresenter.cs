@@ -22,8 +22,6 @@ namespace Corebound.Gameplay.Relics
         private const string RevealFlashPath = "Assets/Art/Combat/VFX/vfx_card_reveal_flash.png";
         private static readonly Rect FrameContentRect = new Rect(335f, 25f, 465f, 560f);
         private static readonly Vector4 FrameBorder = new Vector4(27f, 27f, 27f, 27f);
-        private const float PanelWidth = 520f;
-        private const float PanelHeight = 340f;
         private const float FadeInSeconds = 0.25f;
         private const float HoldSeconds = 3.2f;
         private const float FadeOutSeconds = 0.5f;
@@ -33,29 +31,29 @@ namespace Corebound.Gameplay.Relics
         private Text _kindText;
         private Text _nameText;
         private Text _descriptionText;
-        private Font _font;
         private float _timer;
         private bool _isShowing;
 
         private void Awake()
         {
-            _font = UIFontResolver.Resolve();
-            BuildUi();
+            TryBind();
         }
 
         private void OnEnable()
         {
             RelicEvents.RelicGranted += OnRelicGranted;
+            AdditiveCanvasSceneLoader.CanvasSceneReady += OnCanvasSceneReady;
         }
 
         private void OnDisable()
         {
             RelicEvents.RelicGranted -= OnRelicGranted;
+            AdditiveCanvasSceneLoader.CanvasSceneReady -= OnCanvasSceneReady;
         }
 
         private void Update()
         {
-            if (!_isShowing)
+            if (!_isShowing || _canvasGroup == null)
             {
                 return;
             }
@@ -84,7 +82,7 @@ namespace Corebound.Gameplay.Relics
 
         private void OnRelicGranted(RelicGrantedEventArgs eventArgs)
         {
-            if (eventArgs.Relic == null)
+            if (eventArgs.Relic == null || _canvasGroup == null || _nameText == null || _descriptionText == null || _kindText == null)
             {
                 return;
             }
@@ -106,53 +104,60 @@ namespace Corebound.Gameplay.Relics
             _canvasGroup.alpha = 0f;
         }
 
-        private void BuildUi()
+        // Open Topics 4 (b), 2026-09-30: the panel lives in OverlayCanvas.unity. The two images
+        // hold no sprite in the scene and get theirs here from the art pipeline, like the HUD's
+        // runtime-art Images - finding elements and repairing sprites, never layout.
+        private void TryBind()
         {
-            var canvasObject = new GameObject("RelicRevealCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
-            canvasObject.transform.SetParent(transform, false);
-            var canvas = canvasObject.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            // Above the HUD/wave banner but below modal overlays (Pause, Card Reward, Shop) that
-            // actively block input - a relic reveal is a passive callout, not a blocker.
-            canvas.sortingOrder = 450;
-            var scaler = canvasObject.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            if (_canvasGroup != null)
+            {
+                return;
+            }
 
-            var panelObject = new GameObject("RelicRevealPanel", typeof(RectTransform), typeof(CanvasGroup));
-            panelObject.transform.SetParent(canvasObject.transform, false);
-            var panelRect = panelObject.GetComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0.5f, 0.72f);
-            panelRect.anchorMax = new Vector2(0.5f, 0.72f);
-            panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.anchoredPosition = Vector2.zero;
-            panelRect.sizeDelta = new Vector2(PanelWidth, PanelHeight);
+            var root = AdditiveCanvasSceneLoader.FindRoot(AdditiveCanvasSceneLoader.OverlayCanvasSceneName, "RelicRevealCanvas");
+            var panel = root != null ? root.transform.Find("RelicRevealPanel") as RectTransform : null;
 
-            _canvasGroup = panelObject.GetComponent<CanvasGroup>();
-            _canvasGroup.alpha = 0f;
-            _canvasGroup.blocksRaycasts = false;
-            _canvasGroup.interactable = false;
+            if (panel == null)
+            {
+                return;
+            }
 
-            _flashImage = CreateImage("RevealFlash", panelRect, DebugSpriteFactory.LoadProjectSprite(RevealFlashPath), Color.white);
-            StretchToParent(_flashImage.rectTransform, new Vector2(-0.25f, -0.2f), new Vector2(1.25f, 1.2f));
-            _flashImage.raycastTarget = false;
+            _canvasGroup = panel.GetComponent<CanvasGroup>();
+            _flashImage = FindComponent<Image>(panel, "RevealFlash");
+            var frameImage = FindComponent<Image>(panel, "Frame");
+            _kindText = FindComponent<Text>(panel, "KindText");
+            _nameText = FindComponent<Text>(panel, "NameText");
+            _descriptionText = FindComponent<Text>(panel, "DescriptionText");
 
-            var frameSprite = DebugSpriteFactory.LoadProjectSpriteRect(LegendaryFramePath, FrameContentRect, 100f, FrameBorder);
-            var frameImage = CreateImage("Frame", panelRect, frameSprite, Color.white);
-            frameImage.type = Image.Type.Sliced;
-            StretchToParent(frameImage.rectTransform, Vector2.zero, Vector2.one);
-            frameImage.raycastTarget = false;
+            if (_flashImage != null && _flashImage.sprite == null)
+            {
+                _flashImage.sprite = DebugSpriteFactory.LoadProjectSprite(RevealFlashPath);
+            }
 
-            _kindText = CreateText("KindText", panelRect, 18, FontStyle.BoldAndItalic, new Color(1f, 0.82f, 0.4f, 1f), TextAnchor.MiddleCenter);
-            StretchToParent(_kindText.rectTransform, new Vector2(0f, 0.82f), new Vector2(1f, 0.96f));
+            if (frameImage != null && frameImage.sprite == null)
+            {
+                frameImage.sprite = DebugSpriteFactory.LoadProjectSpriteRect(LegendaryFramePath, FrameContentRect, 100f, FrameBorder);
+            }
 
-            _nameText = CreateText("NameText", panelRect, 26, FontStyle.Bold, new Color(0.16f, 0.14f, 0.11f, 0.98f), TextAnchor.MiddleCenter);
-            StretchToParent(_nameText.rectTransform, new Vector2(0.08f, 0.66f), new Vector2(0.92f, 0.82f));
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 0f;
+                UIManager.RegisterPanel(panel, "relic_reveal", UIPanelLayer.HUD, false, false, _canvasGroup);
+            }
+        }
 
-            _descriptionText = CreateText("DescriptionText", panelRect, 14, FontStyle.Normal, new Color(0.2f, 0.18f, 0.14f, 0.95f), TextAnchor.UpperCenter, bestFit: true);
-            StretchToParent(_descriptionText.rectTransform, new Vector2(0.08f, 0.08f), new Vector2(0.92f, 0.64f));
+        private static T FindComponent<T>(Transform parent, string childName) where T : Component
+        {
+            var child = parent.Find(childName);
+            return child != null ? child.GetComponent<T>() : null;
+        }
 
-            UIManager.RegisterPanel(panelRect, "relic_reveal", UIPanelLayer.HUD, false, false, _canvasGroup);
+        private void OnCanvasSceneReady(string sceneName)
+        {
+            if (sceneName == AdditiveCanvasSceneLoader.OverlayCanvasSceneName)
+            {
+                TryBind();
+            }
         }
 
         // Measured, not best-fit. resizeTextForBestFit rasterises through a dynamic glyph atlas,
@@ -185,59 +190,6 @@ namespace Corebound.Gameplay.Relics
             }
 
             text.fontSize = minSize;
-        }
-
-        private Image CreateImage(string name, RectTransform parent, Sprite sprite, Color color)
-        {
-            var imageObject = new GameObject(name, typeof(RectTransform), typeof(Image));
-            imageObject.transform.SetParent(parent, false);
-            var image = imageObject.GetComponent<Image>();
-            image.sprite = sprite;
-            image.color = color;
-            return image;
-        }
-
-        private Text CreateText(string name, RectTransform parent, int fontSize, FontStyle fontStyle, Color color, TextAnchor anchor, bool bestFit = false)
-        {
-            var textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
-            textObject.transform.SetParent(parent, false);
-            var text = textObject.GetComponent<Text>();
-            text.font = _font;
-            text.fontSize = fontSize;
-            text.fontStyle = fontStyle;
-            text.color = color;
-            text.alignment = anchor;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.raycastTarget = false;
-
-            if (bestFit)
-            {
-                // Relic descriptions vary a lot in length (Relics.md's whole point is build-defining
-                // effects, which need real explanatory text) - a fixed font size on a fixed-height
-                // box meant longer descriptions overflowed straight past the frame's bottom edge
-                // (2026-09-15 playtest: "Overdriven Barrel" spilled out from under the parchment).
-                // Deliberately NOT using resizeTextForBestFit here: this canvas uses CanvasScaler.
-                // ScaleWithScreenSize, and best-fit's dynamic glyph-atlas rasterization combined with
-                // that scaler's non-1:1 stretch is exactly what made scene-authored text blurry
-                // elsewhere (see CardRewardPresenter.EnsureEditorText's own comment on the same
-                // issue) - so this leans on a smaller fixed size plus Truncate as a hard safety net
-                // instead of ever spilling past the frame.
-                text.verticalOverflow = VerticalWrapMode.Truncate;
-            }
-            else
-            {
-                text.verticalOverflow = VerticalWrapMode.Overflow;
-            }
-
-            return text;
-        }
-
-        private static void StretchToParent(RectTransform rectTransform, Vector2 anchorMin, Vector2 anchorMax)
-        {
-            rectTransform.anchorMin = anchorMin;
-            rectTransform.anchorMax = anchorMax;
-            rectTransform.offsetMin = Vector2.zero;
-            rectTransform.offsetMax = Vector2.zero;
         }
     }
 }

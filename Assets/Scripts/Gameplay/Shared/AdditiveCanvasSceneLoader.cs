@@ -38,13 +38,17 @@ namespace Corebound.Gameplay.Shared
         public const string RewardCanvasSceneName = "RewardCanvas";
         public const string ShopCanvasSceneName = "ShopCanvas";
         public const string HudCanvasSceneName = "HUDCanvas";
+
+        // Boss HUD, system notification and relic reveal (Open Topics 4 (b), 2026-09-30).
+        public const string OverlayCanvasSceneName = "OverlayCanvas";
         private const string GameplaySceneName = "SampleScene";
 
         private static readonly string[] CanvasSceneNames =
         {
             RewardCanvasSceneName,
             ShopCanvasSceneName,
-            HudCanvasSceneName
+            HudCanvasSceneName,
+            OverlayCanvasSceneName
         };
 
         // Scenes whose additive load has been requested but has not completed yet. Static state
@@ -93,6 +97,28 @@ namespace Corebound.Gameplay.Shared
             }
 
             return false;
+        }
+
+        // A root object of a loaded canvas scene, by name. Scene roots rather than GameObject.Find,
+        // which cannot see inactive objects and would also match a same-named object elsewhere.
+        public static GameObject FindRoot(string sceneName, string rootName)
+        {
+            var scene = SceneManager.GetSceneByName(sceneName);
+
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                return null;
+            }
+
+            foreach (var rootObject in scene.GetRootGameObjects())
+            {
+                if (rootObject.name == rootName)
+                {
+                    return rootObject;
+                }
+            }
+
+            return null;
         }
 
         public static bool IsSceneReady(string sceneName)

@@ -36,11 +36,12 @@ namespace Corebound.UI
         private void Awake()
         {
             _instance = this;
-            BuildUi();
+            TryBind();
         }
 
         private void OnEnable()
         {
+            Corebound.Gameplay.Shared.AdditiveCanvasSceneLoader.CanvasSceneReady += OnCanvasSceneReady;
             var saveManager = SaveManager;
 
             if (saveManager != null)
@@ -52,6 +53,7 @@ namespace Corebound.UI
 
         private void OnDisable()
         {
+            Corebound.Gameplay.Shared.AdditiveCanvasSceneLoader.CanvasSceneReady -= OnCanvasSceneReady;
             var saveManager = SaveManager;
 
             if (saveManager != null)
@@ -86,6 +88,12 @@ namespace Corebound.UI
 
         private void Update()
         {
+            // Messages queue until the overlay scene has loaded, then play in order.
+            if (_canvasGroup == null || _messageText == null)
+            {
+                return;
+            }
+
             if (!_isShowing)
             {
                 if (_pendingMessages.Count == 0)
@@ -122,50 +130,55 @@ namespace Corebound.UI
             }
         }
 
-        private void BuildUi()
+        // Open Topics 4 (b), 2026-09-30: the panel lives in OverlayCanvas.unity. Only the style
+        // asset's colours are applied here - those are data, not layout.
+        private void TryBind()
         {
-            var canvasRoot = new GameObject("NotificationCanvas");
-            canvasRoot.transform.SetParent(transform, false);
-            var canvas = canvasRoot.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 500;
-            var scaler = canvasRoot.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            if (_canvasGroup != null)
+            {
+                return;
+            }
 
-            var panelObject = new GameObject("NotificationPanel");
-            panelObject.transform.SetParent(canvasRoot.transform, false);
-            var panelRect = panelObject.AddComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0.5f, 1f);
-            panelRect.anchorMax = new Vector2(0.5f, 1f);
-            panelRect.pivot = new Vector2(0.5f, 1f);
-            panelRect.anchoredPosition = new Vector2(0f, -36f);
-            panelRect.sizeDelta = new Vector2(620f, 56f);
+            var root = Corebound.Gameplay.Shared.AdditiveCanvasSceneLoader.FindRoot(
+                Corebound.Gameplay.Shared.AdditiveCanvasSceneLoader.OverlayCanvasSceneName, "NotificationCanvas");
+            var panel = root != null ? root.transform.Find("NotificationPanel") as RectTransform : null;
 
-            var backgroundColor = _styleData != null ? _styleData.BackgroundColor : new Color(0.04f, 0.08f, 0.12f, 0.9f);
-            var image = panelObject.AddComponent<Image>();
-            image.color = backgroundColor;
+            if (panel == null)
+            {
+                return;
+            }
 
-            _canvasGroup = panelObject.AddComponent<CanvasGroup>();
-            _canvasGroup.alpha = 0f;
-            _canvasGroup.blocksRaycasts = false;
-            _canvasGroup.interactable = false;
+            _canvasGroup = panel.GetComponent<CanvasGroup>();
+            var textTransform = panel.Find("NotificationText");
+            _messageText = textTransform != null ? textTransform.GetComponent<Text>() : null;
+            var background = panel.GetComponent<Image>();
 
-            var textObject = new GameObject("NotificationText");
-            textObject.transform.SetParent(panelObject.transform, false);
-            var textRect = textObject.AddComponent<RectTransform>();
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(18f, 6f);
-            textRect.offsetMax = new Vector2(-18f, -6f);
-            _messageText = textObject.AddComponent<Text>();
-            _messageText.font = UIFontResolver.Resolve();
-            _messageText.fontSize = 20;
-            _messageText.alignment = TextAnchor.MiddleCenter;
-            _messageText.color = _styleData != null ? _styleData.ForegroundColor : Color.white;
-            _messageText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            if (_styleData != null)
+            {
+                if (background != null)
+                {
+                    background.color = _styleData.BackgroundColor;
+                }
 
-            UIManager.RegisterPanel(panelRect, "system_notice", UIPanelLayer.System, false, false, _canvasGroup);
+                if (_messageText != null)
+                {
+                    _messageText.color = _styleData.ForegroundColor;
+                }
+            }
+
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 0f;
+                UIManager.RegisterPanel(panel, "system_notice", UIPanelLayer.System, false, false, _canvasGroup);
+            }
+        }
+
+        private void OnCanvasSceneReady(string sceneName)
+        {
+            if (sceneName == Corebound.Gameplay.Shared.AdditiveCanvasSceneLoader.OverlayCanvasSceneName)
+            {
+                TryBind();
+            }
         }
     }
 }

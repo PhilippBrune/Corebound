@@ -20,6 +20,7 @@ namespace Corebound.EditorTools
             "Assets/Scenes/RewardCanvas.unity",
             "Assets/Scenes/ShopCanvas.unity",
             "Assets/Scenes/HUDCanvas.unity",
+            "Assets/Scenes/OverlayCanvas.unity",
         };
 
         static AdditiveCanvasSceneAutoLoader()
