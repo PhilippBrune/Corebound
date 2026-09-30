@@ -155,16 +155,21 @@ Bonus-only again.
 
 | Card | Rarity | Tags | Built as |
 | --- | --- | --- | --- |
-| Toxic Rounds | Common | Poison | 15% per projectile to poison. Stackable (chances add). |
-| Field Dressing | Common | Support | Heal 8% of max health at each wave clear. Stackable. |
-| Arc Coil | Rare | Shock | 20% per projectile: arcs to 2 enemies within 2.5 units for 50% of the hit. A chained hit never chains again. Stackable. |
-| Target Painter | Rare | Status Effect, Tower | Every hit marks for 3 s; a marked enemy takes +15% from every source - towers and damage over time included. Not stackable. |
-| Reactive Plating | Rare | Support | Blocks one hit, recharges in 12 s; each further copy x0.8. A block grants the normal hit invulnerability so the rest of a volley cannot land straight through. |
-| Overclock Beacon | Rare | Support, Tower | Towers within 3 units of the player fire 20% faster. Stackable. |
-| Virulent Strain | Epic | Poison | A poisoned enemy that dies poisons every enemy within 2 units, **plus 10% poison chance** (see below). |
-| Leech Rounds | Epic | Support | +0.5 health per player kill, at most 5 healing kills per wave. Not stackable. |
-| Core Aegis | Epic | Support | Core regenerates 1% of max health per second during an Intermission and takes 10% less damage. |
-| Sentry Drone | Legendary | Summon | One drone orbits at 1.1 units and fires every 0.5 s at the nearest enemy within 7 units for 35% of the primary weapon's damage (tier, upgrades, skills and card damage included; no crit, no status, no on-hit roll). Its shots count against the projectile budget. |
+Every card can be taken more than once (owner decision 2026-09-21, `CardData.Stackable` is always
+true), so the last column says what a further copy does.
+
+| Card | Rarity | Tags | Built as | Another copy |
+| --- | --- | --- | --- | --- |
+| Toxic Rounds | Common | Poison | 15% per projectile to poison. | +15% chance |
+| Field Dressing | Common | Support | Heal 8% of max health at each wave clear. | +8% |
+| Arc Coil | Rare | Shock | 20% per projectile: arcs to 2 enemies within 2.5 units for 50% of the hit. A chained hit never chains again. | +20% chance |
+| Target Painter | Rare | Status Effect, Tower | Every hit marks for 3 s; a marked enemy takes +15% from every source - towers and damage over time included. | +15% on the mark |
+| Reactive Plating | Rare | Support | Blocks one hit, recharges in 12 s. A block grants the normal hit invulnerability so the rest of a volley cannot land straight through. | recharge x0.8 |
+| Overclock Beacon | Rare | Support, Tower | Towers within 3 units of the player fire 20% faster. | +20% |
+| Virulent Strain | Epic | Poison | A poisoned enemy that dies poisons every enemy within 2 units, **plus 10% poison chance** (see below). | +10% chance; the radius stays 2 |
+| Leech Rounds | Epic | Support | +0.5 health per player kill, at most 5 healing kills per wave. | +0.5 per kill |
+| Core Aegis | Epic | Support | Core regenerates 1% of max health per second during an Intermission and takes 10% less damage. | +1%/s, x0.9 damage |
+| Sentry Drone | Legendary | Summon | One drone orbits at 1.1 units and fires every 0.5 s at the nearest enemy within 7 units for 35% of the primary weapon's damage (tier, upgrades, skills and card damage included; no crit, no status, no on-hit roll). Its shots count against the projectile budget. | another drone, up to 4 |
 
 **Where the build differs from the proposal, and why**
 
@@ -182,6 +187,8 @@ Bonus-only again.
 - The hit effects are rolled **per projectile** when the shot is fired, which is the closest thing
   to "per hit" known at that moment; a Spread volley rolls each pellet separately.
 - Chains, spreads and the drone only ever pick enemies and bosses, never the Core or a tower.
+- **Target Painter stacks on the mark.** A mark is on or off, so a second copy first did nothing;
+  each copy now adds its 15% (found 2026-09-30 when the autopilot was offered repeats).
 
 **New code**: `CombatHitEffects` (the flags and `RunCombatEffects`, the run-wide values combat code
 reads), `PlayerSupportRules` (the fixed numbers the card text and the code share),

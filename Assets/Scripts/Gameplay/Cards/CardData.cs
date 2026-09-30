@@ -42,9 +42,9 @@ namespace Corebound.Gameplay.Cards
 
         public string RequiredUnlockId => _requiredUnlockId;
 
-        // Authored per Docs/Specs/Cards.md's planned synergy/archetype/filtering system, but no
-        // runtime code reads this yet (offer selection and card effects don't consult it).
-        // Deliberately kept rather than deleted: several CardData assets already have tags set.
+        // Authored per Docs/Specs/Cards.md's synergy/archetype system. Drawn as icons on the
+        // card, and since 2026-09-30 read by CardService's offer weighting
+        // (CardOfferData.TagAffinity), so a card's tags are part of how often it is offered.
         public CardTagType[] Tags => _tags;
 
         public CardEffectData[] Effects => _effects;

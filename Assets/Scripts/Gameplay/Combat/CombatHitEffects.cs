@@ -20,8 +20,17 @@ namespace Corebound.Gameplay.Combat
     public static class RunCombatEffects
     {
         // Target Painter: "marked enemies take +15% damage from every source, towers included".
-        public const float VulnerableDamageBonus = 0.15f;
+        // Every card stacks (owner decision 2026-09-21), and a mark is on or off, so a second copy
+        // would otherwise do nothing: each copy adds its 15% to the mark instead.
+        public const float VulnerableBonusPerCopy = 0.15f;
         public const float VulnerableSeconds = 3f;
+
+        public static float VulnerableDamageBonus { get; private set; } = VulnerableBonusPerCopy;
+
+        public static void SetVulnerableCopies(int copies)
+        {
+            VulnerableDamageBonus = VulnerableBonusPerCopy * Math.Max(1, copies);
+        }
 
         // Arc Coil: "arcs to 2 enemies within 2.5 units for 50% damage".
         public const int ShockTargets = 2;

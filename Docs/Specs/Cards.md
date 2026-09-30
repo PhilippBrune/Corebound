@@ -119,6 +119,8 @@ Festgelegte Entscheidungen:
 - Ein Standard-Card-Angebot besteht aus drei Optionen.
 - Ein allgemeines Reroll-System ist nicht Teil des ersten spielbaren Umfangs.
 - Die erste Card-Tag-Welle nutzt Weapon, Projectile, Tower, Resource, Status Effect, Burn, Freeze und Critical.
+- **2026-09-30:** zweite Tag-Welle Poison, Shock, Support, Summon (NEW_CARD_MECHANICS C4-1; Icons in GRAPHICS_ASSET_PROMPTS Asset 108).
+- **2026-09-30 — Tags steuern das Angebot** (Open Topics 4, Owner-Entscheidung (a)): `CardOfferData._tagAffinity` ist der eine Regler. Gewicht = Raritätsgewicht × (1 + Affinität × (2 × Überdeckung − 1)); Überdeckung = Anteil der Karten-Tags, die der Build schon hat, ein Tag zählt ab drei Karten voll. Positiv bevorzugt Synergie, negativ Abwechslung, 0 schaltet Tags aus. Standard +0,35: eine voll passende Karte ist etwa doppelt so wahrscheinlich wie eine ohne Überschneidung. Waffenkarten werden nie nach Tags gewichtet.
 
 **Update 2026-09-09 — Card-Pool 18 → 26 erweitert:** 8 neue Cards ergänzt (`Assets/ScriptableObjects/Gameplay/Cards/`), alle über die bestehenden 4 `CardEffectTarget`-Hebel (WeaponDamageMultiplier, WeaponFireIntervalMultiplier, ResourceGainMultiplier, TowerDamageMultiplier) ohne neue Codepfade: Focused Lens, Rapid Cycler, Harvest Protocol, Reinforced Emitters (je Rare, stackable), Volatile Payload, Twin Turret Array, Endless Supply Line (je Epic, non-stackable), sowie Apex Overload (Legendary, non-stackable, kombiniert Weapon- und Tower-Damage wie das bereits existierende Legendary-Vorbild Reactor Bleed). Alle in `CardPool_Default.asset` registriert.
 

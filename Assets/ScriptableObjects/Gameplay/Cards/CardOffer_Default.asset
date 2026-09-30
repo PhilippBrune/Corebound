@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: CardOffer_Default
   m_EditorClassIdentifier: 
   _optionCount: 3
+  _tagAffinity: 0.35

@@ -206,7 +206,7 @@ namespace Corebound.Gameplay.Cards
                     return Signed(value * 100f) + LocalizationService.Resolve("% chance to arc to ", " % Chance, auf ")
                         + Combat.RunCombatEffects.ShockTargets + LocalizationService.Resolve(" enemies", " Gegner überzuspringen");
                 case WeaponModifierTarget.VulnerableOnHit:
-                    return LocalizationService.Resolve("hits mark: +", "Treffer markieren: +") + Number(Combat.RunCombatEffects.VulnerableDamageBonus * 100f)
+                    return LocalizationService.Resolve("hits mark: +", "Treffer markieren: +") + Number(Combat.RunCombatEffects.VulnerableBonusPerCopy * 100f)
                         + LocalizationService.Resolve("% damage taken for ", " % erlittener Schaden für ") + Number(Combat.RunCombatEffects.VulnerableSeconds) + " s";
                 default:
                     return string.Empty;

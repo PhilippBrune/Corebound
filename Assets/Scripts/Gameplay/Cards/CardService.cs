@@ -163,20 +163,11 @@ namespace Corebound.Gameplay.Cards
 
             if (eligibleCards.Count == 0)
             {
-                for (var index = 0; index < _currentOffer.Count; index++)
-            {
-                var offered = _currentOffer[index];
-
-                if (offered != null && offered.IsWeaponCard && !_rolledWeaponRarities.ContainsKey(offered.CardId))
-                {
-                    _rolledWeaponRarities[offered.CardId] = RollWeaponRarity();
-                }
-            }
-
-            StateChanged?.Invoke();
+                StateChanged?.Invoke();
                 return;
             }
 
+            CountBuildTags();
             var optionCount = Mathf.Min(_cardOfferData.OptionCount, eligibleCards.Count);
 
             if (_guaranteeWeaponInNextOffer)
@@ -206,7 +197,74 @@ namespace Corebound.Gameplay.Cards
                 eligibleCards.Remove(picked);
             }
 
+            // Found 2026-09-30: this roll sat inside the "no eligible cards" branch above, where
+            // the offer is always empty, so since 2026-09-25 no weapon card in a reward ever got
+            // a rolled rarity - every one arrived at its authored Common.
+            for (var index = 0; index < _currentOffer.Count; index++)
+            {
+                var offered = _currentOffer[index];
+
+                if (offered != null && offered.IsWeaponCard && !_rolledWeaponRarities.ContainsKey(offered.CardId))
+                {
+                    _rolledWeaponRarities[offered.CardId] = RollWeaponRarity();
+                }
+            }
+
             StateChanged?.Invoke();
+        }
+
+        // How many of the run's chosen cards carry each tag; rebuilt once per offer.
+        private readonly Dictionary<CardTagType, int> _buildTagCounts = new Dictionary<CardTagType, int>();
+
+        // A tag counts as fully "in the build" from this many cards up, so one early pick does
+        // not lock the rest of the run into its tag.
+        private const int TagSaturationCount = 3;
+
+        private void CountBuildTags()
+        {
+            _buildTagCounts.Clear();
+
+            for (var index = 0; index < _selectedCards.Count; index++)
+            {
+                var tags = _selectedCards[index] != null ? _selectedCards[index].Tags : null;
+
+                if (tags == null)
+                {
+                    continue;
+                }
+
+                for (var tagIndex = 0; tagIndex < tags.Length; tagIndex++)
+                {
+                    _buildTagCounts.TryGetValue(tags[tagIndex], out var count);
+                    _buildTagCounts[tags[tagIndex]] = count + 1;
+                }
+            }
+        }
+
+        // Rarity weight x tag weight. The tag weight is 1 +/- affinity: a card whose every tag is
+        // saturated in the build gets 1 + affinity, a card sharing none gets 1 - affinity, and
+        // partial overlap sits between. An empty build (the first offer) weighs every card 1.
+        public float ResolveOfferWeight(CardData card)
+        {
+            var weight = _cardOfferData != null ? _cardOfferData.ResolveWeight(card.Rarity) : 1f;
+            var affinity = _cardOfferData != null ? _cardOfferData.TagAffinity : 0f;
+            var tags = card.Tags;
+
+            if (Mathf.Approximately(affinity, 0f) || card.IsWeaponCard || tags == null || tags.Length == 0 || _buildTagCounts.Count == 0)
+            {
+                return weight;
+            }
+
+            var overlap = 0f;
+
+            for (var index = 0; index < tags.Length; index++)
+            {
+                _buildTagCounts.TryGetValue(tags[index], out var count);
+                overlap += Mathf.Clamp01(count / (float)TagSaturationCount);
+            }
+
+            overlap /= tags.Length;
+            return weight * Mathf.Max(0.05f, 1f + affinity * (2f * overlap - 1f));
         }
 
         private CardData PickWeightedCard(List<CardData> candidates)
@@ -220,7 +278,7 @@ namespace Corebound.Gameplay.Cards
 
             for (var index = 0; index < candidates.Count; index++)
             {
-                totalWeight += _cardOfferData.ResolveWeight(candidates[index].Rarity);
+                totalWeight += ResolveOfferWeight(candidates[index]);
             }
 
             if (totalWeight <= 0f)
@@ -233,7 +291,7 @@ namespace Corebound.Gameplay.Cards
 
             for (var index = 0; index < candidates.Count; index++)
             {
-                cumulative += _cardOfferData.ResolveWeight(candidates[index].Rarity);
+                cumulative += ResolveOfferWeight(candidates[index]);
 
                 if (roll <= cumulative)
                 {
@@ -441,6 +499,17 @@ namespace Corebound.Gameplay.Cards
             }
 
             // The values combat code reads without a CardService reference (hit receivers).
+            var markCopies = 0;
+
+            for (var index = 0; index < _weaponModifiers.Count; index++)
+            {
+                if (_weaponModifiers[index].Target == WeaponModifierTarget.VulnerableOnHit && _weaponModifiers[index].Value > 0f)
+                {
+                    markCopies++;
+                }
+            }
+
+            Corebound.Gameplay.Combat.RunCombatEffects.SetVulnerableCopies(markCopies);
             Corebound.Gameplay.Combat.RunCombatEffects.Set(
                 _modifierSnapshot.PoisonSpreadRadius,
                 _modifierSnapshot.CoreDamageTakenMultiplier,

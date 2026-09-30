@@ -1358,6 +1358,7 @@ namespace Corebound.EditorTools
 
             if (TickShotTimer(ref _rewardShotTimer))
             {
+                LogRewardOffer();
                 Shot("stage" + _waveManager.StageIndex + "_wave" + wave + "_reward");
             }
 
@@ -1651,6 +1652,66 @@ namespace Corebound.EditorTools
                 + " killHeals=" + Corebound.Gameplay.Combat.PlayerSupportEffects.DebugKillHeals
                 + " waveHeals=" + Corebound.Gameplay.Combat.PlayerSupportEffects.DebugWaveHeals
                 + " playerHp=" + (_playerCombat != null ? _playerCombat.CurrentHealthNormalized.ToString("0.00") : "-"));
+        }
+
+        // Every reward offer as the game built it: card, the rarity it is offered at (weapon
+        // cards roll theirs), the weight it was drawn with and its tags. With cardsN the whole
+        // pool's weights are listed once, which is what shows the tag affinity doing anything.
+        private bool _poolWeightsLogged;
+
+        private void LogRewardOffer()
+        {
+            var cardService = FindFirstObjectByType<CardService>();
+
+            if (cardService == null)
+            {
+                return;
+            }
+
+            var builder = new StringBuilder(256);
+            builder.Append(DebugAutopilot.LogPrefix).Append(" OFFER");
+
+            for (var index = 0; index < cardService.CurrentOffer.Count; index++)
+            {
+                var card = cardService.CurrentOffer[index];
+
+                if (card != null)
+                {
+                    builder.Append(" | ").Append(card.DisplayName).Append(' ').Append(cardService.ResolveOfferedRarity(card))
+                        .Append(" w=").Append(cardService.ResolveOfferWeight(card).ToString("0.0"))
+                        .Append(" [").Append(card.Tags != null ? string.Join(",", card.Tags) : string.Empty).Append(']');
+                }
+            }
+
+            Debug.Log(builder.ToString());
+
+            if (_poolWeightsLogged || !SessionState.GetBool(DebugAutopilot.CardsTestSessionKey, false))
+            {
+                return;
+            }
+
+            _poolWeightsLogged = true;
+            var pool = UnityEditor.AssetDatabase.LoadAssetAtPath<CardPoolData>("Assets/ScriptableObjects/Gameplay/Cards/CardPool_Default.asset");
+
+            if (pool == null || pool.Cards == null)
+            {
+                return;
+            }
+
+            var weights = new System.Collections.Generic.List<(float Weight, string Line)>();
+
+            foreach (var card in pool.Cards)
+            {
+                if (card != null && !card.IsWeaponCard)
+                {
+                    var baseWeight = cardService.ResolveOfferWeight(card);
+                    weights.Add((baseWeight, card.DisplayName + " " + card.Rarity + " " + baseWeight.ToString("0.0")
+                        + " [" + (card.Tags != null ? string.Join(",", card.Tags) : string.Empty) + "]"));
+                }
+            }
+
+            weights.Sort((a, b) => b.Weight.CompareTo(a.Weight));
+            Debug.Log(DebugAutopilot.LogPrefix + " TAG WEIGHTS (rarity x tag affinity): " + string.Join(" | ", weights.ConvertAll(entry => entry.Line)));
         }
 
         private void ApplyLoadoutTestOnce()
