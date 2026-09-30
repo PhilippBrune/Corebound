@@ -17,7 +17,6 @@ MonoBehaviour:
   _displayName: Reactor Depths
   _themeData: {fileID: 11400000, guid: f288852992664113b552e532e6b95ec6, type: 2}
   _stageRewardData: {fileID: 11400000, guid: 9900066b286d40d3b6ba36ce8b15dd9d, type: 2}
-  _stageEnemyPoolData: {fileID: 11400000, guid: d331218407e7455fa3936d70a962bc54, type: 2}
   _progressionData: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}
   _shopData: {fileID: 11400000, guid: 6a9d7ad6f78e43e98430b0c6cbb1f1b2, type: 2}
   _intermissionDurationSeconds: 20

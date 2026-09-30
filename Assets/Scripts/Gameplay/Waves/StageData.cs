@@ -33,7 +33,6 @@ namespace Corebound.Gameplay.Waves
         [SerializeField] private string _displayName = "Stage 1";
         [SerializeField] private StageThemeData _themeData;
         [SerializeField] private StageRewardData _stageRewardData;
-        [SerializeField] private StageEnemyPoolData _stageEnemyPoolData;
         [SerializeField] private StageProgressionData _progressionData;
         [SerializeField] private ShopData _shopData;
         [SerializeField] private float _intermissionDurationSeconds = 20f;
@@ -58,10 +57,6 @@ namespace Corebound.Gameplay.Waves
         public StageThemeData ThemeData => _themeData;
 
         public StageRewardData StageRewardData => _stageRewardData;
-
-        // Deliberately unused by WaveManager today: reserved for a future weighted-random
-        // enemy pool (see Docs/Specs/Waves.md), not wired into spawn selection yet.
-        public StageEnemyPoolData StageEnemyPoolData => _stageEnemyPoolData;
 
         public StageProgressionData ProgressionData => _progressionData;
 

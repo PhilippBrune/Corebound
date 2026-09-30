@@ -100,7 +100,7 @@ Sie dürfen starke Synergies eröffnen, müssen aber durch Angebotsknappheit und
 
 ## Open Questions
 
-- Braucht jede Stage ihren eigenen, thematisch passenden Relic-Pool (analog zu `StageEnemyPoolData`), oder bleibt der Relic-Pool run-weit einheitlich?
+- Braucht jede Stage ihren eigenen, thematisch passenden Relic-Pool (analog zu den stage-eigenen `WaveData`-Sets), oder bleibt der Relic-Pool run-weit einheitlich?
 - Wann bekommt der Reveal-Moment die in „Visual" geforderte eigenständige, hochwertige Präsentation (siehe „Update 2026-09-09" unten für den aktuellen, bewusst einfacheren Zwischenstand)?
 
 **Update 2026-09-09 — v1 implementiert, mit bewusster Scope-Reduktion:** `RelicData`/`RelicPoolData` existieren als echte ScriptableObjects (`Assets/Scripts/Gameplay/Relics/`), `_effects` nutzt bewusst denselben `CardEffectData`-Typ wie Cards (siehe Rules: „gemeinsame Modifier-Schnittstellen"), läuft über dieselbe `CardModifierSnapshot`-Pipeline in `CardService`. 3 Relics ausgeliefert (Overcharged Core, Foundry Bond, Adrenal Surge), je zwei kombinierte Stat-Effekte statt eines einzelnen wie bei den meisten Cards — spürbar stärker und „build-defining" im Sinne der Balancing-Vorgabe. Ausgelöst über `WaveManager.CompleteBossEncounter()` → `CardService.TryGrantRandomRelic()`, exakt am in Rules vorgesehenen Moment (Boss-Abschluss).

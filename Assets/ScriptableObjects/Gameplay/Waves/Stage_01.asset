@@ -17,7 +17,6 @@ MonoBehaviour:
   _displayName: Stage 1
   _themeData: {fileID: 11400000, guid: b4830fcd680847a69741c368c2a65c3e, type: 2}
   _stageRewardData: {fileID: 11400000, guid: 889ae94d2fc34d61b5ea4da28a0c5118, type: 2}
-  _stageEnemyPoolData: {fileID: 11400000, guid: 6df7c4d0a2d3497d998e1e3a0b277ace, type: 2}
   _progressionData: {fileID: 11400000, guid: c29d25be2d4a4c5193544cf392a3bfb1, type: 2}
   _shopData: {fileID: 11400000, guid: 0ce1469f9a4449c79f5c7a0eb0b4d2f8, type: 2}
   _intermissionDurationSeconds: 20

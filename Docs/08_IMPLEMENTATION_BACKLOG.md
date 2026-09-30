@@ -376,7 +376,7 @@ Lieferobjekte:
 
 Noch offen:
 
-- StageEnemyPoolData ist weiterhin vollständig autoriert, aber von keinem Code gelesen (bewusst als künftiges Stage-2+-Feature für gewichtete Zufallsauswahl zurückgestellt, siehe Code-Kommentar in StageData.cs und Docs/Specs/Waves.md)
+- ~~StageEnemyPoolData war autoriert, aber von keinem Code gelesen~~ — 2026-09-30 samt der fünf Assets gelöscht (Owner-Entscheidung, Open Topics 4 (a)); die stage-eigenen `WaveData`-Assets haben die Rolle übernommen
 - WaveManager selbst ist mit ~15 Verantwortlichkeiten (State Machine, Statistik-Persistenz, Core-Konstruktion, Label-Auflösung) ein bekannter "God Object"-Kandidat für einen künftigen Split, siehe Code-Kommentar in WaveManager.cs
 
 ## 11. Enemies

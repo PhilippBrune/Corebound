@@ -59,9 +59,10 @@ Wave-Daten werden in ScriptableObjects definiert.
 - SpawnGroupData: Enemy-Typen, Mengen, Staffelung und Prioritäten
 - WaveModifierData: optionale Daten-Overrides für Tempo, Dichte oder Encounter-Regeln
 - WaveRewardData: definierte Reward-Momente nach Wave-Abschluss
-- StageEnemyPoolData: gewichtete Zufallsauswahl von Enemy-Typen pro Stage. Noch von keinem Code
-  gelesen. **Seit 2026-09-22 nicht mehr der geplante Eskalationsweg:** jede Stage besitzt eigene
-  `WaveData`-Assets (siehe unten), die Zusammensetzung und Tempo pro Stage festlegen.
+- ~~StageEnemyPoolData~~ **2026-09-30 gelöscht** (Owner-Entscheidung, Open Topics 4 (a)): von keinem
+  Code gelesen und seit 2026-09-22 durch die stage-eigenen `WaveData`-Assets ersetzt, die
+  Zusammensetzung und Tempo pro Stage festlegen. Ein künftiger Endlos-/Ascension-Modus, der Waves
+  prozedural zusammenstellt, bräuchte wieder eine gewichtete Auswahl — dann neu und für diesen Modus.
 
 ## Technical Design
 
