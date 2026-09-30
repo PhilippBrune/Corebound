@@ -271,7 +271,7 @@ Lieferobjekte:
 Noch offen:
 
 - tiefere Card-Effekte für Status, Economy und spätere Factory- oder Tower-Interaktionen
-- CardData.Tags wird weiterhin von keinem Code gelesen (bewusst nicht gelöscht, da bereits mehrere Card-Assets Tags autoriert haben — siehe Code-Kommentar in CardData.cs)
+- ~~CardData.Tags wird von keinem Code gelesen~~ — 2026-09-30: Tags gewichten das Kartenangebot über einen Regler (`CardOfferData._tagAffinity`, Open Topics 4 (a)); vier neue Tags Poison/Shock/Support/Summon
 
 ## 7. Towers
 
@@ -423,7 +423,7 @@ Bereits umgesetzt:
 - Stage_01 verweist nach sechs Waves auf Boss_Stage1
 - WaveManager kann nach der Wave-Sequenz in BossCombat wechseln und Boss-Reward ausloesen
 - RunPersistenceController speichert aktive Boss-Begegnung und Boss-Phase
-- BossEvents, BossHudPresenter und BossAudioCuePlayer fuer Boss-Warnung, Spawn, Phasewechsel und Defeat verdrahtet
+- BossEvents, BossHudPresenter und BossAudioCuePlayer fuer Boss-Warnung, Spawn, Phasewechsel und Defeat verdrahtet; seit 2026-09-30 liegt das Boss-HUD (mit Notification und Relic-Reveal) in der autorierten Szene `OverlayCanvas.unity`, und die Autopilot-Variante `bossN` prüft die Phasenwechsel aller fünf Bosse
 - Continue-/Restore-Pfad ueberschreibt beim Laden keinen bestehenden Run-Save mehr sofort
 - BossAttackPatternData besitzt jetzt ein Telegraph-/Windup-Feld; Boss-Projectile-Bursts feuern nicht mehr sofort bei Cooldown-Ablauf ohne Vorwarnung
 - WaveManager re-abonniert BossRuntimeController.PhaseChanged jetzt auch in OnEnable, nicht mehr nur beim ersten Encounter-Start
@@ -563,7 +563,7 @@ Bereits umgesetzt:
 
 Noch offen:
 
-- sechs Multi-Slot-Sprite-Sheets (u.a. combat_vfx_sheet_essentials.png, card_tag_icon_sheet.png, projectile_sheet_core.png) sind importiert, aber ungeslict/ungenutzt oder umgehen das im jeweiligen VFX-Spec dokumentierte Datenmodell zugunsten von Custom-Runtime-Grid-Math
+- ~~sechs Multi-Slot-Sprite-Sheets umgehen das Datenmodell~~ — 2026-09-30: Raster und benannte Zellen liegen in `SpriteSheetData`-Assets (`Assets/ScriptableObjects/Art/`: beide Projektil-Sheets, Waffen-Icons, Tag-Icons, beide Impact-Sheets); `combat_vfx_sheet_essentials.png` ist durch Einzeldateien ersetzt und nur noch in Kommentaren genannt. Offen: Boden-/Prop-Atlanten der Stages (Open Topics 3.4)
 
 ---
 
