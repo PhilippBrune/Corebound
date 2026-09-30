@@ -102,7 +102,11 @@ namespace Corebound.Gameplay.Towers
             }
 
             FireAt(target);
-            _cooldownTimer = ResolveFireIntervalSeconds();
+
+            // Overclock Beacon is applied here, at the moment the next shot is scheduled, and not
+            // inside ResolveFireIntervalSeconds: that one also feeds the tower info card, which
+            // would otherwise flicker between two numbers as the player walks past.
+            _cooldownTimer = ResolveFireIntervalSeconds() / RunCombatEffects.ResolveTowerAuraRateMultiplier(transform.position);
         }
 
         private CombatHitReceiver FindTarget()

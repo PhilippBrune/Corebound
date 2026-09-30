@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: Card_BulkSalvage
   m_EditorClassIdentifier:
   _cardId: card_bulk_salvage
-  _displayName: Volatile Shells
-  _displayNameDe: Instabile Geschosse
-  _description: Projectiles that hit nothing explode where they land.
-  _descriptionDe: Projektile, die nichts treffen, explodieren am Einschlag.
+  _displayName: Leech Rounds
+  _displayNameDe: Blutegelmunition
+  _description: 'Kills heal you a little, a few times every wave.'
+  _descriptionDe: 'Kills heilen dich ein wenig, ein paar Mal pro Welle.'
   _rarity: 2
   _requiredUnlockId:
   _tags:
-  - 1
-  _effects: []
-  _weaponModifiers:
-  - {fileID: 11400000, guid: e0592ffdb908ba04aaee2675fe08e4cd, type: 2}
+  - 10
+  _effects:
+  - {fileID: 11400000, guid: 621013ae86084d5fba7d6cffb7a33db0, type: 2}
+  _weaponModifiers: []
   _stackable: 0

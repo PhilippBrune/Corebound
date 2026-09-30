@@ -23,4 +23,5 @@ MonoBehaviour:
   _statusDefinitions:
   - {fileID: 11400000, guid: 4600659f79d547258c7e3da3a7aa32e1, type: 2}
   - {fileID: 11400000, guid: a06061af6f3942ce8f1140eb13f0e7cf, type: 2}
+  - {fileID: 11400000, guid: 88ca6620be72477baca7c5d19810cbdf, type: 2}
   _debugColor: {r: 0.78, g: 0.22, b: 0.22, a: 1}

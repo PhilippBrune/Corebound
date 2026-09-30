@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: Card_OverchargedRounds
   m_EditorClassIdentifier:
   _cardId: card_overcharged_rounds
-  _displayName: Piercing Rounds
-  _displayNameDe: Durchschlagsmunition
-  _description: Your shots pass through one extra enemy.
-  _descriptionDe: Deine Schuesse durchdringen einen Gegner mehr.
+  _displayName: Toxic Rounds
+  _displayNameDe: Toxische Munition
+  _description: 'Your shots can poison. A poisoned enemy keeps taking damage for a few seconds.'
+  _descriptionDe: 'Deine Schüsse können vergiften. Ein vergifteter Gegner nimmt noch einige Sekunden Schaden.'
   _rarity: 0
   _requiredUnlockId:
   _tags:
-  - 1
+  - 8
   _effects: []
   _weaponModifiers:
-  - {fileID: 11400000, guid: 7247fab24c29a3e448c1e5aece20e61b, type: 2}
+  - {fileID: 11400000, guid: 8c4656b4018a4cf084ca9f624659f2ed, type: 2}
   _stackable: 1

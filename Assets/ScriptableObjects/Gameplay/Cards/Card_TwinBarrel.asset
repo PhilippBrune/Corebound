@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: Card_TwinBarrel
   m_EditorClassIdentifier:
   _cardId: card_twin_barrel
-  _displayName: Focused Barrel
-  _displayNameDe: Fokussierter Lauf
-  _description: Tightens your spread, so shots land where you aim.
-  _descriptionDe: Verringert die Streuung, Schuesse treffen genauer.
+  _displayName: Arc Coil
+  _displayNameDe: Bogenspule
+  _description: 'Hits can arc to the enemies standing next to your target.'
+  _descriptionDe: 'Treffer können auf die Gegner neben deinem Ziel überspringen.'
   _rarity: 1
   _requiredUnlockId:
   _tags:
-  - 0
+  - 9
   _effects: []
   _weaponModifiers:
-  - {fileID: 11400000, guid: 771e7156401c9fa4d8f8d8343465fd3a, type: 2}
+  - {fileID: 11400000, guid: d6cb6cfa09174f479ab5cc97d0ce11b9, type: 2}
   _stackable: 1

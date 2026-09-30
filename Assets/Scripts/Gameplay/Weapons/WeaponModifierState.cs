@@ -52,6 +52,13 @@ namespace Corebound.Gameplay.Weapons
 
         public float ReloadTimeMultiplier { get; private set; } = 1f;
 
+        // NEW_CARD_MECHANICS (2026-09-29): on-hit chances, rolled per shot.
+        public float PoisonChance { get; private set; }
+
+        public float ShockChance { get; private set; }
+
+        public bool VulnerableOnHit { get; private set; }
+
         // The share of DamageMultiplier / FireIntervalMultiplier that came from the loadout's Set
         // Bonuses, kept apart so the HUD can say "from your loadout" separately from "from your
         // cards" (WeaponLoadout.md Runtime).
@@ -120,6 +127,9 @@ namespace Corebound.Gameplay.Weapons
             SpreadAngleMultiplier = 1f;
             MagazineBonus = 0;
             ReloadTimeMultiplier = 1f;
+            PoisonChance = 0f;
+            ShockChance = 0f;
+            VulnerableOnHit = false;
             LoadoutDamageMultiplier = 1f;
             LoadoutFireIntervalMultiplier = 1f;
 
@@ -182,6 +192,8 @@ namespace Corebound.Gameplay.Weapons
             CriticalDamageMultiplier = Mathf.Max(1f, CriticalDamageMultiplier);
             AdditionalProjectiles = Mathf.Max(0, AdditionalProjectiles);
             StatusEffectChance = Mathf.Clamp01(StatusEffectChance);
+            PoisonChance = Mathf.Clamp01(PoisonChance);
+            ShockChance = Mathf.Clamp01(ShockChance);
 
             var changed = modifiersChanged
                 || previousModifierCount != _activeModifiers.Count
@@ -232,7 +244,10 @@ namespace Corebound.Gameplay.Weapons
                 + Mathf.RoundToInt(HeldDamageRampPerSecond * 100f) * (1 << 13)
                 + Mathf.RoundToInt(SpreadAngleMultiplier * 100f) * 7
                 + MagazineBonus * 131
-                + Mathf.RoundToInt(ReloadTimeMultiplier * 100f) * 17;
+                + Mathf.RoundToInt(ReloadTimeMultiplier * 100f) * 17
+                + Mathf.RoundToInt(PoisonChance * 100f) * 19
+                + Mathf.RoundToInt(ShockChance * 100f) * 23
+                + (VulnerableOnHit ? 1 << 20 : 0);
         }
 
         private void Apply(WeaponModifierData modifier)
@@ -296,6 +311,15 @@ namespace Corebound.Gameplay.Weapons
                     return;
                 case WeaponModifierTarget.ReloadTimeMultiplier:
                     ReloadTimeMultiplier *= value;
+                    return;
+                case WeaponModifierTarget.PoisonChance:
+                    PoisonChance += value;
+                    return;
+                case WeaponModifierTarget.ShockChance:
+                    ShockChance += value;
+                    return;
+                case WeaponModifierTarget.VulnerableOnHit:
+                    VulnerableOnHit |= value > 0f;
                     return;
             }
         }

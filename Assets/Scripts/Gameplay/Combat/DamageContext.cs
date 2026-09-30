@@ -12,7 +12,8 @@ namespace Corebound.Gameplay.Combat
             Vector2 hitDirection,
             StatusEffectType? statusEffect,
             bool isCritical = false,
-            string sourceId = null)
+            string sourceId = null,
+            CombatHitEffects hitEffects = CombatHitEffects.None)
         {
             SourceType = sourceType;
             DamageKind = damageKind;
@@ -22,6 +23,7 @@ namespace Corebound.Gameplay.Combat
             StatusEffect = statusEffect;
             IsCritical = isCritical;
             SourceId = sourceId;
+            HitEffects = hitEffects;
         }
 
         public DamageSourceType SourceType { get; }
@@ -44,17 +46,21 @@ namespace Corebound.Gameplay.Combat
         // until then a hit only knew it came from "the player".
         public string SourceId { get; }
 
+        // Card mechanics rolled when the shot was fired (Poison, Shock, Vulnerable); applied by the
+        // receiver on the hit.
+        public CombatHitEffects HitEffects { get; }
+
         // Every rebuild of a context used to repeat all seven constructor arguments by hand, which
         // is how a new field gets silently dropped at one of the six rebuild sites. These copy
         // everything and change one thing.
         public DamageContext WithAmount(float amount)
         {
-            return new DamageContext(SourceType, DamageKind, amount, HitPoint, HitDirection, StatusEffect, IsCritical, SourceId);
+            return new DamageContext(SourceType, DamageKind, amount, HitPoint, HitDirection, StatusEffect, IsCritical, SourceId, HitEffects);
         }
 
         public DamageContext WithHitPoint(Vector2 hitPoint)
         {
-            return new DamageContext(SourceType, DamageKind, Amount, hitPoint, HitDirection, StatusEffect, IsCritical, SourceId);
+            return new DamageContext(SourceType, DamageKind, Amount, hitPoint, HitDirection, StatusEffect, IsCritical, SourceId, HitEffects);
         }
     }
 }

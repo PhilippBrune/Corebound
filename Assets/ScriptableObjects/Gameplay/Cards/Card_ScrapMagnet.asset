@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: Card_ScrapMagnet
   m_EditorClassIdentifier:
   _cardId: card_scrap_magnet
-  _displayName: Wide Magazine
-  _displayNameDe: Grosses Magazin
-  _description: Carry more rounds before reloading.
-  _descriptionDe: Mehr Schuss pro Magazin.
+  _displayName: Field Dressing
+  _displayNameDe: Feldverband
+  _description: 'Patch yourself up after every wave you clear.'
+  _descriptionDe: 'Flick dich nach jeder geschafften Welle wieder zusammen.'
   _rarity: 0
   _requiredUnlockId:
   _tags:
-  - 0
-  _effects: []
-  _weaponModifiers:
-  - {fileID: 11400000, guid: 81af0d9034135074ca85431345291d55, type: 2}
+  - 10
+  _effects:
+  - {fileID: 11400000, guid: 689dbc1f83104bb99e4c763f81d03dbc, type: 2}
+  _weaponModifiers: []
   _stackable: 1

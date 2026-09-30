@@ -13,15 +13,16 @@ MonoBehaviour:
   m_Name: Card_FortifiedRelay
   m_EditorClassIdentifier:
   _cardId: card_fortified_relay
-  _displayName: Marked Volley
-  _displayNameDe: Markierte Salve
-  _description: Every fourth volley is a guaranteed critical hit.
-  _descriptionDe: Jede vierte Salve ist ein garantierter kritischer Treffer.
+  _displayName: Overclock Beacon
+  _displayNameDe: Übertaktungsbake
+  _description: 'Towers near you fire faster. Fight next to your defences.'
+  _descriptionDe: 'Türme in deiner Nähe feuern schneller. Kämpfe an deinen Verteidigungen.'
   _rarity: 1
   _requiredUnlockId:
   _tags:
-  - 7
-  _effects: []
-  _weaponModifiers:
-  - {fileID: 11400000, guid: b4b7ac876a7d2144d9b4205c98b3f2a8, type: 2}
+  - 10
+  - 2
+  _effects:
+  - {fileID: 11400000, guid: 6c09ac34edea425bbbc7e09ffa51e2eb, type: 2}
+  _weaponModifiers: []
   _stackable: 1

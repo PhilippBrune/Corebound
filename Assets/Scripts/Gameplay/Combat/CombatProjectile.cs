@@ -87,7 +87,8 @@ namespace Corebound.Gameplay.Combat
                 _direction,
                 _damageContext.StatusEffect,
                 _damageContext.IsCritical,
-                _damageContext.SourceId);
+                _damageContext.SourceId,
+                _damageContext.HitEffects);
 
             for (var index = 0; index < count; index++)
             {

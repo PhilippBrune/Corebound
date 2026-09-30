@@ -21,6 +21,7 @@ MonoBehaviour:
   _statusDefinitions:
   - {fileID: 11400000, guid: 4600659f79d547258c7e3da3a7aa32e1, type: 2}
   - {fileID: 11400000, guid: a06061af6f3942ce8f1140eb13f0e7cf, type: 2}
+  - {fileID: 11400000, guid: 88ca6620be72477baca7c5d19810cbdf, type: 2}
   _phases:
   - {fileID: 11400000, guid: 07fb7d1dffb94828bf8a2e4b40e8a5f0, type: 2}
   - {fileID: 11400000, guid: d7d5da097f5f49d797e88f43b414dc2c, type: 2}

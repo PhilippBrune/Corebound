@@ -13,15 +13,16 @@ MonoBehaviour:
   m_Name: Card_AssemblyLine
   m_EditorClassIdentifier:
   _cardId: card_assembly_line
-  _displayName: Rapid Reload
-  _displayNameDe: Schnellladen
-  _description: Reload noticeably faster.
-  _descriptionDe: Deutlich schnelleres Nachladen.
+  _displayName: Target Painter
+  _displayNameDe: Zielmarkierer
+  _description: 'Your hits mark enemies, and everything hits a marked enemy harder - your towers too.'
+  _descriptionDe: 'Deine Treffer markieren Gegner, und alles trifft einen markierten Gegner härter - auch deine Türme.'
   _rarity: 1
   _requiredUnlockId:
   _tags:
-  - 0
+  - 4
+  - 2
   _effects: []
   _weaponModifiers:
-  - {fileID: 11400000, guid: dd6cd700f2fa7fd45a710f65b4524744, type: 2}
-  _stackable: 1
+  - {fileID: 11400000, guid: a52857a20fb247778221210244e3a9ea, type: 2}
+  _stackable: 0

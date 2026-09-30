@@ -125,6 +125,22 @@ namespace Corebound.Gameplay.Combat
             _invulnerabilityTimer = 0f;
         }
 
+        public bool IsInvulnerable => _invulnerabilityTimer > 0f;
+
+        // A shield block (Reactive Plating) grants the same grace a real hit would, so the rest of
+        // a volley does not land straight through the moment the shield breaks.
+        public void GrantInvulnerability(float seconds)
+        {
+            _invulnerabilityTimer = Mathf.Max(_invulnerabilityTimer, seconds);
+        }
+
+        // Unlike RestoreHealthNormalized this leaves the invulnerability window alone: a heal on
+        // kill mid-fight must not strip the grace period of the hit the player just took.
+        public float Heal(float amount)
+        {
+            return _healthRuntime.Heal(amount);
+        }
+
         public bool TryReceiveHit(DamageContext damageContext, float invulnerabilitySeconds, out float remainingHealth)
         {
             if (_invulnerabilityTimer > 0f || !_healthRuntime.IsAlive)

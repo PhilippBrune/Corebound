@@ -53,6 +53,10 @@ namespace Corebound.Gameplay.Combat
 
         public float CurrentHealthNormalized => _runtime != null && _runtime.MaxHealth > Mathf.Epsilon ? _runtime.CurrentHealth / _runtime.MaxHealth : 1f;
 
+        public bool IsAlive => _runtime != null && _runtime.IsAlive;
+
+        private PlayerSupportEffects _supportEffects;
+
         public WeaponLoadoutRuntime Loadout => _loadout;
 
         public bool HasPendingWeapon => _loadout != null && _loadout.HasPendingWeapon;
@@ -126,6 +130,9 @@ namespace Corebound.Gameplay.Combat
             {
                 gameObject.AddComponent<Corebound.UI.Gameplay.AimReticlePresenter>();
             }
+
+            _supportEffects = GetComponent<PlayerSupportEffects>() ?? gameObject.AddComponent<PlayerSupportEffects>();
+            _supportEffects.Bind(this, _cardService);
         }
 
         private void OnEnable()
@@ -486,6 +493,25 @@ namespace Corebound.Gameplay.Combat
                 statusEffect = StatusEffectType.Freeze;
             }
 
+            // NEW_CARD_MECHANICS: rolled per projectile, which is the closest thing to "per hit"
+            // that is known when the shot leaves the barrel. The receiver applies them on impact.
+            var hitEffects = CombatHitEffects.None;
+
+            if (modifiers.PoisonChance > 0f && UnityEngine.Random.value < modifiers.PoisonChance)
+            {
+                hitEffects |= CombatHitEffects.Poison;
+            }
+
+            if (modifiers.ShockChance > 0f && UnityEngine.Random.value < modifiers.ShockChance)
+            {
+                hitEffects |= CombatHitEffects.Shock;
+            }
+
+            if (modifiers.VulnerableOnHit)
+            {
+                hitEffects |= CombatHitEffects.Vulnerable;
+            }
+
             return new DamageContext(
                 DamageSourceType.Player,
                 profile != null ? profile.DamageKind : DamageKind.Direct,
@@ -494,7 +520,45 @@ namespace Corebound.Gameplay.Combat
                 direction,
                 statusEffect,
                 isCritical,
-                weapon.WeaponId);
+                weapon.WeaponId,
+                hitEffects);
+        }
+
+        // Sentry Drone: one shot of the primary weapon's projectile at a share of its damage. No
+        // crit, status or card on-hit roll - the drone is support fire, not a seventh weapon slot,
+        // and it counts against the same projectile budget so it cannot push past the cap.
+        public bool FireSupportProjectile(Vector2 origin, Vector2 direction, float damageFraction, string sourceId)
+        {
+            var slot = ResolvePrimarySlot();
+
+            if (slot == null || _runtime == null || !_runtime.IsAlive || _projectilePrefab == null
+                || CombatProjectile.ActivePlayerProjectileCount >= ProjectileBudget)
+            {
+                return false;
+            }
+
+            var weapon = slot.Weapon;
+            var damage = (weapon.DamageProfile != null ? weapon.DamageProfile.BaseDamage : 1f)
+                * WeaponTierRules.DamageMultiplier(slot.Tier)
+                * _progression.Upgrades.GetIncreaseMultiplier(weapon.WeaponId, UpgradableStat.Damage)
+                * _progression.Skills[SkillEffectTarget.WeaponDamageMultiplier]
+                * slot.Modifiers.DamageMultiplier
+                * Mathf.Max(0f, damageFraction);
+            var context = new DamageContext(DamageSourceType.Player, DamageKind.Direct, damage, origin, direction, null, false, sourceId);
+            var projectile = _projectilePool.Get(_projectilePrefab);
+            projectile.Launch(gameObject, weapon.Projectile, origin, direction, context);
+            return true;
+        }
+
+        // Leech Rounds: adds a flat amount of health without touching the invulnerability window.
+        public bool TryHealAmount(float amount)
+        {
+            if (_runtime == null || amount <= 0f || !_runtime.IsAlive || CurrentHealthNormalized >= 0.999f)
+            {
+                return false;
+            }
+
+            return _runtime.Heal(amount) > 0f;
         }
 
         // Pause menu Player tab: every stat as base (+ what perks, skills, upgrades, tiers and set
@@ -622,6 +686,14 @@ namespace Corebound.Gameplay.Combat
             }
 
             damageContext = ApplyIncomingDamageMultiplier(damageContext);
+
+            // Reactive Plating: a ready shield takes the whole hit. Only a hit that would land -
+            // not one inside the invulnerability window - may spend it.
+            if (_runtime.IsAlive && !_runtime.IsInvulnerable && _supportEffects != null && _supportEffects.TryAbsorbHit())
+            {
+                _runtime.GrantInvulnerability(_combatData.CombatBalance != null ? _combatData.CombatBalance.PlayerInvulnerabilitySeconds : 0.35f);
+                return;
+            }
 
             if (!_runtime.TryReceiveHit(damageContext, _combatData.CombatBalance != null ? _combatData.CombatBalance.PlayerInvulnerabilitySeconds : 0.35f, out var remainingHealth))
             {

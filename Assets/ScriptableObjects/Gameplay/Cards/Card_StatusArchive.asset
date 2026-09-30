@@ -13,15 +13,16 @@ MonoBehaviour:
   m_Name: Card_StatusArchive
   m_EditorClassIdentifier: 
   _cardId: card_status_archive
-  _displayName: Impact Charges
-  _displayNameDe: Aufschlagladungen
-  _description: Every hit bursts, damaging what stands next to the target.
-  _descriptionDe: Jeder Treffer explodiert und trifft auch, was neben dem Ziel steht.
+  _displayName: Virulent Strain
+  _displayNameDe: Virulenter Stamm
+  _description: 'Your shots can poison, and when a poisoned enemy dies its poison jumps to the enemies around it.'
+  _descriptionDe: 'Deine Schüsse können vergiften, und stirbt ein vergifteter Gegner, springt das Gift auf die Gegner um ihn herum über.'
   _rarity: 2
   _requiredUnlockId: unlock_card_status
   _tags:
-  - 1
-  _effects: []
+  - 8
+  _effects:
+  - {fileID: 11400000, guid: 616318809d1341b09d840f998c79f45e, type: 2}
   _weaponModifiers:
-  - {fileID: 11400000, guid: b1810508075457e4b83fe39bc3fcb0e4, type: 2}
-  _stackable: 1
+  - {fileID: 11400000, guid: 0eee57337ba4492eb34a4da768002024, type: 2}
+  _stackable: 0

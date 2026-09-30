@@ -137,6 +137,22 @@ namespace Corebound.Gameplay.Combat
         private GameObject _prompt;
         private TextMesh _promptText;
 
+        private void Update()
+        {
+            // Core Aegis (NEW_CARD_MECHANICS C3-1): the Core mends itself between waves.
+            var regen = RunCombatEffects.CoreIntermissionRegen;
+
+            if (regen > 0f && _waveManager != null && _waveManager.State == WaveState.Intermission && Time.timeScale > 0f)
+            {
+                ResolveCoreHitReceiver();
+
+                if (_coreHitReceiver != null && _coreHitReceiver.TryRepairFraction(regen * Time.deltaTime))
+                {
+                    StateChanged?.Invoke();
+                }
+            }
+        }
+
         private void LateUpdate()
         {
             ResolveCoreHitReceiver();

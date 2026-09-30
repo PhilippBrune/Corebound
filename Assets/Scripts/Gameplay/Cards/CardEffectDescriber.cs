@@ -106,6 +106,15 @@ namespace Corebound.Gameplay.Cards
 
         private static string DescribeCardEffect(CardEffectData effect)
         {
+            // The NEW_CARD_MECHANICS targets are mechanics, not stat multipliers, so "+0.5 HealPerKill"
+            // would be the honest-but-useless fallback; each gets a sentence with its real numbers.
+            var mechanic = DescribeMechanic(effect.Target, effect.Value);
+
+            if (mechanic != null)
+            {
+                return mechanic;
+            }
+
             var label = CardTargetLabel(effect.Target);
 
             if (effect.Operation == CardEffectOperation.Add)
@@ -114,6 +123,31 @@ namespace Corebound.Gameplay.Cards
             }
 
             return Percent(effect.Value) + " " + label;
+        }
+
+        private static string DescribeMechanic(CardEffectTarget target, float value)
+        {
+            switch (target)
+            {
+                case CardEffectTarget.PoisonSpreadRadius:
+                    return LocalizationService.Resolve("Poison spreads on death (", "Gift springt beim Tod über (") + Number(value) + LocalizationService.Resolve(" units)", " Einheiten)");
+                case CardEffectTarget.HealOnWaveClear:
+                    return Signed(value * 100f) + LocalizationService.Resolve("% health per wave clear", " % Leben pro geschaffter Welle");
+                case CardEffectTarget.HealPerKill:
+                    return Signed(value) + LocalizationService.Resolve(" health per kill (", " Leben pro Kill (") + Combat.PlayerSupportRules.HealPerKillCapPerWave + LocalizationService.Resolve(" per wave)", " pro Welle)");
+                case CardEffectTarget.ShieldStacks:
+                    return LocalizationService.Resolve("shield blocks one hit (", "Schild blockt einen Treffer (") + Number(Combat.PlayerSupportRules.ShieldRechargeSeconds) + LocalizationService.Resolve(" s recharge)", " s Aufladung)");
+                case CardEffectTarget.TowerAuraFireRate:
+                    return Signed(value * 100f) + LocalizationService.Resolve("% fire rate for towers within ", " % Feuerrate für Türme im Umkreis von ") + Number(Combat.PlayerSupportRules.TowerAuraRadius);
+                case CardEffectTarget.CoreIntermissionRegen:
+                    return LocalizationService.Resolve("Core regenerates ", "Kern regeneriert ") + Number(value * 100f) + LocalizationService.Resolve("%/s in an intermission", " %/s in der Zwischenphase");
+                case CardEffectTarget.CoreDamageTakenMultiplier:
+                    return Percent(value) + LocalizationService.Resolve(" Core damage taken", " erlittener Kernschaden");
+                case CardEffectTarget.SentryDrones:
+                    return Signed(value) + LocalizationService.Resolve(" sentry drone (", " Wächterdrohne (") + Number(Combat.PlayerSupportRules.DroneDamageFraction * 100f) + LocalizationService.Resolve("% of primary damage)", " % des Primärschadens)");
+                default:
+                    return null;
+            }
         }
 
         private static string DescribeWeaponModifier(WeaponModifierData modifier)
@@ -166,6 +200,14 @@ namespace Corebound.Gameplay.Cards
                     return Signed(value) + LocalizationService.Resolve(" magazine", " Magazin");
                 case WeaponModifierTarget.ReloadTimeMultiplier:
                     return Percent(value) + LocalizationService.Resolve(" reload time", " Nachladezeit");
+                case WeaponModifierTarget.PoisonChance:
+                    return Signed(value * 100f) + LocalizationService.Resolve("% poison chance", " % Giftchance");
+                case WeaponModifierTarget.ShockChance:
+                    return Signed(value * 100f) + LocalizationService.Resolve("% chance to arc to ", " % Chance, auf ")
+                        + Combat.RunCombatEffects.ShockTargets + LocalizationService.Resolve(" enemies", " Gegner überzuspringen");
+                case WeaponModifierTarget.VulnerableOnHit:
+                    return LocalizationService.Resolve("hits mark: +", "Treffer markieren: +") + Number(Combat.RunCombatEffects.VulnerableDamageBonus * 100f)
+                        + LocalizationService.Resolve("% damage taken for ", " % erlittener Schaden für ") + Number(Combat.RunCombatEffects.VulnerableSeconds) + " s";
                 default:
                     return string.Empty;
             }

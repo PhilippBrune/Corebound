@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: Card_RelayOverclock
   m_EditorClassIdentifier: 
   _cardId: card_relay_overclock
-  _displayName: Chilling Rounds
-  _displayNameDe: Frostmunition
-  _description: Your hits slow what they strike.
-  _descriptionDe: Deine Treffer verlangsamen Gegner.
+  _displayName: Reactive Plating
+  _displayNameDe: Reaktivpanzerung
+  _description: 'A shield swallows one hit, then recharges. More copies recharge it faster.'
+  _descriptionDe: 'Ein Schild schluckt einen Treffer und lädt sich dann wieder auf. Weitere Kopien laden ihn schneller.'
   _rarity: 1
   _requiredUnlockId: 
   _tags:
-  - 6
-  _effects: []
-  _weaponModifiers:
-  - {fileID: 11400000, guid: ade0bdcec274c5d4aa0f8fb307b69c2c, type: 2}
+  - 10
+  _effects:
+  - {fileID: 11400000, guid: e5355e9cdbf244fdb6ceff6beb908ee4, type: 2}
+  _weaponModifiers: []
   _stackable: 1

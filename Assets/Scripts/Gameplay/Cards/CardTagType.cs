@@ -9,6 +9,13 @@ namespace Corebound.Gameplay.Cards
         StatusEffect,
         Burn,
         Freeze,
-        Critical
+        Critical,
+
+        // Appended 2026-09-29 (C4-1). The icon sheet grows a third row for these; until that art
+        // exists CardTagIconAtlas falls back to the nearest existing icon.
+        Poison,
+        Shock,
+        Support,
+        Summon
     }
 }

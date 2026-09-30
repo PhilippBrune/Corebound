@@ -13,15 +13,16 @@ MonoBehaviour:
   m_Name: Card_SiegeBattery
   m_EditorClassIdentifier:
   _cardId: card_siege_battery
-  _displayName: Sustained Fire
-  _displayNameDe: Dauerfeuer
-  _description: Damage builds the longer you hold fire, and resets when you let go.
-  _descriptionDe: Der Schaden steigt, je laenger du feuerst, und faellt beim Loslassen zurueck.
+  _displayName: Core Aegis
+  _displayNameDe: Kern-Aegis
+  _description: 'The Core mends itself between waves and shrugs off part of every hit.'
+  _descriptionDe: 'Der Kern repariert sich zwischen den Wellen und steckt einen Teil jedes Treffers weg.'
   _rarity: 2
   _requiredUnlockId:
   _tags:
-  - 0
-  _effects: []
-  _weaponModifiers:
-  - {fileID: 11400000, guid: f3ea4ffc0083c3f43ad3ceab6fee6df7, type: 2}
+  - 10
+  _effects:
+  - {fileID: 11400000, guid: 41fae2c708274d41a0dfc9f6d2d78b4b, type: 2}
+  - {fileID: 11400000, guid: 32f792a66dc54d1ea8ca3811ed1f7295, type: 2}
+  _weaponModifiers: []
   _stackable: 0

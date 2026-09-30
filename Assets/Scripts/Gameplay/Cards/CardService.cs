@@ -93,6 +93,19 @@ namespace Corebound.Gameplay.Cards
 
         public float PurchaseCostMultiplier => _modifierSnapshot.PurchaseCostMultiplier;
 
+        // NEW_CARD_MECHANICS (2026-09-29), read live by their consumers.
+        public float HealOnWaveClear => _modifierSnapshot.HealOnWaveClear;
+
+        public float HealPerKill => _modifierSnapshot.HealPerKill;
+
+        public int ShieldStacks => Mathf.RoundToInt(_modifierSnapshot.ShieldStacks);
+
+        public float TowerAuraFireRate => _modifierSnapshot.TowerAuraFireRate;
+
+        public float CoreIntermissionRegen => _modifierSnapshot.CoreIntermissionRegen;
+
+        public int SentryDrones => Mathf.RoundToInt(_modifierSnapshot.SentryDrones);
+
         // Every WeaponModifierData the current build grants, cards and relics together.
         // PlayerCombatController folds these into a WeaponModifierState alongside the three flat
         // multipliers above; nothing here knows which weapon is equipped.
@@ -426,6 +439,13 @@ namespace Corebound.Gameplay.Cards
                 ApplyEffects(hasEvolved ? relic.EvolvedEffects : relic.Effects);
                 CollectWeaponModifiers(relic.WeaponModifiers);
             }
+
+            // The values combat code reads without a CardService reference (hit receivers).
+            Corebound.Gameplay.Combat.RunCombatEffects.Set(
+                _modifierSnapshot.PoisonSpreadRadius,
+                _modifierSnapshot.CoreDamageTakenMultiplier,
+                _modifierSnapshot.CoreIntermissionRegen,
+                _modifierSnapshot.TowerAuraFireRate);
         }
 
         // Duplicates are kept, not deduplicated: two copies of a stackable +10% crit card must

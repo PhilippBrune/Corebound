@@ -172,7 +172,7 @@ Create a 2D card frame for the Legendary rarity of a passive upgrade card in a t
 
 Target: Assets/Art/Cards/Icons/card_tag_icon_sheet.png
 
-**Status:** DELIVERED and wired.
+**Status:** DELIVERED and wired. Rows 1-2 of the 4 x 3 sheet in Asset 108, which adds a third row.
 
 Unity Import Note:
 
@@ -1421,3 +1421,52 @@ The ring is the countdown. It closes in toward the cache as the timer runs out, 
 Prompt:
 
 Create a 2D top-down ring sprite for a sci-fantasy defense roguelite: a single thin amber circle with a soft inner falloff and a crisp outer edge, drawn centred so it can be scaled from large to small over its lifetime. The interior must be almost fully transparent so the arena floor, props and enemies stay visible through it. Match the established Corebound language: restrained, readable, industrial sci-fantasy. Transparent background, no text.
+
+## Card mechanics 2026-09-30 (Assets 108-109)
+
+The ten repurposed cards now carry mechanics the game did not have before: Poison, Shock, four
+support effects and a summoned drone (`Docs/Specs/DIY/NEW_CARD_MECHANICS_2026-09-29.md`, owner
+decision C4-1). Both assets below are already looked for by code, which falls back to a placeholder
+until the file exists. After adding either, mirror it into `Assets/StreamingAssets/Art/` and run
+**Corebound > Validate Art Pipeline**.
+
+### Asset 108 - Card Tag Icon Sheet, Third Row
+
+Target: Assets/Art/Cards/Icons/card_tag_icon_sheet.png (the existing sheet, grown from 4 x 2 to 4 x 3)
+
+**Status:** NOT DELIVERED. `CardTagIconAtlas` reads the row count from the sheet's shape, so the
+4 x 3 sheet works the moment it replaces the current one. Until then Poison and Shock show the
+Status Effect icon, Support the Tower icon and Summon the Weapon icon.
+
+Delivery note: generate only the four new icons as one 4 x 1 strip, then paste it under the current
+sheet so rows 1 and 2 stay exactly as they are. The current sheet is 1088 x 606 (cells 272 x 303),
+so the strip should be 1088 x 303 and the finished sheet 1088 x 909. Keep the old file as
+`be_card_tag_icon_sheet.png` when replacing it. The order must stay Poison, Shock, Support, Summon,
+matching `CardTagType`.
+
+Needed because:
+
+A Poison card under the generic Status Effect icon reads as a Burn or Freeze card, and the four
+support cards and the drone had no icon of their own at all. The icons are how a player reads a
+card before its text (C4, recommendation 1).
+
+Prompt:
+
+Create a 2D UI icon strip of four icons in a single row with even spacing, for the card tags of a sci-fantasy defense roguelite, matching an existing icon set that uses a shared line and shape language, bold simple silhouettes and a restrained palette. The four icons, left to right: Poison - a single droplet inside a small hazard ring, acid green; Shock - a short forked lightning bolt between two small nodes, pale electric blue; Support - a shield outline with a small plus inside it, warm teal; Summon - a small hovering drone seen from above with two rotor arms, cool steel with a cyan eye. Each icon must read at 32 pixels, sit centred in its own square cell, and stay consistent in stroke weight and lighting with the others. Transparent background, no text, no frames, no labels.
+
+### Asset 109 - Sentry Drone
+
+Target: Assets/Art/Combat/Player/sentry_drone.png
+
+**Status:** NOT DELIVERED. `PlayerSupportEffects` loads this path and draws a small cyan diamond
+until it exists.
+
+Needed because:
+
+The Legendary card Sentry Drone puts a drone in orbit around the player that fires at the nearest
+enemy. At the moment it is a flat square, which reads as a pickup rather than as something that is
+shooting on the player's side.
+
+Prompt:
+
+Create a 2D top-down sprite of a small combat drone for a sci-fantasy defense roguelite, seen from directly above and pointing up: a compact armoured body with two short rotor arms, a single forward-facing cyan sensor eye and a tiny gun barrel at the front. It orbits the player at roughly 40 pixels across, so the silhouette must stay clear at that size and read as friendly - use the player's steel-blue and cyan palette, never the red and orange of enemies. Match the established Corebound language: steel-blue structure, pale metallic edges, cyan energy accents, industrial sci-fantasy. Transparent background, no text.

@@ -284,6 +284,17 @@ namespace Corebound.EditorTools
             // the Progression screen, photograph it and the main-menu badge, then start the run.
             // "god3": stage 3 with the debug god mode on, so the run reaches the boss (boss
             // rewards, telegraph art, the guaranteed boss weapon offer).
+            // "cards2": stage 2 with the ten NEW_CARD_MECHANICS cards (2026-09-29) applied at the
+            // start of the run, and a per-wave line of what they did: poison, shock and drone
+            // damage, shield blocks, heals. Combine with god for a run that reaches the boss.
+            var cardsTest = contents.StartsWith("cards", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(CardsTestSessionKey, cardsTest);
+
+            if (cardsTest)
+            {
+                contents = contents.Substring("cards".Length).Trim();
+            }
+
             var godMode = contents.StartsWith("god", System.StringComparison.OrdinalIgnoreCase);
             SessionState.SetBool(GodModeSessionKey, godMode);
 
@@ -329,6 +340,7 @@ namespace Corebound.EditorTools
         public const string ProgressionTestSessionKey = "Corebound.Autopilot.ProgressionTest";
         public const string AscensionTestSessionKey = "Corebound.Autopilot.AscensionTest";
         public const string GodModeSessionKey = "Corebound.Autopilot.GodMode";
+        public const string CardsTestSessionKey = "Corebound.Autopilot.CardsTest";
 
         private static string ReadCommand()
         {
@@ -451,6 +463,21 @@ namespace Corebound.EditorTools
         }
 
         private const float PreferredCombatDistance = 5.5f;
+
+        // 2026-09-30: a profile whose start weapon is the Scorcher (reach 7.5 * 0.36 = 2.7 units)
+        // kited at 5.5 and never landed a shot - 13 damage in 38 s, and the Core fell in wave 1.
+        // The working distance is now inside the primary weapon's reach.
+        private float ResolvePreferredCombatDistance()
+        {
+            var projectile = _playerCombat != null && _playerCombat.ActiveWeapon != null ? _playerCombat.ActiveWeapon.Projectile : null;
+
+            if (projectile == null)
+            {
+                return PreferredCombatDistance;
+            }
+
+            return Mathf.Clamp(projectile.Speed * projectile.LifetimeSeconds * 0.7f, 1.4f, PreferredCombatDistance);
+        }
 
         // A run that has not changed its wave, its alive count or any enemy position for this long
         // is not slow, it is stuck. Reporting that as a finding is the whole point of the harness;
@@ -905,6 +932,7 @@ namespace Corebound.EditorTools
 
             ResolveRuntimeReferences();
             ApplyLoadoutTestOnce();
+            ApplyCardsTestOnce();
             NoteShopVisibility();
             NoteStateTransition();
             TickVisualProbes();
@@ -967,6 +995,7 @@ namespace Corebound.EditorTools
             }
 
             _lastLoggedState = state;
+            LogCardsWave(state.ToString());
             Debug.Log(DebugAutopilot.LogPrefix + " -> " + state
                 + " wave=" + _waveManager.CurrentWaveNumber
                 + " gates[shop=" + _waveManager.RequiresIntermissionShopAction
@@ -1071,7 +1100,7 @@ namespace Corebound.EditorTools
 
             // Kite rather than charge: hold a working distance, circle so chasers never line up a
             // straight run, and bias back toward the middle so it cannot be pinned against a wall.
-            var radial = (distance - PreferredCombatDistance) * 0.6f;
+            var radial = (distance - ResolvePreferredCombatDistance()) * 0.6f;
             var tangent = new Vector2(-direction.y, direction.x) * _strafeSign;
             var move = direction * Mathf.Clamp(radial, -1f, 1f) + tangent * 0.85f;
 
@@ -1483,6 +1512,74 @@ namespace Corebound.EditorTools
             return true;
         }
 
+        private bool _cardsTestApplied;
+
+        private static readonly string[] NewMechanicCards =
+        {
+            "Card_OverchargedRounds", "Card_ScrapMagnet", "Card_TwinBarrel", "Card_AssemblyLine", "Card_RelayOverclock",
+            "Card_FortifiedRelay", "Card_StatusArchive", "Card_BulkSalvage", "Card_SiegeBattery", "Card_ReactorBleed"
+        };
+
+        private void ApplyCardsTestOnce()
+        {
+            if (_cardsTestApplied || _playerCombat == null || !SessionState.GetBool(DebugAutopilot.CardsTestSessionKey, false))
+            {
+                return;
+            }
+
+            var cardService = FindFirstObjectByType<CardService>();
+
+            if (cardService == null)
+            {
+                return;
+            }
+
+            _cardsTestApplied = true;
+
+            for (var index = 0; index < NewMechanicCards.Length; index++)
+            {
+                var card = UnityEditor.AssetDatabase.LoadAssetAtPath<CardData>("Assets/ScriptableObjects/Gameplay/Cards/" + NewMechanicCards[index] + ".asset");
+                var applied = card != null && cardService.TryApplyCard(card);
+                Debug.Log(DebugAutopilot.LogPrefix + " CARD " + (card != null ? card.DisplayName : NewMechanicCards[index] + " (missing)")
+                    + " applied=" + applied + " text=\"" + (card != null ? CardEffectDescriber.Describe(card) : string.Empty) + "\"");
+            }
+
+            Debug.Log(DebugAutopilot.LogPrefix + " CARDS state: shieldStacks=" + cardService.ShieldStacks + " drones=" + cardService.SentryDrones
+                + " healWave=" + cardService.HealOnWaveClear + " healKill=" + cardService.HealPerKill + " aura=" + cardService.TowerAuraFireRate
+                + " coreRegen=" + cardService.CoreIntermissionRegen + " spread=" + Corebound.Gameplay.Combat.RunCombatEffects.PoisonSpreadRadius
+                + " coreTaken=" + Corebound.Gameplay.Combat.RunCombatEffects.CoreDamageTakenMultiplier
+                + " poisonChance=" + _playerCombat.WeaponModifierState.PoisonChance + " shockChance=" + _playerCombat.WeaponModifierState.ShockChance
+                + " mark=" + _playerCombat.WeaponModifierState.VulnerableOnHit);
+        }
+
+        private float _poisonDamage;
+        private float _shockDamage;
+        private float _droneDamage;
+        private int _poisonApplied;
+
+        private void OnCardsStatus(Corebound.Gameplay.Combat.StatusAppliedEventArgs args)
+        {
+            if (args.EffectType == Corebound.Gameplay.Combat.StatusEffectType.Poison)
+            {
+                _poisonApplied++;
+            }
+        }
+
+        private void LogCardsWave(string label)
+        {
+            if (!SessionState.GetBool(DebugAutopilot.CardsTestSessionKey, false))
+            {
+                return;
+            }
+
+            Debug.Log(DebugAutopilot.LogPrefix + " CARDS " + label + ": poisonApplied=" + _poisonApplied
+                + " poisonDmg=" + _poisonDamage.ToString("0.0") + " shockDmg=" + _shockDamage.ToString("0.0") + " droneDmg=" + _droneDamage.ToString("0.0")
+                + " shieldBlocks=" + Corebound.Gameplay.Combat.PlayerSupportEffects.DebugShieldBlocks
+                + " killHeals=" + Corebound.Gameplay.Combat.PlayerSupportEffects.DebugKillHeals
+                + " waveHeals=" + Corebound.Gameplay.Combat.PlayerSupportEffects.DebugWaveHeals
+                + " playerHp=" + (_playerCombat != null ? _playerCombat.CurrentHealthNormalized.ToString("0.00") : "-"));
+        }
+
         private void ApplyLoadoutTestOnce()
         {
             if (!_loadoutTest || _loadoutTestApplied || _playerCombat == null)
@@ -1517,6 +1614,7 @@ namespace Corebound.EditorTools
         private void HookRunSummary()
         {
             Corebound.Gameplay.Combat.CombatEvents.DamageTaken += OnSummaryDamage;
+            Corebound.Gameplay.Combat.CombatEvents.StatusApplied += OnCardsStatus;
             Corebound.Gameplay.Combat.CombatEvents.CombatantDied += OnSummaryDeath;
         }
 
@@ -1524,10 +1622,25 @@ namespace Corebound.EditorTools
         {
             Corebound.Gameplay.Combat.CombatEvents.DamageTaken -= OnSummaryDamage;
             Corebound.Gameplay.Combat.CombatEvents.CombatantDied -= OnSummaryDeath;
+            Corebound.Gameplay.Combat.CombatEvents.StatusApplied -= OnCardsStatus;
         }
 
         private void OnSummaryDamage(Corebound.Gameplay.Combat.DamageEventArgs args)
         {
+            if (args.DamageContext.DamageKind == Corebound.Gameplay.Combat.DamageKind.Poison)
+            {
+                _poisonDamage += args.DamageContext.Amount;
+            }
+            else if (args.DamageContext.DamageKind == Corebound.Gameplay.Combat.DamageKind.Shock)
+            {
+                _shockDamage += args.DamageContext.Amount;
+            }
+
+            if (args.DamageContext.SourceId == "sentry_drone")
+            {
+                _droneDamage += args.DamageContext.Amount;
+            }
+
             switch (args.DamageContext.SourceType)
             {
                 case Corebound.Gameplay.Combat.DamageSourceType.Player:

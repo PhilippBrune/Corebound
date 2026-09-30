@@ -13,16 +13,15 @@ MonoBehaviour:
   m_Name: Card_ReactorBleed
   m_EditorClassIdentifier:
   _cardId: card_reactor_bleed
-  _displayName: Nova Discharge
-  _displayNameDe: Nova-Entladung
-  _description: Your volleys fire as a full ring in every direction.
-  _descriptionDe: Deine Salven feuern als vollstaendiger Ring in alle Richtungen.
+  _displayName: Sentry Drone
+  _displayNameDe: Wächterdrohne
+  _description: 'A drone orbits you and fires at the nearest enemy.'
+  _descriptionDe: 'Eine Drohne umkreist dich und feuert auf den nächsten Gegner.'
   _rarity: 3
   _requiredUnlockId:
   _tags:
-  - 1
-  - 0
-  _effects: []
-  _weaponModifiers:
-  - {fileID: 11400000, guid: ce049fb3821f50f4bbe98c146eb2065c, type: 2}
+  - 11
+  _effects:
+  - {fileID: 11400000, guid: 785d5841518c4112baf62aa5a0403f9a, type: 2}
+  _weaponModifiers: []
   _stackable: 0

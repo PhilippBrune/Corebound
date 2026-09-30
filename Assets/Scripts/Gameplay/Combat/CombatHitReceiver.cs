@@ -161,6 +161,11 @@ namespace Corebound.Gameplay.Combat
         {
             UpdateStatuses(Time.deltaTime);
             UpdateFlash(Time.deltaTime);
+
+            if (_markRenderer != null && _markRenderer.gameObject.activeSelf && !IsMarked)
+            {
+                UpdateMarkVisual();
+            }
         }
 
         // The weapon behind the latest player hit, so a burn or freeze tick that finishes the
@@ -214,6 +219,18 @@ namespace Corebound.Gameplay.Combat
                 }
             }
 
+            // Target Painter: a marked enemy takes more from every source, towers included.
+            if (!IsCoreReceiver && IsMarked)
+            {
+                damageContext = damageContext.WithAmount(damageContext.Amount * (1f + RunCombatEffects.VulnerableDamageBonus));
+            }
+
+            // Core Aegis: the Core itself takes less.
+            if (IsCoreReceiver && RunCombatEffects.CoreDamageTakenMultiplier < 1f)
+            {
+                damageContext = damageContext.WithAmount(damageContext.Amount * RunCombatEffects.CoreDamageTakenMultiplier);
+            }
+
             if (damageContext.SourceType == DamageSourceType.Player && !string.IsNullOrEmpty(damageContext.SourceId))
             {
                 _lastPlayerSourceId = damageContext.SourceId;
@@ -243,12 +260,172 @@ namespace Corebound.Gameplay.Combat
                 TryApplyStatus(damageContext.StatusEffect.Value);
             }
 
+            if (!IsCoreReceiver && damageContext.HitEffects != CombatHitEffects.None)
+            {
+                ApplyHitEffects(source, damageContext);
+            }
+
             if (remainingHealth > 0f)
             {
                 return;
             }
 
             HandleDeath(damageContext);
+        }
+
+        // ---- Card mechanics on hit (NEW_CARD_MECHANICS, 2026-09-29) -----------------------------
+
+        private float _markedUntil;
+        private SpriteRenderer _markRenderer;
+        private static readonly Collider2D[] ChainBuffer = new Collider2D[16];
+        private static readonly Color PoisonTint = new Color(0.55f, 1f, 0.45f, 1f);
+        private static readonly Color MarkColor = new Color(1f, 0.55f, 0.2f, 0.9f);
+
+        private bool IsMarked => _markedUntil > Time.time;
+
+        private bool IsPoisoned => _activeStatuses.ContainsKey(StatusEffectType.Poison);
+
+        private void ApplyHitEffects(GameObject source, DamageContext damageContext)
+        {
+            if ((damageContext.HitEffects & CombatHitEffects.Poison) != 0 && IsAlive)
+            {
+                TryApplyStatus(StatusEffectType.Poison);
+            }
+
+            if ((damageContext.HitEffects & CombatHitEffects.Vulnerable) != 0 && IsAlive)
+            {
+                _markedUntil = Time.time + RunCombatEffects.VulnerableSeconds;
+                UpdateMarkVisual();
+            }
+
+            // A chained hit never chains again - its kind is Shock.
+            if ((damageContext.HitEffects & CombatHitEffects.Shock) != 0 && damageContext.DamageKind != DamageKind.Shock)
+            {
+                ChainShock(source, damageContext);
+            }
+        }
+
+        // Arc Coil: up to ShockTargets other enemies within ShockRadius take a share of the hit.
+        private void ChainShock(GameObject source, DamageContext damageContext)
+        {
+            var count = Physics2D.OverlapCircleNonAlloc(transform.position, RunCombatEffects.ShockRadius, ChainBuffer);
+            var struck = 0;
+
+            for (var index = 0; index < count && struck < RunCombatEffects.ShockTargets; index++)
+            {
+                var receiver = ResolveHostileReceiver(ChainBuffer[index]);
+
+                if (receiver == null || receiver == this || !receiver.IsAlive)
+                {
+                    continue;
+                }
+
+                var direction = ((Vector2)receiver.transform.position - (Vector2)transform.position).normalized;
+                var chained = new DamageContext(
+                    damageContext.SourceType,
+                    DamageKind.Shock,
+                    damageContext.Amount * RunCombatEffects.ShockDamageFraction,
+                    receiver.transform.position,
+                    direction,
+                    null,
+                    false,
+                    damageContext.SourceId);
+                CombatVfxSpawner.SpawnShockArc(transform.position, receiver.transform.position);
+                receiver.ReceiveHit(source, chained);
+                struck++;
+            }
+        }
+
+        // Virulent Strain: a poisoned enemy that dies passes its Poison to the enemies around it.
+        private void SpreadPoisonOnDeath()
+        {
+            var radius = RunCombatEffects.PoisonSpreadRadius;
+
+            if (radius <= 0f || !IsPoisoned)
+            {
+                return;
+            }
+
+            var count = Physics2D.OverlapCircleNonAlloc(transform.position, radius, ChainBuffer);
+
+            for (var index = 0; index < count; index++)
+            {
+                var receiver = ResolveHostileReceiver(ChainBuffer[index]);
+
+                if (receiver != null && receiver != this && receiver.IsAlive)
+                {
+                    receiver._lastPlayerSourceId = _lastPlayerSourceId;
+                    receiver.TryApplyStatus(StatusEffectType.Poison);
+                }
+            }
+        }
+
+        // Only enemies and bosses: a chain or a spread must never reach the Core or a tower.
+        private static CombatHitReceiver ResolveHostileReceiver(Collider2D collider)
+        {
+            if (collider == null)
+            {
+                return null;
+            }
+
+            var owner = collider.attachedRigidbody != null ? collider.attachedRigidbody.gameObject : collider.gameObject;
+            var receiver = owner.GetComponent<CombatHitReceiver>();
+
+            if (receiver == null || receiver.IsCoreReceiver)
+            {
+                return null;
+            }
+
+            var isHostile = owner.GetComponent<Corebound.Gameplay.Enemies.EnemyRuntimeController>() != null
+                || owner.GetComponent<Corebound.Gameplay.Bosses.BossRuntimeController>() != null;
+            return isHostile ? receiver : null;
+        }
+
+        // C5-1: a poisoned enemy is tinted, a marked one wears a ring. The rest colour is what the
+        // hit flash returns to, so the tint survives every flash.
+        private Color ResolveRestColor()
+        {
+            if (_healthRuntime == null || !_healthRuntime.IsAlive)
+            {
+                return _targetData != null ? _targetData.DeadColor : Color.gray;
+            }
+
+            return IsPoisoned ? Color.Lerp(_baseColor, _baseColor * PoisonTint, 0.75f) : _baseColor;
+        }
+
+        private void RefreshRestColor()
+        {
+            if (_spriteRenderer != null && _flashTimer <= 0f)
+            {
+                _spriteRenderer.color = ResolveRestColor();
+            }
+        }
+
+        private void UpdateMarkVisual()
+        {
+            var marked = IsMarked && IsAlive;
+
+            if (!marked && _markRenderer == null)
+            {
+                return;
+            }
+
+            if (_markRenderer == null)
+            {
+                var markObject = new GameObject("VulnerableMark");
+                markObject.transform.SetParent(transform, false);
+                _markRenderer = markObject.AddComponent<SpriteRenderer>();
+                _markRenderer.sprite = Corebound.Gameplay.Shared.DebugSpriteFactory.ResolveRingSprite();
+                _markRenderer.color = MarkColor;
+                _markRenderer.sortingOrder = _spriteRenderer != null ? _spriteRenderer.sortingOrder + 1 : 10;
+                var size = _boxCollider2D != null ? Mathf.Max(_boxCollider2D.size.x, _boxCollider2D.size.y) : 0.8f;
+                markObject.transform.localScale = Vector3.one * (size * 1.5f);
+            }
+
+            if (_markRenderer.gameObject.activeSelf != marked)
+            {
+                _markRenderer.gameObject.SetActive(marked);
+            }
         }
 
         private void ResetState()
@@ -261,6 +438,8 @@ namespace Corebound.Gameplay.Combat
             }
             _healthRuntime = new HealthRuntime(maxHealth);
             _activeStatuses.Clear();
+            _markedUntil = 0f;
+            UpdateMarkVisual();
 
             if (_spriteRenderer != null)
             {
@@ -271,6 +450,10 @@ namespace Corebound.Gameplay.Combat
 
         private void HandleDeath(DamageContext damageContext)
         {
+            SpreadPoisonOnDeath();
+            _markedUntil = 0f;
+            UpdateMarkVisual();
+
             if (_spriteRenderer != null)
             {
                 _spriteRenderer.color = _targetData != null ? _targetData.DeadColor : Color.gray;
@@ -295,6 +478,7 @@ namespace Corebound.Gameplay.Combat
 
             _activeStatuses[effectType] = new StatusEffectRuntime(statusData);
             CombatEvents.RaiseStatusApplied(new StatusAppliedEventArgs(gameObject, effectType, statusData.DurationSeconds));
+            RefreshRestColor();
         }
 
         private void UpdateStatuses(float deltaTime)
@@ -312,10 +496,16 @@ namespace Corebound.Gameplay.Combat
 
                 if (tickDamage > 0f)
                 {
-                    // A burn or freeze kill belongs to the weapon that last hit this target.
+                    // Target Painter's mark counts for damage over time too: "every source".
+                    if (IsMarked)
+                    {
+                        tickDamage *= 1f + RunCombatEffects.VulnerableDamageBonus;
+                    }
+
+                    // A burn, freeze or poison kill belongs to the weapon that last hit this target.
                     var context = new DamageContext(
                         DamageSourceType.Player,
-                        pair.Key == StatusEffectType.Burn ? DamageKind.Burn : DamageKind.Freeze,
+                        pair.Key == StatusEffectType.Burn ? DamageKind.Burn : pair.Key == StatusEffectType.Poison ? DamageKind.Poison : DamageKind.Freeze,
                         tickDamage,
                         transform.position,
                         Vector2.zero,
@@ -355,6 +545,8 @@ namespace Corebound.Gameplay.Combat
             {
                 _activeStatuses.Remove(expiredEffects[index]);
             }
+
+            RefreshRestColor();
         }
 
         private void ApplyHitFlash()
@@ -380,7 +572,7 @@ namespace Corebound.Gameplay.Combat
 
             if (_flashTimer <= 0f)
             {
-                _spriteRenderer.color = _healthRuntime != null && _healthRuntime.IsAlive ? _baseColor : (_targetData != null ? _targetData.DeadColor : Color.gray);
+                _spriteRenderer.color = ResolveRestColor();
             }
         }
 

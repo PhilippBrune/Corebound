@@ -32,7 +32,12 @@ namespace Corebound.Gameplay.Weapons
 
         // Launcher (2026-09-22 weapon set): every hit also bursts for splash damage, not only a
         // shot that expired without hitting (ExplodeOnExpire, Spread Synchronised).
-        ExplodeOnImpact = 16            // Add: > 0 makes every hit burst
+        ExplodeOnImpact = 16,           // Add: > 0 makes every hit burst
+
+        // Appended 2026-09-29 (NEW_CARD_MECHANICS): the on-hit card mechanics.
+        PoisonChance = 17,              // Add: chance per hit to apply Poison
+        ShockChance = 18,               // Add: chance per hit to arc to nearby enemies
+        VulnerableOnHit = 19            // Add: > 0 marks the target; marked enemies take more damage
     }
 
     // Multiplicative targets compose by multiplying, additive ones by summing. Keeping this on the

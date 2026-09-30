@@ -3,7 +3,9 @@
 **Owner request:** *"Create new cards to fill up those free cards with e.g. poisoning effects or other
 support effects which are not implemented / integrated for now."*
 
-Answer each decision with its code, e.g. `C1-1, C2-1 ...`. Nothing here is implemented.
+**Owner decisions (2026-09-29, night):** C1-1, C2-2, C3-1, C4-1 (with an art prompt), C5-1, C6-1.
+**Status: implemented 2026-09-30.** See "As built" at the end for the numbers, the places the build
+differs from the proposal, and what has and has not been seen working.
 
 ---
 
@@ -141,3 +143,68 @@ others reuse. The drone is the largest piece and the easiest to judge last.
 
 A day for Poison with its two cards and the overlay. A day for the four support cards. Half a day for
 Shock and Mark. A day for the drone. Plus the icon art.
+
+---
+
+## As built (2026-09-30)
+
+All ten cards were replaced in place (C1-1). The card files and `_cardId`s are unchanged
+(`Card_OverchargedRounds` is now Toxic Rounds), so collection progress, the Records grid and the
+"collect every card" quest keep counting the same 42 ids. The Set Bonus rule changes are Set
+Bonus-only again.
+
+| Card | Rarity | Tags | Built as |
+| --- | --- | --- | --- |
+| Toxic Rounds | Common | Poison | 15% per projectile to poison. Stackable (chances add). |
+| Field Dressing | Common | Support | Heal 8% of max health at each wave clear. Stackable. |
+| Arc Coil | Rare | Shock | 20% per projectile: arcs to 2 enemies within 2.5 units for 50% of the hit. A chained hit never chains again. Stackable. |
+| Target Painter | Rare | Status Effect, Tower | Every hit marks for 3 s; a marked enemy takes +15% from every source - towers and damage over time included. Not stackable. |
+| Reactive Plating | Rare | Support | Blocks one hit, recharges in 12 s; each further copy x0.8. A block grants the normal hit invulnerability so the rest of a volley cannot land straight through. |
+| Overclock Beacon | Rare | Support, Tower | Towers within 3 units of the player fire 20% faster. Stackable. |
+| Virulent Strain | Epic | Poison | A poisoned enemy that dies poisons every enemy within 2 units, **plus 10% poison chance** (see below). |
+| Leech Rounds | Epic | Support | +0.5 health per player kill, at most 5 healing kills per wave. Not stackable. |
+| Core Aegis | Epic | Support | Core regenerates 1% of max health per second during an Intermission and takes 10% less damage. |
+| Sentry Drone | Legendary | Summon | One drone orbits at 1.1 units and fires every 0.5 s at the nearest enemy within 7 units for 35% of the primary weapon's damage (tier, upgrades, skills and card damage included; no crit, no status, no on-hit roll). Its shots count against the projectile budget. |
+
+**Where the build differs from the proposal, and why**
+
+- **Poison does not stack** (C2-2): one effect like Burn, refreshed on re-application, 0.35 damage
+  every 0.5 s for 4 s. Virulent Strain therefore passes *Poison* on rather than "its stacks".
+- **No stack number over poisoned enemies** (C5-1): with C2-2 there is only ever one stack, so the
+  number would always read 1. A poisoned enemy is tinted green and a marked one wears an orange
+  ring; the tint survives hit flashes because the flash now returns to a "rest colour".
+- **Virulent Strain carries its own 10% poison chance.** Without Toxic Rounds it would otherwise be
+  an Epic that does nothing.
+- **"Up to 5 per wave"** for Leech Rounds is read as five healing kills (2.5 health), not five
+  health: the player has 8 health, and five health per wave would out-heal every other source.
+- **C6-1 (order)** was about sequencing the work. Everything was built in one pass during the
+  overnight session; Poison was built and tested first.
+- The hit effects are rolled **per projectile** when the shot is fired, which is the closest thing
+  to "per hit" known at that moment; a Spread volley rolls each pellet separately.
+- Chains, spreads and the drone only ever pick enemies and bosses, never the Core or a tower.
+
+**New code**: `CombatHitEffects` (the flags and `RunCombatEffects`, the run-wide values combat code
+reads), `PlayerSupportRules` (the fixed numbers the card text and the code share),
+`PlayerSupportEffects` (heals, shield, drone; attached by `PlayerCombatController`),
+`CombatShockArcRuntime` (the bolt). `CardEffectDescriber` has a sentence for every new target - an
+unknown target printing nothing was the original "missing description" bug.
+
+**New assets**: `StatusEffect_Poison` (added to every enemy, every boss and the scene dummy),
+eight `CardEffect_*` and four `WeaponModifier_*` assets. The ten weapon-modifier assets the old
+cards used (`WeaponModifier_OverchargedRounds`, `_ScrapMagnet`, `_TwinBarrel`, `_AssemblyLine`,
+`_RelayOverclock`, `_FortifiedRelay`, `_StatusArchive`, `_BulkSalvage`, `_SiegeBattery`,
+`_ReactorBleed`) and nine `CardEffect_*` assets of the same names are now referenced by nothing.
+They are left in place until the owner says they can go.
+
+**Art**: GRAPHICS_ASSET_PROMPTS Asset 108 (third row of the tag icon sheet) and Asset 109 (the
+drone). Both are looked for by code and fall back to a placeholder.
+
+**Verified 2026-09-30** with the new autopilot variant `cards1` (all ten cards applied at run start,
+Profile 2): every card applied and printed its description; over a Stage 1 run Poison was applied
+38 times, Shock and the drone dealt damage every wave, and the shield blocked 5 hits. The boss
+screenshot shows the shield ring and the drone.
+
+**Not verified**: the two heals (the autopilot stayed at full health until the boss, where both
+correctly have nothing to do), the tower aura and the Core regeneration (not measured), the mark
+ring and the poison tint (not caught in a screenshot), and the tag-icon fallback on a real reward
+screen.

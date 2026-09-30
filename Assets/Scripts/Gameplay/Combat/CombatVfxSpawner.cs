@@ -232,7 +232,27 @@ namespace Corebound.Gameplay.Combat
                 case StatusEffectType.Freeze:
                     SpawnBurst(position, _freezePulseSprite, _freezePulseColor, _statusEffectVfxSize, _statusEffectVfxLifetimeSeconds, 44, EffectsIntensityScale, Color.white, _freezeFrames);
                     break;
+                case StatusEffectType.Poison:
+                    // There is no poison sheet; the frost impact is pale enough to take a green
+                    // tint cleanly, where the orange flame frames turn to mud.
+                    SpawnBurst(position, _freezePulseSprite, PoisonBurstColor, _statusEffectVfxSize, _statusEffectVfxLifetimeSeconds, 44, EffectsIntensityScale, PoisonBurstColor, _freezeFrames);
+                    break;
             }
+        }
+
+        private static readonly Color PoisonBurstColor = new Color(0.45f, 1f, 0.35f, 0.9f);
+
+        public static void SpawnShockArc(Vector2 from, Vector2 to)
+        {
+            CombatShockArcRuntime.Spawn(from, to);
+        }
+
+        // Reactive Plating took a hit: the ring flashes outward so the player knows why nothing hurt.
+        private static readonly Color ShieldBreakColor = new Color(0.45f, 0.85f, 1f, 0.9f);
+
+        public static void SpawnShieldBreak(Vector2 position)
+        {
+            SpawnBurst(position, Corebound.Gameplay.Shared.DebugSpriteFactory.ResolveRingSprite(), ShieldBreakColor, 2.2f, 0.25f, 46, 1f, ShieldBreakColor);
         }
 
         private static void SpawnBurst(Vector2 position, Sprite artSprite, Color fallbackColor, float targetSize, float lifetimeSeconds, int sortingOrder, float intensityScale)

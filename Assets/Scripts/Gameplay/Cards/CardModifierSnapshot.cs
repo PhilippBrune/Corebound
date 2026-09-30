@@ -18,8 +18,33 @@ namespace Corebound.Gameplay.Cards
 
         public float PurchaseCostMultiplier { get; private set; } = 1f;
 
+        // NEW_CARD_MECHANICS (2026-09-29). Additive ones start at 0.
+        public float PoisonSpreadRadius { get; private set; }
+
+        public float HealOnWaveClear { get; private set; }
+
+        public float HealPerKill { get; private set; }
+
+        public float ShieldStacks { get; private set; }
+
+        public float TowerAuraFireRate { get; private set; }
+
+        public float CoreIntermissionRegen { get; private set; }
+
+        public float CoreDamageTakenMultiplier { get; private set; } = 1f;
+
+        public float SentryDrones { get; private set; }
+
         public void Reset()
         {
+            PoisonSpreadRadius = 0f;
+            HealOnWaveClear = 0f;
+            HealPerKill = 0f;
+            ShieldStacks = 0f;
+            TowerAuraFireRate = 0f;
+            CoreIntermissionRegen = 0f;
+            CoreDamageTakenMultiplier = 1f;
+            SentryDrones = 0f;
             WeaponDamageMultiplier = 1f;
             WeaponFireIntervalMultiplier = 1f;
             ResourceGainMultiplier = 1f;
@@ -62,6 +87,31 @@ namespace Corebound.Gameplay.Cards
                     return;
                 case CardEffectTarget.PurchaseCostMultiplier:
                     PurchaseCostMultiplier = ApplyOperation(PurchaseCostMultiplier, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.PoisonSpreadRadius:
+                    // Two copies spread no further than one; the radius is a reach, not a sum.
+                    PoisonSpreadRadius = UnityEngine.Mathf.Max(PoisonSpreadRadius, effect.Value);
+                    return;
+                case CardEffectTarget.HealOnWaveClear:
+                    HealOnWaveClear = ApplyOperation(HealOnWaveClear, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.HealPerKill:
+                    HealPerKill = ApplyOperation(HealPerKill, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.ShieldStacks:
+                    ShieldStacks = ApplyOperation(ShieldStacks, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.TowerAuraFireRate:
+                    TowerAuraFireRate = ApplyOperation(TowerAuraFireRate, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.CoreIntermissionRegen:
+                    CoreIntermissionRegen = ApplyOperation(CoreIntermissionRegen, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.CoreDamageTakenMultiplier:
+                    CoreDamageTakenMultiplier = ApplyOperation(CoreDamageTakenMultiplier, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.SentryDrones:
+                    SentryDrones = ApplyOperation(SentryDrones, effect.Operation, effect.Value);
                     return;
             }
         }

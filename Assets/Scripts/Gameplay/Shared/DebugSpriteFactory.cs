@@ -27,6 +27,40 @@ namespace Corebound.Gameplay.Shared
             return sprite;
         }
 
+        private static Sprite _ringSprite;
+
+        // A thin one-unit ring, drawn once and shared: the Target Painter mark on enemies and the
+        // Reactive Plating shield around the player (NEW_CARD_MECHANICS, 2026-09-29).
+        public static Sprite ResolveRingSprite()
+        {
+            if (_ringSprite != null)
+            {
+                return _ringSprite;
+            }
+
+            const int size = 64;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var pixels = new Color32[size * size];
+            var centre = (size - 1) * 0.5f;
+
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var distance = Mathf.Sqrt((x - centre) * (x - centre) + (y - centre) * (y - centre));
+                    var alpha = Mathf.Min(Mathf.Clamp01(31f - distance), Mathf.Clamp01(distance - 26f));
+                    pixels[y * size + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(alpha * 255f));
+                }
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            texture.hideFlags = HideFlags.DontSaveInEditor;
+            _ringSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
+            _ringSprite.hideFlags = HideFlags.DontSaveInEditor;
+            return _ringSprite;
+        }
+
         public static Texture2D LoadTextureFromProjectFile(string projectRelativePath)
         {
             if (!TryReadArtBytes(projectRelativePath, out var bytes))
@@ -177,6 +211,24 @@ namespace Corebound.Gameplay.Shared
         // Docs/Specs/Graphics.md documents for StageArenaArtPresenter's ground/prop atlases.
         // column/row are 0-based from the top-left, matching how the sheets read visually;
         // Unity's pixel-Rect origin is bottom-left, so the row is flipped internally.
+        // The pixel size of an atlas sheet, loading it into the same cache the cell loader uses so
+        // asking costs nothing extra. Zero when the file cannot be read.
+        public static Vector2Int ResolveProjectAtlasSize(string projectRelativePath)
+        {
+            if (string.IsNullOrWhiteSpace(projectRelativePath))
+            {
+                return Vector2Int.zero;
+            }
+
+            if (!AtlasTextureCache.TryGetValue(projectRelativePath, out var texture) || texture == null)
+            {
+                texture = LoadTextureFromProjectFile(projectRelativePath);
+                AtlasTextureCache[projectRelativePath] = texture;
+            }
+
+            return texture != null ? new Vector2Int(texture.width, texture.height) : Vector2Int.zero;
+        }
+
         public static Sprite LoadProjectAtlasCellSprite(string projectRelativePath, int column, int row, int columns, int rows, float pixelsPerUnit = 100f)
         {
             if (string.IsNullOrWhiteSpace(projectRelativePath) || columns <= 0 || rows <= 0)
