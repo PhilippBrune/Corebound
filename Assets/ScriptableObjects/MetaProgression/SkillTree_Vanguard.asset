@@ -80,6 +80,7 @@ MonoBehaviour:
           _operation: 0
           _value: 0.05
       _iconSpritePath: 
+      _graphPosition: {x: 0, y: 180}
     - _nodeId: combat_armory
       _displayName: 'Armory'
       _displayNameDe: 'Waffenkammer'
@@ -138,6 +139,7 @@ MonoBehaviour:
           _operation: 0
           _value: 0.02
       _iconSpritePath: 
+      _graphPosition: {x: 0, y: 280}
     - _nodeId: combat_second_wind
       _displayName: 'Second Wind'
       _displayNameDe: 'Zweiter Atem'
@@ -196,6 +198,7 @@ MonoBehaviour:
           _operation: 0
           _value: 0.03
       _iconSpritePath: 
+      _graphPosition: {x: 0, y: 380}
     - _nodeId: combat_full_arsenal
       _displayName: 'Full Arsenal'
       _displayNameDe: 'Volles Arsenal'
@@ -254,6 +257,7 @@ MonoBehaviour:
           _operation: 0
           _value: 2
       _iconSpritePath: 
+      _graphPosition: {x: 0, y: 480}
     - _nodeId: vanguard_full_kit
       _displayName: 'Full Kit'
       _displayNameDe: 'Volle Ausrüstung'
@@ -290,6 +294,7 @@ MonoBehaviour:
           _operation: 0
           _value: 0.03
       _iconSpritePath: 
+      _graphPosition: {x: 0, y: 580}
   - _branchId: construction
     _displayName: Construction
     _displayNameDe: Bau
@@ -353,6 +358,7 @@ MonoBehaviour:
           _operation: 0
           _value: 0.05
       _iconSpritePath: 
+      _graphPosition: {x: 180, y: 0}
     - _nodeId: construction_field_repair
       _displayName: 'Field Repair'
       _displayNameDe: 'Feldreparatur'
@@ -411,6 +417,7 @@ MonoBehaviour:
           _operation: 0
           _value: 0.03
       _iconSpritePath: 
+      _graphPosition: {x: 280, y: 0}
     - _nodeId: construction_overwatch
       _displayName: 'Overwatch'
       _displayNameDe: 'Überwachung'
@@ -469,6 +476,7 @@ MonoBehaviour:
           _operation: 0
           _value: 0.06
       _iconSpritePath: 
+      _graphPosition: {x: 380, y: 0}
     - _nodeId: construction_last_bastion
       _displayName: 'Last Bastion'
       _displayNameDe: 'Letzte Bastion'
@@ -527,6 +535,7 @@ MonoBehaviour:
           _operation: 0
           _value: -0.1
       _iconSpritePath: 
+      _graphPosition: {x: 480, y: 0}
   - _branchId: industry
     _displayName: Industry
     _displayNameDe: Industrie
@@ -590,6 +599,7 @@ MonoBehaviour:
           _operation: 0
           _value: -0.02
       _iconSpritePath: 
+      _graphPosition: {x: 0, y: -180}
     - _nodeId: industry_dividend
       _displayName: 'Dividend'
       _displayNameDe: 'Dividende'
@@ -648,6 +658,7 @@ MonoBehaviour:
           _operation: 0
           _value: -0.08
       _iconSpritePath: 
+      _graphPosition: {x: 0, y: -280}
     - _nodeId: industry_scrap_surge
       _displayName: 'Magnetise'
       _displayNameDe: 'Magnetisieren'
@@ -706,6 +717,7 @@ MonoBehaviour:
           _operation: 0
           _value: 8
       _iconSpritePath: 
+      _graphPosition: {x: 0, y: -380}
     - _nodeId: industry_deep_reserves
       _displayName: 'Deep Reserves'
       _displayNameDe: 'Tiefe Reserven'
@@ -764,6 +776,7 @@ MonoBehaviour:
           _operation: 0
           _value: 5
       _iconSpritePath: 
+      _graphPosition: {x: 0, y: -480}
   - _branchId: command
     _displayName: Command
     _displayNameDe: Kommando
@@ -830,6 +843,7 @@ MonoBehaviour:
           _operation: 0
           _value: -0.02
       _iconSpritePath: 
+      _graphPosition: {x: -180, y: 0}
     - _nodeId: command_veterans_cache
       _displayName: 'Veteran''s Cache'
       _displayNameDe: 'Veteranenvorrat'
@@ -888,6 +902,7 @@ MonoBehaviour:
           _operation: 0
           _value: 0.03
       _iconSpritePath: 
+      _graphPosition: {x: -280, y: 0}
     - _nodeId: command_war_chest
       _displayName: 'Wider Draft'
       _displayNameDe: 'Breitere Auswahl'
@@ -946,6 +961,7 @@ MonoBehaviour:
           _operation: 0
           _value: 0.05
       _iconSpritePath: 
+      _graphPosition: {x: -380, y: 0}
     - _nodeId: command_relic_hunter
       _displayName: 'Relic Hunter'
       _displayNameDe: 'Reliktjäger'
@@ -1007,6 +1023,7 @@ MonoBehaviour:
           _operation: 0
           _value: 0.01
       _iconSpritePath: 
+      _graphPosition: {x: -480, y: 0}
   _ascensionPool:
   - _bonusId: asc_weapon_damage
     _displayName: '+2% weapon damage'
