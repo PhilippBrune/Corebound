@@ -11,6 +11,10 @@ namespace Corebound.Gameplay.Cards
         // registered for CardTagIconAtlas, which is static and has no reference of its own.
         [SerializeField] private Corebound.Gameplay.Shared.SpriteSheetData _tagIconSheet;
 
+        // Asset 108 (2026-09-30): the tags added for the new card mechanics arrived as their own
+        // file, card_tag_icon_sheet_2.png, rather than a third row of the first sheet.
+        [SerializeField] private Corebound.Gameplay.Shared.SpriteSheetData _tagIconSheetExtra;
+
         public CardData[] Cards => _cards;
 
         public Corebound.Gameplay.Shared.SpriteSheetData TagIconSheet => _tagIconSheet;
@@ -18,6 +22,7 @@ namespace Corebound.Gameplay.Cards
         private void OnEnable()
         {
             Corebound.Gameplay.Shared.SpriteSheetData.Register(_tagIconSheet);
+            Corebound.Gameplay.Shared.SpriteSheetData.Register(_tagIconSheetExtra);
         }
     }
 }

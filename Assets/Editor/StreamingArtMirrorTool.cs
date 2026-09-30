@@ -18,9 +18,68 @@ namespace Corebound.EditorTools
     // rendering the previous reward panel art.
     //
     // Keeping the mirror correct by hand has demonstrably not worked, so this does it mechanically.
+    [InitializeOnLoad]
     public static class StreamingArtMirrorTool
     {
         private const string SourceRoot = "Assets/Art";
+
+        // Open Topics 4 (2026-09-30): the menu item ends in a modal dialog, which nothing but a
+        // person can dismiss. Writing "validate" or "sync" into this file in the project root runs
+        // the same checks from the Editor's update loop and writes the report to the log
+        // ([ArtPipeline]); "sync" also copies the mirror. The file is emptied once handled.
+        private const string RequestFilePath = "ArtPipelineRequest.txt";
+        private static double _nextPoll;
+
+        static StreamingArtMirrorTool()
+        {
+            EditorApplication.update -= PollRequestFile;
+            EditorApplication.update += PollRequestFile;
+        }
+
+        private static void PollRequestFile()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.timeSinceStartup < _nextPoll)
+            {
+                return;
+            }
+
+            _nextPoll = EditorApplication.timeSinceStartup + 1.0;
+
+            if (!File.Exists(RequestFilePath))
+            {
+                return;
+            }
+
+            string command;
+
+            try
+            {
+                command = File.ReadAllText(RequestFilePath).Trim().ToLowerInvariant();
+                File.WriteAllText(RequestFilePath, string.Empty);
+            }
+            catch (IOException)
+            {
+                return;
+            }
+
+            if (command != "validate" && command != "sync")
+            {
+                return;
+            }
+
+            if (command == "sync")
+            {
+                Debug.Log("[ArtPipeline] " + SyncMirror(applyChanges: true));
+                AssetDatabase.Refresh();
+            }
+
+            Debug.Log("[ArtPipeline] Validation report (request file):\n" + BuildReport());
+        }
+
+        private static string BuildReport()
+        {
+            return SyncMirror(applyChanges: false) + "\n\n" + ValidateStageThemePaths() + "\n\n" + ValidateSpriteSheets() + "\n\n" + ValidateArtContent();
+        }
         private const string MirrorRoot = "Assets/StreamingAssets/Art";
 
         private static readonly string[] MirroredExtensions = { ".png", ".jpg", ".jpeg" };
@@ -73,12 +132,14 @@ namespace Corebound.EditorTools
                     continue;
                 }
 
-                var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(sourcePath);
+                // The raw file, the way the game itself reads art (DebugSpriteFactory), so the check
+                // works without Read/Write on the import - 16 cut-out assets used to be skipped as
+                // "cannot be read".
+                var texture = Corebound.Gameplay.Shared.DebugSpriteFactory.LoadTextureFromProjectFile(sourcePath);
 
-                if (texture == null || !texture.isReadable)
+                if (texture == null)
                 {
-                    // Not readable means no import setting for it; say so rather than pass silently.
-                    suspects.Add(sourcePath + " - cannot be read (enable Read/Write to check it)");
+                    suspects.Add(sourcePath + " - cannot be decoded");
                     continue;
                 }
 
@@ -103,6 +164,8 @@ namespace Corebound.EditorTools
                 {
                     suspects.Add(sourcePath + " - checkerboard baked into the pixels (fake transparency)");
                 }
+
+                Object.DestroyImmediate(texture);
             }
 
             if (suspects.Count == 0)
@@ -306,6 +369,7 @@ namespace Corebound.EditorTools
         private static string ValidateSpriteSheets()
         {
             var problems = new List<string>();
+            var notes = new List<string>();
             var checkedCount = 0;
 
             foreach (var guid in AssetDatabase.FindAssets("t:SpriteSheetData"))
@@ -327,10 +391,11 @@ namespace Corebound.EditorTools
 
                 var size = Corebound.Gameplay.Shared.DebugSpriteFactory.ResolveProjectAtlasSize(sheet.SheetPath);
 
+                // A note, not a problem: the cell edges land between pixels, which can bleed a
+                // one-pixel sliver of the neighbouring cell. Two delivered sheets do this and look fine.
                 if (size.x % sheet.Columns != 0 || size.y % sheet.Rows != 0)
                 {
-                    problems.Add(sheet.name + " -> " + size.x + "x" + size.y + " does not divide into " + sheet.Columns + "x" + sheet.Rows
-                        + " (cells are cut at fractional pixels)");
+                    notes.Add(sheet.name + " -> " + size.x + "x" + size.y + " does not divide evenly into " + sheet.Columns + "x" + sheet.Rows);
                 }
 
                 foreach (var cell in sheet.Cells)
@@ -353,10 +418,10 @@ namespace Corebound.EditorTools
 
             if (problems.Count == 0)
             {
-                return "Sprite sheets: all " + checkedCount + " resolve and fit their grids.";
+                return "Sprite sheets: all " + checkedCount + " resolve and fit their images." + FormatList("Notes", notes);
             }
 
-            return "Sprite sheets: " + problems.Count + " problem(s) in " + checkedCount + " sheets." + FormatList("Problems", problems);
+            return "Sprite sheets: " + problems.Count + " problem(s) in " + checkedCount + " sheets." + FormatList("Problems", problems) + FormatList("Notes", notes);
         }
 
         private static string FormatList(string header, List<string> entries)

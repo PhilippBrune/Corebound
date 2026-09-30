@@ -1432,11 +1432,12 @@ until the file exists. After adding either, mirror it into `Assets/StreamingAsse
 
 ### Asset 108 - Card Tag Icon Sheet, Third Row
 
-Target: Assets/Art/Cards/Icons/card_tag_icon_sheet.png (the existing sheet, grown from 4 x 2 to 4 x 3)
+Target: Assets/Art/Cards/Icons/card_tag_icon_sheet_2.png (delivered as its own file)
 
-**Status:** NOT DELIVERED. `CardTagIconAtlas` reads the row count from the sheet's shape, so the
-4 x 3 sheet works the moment it replaces the current one. Until then Poison and Shock show the
-Status Effect icon, Support the Tower icon and Summon the Weapon icon.
+**Status:** DELIVERED and wired (2026-09-30). It arrived as a separate 911 x 911 file with the four
+icons in one row rather than as a third row of the first sheet, so it has its own sheet asset,
+`SpriteSheet_CardTagIcons2`, with a square named cell per icon; `CardTagIconAtlas` takes Poison,
+Shock, Support and Summon from it. The first sheet is unchanged.
 
 Delivery note: generate only the four new icons as one 4 x 1 strip, then paste it under the current
 sheet so rows 1 and 2 stay exactly as they are. The current sheet is 1088 x 606 (cells 272 x 303),
@@ -1458,8 +1459,9 @@ Create a 2D UI icon strip of four icons in a single row with even spacing, for t
 
 Target: Assets/Art/Combat/Player/sentry_drone.png
 
-**Status:** NOT DELIVERED. `PlayerSupportEffects` loads this path and draws a small cyan diamond
-until it exists.
+**Status:** DELIVERED and wired (2026-09-30). `PlayerSupportEffects` loads it, fits it by its
+opaque area (the drone fills about 580 of the 911 px canvas) and turns it towards its target; it is
+drawn gun-down like the player, so the rotation offset is +90°.
 
 Needed because:
 

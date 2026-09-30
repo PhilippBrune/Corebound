@@ -15,7 +15,7 @@ MonoBehaviour:
   _sheetPath: Assets/Art/Cards/Icons/card_tag_icon_sheet.png
   _columns: 4
   _rows: 2
-  _cellAspect: 1.114
+  _cellAspect: 0
   _cells:
   - _name: weapon
     _column: 0
@@ -83,42 +83,6 @@ MonoBehaviour:
   - _name: critical
     _column: 3
     _row: 1
-    _pixelRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 0
-      height: 0
-  - _name: poison
-    _column: 0
-    _row: 2
-    _pixelRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 0
-      height: 0
-  - _name: shock
-    _column: 1
-    _row: 2
-    _pixelRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 0
-      height: 0
-  - _name: support
-    _column: 2
-    _row: 2
-    _pixelRect:
-      serializedVersion: 2
-      x: 0
-      y: 0
-      width: 0
-      height: 0
-  - _name: summon
-    _column: 3
-    _row: 2
     _pixelRect:
       serializedVersion: 2
       x: 0

@@ -267,7 +267,8 @@ namespace Corebound.Gameplay.Combat
                 if (_player.FireSupportProjectile(position, direction, PlayerSupportRules.DroneDamageFraction, DroneSourceId))
                 {
                     drone.Cooldown = PlayerSupportRules.DroneFireIntervalSeconds;
-                    drone.Renderer.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f);
+                    // sentry_drone.png (Asset 109) is drawn with its gun pointing down, like the player.
+                    drone.Renderer.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + 90f);
                 }
             }
         }
@@ -281,11 +282,13 @@ namespace Corebound.Gameplay.Combat
             if (sprite != null)
             {
                 renderer.sprite = sprite;
-                Corebound.Gameplay.Shared.DebugSpriteFactory.FitTransformToSprite(droneObject.transform, sprite, new Vector2(0.45f, 0.45f));
+
+                // Measured by the opaque drone, not the 911 px canvas it sits in.
+                Corebound.Gameplay.Shared.DebugSpriteFactory.FitTransformToSpriteContent(droneObject.transform, sprite, sprite.texture, new Vector2(0.5f, 0.5f));
             }
             else
             {
-                // No art yet (GRAPHICS_ASSET_PROMPTS Asset 109): a small bright diamond.
+                // Only if sentry_drone.png (Asset 109) cannot be read: a small bright diamond.
                 renderer.sprite = Corebound.Gameplay.Shared.DebugSpriteFactory.CreateSquare(Corebound.Gameplay.Shared.DebugSpriteFactory.UnitPixelsPerUnit);
                 renderer.color = DroneColor;
                 droneObject.transform.localScale = Vector3.one * 0.28f;
