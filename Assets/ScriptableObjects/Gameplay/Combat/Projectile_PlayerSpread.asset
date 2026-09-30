@@ -12,11 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c23467e541d3df7429768d96d4ab5f2c, type: 3}
   m_Name: Projectile_PlayerSpread
   m_EditorClassIdentifier: 
-  _atlasSheetPath: Assets/Art/Combat/Projectiles/projectile_sheet_core.png
-  _atlasColumn: 0
-  _atlasRow: 1
-  _atlasColumns: 4
-  _atlasRows: 4
+  _sheet: {fileID: 11400000, guid: 1bb4e08bb89f4ac0b82f408828035cde, type: 2}
+  _sheetCell: spread
   _speed: 9
   _lifetimeSeconds: 0.95
   _radius: 0.17

@@ -16,13 +16,11 @@ namespace Corebound.Gameplay.Weapons
         [SerializeField] private Sprite _iconSprite;
         [SerializeField] private string _iconSpritePath = string.Empty;
 
-        // Asset 102 is one 3x3 icon sheet for all nine weapons, so a weapon names its cell rather
-        // than its own file. Columns 0 means "the whole image", which is how a single-file icon
-        // still works. Until the sheet exists the HUD falls back to the weapon's short label.
-        [SerializeField] private int _iconAtlasColumns;
-        [SerializeField] private int _iconAtlasRows;
-        [SerializeField] private int _iconColumn;
-        [SerializeField] private int _iconRow;
+        // Asset 102 is one 3x3 icon sheet for all nine weapons, so a weapon names its cell of the
+        // sheet asset (which owns the grid) rather than its own file. A single-file icon still
+        // works through _iconSpritePath. With neither, the HUD shows the weapon's short label.
+        [SerializeField] private Corebound.Gameplay.Shared.SpriteSheetData _iconSheet;
+        [SerializeField] private string _iconCell = string.Empty;
         [SerializeField] private Color _accentColor = new Color(1f, 0.72f, 0.35f, 1f);
 
         [Header("Muzzle")]
@@ -93,13 +91,13 @@ namespace Corebound.Gameplay.Weapons
                 return _iconSprite;
             }
 
-            if (string.IsNullOrWhiteSpace(_iconSpritePath))
+            if (_iconSheet != null)
             {
-                return null;
+                return _iconSheet.LoadCell(_iconCell);
             }
 
-            return _iconAtlasColumns > 0 && _iconAtlasRows > 0
-                ? Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectAtlasCellSprite(_iconSpritePath, _iconColumn, _iconRow, _iconAtlasColumns, _iconAtlasRows)
+            return string.IsNullOrWhiteSpace(_iconSpritePath)
+                ? null
                 : Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(_iconSpritePath);
         }
     }

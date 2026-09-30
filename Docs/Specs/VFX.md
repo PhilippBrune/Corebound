@@ -27,9 +27,18 @@ Atlas-Aufteilungen stehen in den drei Detaildokumenten.
   `Instantiate` pro Treffer.
 - **Farbe trägt Bedeutung**: Gold für kritische Treffer, Orange-Rot für Burn, Cyan für Freeze und
   Verlangsamung, Violett für Boss- und Elite-Telegraphs, Grün nur für Heilung und Reparatur.
+  **Ergänzt 2026-09-30** für die neuen Kartenmechaniken: Säuregelb (#D9F24D) für Poison — bewusst
+  gelber als das Heil-Grün —, Weiß-Blau (#D1E6FF) für Shock-Bögen, Magenta (#FF59BF) für die
+  Target-Painter-Markierung, Hellblau (#73D9FF) für den Schild des Spielers (nur am Spieler, daher
+  keine Verwechslung mit Freeze an Gegnern).
 - Effekte werden aus Atlas-Zellen per Pixel-Rect geschnitten; die Zuordnung Zelle → Funktion steht an
-  genau einer Stelle im Code und im zugehörigen Dokument (siehe
-  [Graphics.md](Graphics.md), Technical Design).
+  genau einer Stelle (siehe [Graphics.md](Graphics.md), Technical Design). **Seit 2026-09-30** ist
+  diese Stelle für Sheets mit mehreren Zellen ein `SpriteSheetData`-Asset unter
+  `Assets/ScriptableObjects/Art/` (Pfad, Raster, benannte Zellen, optional Pixel-Rects): beide
+  Projektil-Sheets, das Waffen-Icon-Sheet, das Tag-Icon-Sheet und die beiden Impact-Sheets. Ein
+  Verbraucher nennt nur noch die Zelle. `Corebound > Validate Art Pipeline` prüft die Pfade und ob
+  das Bild sich glatt ins Raster teilen lässt. Die Boden- und Prop-Atlanten der Stages sind noch
+  nicht umgestellt (Open Topics).
 
 ## Offene Punkte
 

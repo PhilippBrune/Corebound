@@ -14,11 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _presentationId: weapon_presentation_railgun
   _iconSprite: {fileID: 0}
-  _iconSpritePath: Assets/Art/UI/HUD/weapon_icon_sheet.png
-  _iconAtlasColumns: 3
-  _iconAtlasRows: 3
-  _iconColumn: 2
-  _iconRow: 1
+  _iconSpritePath:
+  _iconSheet: {fileID: 11400000, guid: 568f0ee9c1f04f22b18ef6c27ff0d2d2, type: 2}
+  _iconCell: railgun
   _accentColor: {r: 0.85, g: 0.9, b: 1, a: 1}
   _muzzleColor: {r: 0.95, g: 0.97, b: 1, a: 0.95}
   _muzzleRadius: 0.4

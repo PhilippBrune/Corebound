@@ -425,8 +425,12 @@ namespace Corebound.MetaProgression
 
             if (!string.IsNullOrWhiteSpace(iconPath))
             {
-                emblem = _controller.ActiveTabIconIsWeaponSheet
-                    ? Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectAtlasCellSprite(iconPath, 0, 0, 3, 3)
+                // The weapon sheet's grid lives on its asset now; the emblem is its first cell.
+                var weaponSheet = _controller.ActiveTabIconIsWeaponSheet
+                    ? Corebound.Gameplay.Shared.SpriteSheetData.Find("SpriteSheet_WeaponIcons")
+                    : null;
+                emblem = weaponSheet != null
+                    ? weaponSheet.LoadCell(0)
                     : Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(iconPath);
             }
             else

@@ -1452,7 +1452,7 @@ card before its text (C4, recommendation 1).
 
 Prompt:
 
-Create a 2D UI icon strip of four icons in a single row with even spacing, for the card tags of a sci-fantasy defense roguelite, matching an existing icon set that uses a shared line and shape language, bold simple silhouettes and a restrained palette. The four icons, left to right: Poison - a single droplet inside a small hazard ring, acid green; Shock - a short forked lightning bolt between two small nodes, pale electric blue; Support - a shield outline with a small plus inside it, warm teal; Summon - a small hovering drone seen from above with two rotor arms, cool steel with a cyan eye. Each icon must read at 32 pixels, sit centred in its own square cell, and stay consistent in stroke weight and lighting with the others. Transparent background, no text, no frames, no labels.
+Create a 2D UI icon strip of four icons in a single row with even spacing, for the card tags of a sci-fantasy defense roguelite, matching an existing icon set that uses a shared line and shape language, bold simple silhouettes and a restrained palette. The four icons, left to right: Poison - a single droplet inside a small hazard ring, acid yellow-green (clearly yellower than the healing green used elsewhere); Shock - a short forked lightning bolt between two small nodes, pale electric blue; Support - a shield outline with a small plus inside it, warm teal; Summon - a small hovering drone seen from above with two rotor arms, cool steel with a cyan eye. Each icon must read at 32 pixels, sit centred in its own square cell, and stay consistent in stroke weight and lighting with the others. Transparent background, no text, no frames, no labels.
 
 ### Asset 109 - Sentry Drone
 

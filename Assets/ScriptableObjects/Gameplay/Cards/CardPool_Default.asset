@@ -55,3 +55,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1568a074fe4f487e8b133f91cee851da, type: 2}
   - {fileID: 11400000, guid: 70928c31a8c04f9dacaad7f629c2d80d, type: 2}
   - {fileID: 11400000, guid: e5b3afa7462941ca86cb467a2a0e1275, type: 2}
+  _tagIconSheet: {fileID: 11400000, guid: 71f451aec3b34e34b210c2cd46aa914f, type: 2}

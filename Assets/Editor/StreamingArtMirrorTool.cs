@@ -34,9 +34,10 @@ namespace Corebound.EditorTools
         {
             var mirrorReport = SyncMirror(applyChanges: false);
             var pathReport = ValidateStageThemePaths();
+            var sheetReport = ValidateSpriteSheets();
             var contentReport = ValidateArtContent();
 
-            var message = mirrorReport + "\n\n" + pathReport + "\n\n" + contentReport;
+            var message = mirrorReport + "\n\n" + pathReport + "\n\n" + sheetReport + "\n\n" + contentReport;
             Debug.Log("[ArtPipeline] Validation report:\n" + message);
 
             if (EditorUtility.DisplayDialog("Corebound - Art Pipeline", message, "Sync Mirror Now", "Close"))
@@ -296,6 +297,66 @@ namespace Corebound.EditorTools
 
             return "StageThemeData texture paths: " + brokenEntries.Count + " of " + checkedCount + " BROKEN."
                 + FormatList("Broken", brokenEntries);
+        }
+
+        // SpriteSheetData (2026-09-30) is where every multi-cell sheet's grid lives, and its path is
+        // a plain string like StageThemeData's. A missing file, an image that does not divide into
+        // the grid, or a named pixel rect outside the image would all render as a blank or garbled
+        // cell with no error, so each is reported here.
+        private static string ValidateSpriteSheets()
+        {
+            var problems = new List<string>();
+            var checkedCount = 0;
+
+            foreach (var guid in AssetDatabase.FindAssets("t:SpriteSheetData"))
+            {
+                var sheet = AssetDatabase.LoadAssetAtPath<Corebound.Gameplay.Shared.SpriteSheetData>(AssetDatabase.GUIDToAssetPath(guid));
+
+                if (sheet == null)
+                {
+                    continue;
+                }
+
+                checkedCount++;
+
+                if (string.IsNullOrWhiteSpace(sheet.SheetPath) || !File.Exists(sheet.SheetPath))
+                {
+                    problems.Add(sheet.name + " -> missing file " + sheet.SheetPath);
+                    continue;
+                }
+
+                var size = Corebound.Gameplay.Shared.DebugSpriteFactory.ResolveProjectAtlasSize(sheet.SheetPath);
+
+                if (size.x % sheet.Columns != 0 || size.y % sheet.Rows != 0)
+                {
+                    problems.Add(sheet.name + " -> " + size.x + "x" + size.y + " does not divide into " + sheet.Columns + "x" + sheet.Rows
+                        + " (cells are cut at fractional pixels)");
+                }
+
+                foreach (var cell in sheet.Cells)
+                {
+                    if (cell == null)
+                    {
+                        continue;
+                    }
+
+                    var outside = cell.HasPixelRect
+                        ? cell.PixelRect.xMax > size.x || cell.PixelRect.yMax > size.y || cell.PixelRect.xMin < 0f || cell.PixelRect.yMin < 0f
+                        : cell.Column >= sheet.Columns || cell.Row >= sheet.Rows;
+
+                    if (outside)
+                    {
+                        problems.Add(sheet.name + "." + cell.Name + " -> outside the sheet");
+                    }
+                }
+            }
+
+            if (problems.Count == 0)
+            {
+                return "Sprite sheets: all " + checkedCount + " resolve and fit their grids.";
+            }
+
+            return "Sprite sheets: " + problems.Count + " problem(s) in " + checkedCount + " sheets." + FormatList("Problems", problems);
         }
 
         private static string FormatList(string header, List<string> entries)

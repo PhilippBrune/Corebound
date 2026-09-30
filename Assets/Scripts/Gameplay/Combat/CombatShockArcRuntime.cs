@@ -15,7 +15,8 @@ namespace Corebound.Gameplay.Combat
         private const float LifetimeSeconds = 0.14f;
 
         private static Sprite _unitSprite;
-        private static readonly Color ArcColor = new Color(0.62f, 0.9f, 1f, 1f);
+        // Near-white blue: cyan proper is Freeze and slow in VFX.md's colour rules.
+        private static readonly Color ArcColor = new Color(0.82f, 0.9f, 1f, 1f);
 
         private SpriteRenderer[] _segments;
         private float _age;

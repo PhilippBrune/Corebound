@@ -278,8 +278,10 @@ namespace Corebound.Gameplay.Combat
         private float _markedUntil;
         private SpriteRenderer _markRenderer;
         private static readonly Collider2D[] ChainBuffer = new Collider2D[16];
-        private static readonly Color PoisonTint = new Color(0.55f, 1f, 0.45f, 1f);
-        private static readonly Color MarkColor = new Color(1f, 0.55f, 0.2f, 0.9f);
+        // VFX.md's colour rules: green is healing and repair only and orange-red is Burn, so Poison
+        // is acid yellow and the Target Painter mark magenta.
+        private static readonly Color PoisonTint = new Color(0.85f, 0.95f, 0.3f, 1f);
+        private static readonly Color MarkColor = new Color(1f, 0.35f, 0.75f, 0.9f);
 
         private bool IsMarked => _markedUntil > Time.time;
 

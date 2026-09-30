@@ -14,11 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _presentationId: weapon_presentation_scorcher
   _iconSprite: {fileID: 0}
-  _iconSpritePath: Assets/Art/UI/HUD/weapon_icon_sheet.png
-  _iconAtlasColumns: 3
-  _iconAtlasRows: 3
-  _iconColumn: 0
-  _iconRow: 1
+  _iconSpritePath:
+  _iconSheet: {fileID: 11400000, guid: 568f0ee9c1f04f22b18ef6c27ff0d2d2, type: 2}
+  _iconCell: scorcher
   _accentColor: {r: 1, g: 0.5, b: 0.18, a: 1}
   _muzzleColor: {r: 1, g: 0.62, b: 0.25, a: 0.9}
   _muzzleRadius: 0.3

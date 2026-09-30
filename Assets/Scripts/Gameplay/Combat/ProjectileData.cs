@@ -9,17 +9,12 @@ namespace Corebound.Gameplay.Combat
         [SerializeField] private Sprite _sprite;
         [SerializeField] private string _projectSpritePath = string.Empty;
 
-        [Header("Atlas Cell (used when Sprite and Project Sprite Path are both unset)")]
-        [SerializeField] private string _atlasSheetPath = string.Empty;
-        [SerializeField] private int _atlasColumn;
-        [SerializeField] private int _atlasRow;
-        [SerializeField] private int _atlasColumns = 1;
-        [SerializeField] private int _atlasRows = 1;
-
-        // Asset 101 (projectile_sheet_weapons_02.png) is not a uniform grid: its six rows hold four
-        // or six frames of different widths, so each weapon names its own pixel rect instead.
-        // Takes precedence over the atlas cell when width and height are set.
-        [SerializeField] private Rect _spriteRect = new Rect(0f, 0f, 0f, 0f);
+        // A cell of a shared projectile sheet (used when Sprite and Project Sprite Path are both
+        // unset). The sheet asset owns the grid and, for the hand-composed Asset 101 sheet, each
+        // cell's pixel rect; a projectile only names its cell (Open Topics 4 (a), 2026-09-30).
+        [Header("Sheet Cell (used when Sprite and Project Sprite Path are both unset)")]
+        [SerializeField] private SpriteSheetData _sheet;
+        [SerializeField] private string _sheetCell = string.Empty;
 
         [SerializeField] private float _speed = 10f;
         [SerializeField] private float _lifetimeSeconds = 1.4f;
@@ -55,14 +50,7 @@ namespace Corebound.Gameplay.Combat
                 return DebugSpriteFactory.LoadProjectSprite(_projectSpritePath);
             }
 
-            if (string.IsNullOrWhiteSpace(_atlasSheetPath))
-            {
-                return null;
-            }
-
-            return _spriteRect.width > 0f && _spriteRect.height > 0f
-                ? DebugSpriteFactory.LoadProjectSpriteRect(_atlasSheetPath, _spriteRect)
-                : DebugSpriteFactory.LoadProjectAtlasCellSprite(_atlasSheetPath, _atlasColumn, _atlasRow, _atlasColumns, _atlasRows);
+            return _sheet != null ? _sheet.LoadCell(_sheetCell) : null;
         }
     }
 }

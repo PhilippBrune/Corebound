@@ -705,6 +705,8 @@ MonoBehaviour:
   _deathBurstLifetimeSeconds: 0.3
   _coreFlareLifetimeSeconds: 0.4
   _statusEffectVfxLifetimeSeconds: 0.35
+  _impactFlameFrostSheet: {fileID: 11400000, guid: 3a4aff4f0b6542aea2ceab0b7c80d0da, type: 2}
+  _impactSplashSheet: {fileID: 11400000, guid: c87f73511480475094ea55e201b83114, type: 2}
 --- !u!114 &100002020
 MonoBehaviour:
   m_ObjectHideFlags: 0

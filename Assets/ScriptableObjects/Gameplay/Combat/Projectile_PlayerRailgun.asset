@@ -14,17 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _sprite: {fileID: 0}
   _projectSpritePath: 
-  _atlasSheetPath: Assets/Art/Combat/Projectiles/projectile_sheet_weapons_02.png
-  _atlasColumn: 0
-  _atlasRow: 2
-  _atlasColumns: 4
-  _atlasRows: 4
-  _spriteRect:
-    serializedVersion: 2
-    x: 91
-    y: 392
-    width: 169
-    height: 69
+  _sheet: {fileID: 11400000, guid: 794eec2d57f145da8f72839a3850dec3, type: 2}
+  _sheetCell: railgun
   _speed: 32
   _lifetimeSeconds: 0.55
   _radius: 0.2
