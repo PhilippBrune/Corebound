@@ -22,8 +22,15 @@ namespace Corebound.UI.MainMenu
     {
         MainMenuRoute? ActivePanelRoute { get; }
 
-        // 0 = runs, 1 = cards.
+        // 0 = runs, 1 = cards, 2 = Core Logs, 3 = credits (STORY_2026-09-30).
         int RecordsTab { get; }
+
+        int RecordsLogCount { get; }
+
+        int RecordsLogUnlockedCount { get; }
+
+        // The selected Core Log's text, shown under the list; empty unless the Logs tab shows.
+        string RecordsSelectedLogText { get; }
 
         IReadOnlyList<RecordsCardEntry> RecordsCards { get; }
 

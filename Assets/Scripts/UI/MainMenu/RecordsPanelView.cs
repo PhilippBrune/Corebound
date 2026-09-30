@@ -35,8 +35,8 @@ namespace Corebound.UI.MainMenu
         private readonly RectTransform _root;
         private readonly RectTransform _tabsRoot;
         private readonly RectTransform _gridRoot;
-        private readonly Text[] _tabLabels = new Text[2];
-        private readonly Image[] _tabUnderlines = new Image[2];
+        private readonly Text[] _tabLabels = new Text[4];
+        private readonly Image[] _tabUnderlines = new Image[4];
         private readonly Text _cardDetail;
         private readonly Font _font;
         private readonly Color _selectedColor;
@@ -129,6 +129,8 @@ namespace Corebound.UI.MainMenu
             var collected = source.RecordsCollectedCount;
             _tabLabels[0].text = LocalizationService.Resolve("Runs", "Runs");
             _tabLabels[1].text = LocalizationService.Resolve("Cards  ", "Karten  ") + collected + " / " + cards.Count;
+            _tabLabels[2].text = LocalizationService.Resolve("Core Logs  ", "Kern-Logs  ") + source.RecordsLogUnlockedCount + " / " + source.RecordsLogCount;
+            _tabLabels[3].text = LocalizationService.Resolve("Credits", "Credits");
 
             for (var index = 0; index < _tabLabels.Length; index++)
             {
@@ -138,8 +140,15 @@ namespace Corebound.UI.MainMenu
             }
 
             var showCards = source.RecordsTab == 1;
+            var showLogs = source.RecordsTab == 2;
             _gridRoot.gameObject.SetActive(showCards);
-            _cardDetail.gameObject.SetActive(showCards);
+            _cardDetail.gameObject.SetActive(showCards || showLogs);
+
+            if (showLogs)
+            {
+                _cardDetail.text = source.RecordsSelectedLogText;
+                return;
+            }
 
             if (!showCards)
             {

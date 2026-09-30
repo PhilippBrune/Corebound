@@ -40,6 +40,51 @@ namespace Corebound.Audio
         private float _fadingStartVolume;
         private bool _isFading;
 
+        // STORY_2026-09-30: the credits in Records play their own loop (Audio 25) over the menu
+        // music. An override crossfades to a clip and back to whatever state was playing.
+        private static MusicStateController _instance;
+        private MusicState _currentState = MusicState.Calm;
+        private AudioClip _overrideClip;
+
+        public static void PlayOverride(AudioClip clip, float volume)
+        {
+            if (_instance == null || clip == null || _instance._overrideClip == clip)
+            {
+                return;
+            }
+
+            var controller = _instance;
+            controller._overrideClip = clip;
+            controller.CrossfadeTo(clip, volume, 1.5f);
+            controller._currentStateData = null;
+        }
+
+        public static void ClearOverride()
+        {
+            if (_instance == null || _instance._overrideClip == null)
+            {
+                return;
+            }
+
+            _instance._overrideClip = null;
+            _instance.SwitchToState(_instance._currentState);
+        }
+
+        private void CrossfadeTo(AudioClip clip, float volume, float seconds)
+        {
+            var previousActive = _activeSource;
+            _activeSource = _fadingSource;
+            _fadingSource = previousActive;
+            _activeSource.clip = clip;
+            _activeSource.volume = 0f;
+            _activeSource.Play();
+            _fadingStartVolume = _fadingSource.volume;
+            _activeTargetVolume = volume;
+            _blendDuration = seconds;
+            _blendTimer = 0f;
+            _isFading = true;
+        }
+
         private void Awake()
         {
             _activeSource = gameObject.AddComponent<AudioSource>();
@@ -50,6 +95,7 @@ namespace Corebound.Audio
 
         private void OnEnable()
         {
+            _instance = this;
             WaveEvents.WaveStarted += OnWaveStarted;
             WaveEvents.IntermissionStarted += OnIntermissionStarted;
             WaveEvents.StageCompleted += OnStageCompleted;
@@ -61,6 +107,11 @@ namespace Corebound.Audio
 
         private void OnDisable()
         {
+            if (_instance == this)
+            {
+                _instance = null;
+            }
+
             WaveEvents.WaveStarted -= OnWaveStarted;
             WaveEvents.IntermissionStarted -= OnIntermissionStarted;
             WaveEvents.StageCompleted -= OnStageCompleted;
@@ -128,6 +179,14 @@ namespace Corebound.Audio
 
         private void SwitchToState(MusicState state)
         {
+            _currentState = state;
+
+            // While the credits play, state changes are remembered and applied when they end.
+            if (_overrideClip != null)
+            {
+                return;
+            }
+
             var data = ResolveStateData(state);
 
             if (data == null || data == _currentStateData)

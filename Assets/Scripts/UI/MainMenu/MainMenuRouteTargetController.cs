@@ -55,6 +55,12 @@ namespace Corebound.UI.MainMenu
                 return TryNavigateRecords(navigationInput);
             }
 
+            // The premise page has nothing to move between.
+            if (_showingPremise && _pendingPanelRoute == MainMenuRoute.NewRun)
+            {
+                return false;
+            }
+
             // The profile panel is the one panel with a selection in it (SaveSystem.md, "Drei
             // Profile"). Everything else the route panel shows is static text.
             if (_activePanelData == null || Mathf.Abs(navigationInput.y) < 0.5f)
@@ -120,7 +126,12 @@ namespace Corebound.UI.MainMenu
                 return true;
             }
 
-            if (_pendingPanelRoute == MainMenuRoute.NewRun)
+            if (_pendingPanelRoute == MainMenuRoute.Records && _recordsTab == 2)
+            {
+                return TrySelectRecordsLog(index);
+            }
+
+            if (_pendingPanelRoute == MainMenuRoute.NewRun && !_showingPremise)
             {
                 var rowCount = _startWeaponOptions.Count + (OffersTutorialRow ? 1 : 0);
 
@@ -151,7 +162,12 @@ namespace Corebound.UI.MainMenu
                     return _profileRowIndex;
                 }
 
-                return _pendingPanelRoute == MainMenuRoute.NewRun && _startWeaponOptions.Count > 0 ? _startWeaponRowIndex : -1;
+                if (_pendingPanelRoute == MainMenuRoute.Records)
+                {
+                    return _recordsTab == 2 ? _recordsLogIndex : -1;
+                }
+
+                return _pendingPanelRoute == MainMenuRoute.NewRun && !_showingPremise && _startWeaponOptions.Count > 0 ? _startWeaponRowIndex : -1;
             }
         }
 
@@ -419,7 +435,7 @@ namespace Corebound.UI.MainMenu
 
         public bool TrySelectRecordsTab(int tab)
         {
-            var clamped = Mathf.Clamp(tab, 0, 1);
+            var clamped = Mathf.Clamp(tab, 0, RecordsTabCount - 1);
 
             if (_activePanelData == null || _pendingPanelRoute != MainMenuRoute.Records || clamped == _recordsTab)
             {
@@ -427,8 +443,136 @@ namespace Corebound.UI.MainMenu
             }
 
             _recordsTab = clamped;
+            UpdateCreditsMusic();
             RouteTargetChanged?.Invoke();
             return true;
+        }
+
+        // ---- Records: Core Logs and credits (STORY_2026-09-30, S1-2) ---------------------------------
+
+        private const int RecordsTabCount = 4;
+        private int _recordsLogIndex;
+
+        private Corebound.Story.StoryData Story
+        {
+            get
+            {
+                var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+                return definition != null ? definition.Story : null;
+            }
+        }
+
+        public int RecordsLogCount => Story != null && Story.CoreLogs != null ? Story.CoreLogs.Length : 0;
+
+        public int RecordsLogUnlockedCount
+        {
+            get
+            {
+                var count = 0;
+
+                for (var index = 0; index < RecordsLogCount; index++)
+                {
+                    if (IsLogUnlocked(index))
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        public string RecordsSelectedLogText
+        {
+            get
+            {
+                if (_recordsTab != 2 || _recordsLogIndex < 0 || _recordsLogIndex >= RecordsLogCount)
+                {
+                    return string.Empty;
+                }
+
+                var entry = Story.CoreLogs[_recordsLogIndex];
+
+                return IsLogUnlocked(_recordsLogIndex)
+                    ? "<b>" + entry.Title.Text + "</b>   ·   " + entry.Text.Text
+                    : LocalizationService.Resolve("Locked - ", "Gesperrt - ") + entry.UnlockHint.Text;
+            }
+        }
+
+        private SaveSystem.MetaProgressionSaveData _logSave;
+        private SaveSystem.StatisticsSaveData _logStatistics;
+
+        // The save is read once when Records opens, not per row per frame.
+        private void RefreshLogState()
+        {
+            var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+            _logSave = SaveManager != null && definition != null ? SaveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData()) : null;
+            _logStatistics = SaveManager != null ? SaveManager.LoadStatisticsSaveData(new SaveSystem.StatisticsSaveData()) : null;
+        }
+
+        private bool IsLogUnlocked(int index)
+        {
+            var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+            return Story != null && index >= 0 && index < RecordsLogCount
+                && Corebound.Story.CoreLogRules.IsUnlocked(Story.CoreLogs[index], _logSave, _logStatistics, definition);
+        }
+
+        private bool TrySelectRecordsLog(int index)
+        {
+            if (_recordsTab != 2 || index < 0 || index >= RecordsLogCount || index == _recordsLogIndex)
+            {
+                return false;
+            }
+
+            _recordsLogIndex = index;
+            RouteTargetChanged?.Invoke();
+            return true;
+        }
+
+        private string[] BuildCoreLogLines()
+        {
+            var lines = new string[RecordsLogCount];
+
+            for (var index = 0; index < lines.Length; index++)
+            {
+                lines[index] = IsLogUnlocked(index) ? Story.CoreLogs[index].Title.Text : "???";
+            }
+
+            return lines;
+        }
+
+        private string[] BuildCreditLines()
+        {
+            var credits = Story != null ? Story.Credits : null;
+
+            if (credits == null)
+            {
+                return System.Array.Empty<string>();
+            }
+
+            var lines = new string[credits.Length];
+
+            for (var index = 0; index < credits.Length; index++)
+            {
+                lines[index] = credits[index] != null ? credits[index].Text : string.Empty;
+            }
+
+            return lines;
+        }
+
+        // Audio 25 plays while the credits are open, and the menu music comes back when they close.
+        private void UpdateCreditsMusic()
+        {
+            var showing = _activePanelData != null && _pendingPanelRoute == MainMenuRoute.Records && _recordsTab == 3;
+
+            if (showing && Story != null && Story.CreditsLoop != null)
+            {
+                Corebound.Audio.MusicStateController.PlayOverride(Story.CreditsLoop, Story.CreditsVolume);
+            }
+            else
+            {
+                Corebound.Audio.MusicStateController.ClearOverride();
+            }
         }
 
         public bool TrySelectRecordsCard(int index)
@@ -445,6 +589,11 @@ namespace Corebound.UI.MainMenu
 
         private bool TryNavigateRecords(Vector2 navigationInput)
         {
+            if (_recordsTab == 2 && Mathf.Abs(navigationInput.y) >= 0.5f)
+            {
+                return TrySelectRecordsLog(Mathf.Clamp(_recordsLogIndex + (navigationInput.y > 0f ? -1 : 1), 0, Mathf.Max(0, RecordsLogCount - 1)));
+            }
+
             if (_recordsTab != 1 || _recordsCards.Count == 0)
             {
                 return false;
@@ -512,13 +661,23 @@ namespace Corebound.UI.MainMenu
 
                 if (_pendingPanelRoute == MainMenuRoute.NewRun)
                 {
-                    return BuildStartWeaponLines();
+                    return _showingPremise ? BuildPremiseLines() : BuildStartWeaponLines();
                 }
 
                 if (_pendingPanelRoute == MainMenuRoute.Records)
                 {
                     // The Cards tab draws a grid instead of rows.
-                    return _recordsTab == 0 ? BuildRecordLines() : System.Array.Empty<string>();
+                    switch (_recordsTab)
+                    {
+                        case 0:
+                            return BuildRecordLines();
+                        case 2:
+                            return BuildCoreLogLines();
+                        case 3:
+                            return BuildCreditLines();
+                        default:
+                            return System.Array.Empty<string>();
+                    }
                 }
 
                 if (_pendingPanelRoute != MainMenuRoute.Profile)
@@ -692,6 +851,14 @@ namespace Corebound.UI.MainMenu
 
             if (route == MainMenuRoute.NewRun)
             {
+                if (_showingPremise)
+                {
+                    _showingPremise = false;
+                    MarkPremiseSeen();
+                    RouteTargetChanged?.Invoke();
+                    return true;
+                }
+
                 if (OffersTutorialRow && _startWeaponRowIndex == 0)
                 {
                     CloseActivePanel();
@@ -737,7 +904,9 @@ namespace Corebound.UI.MainMenu
                 case MainMenuRoute.Records:
                     _recordsTab = 0;
                     _recordsCardIndex = 0;
+                    _recordsLogIndex = 0;
                     RefreshRecordsCards();
+                    RefreshLogState();
                     OpenPanel(_executionData != null ? _executionData.RecordsPanelData : null, MainMenuRoute.Records);
                     return;
                 case MainMenuRoute.Profile:
@@ -750,6 +919,67 @@ namespace Corebound.UI.MainMenu
             }
         }
 
+        // STORY_2026-09-30, S5-1: before a profile's first run the New Run panel opens on the
+        // story's premise; Confirm turns the page to the usual weapon choice and marks it seen.
+        // Replayable any time as the first Core Log in Records.
+        private bool _showingPremise;
+
+        public string ActivePanelTitleOverride => _activePanelData != null && _pendingPanelRoute == MainMenuRoute.NewRun && _showingPremise && Story != null
+            ? Story.PremiseTitle.Text
+            : null;
+
+        public string ActivePanelSubtitleOverride => ActivePanelTitleOverride != null ? string.Empty : null;
+
+        public string ActivePanelSummaryOverride => _activePanelData != null && _pendingPanelRoute == MainMenuRoute.NewRun && _showingPremise
+            ? LocalizationService.Resolve("Confirm to go on.", "Bestätigen, um fortzufahren.")
+            : null;
+
+        private string[] BuildPremiseLines()
+        {
+            var premise = Story != null ? Story.Premise : null;
+
+            if (premise == null)
+            {
+                return System.Array.Empty<string>();
+            }
+
+            var lines = new string[premise.Length];
+
+            for (var index = 0; index < premise.Length; index++)
+            {
+                lines[index] = premise[index] != null ? premise[index].Text : string.Empty;
+            }
+
+            return lines;
+        }
+
+        private bool ShouldShowPremise()
+        {
+            var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+
+            if (definition == null || definition.Story == null || SaveManager == null)
+            {
+                return false;
+            }
+
+            var save = SaveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
+            return save != null && !save.HasSeenPremise;
+        }
+
+        private void MarkPremiseSeen()
+        {
+            var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+            var save = SaveManager != null && definition != null ? SaveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData()) : null;
+
+            if (save == null)
+            {
+                return;
+            }
+
+            save.MarkPremiseSeen();
+            SaveManager.SaveMetaProgressionSaveData(save);
+        }
+
         private void BeginNewRunRoute(MainMenuRoute route)
         {
             // B11: the New Run panel is where the starting weapon is picked, so it opens whether or
@@ -758,6 +988,7 @@ namespace Corebound.UI.MainMenu
             if (route == MainMenuRoute.NewRun)
             {
                 _startWeaponRowIndex = ResolvePreferredStartWeaponRow();
+                _showingPremise = ShouldShowPremise();
                 OpenPanel(_executionData != null ? _executionData.NewRunConfirmationPanelData : null, route);
                 return;
             }
@@ -927,6 +1158,8 @@ namespace Corebound.UI.MainMenu
         {
             _activePanelData = null;
             _pendingPanelRoute = null;
+            _showingPremise = false;
+            UpdateCreditsMusic();
             RouteTargetChanged?.Invoke();
         }
 

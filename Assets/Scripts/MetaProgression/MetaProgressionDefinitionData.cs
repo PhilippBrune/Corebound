@@ -54,6 +54,12 @@ namespace Corebound.MetaProgression
 
         public Corebound.Gameplay.Enemies.EnemyData[] QuestEnemies => _questEnemies;
 
+        // STORY_2026-09-30. Hung off this asset because both the main menu (premise, Core Logs,
+        // credits) and the run (the Core's lines, the ending) already reference it.
+        [SerializeField] private Corebound.Story.StoryData _story;
+
+        public Corebound.Story.StoryData Story => _story;
+
         public Corebound.Gameplay.Enemies.EnemyEliteModifierData[] QuestEliteAffixes => _questEliteAffixes;
 
         public string MetaCurrencyLabel => Corebound.UI.LocalizationService.Resolve(_metaCurrencyLabel, _metaCurrencyLabelDe);

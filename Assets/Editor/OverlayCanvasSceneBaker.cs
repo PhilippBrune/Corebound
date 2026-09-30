@@ -32,9 +32,15 @@ namespace Corebound.EditorTools
 
         private static void BakeIfMissing()
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode || File.Exists(ScenePath))
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            if (File.Exists(ScenePath))
             {
                 EnsureInBuildSettings();
+                AddMissingCanvases();
                 return;
             }
 
@@ -57,7 +63,55 @@ namespace Corebound.EditorTools
             Bake();
         }
 
-        private static readonly string[] CanvasRootNames = { "BossHudCanvas", "NotificationCanvas", "RelicRevealCanvas" };
+        private static readonly string[] CanvasRootNames = { "BossHudCanvas", "NotificationCanvas", "RelicRevealCanvas", "CoreVoiceCanvas", "EndingCanvas" };
+
+        // A canvas added to the overlay after the scene was first baked (2026-09-30: the Core's
+        // voice and the ending card) is added to the existing scene - built into it, saved, and
+        // nothing already in it touched - so edits made to the scene survive.
+        private static void AddMissingCanvases()
+        {
+            var scene = SceneManager.GetSceneByPath(ScenePath);
+            var openedHere = false;
+
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+                openedHere = true;
+            }
+
+            var present = new HashSet<string>();
+
+            foreach (var rootObject in scene.GetRootGameObjects())
+            {
+                present.Add(rootObject.name);
+            }
+
+            var font = UIFontResolver.Resolve();
+            var added = new List<string>();
+
+            if (!present.Contains("CoreVoiceCanvas"))
+            {
+                BuildCoreVoice(font, scene);
+                added.Add("CoreVoiceCanvas");
+            }
+
+            if (!present.Contains("EndingCanvas"))
+            {
+                BuildEndingCard(font, scene);
+                added.Add("EndingCanvas");
+            }
+
+            if (added.Count > 0)
+            {
+                EditorSceneManager.SaveScene(scene);
+                Debug.Log("[OverlayCanvas] added " + string.Join(", ", added) + " to " + ScenePath);
+            }
+
+            if (openedHere)
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
+        }
 
         private static void Bake()
         {
@@ -68,6 +122,8 @@ namespace Corebound.EditorTools
             BuildBossHud(font, scene);
             BuildNotification(font, scene);
             BuildRelicReveal(font, scene);
+            BuildCoreVoice(font, scene);
+            BuildEndingCard(font, scene);
 
             // A new additive scene becomes the active one, so anything that lazily creates a
             // GameObject while it is (the first bake caught a UIManager singleton) lands in it.
@@ -233,6 +289,45 @@ namespace Corebound.EditorTools
             var text = CreateRect("NotificationText", panel, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             Stretch(text, Vector2.zero, Vector2.one, new Vector2(18f, 6f), new Vector2(-18f, -6f));
             AddText(text, font, 20, FontStyle.Normal, TextAnchor.MiddleCenter, Color.white, string.Empty);
+        }
+
+        // STORY_2026-09-30 (S2-1): the Core's lines. Low in the frame, clear of the boss bar, above
+        // the HUD and the relic reveal, below notifications.
+        private static void BuildCoreVoice(Font font, Scene scene)
+        {
+            var root = CreateCanvas("CoreVoiceCanvas", 470, scene, false);
+
+            var panel = CreateRect("CoreVoicePanel", root, new Vector2(0.5f, 0.2f), new Vector2(0.5f, 0.2f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1100f, 72f));
+            AddImage(panel, new Color(0.03f, 0.05f, 0.08f, 0.62f));
+            var group = panel.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.blocksRaycasts = false;
+            group.interactable = false;
+
+            var text = CreateRect("CoreVoiceText", panel, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            Stretch(text, Vector2.zero, Vector2.one, new Vector2(24f, 6f), new Vector2(-24f, -6f));
+            AddText(text, font, 26, FontStyle.Italic, TextAnchor.MiddleCenter, new Color(0.85f, 0.93f, 1f, 1f), string.Empty);
+        }
+
+        // STORY_2026-09-30 (S4-1): the ending, over the Run Complete screen at the first full clear.
+        private static void BuildEndingCard(Font font, Scene scene)
+        {
+            var root = CreateCanvas("EndingCanvas", 480, scene, false);
+
+            var panel = CreateRect("EndingPanel", root, new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.56f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1040f, 470f));
+            AddImage(panel, new Color(0.02f, 0.03f, 0.05f, 0.9f));
+            var group = panel.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.blocksRaycasts = false;
+            group.interactable = false;
+
+            var title = CreateRect("EndingTitle", panel, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            Stretch(title, new Vector2(0f, 0.8f), new Vector2(1f, 0.96f), new Vector2(40f, 0f), new Vector2(-40f, 0f));
+            AddText(title, font, 40, FontStyle.Bold, TextAnchor.MiddleCenter, new Color(1f, 0.86f, 0.5f, 1f), string.Empty);
+
+            var body = CreateRect("EndingText", panel, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            Stretch(body, new Vector2(0f, 0.06f), new Vector2(1f, 0.78f), new Vector2(60f, 0f), new Vector2(-60f, 0f));
+            AddText(body, font, 25, FontStyle.Normal, TextAnchor.MiddleCenter, new Color(0.9f, 0.93f, 0.97f, 1f), string.Empty);
         }
 
         private static void BuildRelicReveal(Font font, Scene scene)

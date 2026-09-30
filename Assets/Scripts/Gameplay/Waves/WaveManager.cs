@@ -156,6 +156,8 @@ namespace Corebound.Gameplay.Waves
 
         public ISaveManager SaveManagerSource => SaveManager;
 
+        public bool IsTutorialRun => _isTutorialRun;
+
         // So sibling services (PlayerRepairService) can share the reader this component was
         // wired with, rather than each one hunting for the right CoreboundInputReader - the
         // MainMenu and gameplay scenes each carry one.
@@ -215,6 +217,11 @@ namespace Corebound.Gameplay.Waves
             if (GetComponent<GameplayQuestTracker>() == null)
             {
                 gameObject.AddComponent<GameplayQuestTracker>().Bind(this);
+            }
+
+            if (GetComponent<Corebound.Story.StoryDirector>() == null)
+            {
+                gameObject.AddComponent<Corebound.Story.StoryDirector>().Bind(this);
             }
 
             // Captured now because the run save is wiped the moment the run is lost, before the

@@ -311,7 +311,7 @@ Neither a "you beat the game" cue nor a credits track exists yet - `WaveManager.
 
 Target: Assets/Audio/Music/music_run_victory_sting.mp3
 
-**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
+**Status:** DELIVERED and wired (2026-09-30) - `AudioCue_RunVictorySting`, played by `StoryDirector` whenever a run is won; the first win also shows the story's ending card.
 
 Prompt:
 
@@ -321,7 +321,7 @@ A short, triumphant victory sting for completing an entire run in a sci-fantasy 
 
 Target: Assets/Audio/Music/music_credits_loop.mp3
 
-**Status:** DELIVERED but NOT WIRED - the file exists; its `AudioClip` field is still empty, so the placeholder tone is what actually plays.
+**Status:** DELIVERED and wired (2026-09-30) - `StoryData_Default._creditsLoop`, played through `MusicStateController.PlayOverride` while the Credits tab in Records is open; the menu music returns when it closes.
 
 Prompt:
 

@@ -273,6 +273,14 @@ namespace Corebound.EditorTools
             // "progression1": grant test currency in the main menu, buy a scripted set of skill
             // nodes, upgrades and a slot unlock through the Progression screen, photograph every
             // tab, then start the run. Writes to the real profile save - back it up first.
+            var recordsTest = contents.StartsWith("records", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(RecordsTestSessionKey, recordsTest);
+
+            if (recordsTest)
+            {
+                contents = contents.Substring("records".Length).Trim();
+            }
+
             var progressionTest = contents.StartsWith("progression", System.StringComparison.OrdinalIgnoreCase);
             SessionState.SetBool(ProgressionTestSessionKey, progressionTest);
 
@@ -354,6 +362,7 @@ namespace Corebound.EditorTools
         public const string GodModeSessionKey = "Corebound.Autopilot.GodMode";
         public const string CardsTestSessionKey = "Corebound.Autopilot.CardsTest";
         public const string BossTestSessionKey = "Corebound.Autopilot.BossTest";
+        public const string RecordsTestSessionKey = "Corebound.Autopilot.RecordsTest";
 
         private static string ReadCommand()
         {
@@ -451,7 +460,7 @@ namespace Corebound.EditorTools
             Object.DontDestroyOnLoad(host);
             var runtime = host.AddComponent<DebugAutopilotRuntime>();
             runtime.Configure(TargetStage, MaxRunSeconds, SessionState.GetBool(LoadoutTestSessionKey, false));
-            runtime.ConfigureProgressionTest(SessionState.GetBool(ProgressionTestSessionKey, false), SessionState.GetBool(AscensionTestSessionKey, false));
+            runtime.ConfigureProgressionTest(SessionState.GetBool(ProgressionTestSessionKey, false), SessionState.GetBool(AscensionTestSessionKey, false), SessionState.GetBool(RecordsTestSessionKey, false));
 
             if (SessionState.GetBool(GodModeSessionKey, false))
             {
@@ -689,11 +698,22 @@ namespace Corebound.EditorTools
         private Corebound.UI.MainMenu.MainMenuRouteTargetController _menuRoute;
 
         private bool _ascensionTest;
+        private bool _recordsTest;
+        private string[] _script = ProgressionScript;
 
-        public void ConfigureProgressionTest(bool enabled, bool ascension = false)
+        // "records2": open Records in the main menu, photograph every tab (runs, cards, Core Logs,
+        // credits - STORY_2026-09-30) and stop, without starting a run.
+        private static readonly string[] RecordsScript =
         {
-            _progressionTest = enabled || ascension;
+            "Orecords", "Srecords_runs", "T", "Srecords_cards", "T", "Vd", "Vd", "Srecords_logs", "T", "Srecords_credits", "K", "Q",
+        };
+
+        public void ConfigureProgressionTest(bool enabled, bool ascension = false, bool records = false)
+        {
+            _progressionTest = enabled || ascension || records;
             _ascensionTest = ascension;
+            _recordsTest = records;
+            _script = records ? RecordsScript : ProgressionScript;
 
             if (enabled)
             {
@@ -705,14 +725,14 @@ namespace Corebound.EditorTools
         // own screenshot. Returns true while the script is still running.
         private bool TickProgressionTest()
         {
-            if (!_progressionTest || _progressionStep >= ProgressionScript.Length)
+            if (!_progressionTest || _progressionStep >= _script.Length)
             {
                 return false;
             }
 
-            if (!_ascensionTest && _progressionStep > 0 && ProgressionScript[_progressionStep - 1] == "X")
+            if (!_ascensionTest && _progressionStep > 0 && _script[_progressionStep - 1] == "X")
             {
-                _progressionStep = ProgressionScript.Length;
+                _progressionStep = _script.Length;
                 return false;
             }
 
@@ -725,6 +745,12 @@ namespace Corebound.EditorTools
 
             _progressionTimer = 0f;
 
+            if (_progressionStep < 0 && _recordsTest)
+            {
+                _progressionStep = 0;
+                return true;
+            }
+
             if (_progressionStep < 0)
             {
                 var service = FindFirstObjectByType<Corebound.MetaProgression.MetaProgressionService>();
@@ -733,7 +759,7 @@ namespace Corebound.EditorTools
                 if (service == null || _progressionRoute == null)
                 {
                     Debug.LogWarning(DebugAutopilot.LogPrefix + " progression test: no MetaProgressionService/route in the main menu");
-                    _progressionStep = ProgressionScript.Length;
+                    _progressionStep = _script.Length;
                     return false;
                 }
 
@@ -775,7 +801,7 @@ namespace Corebound.EditorTools
                         + Corebound.MetaProgression.SkillTreeRules.IsTreeComplete(save, tree) + " SP left=" + save.SkillPointsAvailable
                         + " level=" + save.Level + " paragon=" + save.ParagonLevel + " AP=" + save.AscensionPointsAvailable + " keystones=" + save.KeystonesAvailable);
                     _progressionRoute.Open();
-                    _progressionStep = System.Array.IndexOf(ProgressionScript, "ASC");
+                    _progressionStep = System.Array.IndexOf(_script, "ASC");
                     return true;
                 }
 
@@ -786,7 +812,7 @@ namespace Corebound.EditorTools
                 return true;
             }
 
-            var action = ProgressionScript[_progressionStep++];
+            var action = _script[_progressionStep++];
 
             switch (action[0])
             {
@@ -838,6 +864,10 @@ namespace Corebound.EditorTools
                 case 'T':
                     _menuRoute?.TryHandleTabSwitch(1);
                     break;
+                case 'Q':
+                    Debug.Log(DebugAutopilot.LogPrefix + " menu script done");
+                    Finish();
+                    return false;
                 case 'V':
                     // "V<u|d|l|r>": navigate inside a route panel.
                     var push = action[1] == 'u' ? Vector2.up : action[1] == 'd' ? Vector2.down : action[1] == 'l' ? Vector2.left : Vector2.right;
@@ -875,7 +905,7 @@ namespace Corebound.EditorTools
             "R", "C", "N0,0", "C", "C", "C", "N0,1", "C", "Sindustry",
             "R", "C", "N0,0", "C", "C", "C", "N0,1", "C", "Scommand",
             "R", "Sascension",
-            "Z", "Osettings", "Ssettings", "K", "Orecords", "Srecords_runs", "T", "Vr", "Vr", "Vd", "Srecords_cards", "K",
+            "Z", "Osettings", "Ssettings", "K", "Orecords", "Srecords_runs", "T", "Vr", "Vr", "Vd", "Srecords_cards", "T", "Vd", "Srecords_logs", "T", "Srecords_credits", "K",
             "X",
             "ASC", "R", "R", "N4,0", "C", "Scombat_ring", "R", "R", "R", "R", "Sascension_before", "D", "C", "Sascension_after", "R", "Squests", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "Squests_down15",
             "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "D", "Squests_down30", "W4", "Squests_wheel_up4",
@@ -953,12 +983,30 @@ namespace Corebound.EditorTools
             Finish();
         }
 
+        private bool _premiseShotTaken;
+        private float _completedTimer;
+
         private void TickWaitForCombat()
         {
             _waveManager = FindFirstObjectByType<WaveManager>();
 
             if (_waveManager == null)
             {
+                // STORY_2026-09-30: a profile's first New Run opens on the premise page.
+                if (!_premiseShotTaken)
+                {
+                    var route = FindFirstObjectByType<Corebound.UI.MainMenu.MainMenuRouteTargetController>();
+
+                    if (route != null && route.ActivePanelTitleOverride != null)
+                    {
+                        _premiseShotTaken = true;
+                        Debug.Log(DebugAutopilot.LogPrefix + " PREMISE page: " + route.ActivePanelTitleOverride);
+                        Shot("premise");
+                        _stepTimer = 0f;
+                        return;
+                    }
+                }
+
                 // Confirming New Run opens a route panel that needs its own confirm.
                 if (_stepTimer > 1f)
                 {
@@ -1019,6 +1067,19 @@ namespace Corebound.EditorTools
                     Advance(Step.AfterRun);
                     return;
                 case WaveState.Completed:
+                    // Two seconds for the ending card (STORY_2026-09-30) to fade in before the shot.
+                    _completedTimer += Time.unscaledDeltaTime;
+
+                    if (_completedTimer < 2f)
+                    {
+                        return;
+                    }
+
+                    var endingRoot = AdditiveCanvasSceneLoader.FindRoot(AdditiveCanvasSceneLoader.OverlayCanvasSceneName, "EndingCanvas");
+                    var endingPanel = endingRoot != null ? endingRoot.transform.Find("EndingPanel") : null;
+                    var endingGroup = endingPanel != null ? endingPanel.GetComponent<CanvasGroup>() : null;
+                    Debug.Log(DebugAutopilot.LogPrefix + " ENDING alpha=" + (endingGroup != null ? endingGroup.alpha.ToString("0.00") : "none") + " timeScale=" + Time.timeScale);
+                    Shot("run_completed");
                     Debug.Log(DebugAutopilot.LogPrefix + " run completed");
                     Finish();
                     return;

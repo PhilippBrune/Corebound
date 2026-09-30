@@ -212,9 +212,9 @@ namespace Corebound.UI.MainMenu
                 ApplyDefaultLayout();
             }
 
-            _titleText.text = panelData.Title;
-            _subtitleText.text = panelData.Subtitle;
-            _summaryText.text = panelData.Summary;
+            _titleText.text = RouteTargetController.ActivePanelTitleOverride ?? panelData.Title;
+            _subtitleText.text = RouteTargetController.ActivePanelSubtitleOverride ?? panelData.Subtitle;
+            _summaryText.text = RouteTargetController.ActivePanelSummaryOverride ?? panelData.Summary;
             _footerText.text = panelData.FooterHint;
             RebuildDetailLines(RouteTargetController.ActivePanelDetailLinesOverride ?? panelData.DetailLines);
 
@@ -265,8 +265,11 @@ namespace Corebound.UI.MainMenu
 
             if (controller is IRecordsViewSource records && records.ActivePanelRoute == MainMenuRoute.Records)
             {
-                _recordsView.HandlePointer(records, pointer, moved, clicked);
-                return;
+                // The Logs tab is a list of rows like any other panel; the other tabs are not.
+                if (_recordsView.HandlePointer(records, pointer, moved, clicked) || records.RecordsTab != 2)
+                {
+                    return;
+                }
             }
 
             if (controller.ActivePanelSelectedIndex < 0)

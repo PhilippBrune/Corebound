@@ -18,6 +18,14 @@ namespace Corebound.UI.MainMenu
         // Index of the highlighted row in that override, or -1 when the panel is plain text.
         int ActivePanelSelectedIndex { get; }
 
+        // A title and summary that replace the authored ones while a panel shows something else
+        // (the story's premise page in front of New Run). Null keeps the authored text.
+        string ActivePanelTitleOverride { get; }
+
+        string ActivePanelSubtitleOverride { get; }
+
+        string ActivePanelSummaryOverride { get; }
+
         // Mouse selection of a panel row; false when this panel has no selectable rows.
         bool TrySelectPanelRow(int index);
 

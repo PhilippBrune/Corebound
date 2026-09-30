@@ -55,6 +55,11 @@ namespace Corebound.SaveSystem
         [SerializeField] private bool _hasClearedAnyStage;
         [SerializeField] private bool _hasCompletedFullRun;
 
+        // STORY_2026-09-30: the premise is shown before the first run of a profile (S5-1) and the
+        // ending once at the first full clear (S4-1). Both replay from Records.
+        [SerializeField] private bool _hasSeenPremise;
+        [SerializeField] private bool _hasSeenEnding;
+
         public int SaveFormatVersion => _saveFormatVersion;
 
         public bool HasSeenTutorial => _hasSeenTutorial;
@@ -134,6 +139,20 @@ namespace Corebound.SaveSystem
         public bool HasClearedAnyStage => _hasClearedAnyStage;
 
         public bool HasCompletedFullRun => _hasCompletedFullRun;
+
+        public bool HasSeenPremise => _hasSeenPremise;
+
+        public bool HasSeenEnding => _hasSeenEnding;
+
+        public void MarkPremiseSeen()
+        {
+            _hasSeenPremise = true;
+        }
+
+        public void MarkEndingSeen()
+        {
+            _hasSeenEnding = true;
+        }
 
         public MetaProgressionSaveData Clone()
         {

@@ -37,6 +37,9 @@ namespace Corebound.Gameplay.Relics
         // A relic granted while "Boss Defeated" is still on screen waits here until it fades.
         private RelicGrantedEventArgs? _pendingReveal;
 
+        // Set while the story's ending card is up (StoryDirector); a relic then stays unrevealed.
+        public static bool Suppressed { get; set; }
+
         private void Awake()
         {
             TryBind();
@@ -56,6 +59,19 @@ namespace Corebound.Gameplay.Relics
 
         private void Update()
         {
+            if (Suppressed)
+            {
+                _pendingReveal = null;
+                _isShowing = false;
+
+                if (_canvasGroup != null)
+                {
+                    _canvasGroup.alpha = 0f;
+                }
+
+                return;
+            }
+
             if (_pendingReveal.HasValue && !Corebound.Gameplay.Bosses.BossEncounterState.IsDefeatNoticeShowing)
             {
                 var pending = _pendingReveal.Value;

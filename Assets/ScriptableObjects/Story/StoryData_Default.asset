@@ -1,0 +1,276 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15fc88b3c1e11e4b92541f231e56556, type: 3}
+  m_Name: StoryData_Default
+  m_EditorClassIdentifier:
+  _premiseTitle:
+    _en: 'The Core'
+    _de: 'Der Kern'
+  _premise:
+  - _en: 'The makers built the Works to rebuild a dead world, and put its last seed in a single Core.'
+    _de: 'Die Erbauer schufen das Werk, um eine tote Welt neu aufzubauen, und legten ihren letzten Samen in einen einzigen Kern.'
+  - _en: 'Then the makers were gone, and the machines of the Works forgot what they were for.'
+    _de: 'Dann verschwanden die Erbauer, und die Maschinen des Werks vergaßen, wofür sie da sind.'
+  - _en: 'You are a Binder. You are bound to the Core. If it breaks, it will bring you back - and you will try again.'
+    _de: 'Du bist ein Binder. Du bist an den Kern gebunden. Wenn er zerbricht, holt er dich zurück - und du versuchst es erneut.'
+  _stages:
+  - _stageIndex: 1
+    _arrival:
+      _en: 'The Foundry. You were made here. Keep me close.'
+      _de: 'Die Gießerei. Hier wurdest du gemacht. Bleib bei mir.'
+    _bossArrival:
+      _en: 'It still guards the doors. It thinks I am being stolen.'
+      _de: 'Es bewacht noch die Tore. Es glaubt, ich werde gestohlen.'
+    _bossDefeat:
+      _en: 'The doors are open. Down.'
+      _de: 'Die Tore sind offen. Hinab.'
+  - _stageIndex: 2
+    _arrival:
+      _en: 'The reactors. They are hungry, and I am warm.'
+      _de: 'Die Reaktoren. Sie sind hungrig, und ich bin warm.'
+    _bossArrival:
+      _en: 'It wants to burn me to keep the lights on.'
+      _de: 'Er will mich verbrennen, damit die Lichter brennen.'
+    _bossDefeat:
+      _en: 'The lights are going out behind us. Good.'
+      _de: 'Hinter uns gehen die Lichter aus. Gut.'
+  - _stageIndex: 3
+    _arrival:
+      _en: 'This is what they do. Everything here was something once.'
+      _de: 'Das ist, was sie tun. Alles hier war einmal etwas.'
+    _bossArrival:
+      _en: 'She has taken Binders apart before. Do not let her count you.'
+      _de: 'Sie hat schon Binder zerlegt. Lass dich nicht von ihr zählen.'
+    _bossDefeat:
+      _en: 'The Scour have no queen now. They will not stop. But they will not plan.'
+      _de: 'Die Scour haben keine Königin mehr. Sie hören nicht auf. Aber sie planen nicht mehr.'
+  - _stageIndex: 4
+    _arrival:
+      _en: 'Cold. Something here remembers me.'
+      _de: 'Kalt. Etwas hier erinnert sich an mich.'
+    _bossArrival:
+      _en: 'That one was a Binder. Mine. I lost it a long time ago.'
+      _de: 'Das war ein Binder. Meiner. Ich habe ihn vor langer Zeit verloren.'
+    _bossDefeat:
+      _en: 'Rest now. I will carry what you knew.'
+      _de: 'Ruh dich aus. Ich trage, was du wusstest.'
+  - _stageIndex: 5
+    _arrival:
+      _en: 'The Nexus. This is where I was meant to go. This is where we always fail.'
+      _de: 'Der Nexus. Hierhin sollte ich immer. Hier scheitern wir immer.'
+    _bossArrival:
+      _en: 'The first of you. It stopped trying to get past. It decided to be the door.'
+      _de: 'Der Erste von euch. Er hat aufgehört durchzukommen. Er hat beschlossen, die Tür zu sein.'
+    _bossDefeat:
+      _en: 'The door is open. Put me down, Binder. Let me grow.'
+      _de: 'Die Tür ist offen. Setz mich ab, Binder. Lass mich wachsen.'
+  _runLostLines:
+  - _en: 'Again. Come back to me.'
+    _de: 'Noch einmal. Komm zu mir zurück.'
+  - _en: 'I kept what I could. Take it.'
+    _de: 'Ich habe behalten, was ich konnte. Nimm es.'
+  - _en: 'You got further than the last one.'
+    _de: 'Du bist weiter gekommen als der Letzte.'
+  - _en: 'The Scour are patient. So am I.'
+    _de: 'Die Scour sind geduldig. Ich auch.'
+  _runWonLine:
+    _en: 'Rooted again. Somewhere deeper, another one is waiting.'
+    _de: 'Wieder verwurzelt. Irgendwo tiefer wartet ein anderer.'
+  _endingTitle:
+    _en: 'Roots'
+    _de: 'Wurzeln'
+  _ending:
+  - _en: 'The Core takes root in the Nexus, and for the first time in an age the Works is quiet.'
+    _de: 'Der Kern schlägt Wurzeln im Nexus, und zum ersten Mal seit einer Ewigkeit ist das Werk still.'
+  - _en: 'Far above, the halls begin to build what they were built to build.'
+    _de: 'Weit oben beginnen die Hallen zu bauen, wofür sie gebaut wurden.'
+  - _en: 'The Binder stays. Binders always stay.'
+    _de: 'Der Binder bleibt. Binder bleiben immer.'
+  - _en: 'Then, somewhere deeper than the Nexus, a second Core wakes up - and calls your name.'
+    _de: 'Dann erwacht irgendwo tiefer als der Nexus ein zweiter Kern - und ruft deinen Namen.'
+  - _en: 'The next cycle has begun.'
+    _de: 'Der nächste Zyklus hat begonnen.'
+  _victorySting: {fileID: 11400000, guid: 2d22e28063a4407caf5c831ed5d1d5b7, type: 2}
+  _coreLogs:
+  - _logId: premise
+    _title:
+      _en: 'Before the Descent'
+      _de: 'Vor dem Abstieg'
+    _text:
+      _en: 'The makers built the Works to rebuild a dead world, and put its last seed in a single Core. Then the makers were gone, and the machines of the Works forgot what they were for. You are a Binder. You are bound to the Core. If it breaks, it will bring you back - and you will try again.'
+      _de: 'Die Erbauer schufen das Werk, um eine tote Welt neu aufzubauen, und legten ihren letzten Samen in einen einzigen Kern. Dann verschwanden die Erbauer, und die Maschinen des Werks vergaßen, wofür sie da sind. Du bist ein Binder. Du bist an den Kern gebunden. Wenn er zerbricht, holt er dich zurück - und du versuchst es erneut.'
+    _unlock: 0
+    _unlockValue: 0
+    _unlockHint:
+      _en: ''
+      _de: ''
+  - _logId: seed
+    _title:
+      _en: 'The Seed'
+      _de: 'Der Samen'
+    _text:
+      _en: 'They called me the last seed. They did not say what a seed must survive before it grows.'
+      _de: 'Sie nannten mich den letzten Samen. Sie sagten nicht, was ein Samen überstehen muss, bevor er wächst.'
+    _unlock: 1
+    _unlockValue: 1
+    _unlockHint:
+      _en: 'Start a run'
+      _de: 'Starte einen Run'
+  - _logId: doors
+    _title:
+      _en: 'Doors'
+      _de: 'Tore'
+    _text:
+      _en: 'The Corebreaker was built to keep thieves out. It never learned the difference between a thief and a guardian.'
+      _de: 'Der Corebreaker wurde gebaut, um Diebe fernzuhalten. Er hat nie gelernt, einen Dieb von einem Wächter zu unterscheiden.'
+    _unlock: 2
+    _unlockValue: 1
+    _unlockHint:
+      _en: 'Defeat the Stage 1 boss'
+      _de: 'Besiege den Boss der Gießerei'
+  - _logId: memory
+    _title:
+      _en: 'Memory'
+      _de: 'Erinnerung'
+    _text:
+      _en: 'When I bring you back, I keep what you learned. It is the only thing I can carry for you.'
+      _de: 'Wenn ich dich zurückhole, behalte ich, was du gelernt hast. Es ist das Einzige, was ich für dich tragen kann.'
+    _unlock: 3
+    _unlockValue: 5
+    _unlockHint:
+      _en: 'Reach level 5'
+      _de: 'Erreiche Stufe 5'
+  - _logId: defences
+    _title:
+      _en: 'The Old Defences'
+      _de: 'Die alten Verteidigungen'
+    _text:
+      _en: 'The towers were here before the Scour. They obey whoever the Core trusts.'
+      _de: 'Die Türme waren vor den Scour hier. Sie gehorchen dem, dem der Kern vertraut.'
+    _unlock: 4
+    _unlockValue: 0
+    _unlockHint:
+      _en: 'Upgrade a tower to its highest level in one run'
+      _de: 'Bringe in einem Run einen Turm auf die höchste Stufe'
+  - _logId: fuel
+    _title:
+      _en: 'Fuel'
+      _de: 'Brennstoff'
+    _text:
+      _en: 'The reactors were meant to power the building. Now they only power themselves.'
+      _de: 'Die Reaktoren sollten den Bau antreiben. Jetzt treiben sie nur noch sich selbst an.'
+    _unlock: 2
+    _unlockValue: 2
+    _unlockHint:
+      _en: 'Defeat the Stage 2 boss'
+      _de: 'Besiege den Boss der Reaktortiefen'
+  - _logId: blueprint
+    _title:
+      _en: 'The Blueprint'
+      _de: 'Der Bauplan'
+    _text:
+      _en: 'The Works still remembers how to make things, in pieces. Link the pieces and it remembers a little more.'
+      _de: 'Das Werk weiß noch, wie man Dinge baut, in Stücken. Verbinde die Stücke, und es erinnert sich ein wenig mehr.'
+    _unlock: 5
+    _unlockValue: 3
+    _unlockHint:
+      _en: 'Reach Factory chain tier 3 in a run'
+      _de: 'Erreiche in einem Run Fabrik-Kettenstufe 3'
+  - _logId: parts
+    _title:
+      _en: 'Parts'
+      _de: 'Teile'
+    _text:
+      _en: 'The Scour are not evil. They were told to recover materials. Nobody told them to stop.'
+      _de: 'Die Scour sind nicht böse. Man hat ihnen gesagt, sie sollen Material bergen. Niemand hat ihnen gesagt, wann sie aufhören sollen.'
+    _unlock: 2
+    _unlockValue: 3
+    _unlockHint:
+      _en: 'Defeat the Stage 3 boss'
+      _de: 'Besiege den Boss der Schrottfelder'
+  - _logId: marked
+    _title:
+      _en: 'Marked'
+      _de: 'Gezeichnet'
+    _text:
+      _en: 'Some Scour carry pieces of Binders. You can tell by how they move.'
+      _de: 'Manche Scour tragen Teile von Bindern in sich. Man erkennt es daran, wie sie sich bewegen.'
+    _unlock: 6
+    _unlockValue: 50
+    _unlockHint:
+      _en: 'Defeat 50 elites'
+      _de: 'Besiege 50 Elite-Gegner'
+  - _logId: cold
+    _title:
+      _en: 'The Cold Ones'
+      _de: 'Die Kalten'
+    _text:
+      _en: 'Every Warden you have fought was once mine. I stopped counting how many I lost.'
+      _de: 'Jeder Warden, gegen den du gekämpft hast, war einmal meiner. Ich habe aufgehört zu zählen, wie viele ich verloren habe.'
+    _unlock: 2
+    _unlockValue: 4
+    _unlockHint:
+      _en: 'Defeat the Stage 4 boss'
+      _de: 'Besiege den Boss der Kryo-Gewölbe'
+  - _logId: why
+    _title:
+      _en: 'Why You'
+      _de: 'Warum du'
+    _text:
+      _en: 'I do not choose Binders. I make them. Each one a little different, hoping the difference is enough.'
+      _de: 'Ich wähle Binder nicht. Ich erschaffe sie. Jeden ein wenig anders, in der Hoffnung, dass der Unterschied genügt.'
+    _unlock: 3
+    _unlockValue: 30
+    _unlockHint:
+      _en: 'Reach level 30'
+      _de: 'Erreiche Stufe 30'
+  - _logId: roots
+    _title:
+      _en: 'Roots'
+      _de: 'Wurzeln'
+    _text:
+      _en: 'I am growing. It hurts in the way I always hoped it would.'
+      _de: 'Ich wachse. Es tut weh, so wie ich es mir immer erhofft habe.'
+    _unlock: 7
+    _unlockValue: 0
+    _unlockHint:
+      _en: 'Clear the game'
+      _de: 'Schließe das Spiel ab'
+  - _logId: cycle
+    _title:
+      _en: 'The Next Cycle'
+      _de: 'Der nächste Zyklus'
+    _text:
+      _en: 'There were always more Cores. There were always more Binders. There was never a last one.'
+      _de: 'Es gab immer mehr Kerne. Es gab immer mehr Binder. Es gab nie einen letzten.'
+    _unlock: 8
+    _unlockValue: 1
+    _unlockHint:
+      _en: 'Reach Paragon 1'
+      _de: 'Erreiche Paragon 1'
+  _credits:
+  - _en: 'COREBOUND'
+    _de: 'COREBOUND'
+  - _en: 'Game design, direction and development - Kratossos'
+    _de: 'Spieldesign, Leitung und Entwicklung - Kratossos'
+  - _en: 'Code, documentation and playtesting automation with AI agents (Claude by Anthropic)'
+    _de: 'Code, Dokumentation und Testautomatisierung mit KI-Agenten (Claude von Anthropic)'
+  - _en: 'Art and music direction - Kratossos'
+    _de: 'Grafik- und Musikleitung - Kratossos'
+  - _en: 'Made with Unity 6'
+    _de: 'Erstellt mit Unity 6'
+  - _en: ''
+    _de: ''
+  - _en: 'Thank you for playing.'
+    _de: 'Danke fürs Spielen.'
+  _creditsLoop: {fileID: 8300000, guid: 7839c21953dbb884a8b4c96003deb813, type: 3}
+  _creditsVolume: 0.5
