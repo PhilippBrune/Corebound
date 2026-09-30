@@ -1062,7 +1062,7 @@ player cannot tell what they are spending. They must differ in silhouette, not o
 
 Target: Assets/Art/UI/SkillTree/skill_node_key_frame.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELIVERED and wired - SkillTreeGraphPresenter (key nodes). Re-audited 2026-09-30; the old 'not wired' line predated the node graph (2026-09-28/29).
 
 Needed because:
 
@@ -1076,7 +1076,7 @@ Prompt:
 
 Target: Assets/Art/UI/SkillTree/skill_node_sub_frame.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELIVERED and wired - SkillTreeGraphPresenter (sub nodes). Re-audited 2026-09-30; the old 'not wired' line predated the node graph (2026-09-28/29).
 
 Needed because:
 
@@ -1090,7 +1090,7 @@ Prompt:
 
 Target: Assets/Art/UI/SkillTree/skill_link_segment.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELIVERED and wired - SkillTreeGraphPresenter (links). Re-audited 2026-09-30; the old 'not wired' line predated the node graph (2026-09-28/29).
 
 Needed because:
 
@@ -1202,7 +1202,7 @@ Prompt:
 
 Target: Assets/Art/UI/HUD/factory_chain_tier_indicator.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELIVERED and wired - FactoryChainIndicatorPresenter. Re-audited 2026-09-30; the old 'not wired' line predated the node graph (2026-09-28/29).
 
 Needed because:
 
@@ -1285,7 +1285,7 @@ Create a compact 2D UI info card frame for a top-down sci-fantasy defense roguel
 
 Target: Assets/Art/UI/SkillTree/character_portrait_frame.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELIVERED and wired - SkillTreeGraphPresenter (the portrait beside the graph). Re-audited 2026-09-30; the old 'not wired' line predated the node graph (2026-09-28/29).
 
 Needed because:
 
