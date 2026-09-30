@@ -7,10 +7,11 @@ namespace Corebound.Gameplay.Combat
         private float _remainingDuration;
         private float _tickTimer;
 
-        public StatusEffectRuntime(StatusEffectData data)
+        // durationMultiplier: the Catalyst's statuses last longer (CHARACTER_CLASSES_2026-09-30).
+        public StatusEffectRuntime(StatusEffectData data, float durationMultiplier = 1f)
         {
             _data = data;
-            _remainingDuration = data != null ? data.DurationSeconds : 0f;
+            _remainingDuration = data != null ? data.DurationSeconds * UnityEngine.Mathf.Max(0.1f, durationMultiplier) : 0f;
             _tickTimer = data != null ? data.TickIntervalSeconds : 0f;
         }
 

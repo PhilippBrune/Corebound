@@ -410,7 +410,10 @@ namespace Corebound.Gameplay.Factory
 
             var towersBuilt = _towerService != null ? _towerService.BuiltTowerCount : 0;
             var lifetimeProduced = _lifetimeProducedByChain.TryGetValue(chain.ChainId, out var produced) ? produced : 0;
-            return chain.ResolveTier(towersBuilt, lifetimeProduced, _wavesCleared);
+
+            // Salvager kit (CHARACTER_CLASSES_2026-09-30): every chain starts at tier 1 at least.
+            var floor = Mathf.Min(Corebound.Gameplay.Combat.CharacterEffects.MinimumChainTier, chain.Tiers != null ? chain.Tiers.Length : 0);
+            return Mathf.Max(floor, chain.ResolveTier(towersBuilt, lifetimeProduced, _wavesCleared));
         }
 
         private void RecordProduction(ProductionChainData chain, int gained)

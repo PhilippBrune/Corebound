@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc4586bcc0a4f5342907bec7219b1606, type: 3}
+  m_Name: Character_Engineer
+  m_EditorClassIdentifier: 
+  _characterId: engineer
+  _displayName: 'Engineer'
+  _displayNameDe: 'Ingenieur'
+  _role: 'Tower conductor'
+  _roleDe: 'Turmdirigent'
+  _summary: 'Overclock: towers within 3 units fire 30% faster. Hold Interact at a tower in combat to overcharge it: double damage for 5 s, once per tower per wave. Starts with a Sentinel built; weapon damage -20%.'
+  _summaryDe: 'Übertakten: Türme im Umkreis von 3 feuern 30 % schneller. Halte Interagieren an einem Turm im Kampf, um ihn zu überladen: doppelter Schaden für 5 s, einmal pro Turm und Welle. Startet mit einem Wächterturm; Waffenschaden -20 %.'
+  _signature: 1
+  _unlock: 1
+  _unlockValue: 0
+  _unlockHint: 'Upgrade any tower to its highest level in one run.'
+  _unlockHintDe: 'Werte in einem Run einen Turm bis zur höchsten Stufe auf.'
+  _maxHealthMultiplier: 1
+  _moveSpeedMultiplier: 1
+  _weaponDamageMultiplier: 0.8
+  _startingScrapBonus: 0
+  _startingTowerId: tower_sentinel
+  _favouredTags:
+  - 2
+  - 10
+  _favouredTagBonus: 0.6
+  _buildTagAffinity: 0.35
+  _spritePath: Assets/Art/Characters/Player/player_engineer_topdown.png
+  _tint: {r: 1.0, g: 0.8, b: 0.35, a: 1}
+  _skillTree: {fileID: 11400000, guid: 63b9635495a14e2cbe189b56728a3254, type: 2}

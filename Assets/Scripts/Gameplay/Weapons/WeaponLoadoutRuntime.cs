@@ -251,6 +251,25 @@ namespace Corebound.Gameplay.Weapons
             Recalculate();
         }
 
+        // How many Set Bonus tiers are active across the loadout (the Vanguard's damage bonus).
+        public int ActiveSetBonusTierCount
+        {
+            get
+            {
+                var count = 0;
+
+                for (var index = 0; index < _activeSetBonuses.Count; index++)
+                {
+                    if (_activeSetBonuses[index].Tier != null)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
         // Every weapon's active Set Bonus effects, plus the Arsenal bonus when it applies.
         public void CollectLoadoutEffects(string weaponId, List<WeaponBonusEffect> result)
         {

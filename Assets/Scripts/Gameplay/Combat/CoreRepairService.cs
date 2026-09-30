@@ -75,7 +75,10 @@ namespace Corebound.Gameplay.Combat
             }
         }
 
-        public int CurrentRepairCost => IsFreeRepairAvailable ? 0 : Mathf.Max(
+        // Custodian (CHARACTER_CLASSES_2026-09-30): the first repair of the run is free as well.
+        private bool IsAnyFreeRepairAvailable => IsFreeRepairAvailable || CharacterEffects.HasFreeRepair;
+
+        public int CurrentRepairCost => IsAnyFreeRepairAvailable ? 0 : Mathf.Max(
             1,
             Mathf.RoundToInt(_baseRepairCost * Mathf.Pow(_repeatCostMultiplier, _repairsThisRun)
                 * Mathf.Max(0.1f, Corebound.MetaProgression.RunProgressionSnapshot.Current.Skills[Corebound.MetaProgression.SkillEffectTarget.CoreRepairCostMultiplier])));
@@ -290,7 +293,8 @@ namespace Corebound.Gameplay.Combat
             // ResolveCost applies the PurchaseCostMultiplier and raises PriceModified once, which
             // is correct at the moment of an actual purchase. CurrentRepairCost is the base price;
             // TryPurchase expects the resolved one.
-            var isFree = IsFreeRepairAvailable;
+            var isFree = IsAnyFreeRepairAvailable;
+            var isSkillFree = IsFreeRepairAvailable;
             var cost = isFree ? 0 : _economyService.ResolveCost(CurrentRepairCost);
 
             if (!isFree && !_economyService.TryPurchase(cost))
@@ -306,9 +310,13 @@ namespace Corebound.Gameplay.Combat
                 return false;
             }
 
-            if (isFree)
+            if (isSkillFree)
             {
                 Corebound.MetaProgression.RunProgressionSnapshot.Current.TryConsumeOncePerStage(FreeRepairRuleKey);
+            }
+            else if (isFree)
+            {
+                CharacterEffects.FreeRepairUsed = true;
             }
             else
             {

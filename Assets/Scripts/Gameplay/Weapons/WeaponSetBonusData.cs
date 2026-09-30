@@ -157,14 +157,35 @@ namespace Corebound.Gameplay.Weapons
                 }
             }
 
+            // Vanguard (CHARACTER_CLASSES_2026-09-30): from two copies on, every archetype counts one
+            // copy more, and the largest stack more again with the Full Kit card or tree node.
+            var largest = -1;
+
             for (var index = 0; index < counted.Count; index++)
             {
+                if (largest < 0 || copies[index] > copies[largest])
+                {
+                    largest = index;
+                }
+            }
+
+            for (var index = 0; index < counted.Count; index++)
+            {
+                var effective = copies[index];
+
+                if (effective >= 2)
+                {
+                    effective += Corebound.Gameplay.Combat.CharacterEffects.SetBonusCopyDiscount
+                        + (index == largest ? Corebound.Gameplay.Combat.CharacterEffects.SetBonusFocusBonus : 0);
+                    effective = System.Math.Min(ArsenalDistinctWeapons, effective);
+                }
+
                 // Only the highest tier reached applies; tiers do not stack with each other.
-                var tier = FindTier(counted[index], copies[index], out var nextTier);
+                var tier = FindTier(counted[index], effective, out var nextTier);
 
                 if (tier != null || nextTier != null)
                 {
-                    result.Add(new ActiveSetBonus(counted[index], copies[index], tier, nextTier));
+                    result.Add(new ActiveSetBonus(counted[index], effective, tier, nextTier));
                 }
             }
 

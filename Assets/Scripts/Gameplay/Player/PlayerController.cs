@@ -97,6 +97,32 @@ namespace Corebound.Gameplay.Player
             }
         }
 
+        // K6-2 (2026-09-30): each class has its own top-down sprite. Until a class's art exists it
+        // wears the Vanguard's sprite in its colour, so it can still be told apart in a busy arena.
+        public void ApplyCharacterLook(Corebound.MetaProgression.CharacterData character)
+        {
+            if (character == null || _spriteRenderer == null || _playerData == null)
+            {
+                return;
+            }
+
+            var sprite = string.IsNullOrWhiteSpace(character.SpritePath) ? null : DebugSpriteFactory.LoadProjectSprite(character.SpritePath);
+
+            if (sprite != null)
+            {
+                // Fitting rescales the transform, and the collider with it; the hitbox must not
+                // change size just because a class's sprite is drawn with more or less padding.
+                var worldRadius = _circleCollider2D.radius * Mathf.Abs(transform.localScale.x);
+                _spriteRenderer.sprite = sprite;
+                _spriteRenderer.color = Color.white;
+                DebugSpriteFactory.FitTransformToSprite(transform, sprite, Vector2.one * (_playerData.CollisionRadius * 2.6f));
+                _circleCollider2D.radius = worldRadius / Mathf.Max(0.0001f, Mathf.Abs(transform.localScale.x));
+                return;
+            }
+
+            _spriteRenderer.color = character.Tint;
+        }
+
         private void ApplyVisualDefaults()
         {
             if (_playerData == null)

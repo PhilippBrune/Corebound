@@ -27,5 +27,5 @@ MonoBehaviour:
   - Der aktuelle Fortsetzungs-Run wird durch einen frischen Stage-Start-Zustand ersetzt.
   - Audio, Einstellungen und Meta-Progression bleiben unberührt.
   - Bestätigen startet das Gameplay sofort. Abbrechen kehrt zum Menü zurück.
-  _footerHint: Confirm starts a new run. Cancel returns to the Main Menu.
-  _footerHintDe: Bestätigen startet einen neuen Run. Abbrechen kehrt zum Hauptmenü zurück.
+  _footerHint: Up / Down picks the start weapon.   Q / Tab or LB / RB changes class.   Confirm starts.   Cancel returns.
+  _footerHintDe: "Hoch / Runter w\u00E4hlt die Startwaffe.   Q / Tab oder LB / RB wechselt die Klasse.   Best\u00E4tigen startet.   Abbrechen kehrt zur\u00FCck."

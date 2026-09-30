@@ -254,6 +254,42 @@ MonoBehaviour:
           _operation: 0
           _value: 2
       _iconSpritePath: 
+    - _nodeId: vanguard_full_kit
+      _displayName: 'Full Kit'
+      _displayNameDe: 'Volle Ausrüstung'
+      _description: 'Your largest weapon stack counts one copy more toward its Set Bonus.'
+      _descriptionDe: 'Dein größter Waffenstapel zählt für seinen Set-Bonus eine Kopie mehr.'
+      _cost: 3
+      _prerequisiteNodeId: combat_full_arsenal
+      _branchSpendRequirement: 22
+      _effects:
+      - _target: 36
+        _operation: 0
+        _value: 1
+      _subNodes:
+      - _nodeId: vanguard_drill
+        _displayName: 'Drill'
+        _displayNameDe: 'Drill'
+        _description: 'Loadout Discipline +15% stronger per rank.'
+        _descriptionDe: 'Ladungsdisziplin pro Rang 15 % stärker.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 31
+          _operation: 0
+          _value: 0.15
+      - _nodeId: vanguard_sidearm
+        _displayName: 'Sidearm'
+        _displayNameDe: 'Seitenwaffe'
+        _description: '+3% weapon damage per rank.'
+        _descriptionDe: '+3 % Waffenschaden pro Rang.'
+        _costPerRank: 1
+        _maxRank: 3
+        _effects:
+        - _target: 0
+          _operation: 0
+          _value: 0.03
+      _iconSpritePath: 
   - _branchId: construction
     _displayName: Construction
     _displayNameDe: Bau

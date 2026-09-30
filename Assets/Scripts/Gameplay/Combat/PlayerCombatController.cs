@@ -51,7 +51,9 @@ namespace Corebound.Gameplay.Combat
 
         private ISaveManager SaveManager => SaveManagerResolver.Resolve(_saveManagerSource);
 
-        public float CurrentHealthNormalized => _runtime != null && _runtime.MaxHealth > Mathf.Epsilon ? _runtime.CurrentHealth / _runtime.MaxHealth : 1f;
+        public float MaxHealth => _runtime != null ? _runtime.MaxHealth : 0f;
+
+        public float CurrentHealthNormalized =>_runtime != null && _runtime.MaxHealth > Mathf.Epsilon ? _runtime.CurrentHealth / _runtime.MaxHealth : 1f;
 
         public bool IsAlive => _runtime != null && _runtime.IsAlive;
 
@@ -98,13 +100,19 @@ namespace Corebound.Gameplay.Combat
         public int LiveProjectileCount => CombatProjectile.ActivePlayerProjectileCount;
 
         public float MovementSpeedMultiplier => (_runtime != null ? _runtime.MovementSpeedMultiplier : 1f)
+            * (_progression.Character != null ? _progression.Character.MoveSpeedMultiplier : 1f)
             * (_cardService != null ? _cardService.PlayerMovementSpeedMultiplier : 1f)
             * _progression.Skills[SkillEffectTarget.PlayerMoveSpeedMultiplier];
 
         private void Awake()
         {
             _progression = RunProgressionSnapshot.Capture(SaveManager, _combatData != null ? _combatData.MetaProgressionDefinitionData : null);
-            var maxHealth = (_combatData != null ? _combatData.MaxHealth : 8f) * Mathf.Max(0.1f, _progression.Skills[SkillEffectTarget.PlayerMaxHealthMultiplier]);
+
+            // The class this run is played as (CHARACTER_CLASSES_2026-09-30). Configured before the
+            // loadout loads, because the Vanguard's signature changes how Set Bonus tiers resolve.
+            CharacterEffects.ConfigureRun(_progression.Character, _progression.Skills);
+            var maxHealth = (_combatData != null ? _combatData.MaxHealth : 8f) * Mathf.Max(0.1f, _progression.Skills[SkillEffectTarget.PlayerMaxHealthMultiplier])
+                * (_progression.Character != null ? _progression.Character.MaxHealthMultiplier : 1f);
             _runtime = new PlayerCombatRuntime(maxHealth);
             _projectilePool = new ProjectilePool(_projectileParent);
             RestoreRuntimeStateFromSave();
@@ -133,6 +141,14 @@ namespace Corebound.Gameplay.Combat
 
             _supportEffects = gameObject.GetOrAdd<PlayerSupportEffects>();
             _supportEffects.Bind(this, _cardService);
+            gameObject.GetOrAdd<CharacterSignatureRuntime>().Bind(this, InputReader);
+
+            var body = GetComponent<Corebound.Gameplay.Player.PlayerController>();
+
+            if (body != null)
+            {
+                body.ApplyCharacterLook(_progression.Character);
+            }
         }
 
         private void OnEnable()
@@ -164,6 +180,13 @@ namespace Corebound.Gameplay.Combat
 
             var deltaTime = Time.deltaTime;
             _runtime.Tick(deltaTime);
+
+            // A class card that changes the Vanguard's Set Bonus counting re-resolves the tiers.
+            if (_characterEffectsVersion != CharacterEffects.Version)
+            {
+                _characterEffectsVersion = CharacterEffects.Version;
+                _loadout.NotifyTierChanged();
+            }
             TickTimedFireIntervalBuff(deltaTime);
             UpdateAimFacing();
             RefreshSlotModifierStates();
@@ -323,6 +346,7 @@ namespace Corebound.Gameplay.Combat
                 * skills[SkillEffectTarget.WeaponDamageMultiplier]
                 * modifiers.DamageMultiplier
                 * (1f + modifiers.HeldDamageRampPerSecond * _fireHeldSeconds)
+                * ClassDamageMultiplier
                 * (isCritical ? criticalMultiplier : 1f);
             var projectileSpeedMultiplier = modifiers.ProjectileSpeedMultiplier * skills[SkillEffectTarget.ProjectileSpeedMultiplier];
             var spreadMultiplier = modifiers.SpreadAngleMultiplier * upgrades.GetReductionMultiplier(weapon.WeaponId, UpgradableStat.Accuracy);
@@ -343,7 +367,9 @@ namespace Corebound.Gameplay.Combat
                 var spawnPosition = origin + shotDirection * spawnDistance;
                 var damageContext = CreateDamageContext(weapon, modifiers, spawnPosition, shotDirection, damageMultiplier, isCritical);
                 var projectile = _projectilePool.Get(_projectilePrefab);
-                projectile.Launch(gameObject, weapon.Projectile, spawnPosition, shotDirection, damageContext, projectileSpeedMultiplier, modifiers.AdditionalPierce, modifiers.ExplodeOnExpire, modifiers.ExplodeOnImpact);
+                // Custodian: tethered to the Core, every shot pierces one more enemy.
+                var pierce = modifiers.AdditionalPierce + (CharacterEffects.IsTethered ? 1 : 0);
+                projectile.Launch(gameObject, weapon.Projectile, spawnPosition, shotDirection, damageContext, projectileSpeedMultiplier, pierce, modifiers.ExplodeOnExpire, modifiers.ExplodeOnImpact);
 
                 WeaponEvents.RaiseProjectileSpawned(new ProjectileSpawnedEventArgs(gameObject, weapon, spawnPosition, shotDirection, damageContext.Amount, shotIndex, isCritical));
                 shotIndex++;
@@ -497,7 +523,10 @@ namespace Corebound.Gameplay.Combat
             // that is known when the shot leaves the barrel. The receiver applies them on impact.
             var hitEffects = CombatHitEffects.None;
 
-            if (modifiers.PoisonChance > 0f && UnityEngine.Random.value < modifiers.PoisonChance)
+            // The Catalyst poisons from the start (its class chance adds to the cards').
+            var poisonChance = modifiers.PoisonChance + CharacterEffects.ClassPoisonChance;
+
+            if (poisonChance > 0f && UnityEngine.Random.value < poisonChance)
             {
                 hitEffects |= CombatHitEffects.Poison;
             }
@@ -543,12 +572,23 @@ namespace Corebound.Gameplay.Combat
                 * _progression.Upgrades.GetIncreaseMultiplier(weapon.WeaponId, UpgradableStat.Damage)
                 * _progression.Skills[SkillEffectTarget.WeaponDamageMultiplier]
                 * slot.Modifiers.DamageMultiplier
+                * ClassDamageMultiplier
                 * Mathf.Max(0f, damageFraction);
             var context = new DamageContext(DamageSourceType.Player, DamageKind.Direct, damage, origin, direction, null, false, sourceId);
             var projectile = _projectilePool.Get(_projectilePrefab);
             projectile.Launch(gameObject, weapon.Projectile, origin, direction, context);
             return true;
         }
+
+        private int _characterEffectsVersion = -1;
+
+        // The class's share of weapon damage: its base (Engineer and Catalyst trade some away),
+        // the Salvager's hoard for this wave, and the Vanguard's bonus per active Set Bonus tier.
+        private float ClassDamageMultiplier => (_progression.Character != null ? _progression.Character.WeaponDamageMultiplier : 1f)
+            * CharacterEffects.HoardDamageMultiplier
+            * (1f + CharacterEffects.DamagePerActiveSetBonusTier * _loadout.ActiveSetBonusTierCount);
+
+        public IInputReader Input => InputReader;
 
         // Leech Rounds: adds a flat amount of health without touching the invulnerability window.
         public bool TryHealAmount(float amount)

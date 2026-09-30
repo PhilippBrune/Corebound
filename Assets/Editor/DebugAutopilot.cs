@@ -200,7 +200,28 @@ namespace Corebound.EditorTools
         // project root starts a run within a second.
         private static void PollRequestFile()
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.timeSinceStartup < _nextRequestPoll)
+            if (EditorApplication.timeSinceStartup < _nextRequestPoll)
+            {
+                return;
+            }
+
+            // "stop" is the one command read during Play: it ends a probe that has already seen
+            // what it came for, instead of waiting out the whole run.
+            if (EditorApplication.isPlaying)
+            {
+                _nextRequestPoll = EditorApplication.timeSinceStartup + 1.0;
+                var playing = System.IO.File.Exists(RequestFilePath) ? ReadCommand() : null;
+
+                if (playing != null && playing.Equals("stop", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    WriteIdleRequestFile();
+                    StopAutopilot();
+                }
+
+                return;
+            }
+
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
             }
@@ -244,6 +265,22 @@ namespace Corebound.EditorTools
                     return;
                 }
             }
+
+            // "class engineer 1" (CHARACTER_CLASSES_2026-09-30): play as that class, unlocked or not;
+            // combines with every other variant ("class custodian god 2"). The Engineer walks to a
+            // tower every twelve seconds and holds Interact to overcharge it, and every wave change
+            // logs a CLASS line with what the signature did.
+            var classId = string.Empty;
+
+            if (contents.StartsWith("class ", System.StringComparison.OrdinalIgnoreCase))
+            {
+                var rest = contents.Substring("class ".Length).Trim();
+                var space = rest.IndexOf(' ');
+                classId = (space > 0 ? rest.Substring(0, space) : rest).ToLowerInvariant();
+                contents = space > 0 ? rest.Substring(space + 1).Trim() : string.Empty;
+            }
+
+            SessionState.SetString(ClassTestSessionKey, classId);
 
             // "loadout3": stage 3 with all six slots filled (3 Rapid, 2 Spread, 1 Beam), so Set
             // Bonuses, the projectile budget and the loadout HUD can be exercised without first
@@ -363,6 +400,7 @@ namespace Corebound.EditorTools
         public const string CardsTestSessionKey = "Corebound.Autopilot.CardsTest";
         public const string BossTestSessionKey = "Corebound.Autopilot.BossTest";
         public const string RecordsTestSessionKey = "Corebound.Autopilot.RecordsTest";
+        public const string ClassTestSessionKey = "Corebound.Autopilot.ClassTest";
 
         private static string ReadCommand()
         {
@@ -921,6 +959,13 @@ namespace Corebound.EditorTools
                 return;
             }
 
+            // The class first, so a progression probe buys into that class's tree.
+            if (!_classSelected)
+            {
+                _classSelected = true;
+                ApplyClassTest();
+            }
+
             if (TickProgressionTest())
             {
                 return;
@@ -1002,6 +1047,21 @@ namespace Corebound.EditorTools
                         _premiseShotTaken = true;
                         Debug.Log(DebugAutopilot.LogPrefix + " PREMISE page: " + route.ActivePanelTitleOverride);
                         Shot("premise");
+                        _stepTimer = 0f;
+                        return;
+                    }
+                }
+
+                // The class line on the New Run panel, once, before it is confirmed away.
+                if (!_classShotTaken && ClassTestId.Length > 0 && _stepTimer > 0.6f)
+                {
+                    var routePanel = FindFirstObjectByType<Corebound.UI.MainMenu.MainMenuRouteTargetController>();
+
+                    if (routePanel != null && routePanel.ActivePanelSubtitleOverride != null && routePanel.ActivePanelTitleOverride == null)
+                    {
+                        _classShotTaken = true;
+                        Debug.Log(DebugAutopilot.LogPrefix + " CLASS select: " + routePanel.ActivePanelSubtitleOverride);
+                        Shot("class_select_" + ClassTestId);
                         _stepTimer = 0f;
                         return;
                     }
@@ -1178,6 +1238,19 @@ namespace Corebound.EditorTools
 
             _lastLoggedState = state;
             LogCardsWave(state.ToString());
+            LogClassState(state.ToString());
+
+            if (ClassTestId == "salvager" && state == WaveState.Intermission && !_hoardScrapGranted)
+            {
+                var wallet = FindFirstObjectByType<Corebound.Gameplay.Resources.ResourceWalletService>();
+
+                if (wallet != null)
+                {
+                    _hoardScrapGranted = true;
+                    wallet.AddFlat(200);
+                    Debug.Log(DebugAutopilot.LogPrefix + " CLASS granted 200 Scrap for the hoard probe, now " + wallet.CurrentAmount);
+                }
+            }
             Debug.Log(DebugAutopilot.LogPrefix + " -> " + state
                 + " wave=" + _waveManager.CurrentWaveNumber
                 + " gates[shop=" + _waveManager.RequiresIntermissionShopAction
@@ -1325,6 +1398,8 @@ namespace Corebound.EditorTools
                 _strafeSign = -_strafeSign;
             }
 
+            TickClassShot();
+            TickEngineerOvercharge(playerPosition, ref move);
             var clampedMove = move.sqrMagnitude > 1f ? move.normalized : move;
 
             if (UsePad)
@@ -2387,9 +2462,178 @@ namespace Corebound.EditorTools
             }
         }
 
+        // ---- Class variant (CHARACTER_CLASSES_2026-09-30) ------------------------------------------
+
+        private bool _classSelected;
+        private bool _classShotTaken;
+        private float _overchargeCooldown = 4f;
+        private float _overchargeAttempt;
+        private int _overchargeSeen;
+        private int _shockwaveSeen;
+        private bool _classShotInRun;
+
+        private static string ClassTestId => SessionState.GetString(DebugAutopilot.ClassTestSessionKey, string.Empty);
+
+        // Selects the class on the test profile before New Run is confirmed. The unlock rules are
+        // bypassed for the session, so a fresh profile can play a late class.
+        private void ApplyClassTest()
+        {
+            var classId = ClassTestId;
+            Corebound.MetaProgression.CharacterUnlockRules.DebugUnlockAll = classId.Length > 0;
+
+            if (classId.Length == 0)
+            {
+                return;
+            }
+
+            var service = FindFirstObjectByType<Corebound.MetaProgression.MetaProgressionService>();
+            var definition = service != null ? service.DefinitionData : null;
+
+            if (service == null || definition == null || definition.FindCharacter(classId) == null || definition.FindCharacter(classId).CharacterId != classId)
+            {
+                Debug.LogWarning(DebugAutopilot.LogPrefix + " CLASS '" + classId + "' is not in the class catalogue.");
+                return;
+            }
+
+            service.SaveData.SetSelectedCharacterId(classId);
+            service.Commit();
+            Debug.Log(DebugAutopilot.LogPrefix + " CLASS selected: " + classId);
+        }
+
+        private void LogClassState(string state)
+        {
+            if (ClassTestId.Length == 0)
+            {
+                return;
+            }
+
+            var character = CharacterEffects.Character;
+            var snapshot = Corebound.MetaProgression.RunProgressionSnapshot.Current;
+            var player = _playerCombat;
+            var body = player != null ? player.GetComponent<SpriteRenderer>() : null;
+            Debug.Log(DebugAutopilot.LogPrefix + " CLASS " + state
+                + " class=" + (character != null ? character.CharacterId : "none")
+                + " snapshot=" + snapshot.CharacterId
+                + " power=" + CharacterEffects.SignaturePower.ToString("0.00")
+                + " setDiscount=" + CharacterEffects.SetBonusCopyDiscount
+                + " setTiers=" + (player != null ? player.Loadout.ActiveSetBonusTierCount : -1)
+                + " aura=" + CharacterEffects.TowerAuraRate.ToString("0.00")
+                + " overcharges=" + CharacterSignatureRuntime.DebugOverchargeCount
+                + " scrapX=" + CharacterEffects.ScrapDropMultiplier.ToString("0.0")
+                + " hoard=" + CharacterEffects.HoardDamageMultiplier.ToString("0.00")
+                + " tethered=" + CharacterEffects.IsTethered
+                + " shockwaves=" + CharacterSignatureRuntime.DebugShockwaveCount
+                + " statusX=" + CharacterEffects.StatusDurationMultiplier.ToString("0.00")
+                + " contagion=" + CharacterEffects.ContagionRadius.ToString("0.0") + " spreads=" + CombatHitReceiver.DebugContagionSpreads + " poisonDmg=" + _poisonDamage.ToString("0.0")
+                + " health=" + (player != null ? player.MaxHealth.ToString("0.0") : "?")
+                + " tint=" + (body != null ? ColorUtility.ToHtmlStringRGB(body.color) : "?"));
+
+            // Not now: the gates shot is taken on this same frame, and ScreenCapture keeps only the
+            // last capture of a frame.
+            if (!_classShotInRun && state == WaveState.Combat.ToString())
+            {
+                _classShotInRun = true;
+                _classShotAt = Time.time + 3f;
+            }
+        }
+
+        private float _classShotAt = -1f;
+
+        private float _lastHoard = 1f;
+        private bool _hoardScrapGranted;
+
+        private void TickClassShot()
+        {
+            // Salvager: the hoard only pays out above 150 Scrap at a wave start, which the autopilot
+            // never holds because it spends at every intermission - so the probe hands it the Scrap.
+            if (!Mathf.Approximately(CharacterEffects.HoardDamageMultiplier, _lastHoard))
+            {
+                _lastHoard = CharacterEffects.HoardDamageMultiplier;
+                Debug.Log(DebugAutopilot.LogPrefix + " CLASS hoard multiplier now " + _lastHoard.ToString("0.00"));
+            }
+            if (_classShotAt > 0f && Time.time >= _classShotAt)
+            {
+                _classShotAt = -1f;
+                Shot("class_run_" + ClassTestId);
+            }
+        }
+
+        // The Engineer's verb: every twelve seconds walk to the nearest tower and hold Interact
+        // until the overcharge lands, still shooting at the nearest enemy on the way.
+        private void TickEngineerOvercharge(Vector2 playerPosition, ref Vector2 move)
+        {
+            if (ClassTestId != "engineer" || _inputReader == null)
+            {
+                return;
+            }
+
+            if (CharacterSignatureRuntime.DebugOverchargeCount != _overchargeSeen)
+            {
+                _overchargeSeen = CharacterSignatureRuntime.DebugOverchargeCount;
+                Debug.Log(DebugAutopilot.LogPrefix + " CLASS overcharge landed (#" + _overchargeSeen + ") after " + _overchargeAttempt.ToString("0.0") + "s");
+                Shot("class_overcharge");
+                EndOvercharge(12f);
+                return;
+            }
+
+            _overchargeCooldown -= Time.deltaTime;
+
+            if (_overchargeCooldown > 0f)
+            {
+                return;
+            }
+
+            Transform nearest = null;
+            var best = float.MaxValue;
+
+            foreach (var tower in FindObjectsByType<TowerRuntimeController>(FindObjectsSortMode.None))
+            {
+                var distance = ((Vector2)tower.transform.position - playerPosition).sqrMagnitude;
+
+                if (tower.isActiveAndEnabled && distance < best)
+                {
+                    best = distance;
+                    nearest = tower.transform;
+                }
+            }
+
+            if (nearest == null)
+            {
+                EndOvercharge(5f);
+                return;
+            }
+
+            _overchargeAttempt += Time.deltaTime;
+
+            if (_overchargeAttempt > 10f)
+            {
+                Debug.LogWarning(DebugAutopilot.LogPrefix + " CLASS overcharge did not land within 10s (distance " + Mathf.Sqrt(best).ToString("0.00") + ", interactHeld=" + _inputReader.IsInteractHeld + ").");
+                EndOvercharge(12f);
+                return;
+            }
+
+            var offset = (Vector2)nearest.position - playerPosition;
+            // The tower's collider keeps the player about 1.3 units from its centre, so aim for just inside the reach.
+            var holding = offset.magnitude <= CharacterEffects.OverchargeReach - 0.15f;
+            move = holding ? Vector2.zero : offset.normalized;
+            _inputReader.DebugSetInteractHeld(holding);
+        }
+
+        private void EndOvercharge(float cooldown)
+        {
+            _overchargeCooldown = cooldown;
+            _overchargeAttempt = 0f;
+
+            if (_inputReader != null)
+            {
+                _inputReader.DebugSetInteractHeld(false);
+            }
+        }
+
         private void Finish()
         {
             _step = Step.Done;
+            Corebound.MetaProgression.CharacterUnlockRules.DebugUnlockAll = false;
             Debug.Log(DebugAutopilot.LogPrefix + " finished after " + _elapsed.ToString("0.0") + "s. sawShop=" + _sawShopOpen);
             LogRunSummary();
             SessionState.SetBool(DebugAutopilot.ActiveSessionKey, false);

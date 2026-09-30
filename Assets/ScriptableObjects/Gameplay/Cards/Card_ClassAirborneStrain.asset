@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04b43e4f37ab4f7ba068087eaf824db0, type: 3}
+  m_Name: Card_ClassAirborneStrain
+  m_EditorClassIdentifier: 
+  _cardId: card_class_airborne_strain
+  _displayName: 'Airborne Strain'
+  _displayNameDe: 'Luftgetragener Stamm'
+  _description: 'Contagion reaches 1.5 units further.'
+  _descriptionDe: 'Die Ansteckung reicht 1,5 Einheiten weiter.'
+  _rarity: 1
+  _requiredUnlockId: 
+  _tags:
+  - 4
+  - 8
+  _effects:
+  - {fileID: 11400000, guid: 9b7a238b7ffc476ebca0efaa4d894222, type: 2}
+  _weaponModifiers: []
+  _stackable: 1
+  _grantedWeapon: {fileID: 0}
+  _requiredCharacterId: catalyst

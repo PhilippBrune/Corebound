@@ -61,14 +61,17 @@ namespace Corebound.Gameplay.Combat
         // The divisor a tower at this position applies to its fire interval.
         public static float ResolveTowerAuraRateMultiplier(UnityEngine.Vector2 towerPosition)
         {
-            if (TowerAuraFireRate <= 0f || AuraCenter == null)
+            // Overclock Beacon (card) and the Engineer's signature add up; both reach 3 units.
+            var rate = TowerAuraFireRate + CharacterEffects.TowerAuraRate;
+
+            if (rate <= 0f || AuraCenter == null)
             {
                 return 1f;
             }
 
             var offset = (UnityEngine.Vector2)AuraCenter.position - towerPosition;
             return offset.sqrMagnitude <= PlayerSupportRules.TowerAuraRadius * PlayerSupportRules.TowerAuraRadius
-                ? 1f + TowerAuraFireRate
+                ? 1f + rate
                 : 1f;
         }
     }

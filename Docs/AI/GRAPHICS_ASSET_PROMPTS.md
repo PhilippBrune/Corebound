@@ -1472,3 +1472,75 @@ shooting on the player's side.
 Prompt:
 
 Create a 2D top-down sprite of a small combat drone for a sci-fantasy defense roguelite, seen from directly above and pointing up: a compact armoured body with two short rotor arms, a single forward-facing cyan sensor eye and a tiny gun barrel at the front. It orbits the player at roughly 40 pixels across, so the silhouette must stay clear at that size and read as friendly - use the player's steel-blue and cyan palette, never the red and orange of enemies. Match the established Corebound language: steel-blue structure, pale metallic edges, cyan energy accents, industrial sci-fantasy. Transparent background, no text.
+
+## Character classes 2026-09-30 (Assets 110-113)
+
+The five classes (`Docs/Specs/DIY/CHARACTER_CLASSES_2026-09-30.md`, owner decision K6-2: a new
+top-down sprite per class) are playable now. Until a class's sprite exists it wears the Vanguard's
+sprite (Asset 14) tinted in its class colour, in the arena and in the skill-tree portrait. Each file
+below is already looked for by `CharacterData._spritePath`; dropping it in replaces the tint with no
+code change. After adding one, mirror it into `Assets/StreamingAssets/Art/` and run
+**Corebound > Validate Art Pipeline**.
+
+Shared rules for all four, so the five classes read as one cast: same camera (directly above), same
+canvas and scale as `player_base_topdown.png`, same facing as the Vanguard (the weapon pointing to
+the bottom edge of the canvas, because the game rotates the sprite by that assumption), the same
+steel-blue and cyan friendly palette as the base, and the class colour below as the *accent*, not
+the whole body. The silhouette is what must differ: a player has to tell the five apart at 40 pixels
+in a busy arena (Vision 19.6). No weapon effects, no text, transparent background.
+
+### Asset 110 - Engineer
+
+Target: Assets/Art/Characters/Player/player_engineer_topdown.png
+
+**Status:** NOT CREATED (2026-09-30). Placeholder: the Vanguard sprite tinted amber (1.0, 0.8, 0.35).
+
+Needed because:
+
+The Engineer runs between towers and overcharges them; it must read as a technician, not a soldier.
+
+Prompt:
+
+Create the playable Engineer character sprite for a top-down sci-fantasy action roguelite, seen from directly above, facing down (its tool arm pointing to the bottom edge). A compact technician in a work harness: a broad tool-pack on the back with two short antenna masts, one arm ending in a stubby multi-tool emitter instead of a rifle, heavy gloves, a round welding visor. Silhouette must be clearly different from a soldier: wider at the shoulders because of the pack, the antennas breaking the outline. Steel-blue armour and pale metallic edges like the rest of the cast, amber (#FFCC59) as the accent on the visor, the pack's status lights and the emitter tip. Stylised, light 2.5D shading, flat sprite for Unity 2D. Same canvas size and framing as the existing player sprite. Transparent background, no effects, no text.
+
+### Asset 111 - Salvager
+
+Target: Assets/Art/Characters/Player/player_salvager_topdown.png
+
+**Status:** NOT CREATED (2026-09-30). Placeholder: the Vanguard sprite tinted green (0.55, 0.95, 0.55).
+
+Needed because:
+
+The Salvager hoards Scrap and pulls pickups to itself; it should look like a scavenger who carries its wealth.
+
+Prompt:
+
+Create the playable Salvager character sprite for a top-down sci-fantasy action roguelite, seen from directly above, facing down (the weapon pointing to the bottom edge). A lean scavenger with a bulging salvage sack or crate strapped to the back, a magnet coil on one shoulder, mismatched armour plates bolted together from different machines, a short sawn-off gun. The silhouette is asymmetric - the sack on one side, the coil on the other - so it is never mistaken for the tidy Vanguard. Steel-blue and rust-grey plates with pale metallic edges, scrap-green (#8CF28C) as the accent on the magnet coil and sack straps. Stylised, light 2.5D shading, flat sprite for Unity 2D. Same canvas size and framing as the existing player sprite. Transparent background, no effects, no text.
+
+### Asset 112 - Custodian
+
+Target: Assets/Art/Characters/Player/player_custodian_topdown.png
+
+**Status:** NOT CREATED (2026-09-30). Placeholder: the Vanguard sprite tinted pale blue (0.55, 0.8, 1.0).
+
+Needed because:
+
+The Custodian anchors the Core behind a tether; it is the tank of the cast and should look heavy.
+
+Prompt:
+
+Create the playable Custodian character sprite for a top-down sci-fantasy action roguelite, seen from directly above, facing down (the weapon pointing to the bottom edge). A heavily armoured guardian: broad rounded pauldrons, a tower shield or shield-plate carried on one arm, a short heavy rifle in the other, a small glowing tether node on the back where the beam to the Core attaches. The widest and roundest silhouette of the five classes. Steel-blue plate with pale metallic edges, ice-blue (#8CCCFF) as the accent on the tether node and shield rim. Stylised, light 2.5D shading, flat sprite for Unity 2D. Same canvas size and framing as the existing player sprite. Transparent background, no effects, no text.
+
+### Asset 113 - Catalyst
+
+Target: Assets/Art/Characters/Player/player_catalyst_topdown.png
+
+**Status:** NOT CREATED (2026-09-30). Placeholder: the Vanguard sprite tinted violet (0.8, 0.55, 1.0).
+
+Needed because:
+
+The Catalyst spreads poison and every other status; it is the late, strange class and should look like it.
+
+Prompt:
+
+Create the playable Catalyst character sprite for a top-down sci-fantasy action roguelite, seen from directly above, facing down (the weapon pointing to the bottom edge). A plague-doctor technician: a long hooded coat whose tails fan out behind, a beaked respirator mask, a back rack of three glass vials, and a slim sprayer-gun connected to the vials by a hose. The narrowest silhouette of the five, with the coat tails as its signature shape. Steel-blue coat panels with pale metallic edges, violet (#CC8CFF) as the accent on the vials and the mask lenses, a hint of acid yellow-green inside one vial. Stylised, light 2.5D shading, flat sprite for Unity 2D. Same canvas size and framing as the existing player sprite. Transparent background, no effects, no text.

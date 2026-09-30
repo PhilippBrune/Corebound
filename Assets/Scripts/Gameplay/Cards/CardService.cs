@@ -247,8 +247,24 @@ namespace Corebound.Gameplay.Cards
         public float ResolveOfferWeight(CardData card)
         {
             var weight = _cardOfferData != null ? _cardOfferData.ResolveWeight(card.Rarity) : 1f;
-            var affinity = _cardOfferData != null ? _cardOfferData.TagAffinity : 0f;
+
+            // Open Topics 5 (b) / K5-1 (2026-09-30): the class sets the build-synergy knob and adds
+            // its own favoured tags on top, so an Engineer sees tower cards more often from wave 1.
+            var character = Corebound.MetaProgression.RunProgressionSnapshot.Current.Character;
+            var affinity = character != null ? character.BuildTagAffinity : (_cardOfferData != null ? _cardOfferData.TagAffinity : 0f);
             var tags = card.Tags;
+
+            if (character != null && !card.IsWeaponCard && tags != null)
+            {
+                for (var index = 0; index < tags.Length; index++)
+                {
+                    if (character.Favours(tags[index]))
+                    {
+                        weight *= 1f + character.FavouredTagBonus;
+                        break;
+                    }
+                }
+            }
 
             if (Mathf.Approximately(affinity, 0f) || card.IsWeaponCard || tags == null || tags.Length == 0 || _buildTagCounts.Count == 0)
             {
@@ -394,6 +410,11 @@ namespace Corebound.Gameplay.Cards
                 return false;
             }
 
+            if (card.IsClassCard && card.RequiredCharacterId != Corebound.MetaProgression.RunProgressionSnapshot.Current.CharacterId)
+            {
+                return false;
+            }
+
             if (card.Rarity == CardRarity.Legendary && _cardOfferData != null && _selectedCards.Count < _cardOfferData.LegendaryMinimumSelectedCards)
             {
                 return false;
@@ -510,6 +531,13 @@ namespace Corebound.Gameplay.Cards
             }
 
             Corebound.Gameplay.Combat.RunCombatEffects.SetVulnerableCopies(markCopies);
+            Corebound.Gameplay.Combat.CharacterEffects.SetCardBonuses(
+                _modifierSnapshot.ClassSignaturePower,
+                Mathf.RoundToInt(_modifierSnapshot.ClassOverchargeCharges),
+                _modifierSnapshot.ClassHoardThresholdReduction,
+                _modifierSnapshot.ClassTetherRadius,
+                _modifierSnapshot.ClassContagionRadius,
+                Mathf.RoundToInt(_modifierSnapshot.ClassSetBonusFocus));
             Corebound.Gameplay.Combat.RunCombatEffects.Set(
                 _modifierSnapshot.PoisonSpreadRadius,
                 _modifierSnapshot.CoreDamageTakenMultiplier,

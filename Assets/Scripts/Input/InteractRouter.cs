@@ -93,6 +93,13 @@ namespace Corebound.Input
             winner.HandleInteract();
         }
 
+        // A hold spent on something that is not a press - the Engineer's overcharge channel - so
+        // the Core guard does not also rise while the Engineer channels next to the Core.
+        public static void ConsumeHold()
+        {
+            HoldConsumed = true;
+        }
+
         // Called when Interact is released, so the next hold starts clean.
         public static void ReleaseHold()
         {

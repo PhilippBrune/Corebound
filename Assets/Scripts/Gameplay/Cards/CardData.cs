@@ -47,6 +47,14 @@ namespace Corebound.Gameplay.Cards
         // (CardOfferData.TagAffinity), so a card's tags are part of how often it is offered.
         public CardTagType[] Tags => _tags;
 
+        // A class card (CHARACTER_CLASSES_2026-09-30) is only ever offered to that class, and does
+        // not count towards the collection quests, which one class alone could never finish.
+        [SerializeField] private string _requiredCharacterId = string.Empty;
+
+        public string RequiredCharacterId => _requiredCharacterId;
+
+        public bool IsClassCard => !string.IsNullOrEmpty(_requiredCharacterId);
+
         public CardEffectData[] Effects => _effects;
 
         public WeaponModifierData[] WeaponModifiers => _weaponModifiers;

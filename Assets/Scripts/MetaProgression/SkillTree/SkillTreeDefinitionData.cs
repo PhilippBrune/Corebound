@@ -45,7 +45,16 @@ namespace Corebound.MetaProgression
         // Appended 2026-09-22 (spec review C8). Both exist so that the Industry and Command
         // branches can end in rule changes rather than in another percentage.
         PickupMagnetRange = 29,             // Add: extra auto-pickup range in units; a large value is "everything"
-        RewardRerolls = 30                  // Add: rerolls available per reward screen
+        RewardRerolls = 30,                 // Add: rerolls available per reward screen
+
+        // Appended 2026-09-30 for the class trees (CHARACTER_CLASSES_2026-09-30). Each raises one
+        // number of the active class's signature; outside that class they do nothing.
+        ClassSignaturePower = 31,           // Add: +fraction to the class's headline number
+        ClassOverchargeCharges = 32,        // Add: Engineer - extra overcharges per tower per wave
+        ClassHoardThresholdReduction = 33,  // Add: Salvager - Scrap taken off the hoard threshold
+        ClassTetherRadius = 34,             // Add: Custodian - units added to the tether
+        ClassContagionRadius = 35,          // Add: Catalyst - units added to the contagion
+        ClassSetBonusFocus = 36             // Add: Vanguard - extra copies counted for the largest stack
     }
 
     [Serializable]

@@ -80,8 +80,29 @@ namespace Corebound.Gameplay.Towers
             }
         }
 
+        // Engineer (CHARACTER_CLASSES_2026-09-30): a channelled overcharge doubles this tower's damage
+        // for a few seconds; it glows gold while it lasts.
+        private float _overchargeUntil;
+        private bool _overchargeTinted;
+
+        public bool IsOvercharged => _overchargeUntil > Time.time;
+
+        public void Overcharge(float seconds)
+        {
+            _overchargeUntil = Time.time + Mathf.Max(0f, seconds);
+        }
+
+        private float OverchargeMultiplier => IsOvercharged ? CharacterEffects.OverchargeDamageMultiplier : 1f;
+
         private void Update()
         {
+            if (_spriteRenderer != null && (IsOvercharged || _overchargeTinted))
+            {
+                _overchargeTinted = IsOvercharged;
+                var pulse = 0.75f + 0.25f * Mathf.Sin(Time.time * 10f);
+                _spriteRenderer.color = IsOvercharged ? Color.Lerp(Color.white, new Color(1f, 0.8f, 0.3f, 1f), pulse) : Color.white;
+            }
+
             if (_towerData == null || _projectilePrototype == null || _towerService == null)
             {
                 return;
@@ -148,9 +169,9 @@ namespace Corebound.Gameplay.Towers
             var projectile = _towerService.GetProjectileInstance(_projectilePrototype, _projectileParent);
             var direction = ((Vector2)target.transform.position - (Vector2)transform.position).normalized;
             FaceFireDirection(direction);
-            var damageAmount = _towerData.DamageProfile != null
+            var damageAmount = (_towerData.DamageProfile != null
                 ? _towerData.DamageProfile.BaseDamage * _towerService.TowerDamageMultiplier * ResolveDamageMultiplier(_currentUpgradeLevel) * ResolveProgressionDamageMultiplier()
-                : 1f;
+                : 1f) * OverchargeMultiplier;
             var statusEffect = _towerData.DamageProfile != null && _towerData.DamageProfile.ApplyStatusEffect ? _towerData.DamageProfile.StatusEffectType : (StatusEffectType?)null;
             // The tower's id rides on the shot so a kill can advance that tower's kill quest.
             var damageContext = new DamageContext(

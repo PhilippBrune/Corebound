@@ -231,6 +231,12 @@ namespace Corebound.Gameplay.Combat
                 damageContext = damageContext.WithAmount(damageContext.Amount * RunCombatEffects.CoreDamageTakenMultiplier);
             }
 
+            // Custodian: while the tether holds, the Core takes less again.
+            if (IsCoreReceiver && CharacterEffects.IsTethered)
+            {
+                damageContext = damageContext.WithAmount(damageContext.Amount * (1f - CharacterEffects.TetherCoreReduction));
+            }
+
             if (damageContext.SourceType == DamageSourceType.Player && !string.IsNullOrEmpty(damageContext.SourceId))
             {
                 _lastPlayerSourceId = damageContext.SourceId;
@@ -362,6 +368,46 @@ namespace Corebound.Gameplay.Combat
             }
         }
 
+        // Catalyst (CHARACTER_CLASSES_2026-09-30): an enemy that dies with two or more different
+        // statuses passes all of them to the enemies around it.
+#if UNITY_EDITOR
+        public static int DebugContagionSpreads;
+#endif
+
+        private void SpreadContagionOnDeath()
+        {
+            var radius = CharacterEffects.ContagionRadius;
+
+            if (radius <= 0f || _activeStatuses.Count < 2)
+            {
+                return;
+            }
+
+            var statuses = new List<StatusEffectType>(_activeStatuses.Keys);
+            var count = Physics2D.OverlapCircleNonAlloc(transform.position, radius, ChainBuffer);
+
+            for (var index = 0; index < count; index++)
+            {
+                var receiver = ResolveHostileReceiver(ChainBuffer[index]);
+
+                if (receiver == null || receiver == this || !receiver.IsAlive)
+                {
+                    continue;
+                }
+
+                receiver._lastPlayerSourceId = _lastPlayerSourceId;
+
+                foreach (var status in statuses)
+                {
+                    receiver.TryApplyStatus(status);
+                }
+
+#if UNITY_EDITOR
+                DebugContagionSpreads++;
+#endif
+            }
+        }
+
         // Only enemies and bosses: a chain or a spread must never reach the Core or a tower.
         private static CombatHitReceiver ResolveHostileReceiver(Collider2D collider)
         {
@@ -453,6 +499,7 @@ namespace Corebound.Gameplay.Combat
         private void HandleDeath(DamageContext damageContext)
         {
             SpreadPoisonOnDeath();
+            SpreadContagionOnDeath();
             _markedUntil = 0f;
             UpdateMarkVisual();
 
@@ -478,7 +525,7 @@ namespace Corebound.Gameplay.Combat
                 return;
             }
 
-            _activeStatuses[effectType] = new StatusEffectRuntime(statusData);
+            _activeStatuses[effectType] = new StatusEffectRuntime(statusData, IsCoreReceiver ? 1f : CharacterEffects.StatusDurationMultiplier);
             CombatEvents.RaiseStatusApplied(new StatusAppliedEventArgs(gameObject, effectType, statusData.DurationSeconds));
             RefreshRestColor();
         }

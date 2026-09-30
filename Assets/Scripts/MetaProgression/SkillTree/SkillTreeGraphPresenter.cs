@@ -103,7 +103,7 @@ namespace Corebound.MetaProgression.SkillTree
                 ? -SkillTreeGraphLayout.BranchCentre(activeBranchIndex, tree.Branches.Length, keyCount)
                 : Vector2.zero;
 
-            BuildPortrait();
+            BuildPortrait(tree);
 
             var branches = tree.Branches;
 
@@ -266,7 +266,7 @@ namespace Corebound.MetaProgression.SkillTree
             return false;
         }
 
-        private void BuildPortrait()
+        private void BuildPortrait(SkillTreeDefinitionData tree)
         {
             var sprite = LoadCropped(PortraitFramePath);
             var image = ProceduralUIBuilder.CreateImage("Portrait", _root, sprite, Color.white);
@@ -279,7 +279,47 @@ namespace Corebound.MetaProgression.SkillTree
             rect.anchoredPosition = Vector2.zero;
             rect.sizeDelta = new Vector2(SkillTreeGraphLayout.PortraitSize, SkillTreeGraphLayout.PortraitSize);
             _spawned.Add(image.gameObject);
+            BuildPortraitContent(tree);
         }
+
+        // CHARACTER_CLASSES_2026-09-30: every class has its own tree, so the portrait says whose
+        // this is - the class's top-down sprite (the Vanguard's in the class colour until its own
+        // art exists, as in the arena) and its name.
+        private void BuildPortraitContent(SkillTreeDefinitionData tree)
+        {
+            var service = FindFirstObjectByType<MetaProgressionService>();
+            var definition = service != null ? service.DefinitionData : null;
+            var character = definition != null ? definition.FindCharacter(tree.CharacterId) : null;
+            var own = character != null && !string.IsNullOrWhiteSpace(character.SpritePath) ? Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(character.SpritePath) : null;
+            var sprite = own != null ? own : Corebound.Gameplay.Shared.DebugSpriteFactory.LoadProjectSprite(DefaultPortraitSpritePath);
+
+            if (sprite != null)
+            {
+                var figure = ProceduralUIBuilder.CreateImage("PortraitFigure", _root, sprite, own != null || character == null ? Color.white : character.Tint);
+                figure.raycastTarget = false;
+                figure.preserveAspect = true;
+                var figureRect = figure.rectTransform;
+                figureRect.anchorMin = new Vector2(0.5f, 0.5f);
+                figureRect.anchorMax = new Vector2(0.5f, 0.5f);
+                figureRect.pivot = new Vector2(0.5f, 0.5f);
+                figureRect.anchoredPosition = new Vector2(0f, 10f);
+                figureRect.sizeDelta = Vector2.one * (SkillTreeGraphLayout.PortraitSize * 0.95f);
+                _spawned.Add(figure.gameObject);
+            }
+
+            var label = ProceduralUIBuilder.CreateText("PortraitName", _root, 16, FontStyle.Bold, TextAnchor.MiddleCenter, ProceduralUIBuilder.ResolveSecondaryTextColor());
+            label.raycastTarget = false;
+            label.text = character != null ? character.DisplayName : tree.CharacterName;
+            var labelRect = label.rectTransform;
+            labelRect.anchorMin = new Vector2(0.5f, 0.5f);
+            labelRect.anchorMax = new Vector2(0.5f, 0.5f);
+            labelRect.pivot = new Vector2(0.5f, 0.5f);
+            labelRect.anchoredPosition = new Vector2(0f, -SkillTreeGraphLayout.PortraitSize * 0.32f);
+            labelRect.sizeDelta = new Vector2(SkillTreeGraphLayout.PortraitSize, 24f);
+            _spawned.Add(label.gameObject);
+        }
+
+        private const string DefaultPortraitSpritePath = "Assets/Art/Characters/Player/player_base_topdown.png";
 
         private void DrawLink(Vector2 from, Vector2 to, Color accent, SkillNodeState state, float alpha, float thickness)
         {

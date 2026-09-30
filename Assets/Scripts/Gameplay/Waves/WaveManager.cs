@@ -1331,7 +1331,8 @@ namespace Corebound.Gameplay.Waves
         // Salvage Instinct: elites drop (1 + value) times their Scrap.
         private static int ResolveKillScrap(EnemyRuntimeController enemy)
         {
-            var amount = enemy.ResourceRewardAmount;
+            // Salvager (CHARACTER_CLASSES_2026-09-30): every kill drops half as much again.
+            var amount = Mathf.RoundToInt(enemy.ResourceRewardAmount * CharacterEffects.ScrapDropMultiplier);
 
             if (!enemy.IsElite)
             {
@@ -1352,7 +1353,14 @@ namespace Corebound.Gameplay.Waves
             }
 
             var skills = RunProgressionSnapshot.Current.Skills;
-            var startingScrap = Mathf.RoundToInt(skills[SkillEffectTarget.StartingScrap]);
+            var character = RunProgressionSnapshot.Current.Character;
+            var startingScrap = Mathf.RoundToInt(skills[SkillEffectTarget.StartingScrap]) + (character != null ? character.StartingScrapBonus : 0);
+
+            // Engineer kit: one tower already standing in the slot nearest the Core.
+            if (character != null && !string.IsNullOrEmpty(character.StartingTowerId) && _towerService != null && _coreTarget != null)
+            {
+                _towerService.TryPlaceKitTower(character.StartingTowerId, _coreTarget.position);
+            }
 
             if (startingScrap > 0 && _resourceWalletService != null)
             {

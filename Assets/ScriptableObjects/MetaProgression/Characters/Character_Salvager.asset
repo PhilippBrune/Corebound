@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc4586bcc0a4f5342907bec7219b1606, type: 3}
+  m_Name: Character_Salvager
+  m_EditorClassIdentifier: 
+  _characterId: salvager
+  _displayName: 'Salvager'
+  _displayNameDe: 'Verwerter'
+  _role: 'Economy and Factory'
+  _roleDe: 'Wirtschaft und Fabrik'
+  _summary: 'Strip for Parts: kills drop 50% more Scrap and pickups within 4 units fly to you. Scrap above 150 at a wave start becomes +1% damage per 10 for that wave. +60 starting Scrap; Factory chains start at tier 1.'
+  _summaryDe: 'Ausschlachten: Kills lassen 50 % mehr Schrott fallen, Beute im Umkreis von 4 fliegt zu dir. Schrott über 150 bei Wellenstart wird zu +1 % Schaden je 10 für diese Welle. +60 Startschrott; Fabrikketten starten auf Stufe 1.'
+  _signature: 2
+  _unlock: 2
+  _unlockValue: 3
+  _unlockHint: 'Reach Factory chain tier 3 in one run.'
+  _unlockHintDe: 'Erreiche in einem Run Fabrik-Kettenstufe 3.'
+  _maxHealthMultiplier: 1
+  _moveSpeedMultiplier: 1
+  _weaponDamageMultiplier: 1
+  _startingScrapBonus: 60
+  _startingTowerId: 
+  _favouredTags:
+  - 3
+  _favouredTagBonus: 0.6
+  _buildTagAffinity: 0.35
+  _spritePath: Assets/Art/Characters/Player/player_salvager_topdown.png
+  _tint: {r: 0.55, g: 0.95, b: 0.55, a: 1}
+  _skillTree: {fileID: 11400000, guid: d8df7350f8b04920a6665d12a22a52af, type: 2}

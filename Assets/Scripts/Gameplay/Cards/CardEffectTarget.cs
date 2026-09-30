@@ -36,6 +36,14 @@ namespace Corebound.Gameplay.Cards
         TowerAuraFireRate,              // Overclock Beacon: towers near the player fire this much faster
         CoreIntermissionRegen,          // Core Aegis: fraction of Core max health regenerated per second in an Intermission
         CoreDamageTakenMultiplier,      // Core Aegis: Multiply, starts at 1
-        SentryDrones                    // Sentry Drone: drones orbiting the player
+        SentryDrones,                   // Sentry Drone: drones orbiting the player
+
+        // Appended 2026-09-30: the class cards (CHARACTER_CLASSES_2026-09-30), Add.
+        ClassSignaturePower,
+        ClassOverchargeCharges,
+        ClassHoardThresholdReduction,
+        ClassTetherRadius,
+        ClassContagionRadius,
+        ClassSetBonusFocus
     }
 }

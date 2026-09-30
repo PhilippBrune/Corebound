@@ -60,6 +60,24 @@ namespace Corebound.MetaProgression
 
         public Corebound.Story.StoryData Story => _story;
 
+        // CHARACTER_CLASSES_2026-09-30: the playable classes, in the order the class select shows.
+        [SerializeField] private CharacterData[] _characters = Array.Empty<CharacterData>();
+
+        public CharacterData[] Characters => _characters;
+
+        public CharacterData FindCharacter(string characterId)
+        {
+            for (var index = 0; _characters != null && index < _characters.Length; index++)
+            {
+                if (_characters[index] != null && _characters[index].CharacterId == characterId)
+                {
+                    return _characters[index];
+                }
+            }
+
+            return _characters != null && _characters.Length > 0 ? _characters[0] : null;
+        }
+
         public Corebound.Gameplay.Enemies.EnemyEliteModifierData[] QuestEliteAffixes => _questEliteAffixes;
 
         public string MetaCurrencyLabel => Corebound.UI.LocalizationService.Resolve(_metaCurrencyLabel, _metaCurrencyLabelDe);

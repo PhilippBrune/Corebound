@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc4586bcc0a4f5342907bec7219b1606, type: 3}
+  m_Name: Character_Vanguard
+  m_EditorClassIdentifier: 
+  _characterId: vanguard
+  _displayName: 'Vanguard'
+  _displayNameDe: 'Vorhut'
+  _role: 'Frontline gunner'
+  _roleDe: 'Frontschütze'
+  _summary: 'Loadout Discipline: every Set Bonus tier needs one copy fewer, and each active tier adds 3% weapon damage.'
+  _summaryDe: 'Ladungsdisziplin: Jede Set-Bonus-Stufe braucht eine Kopie weniger, und jede aktive Stufe gibt 3 % Waffenschaden.'
+  _signature: 0
+  _unlock: 0
+  _unlockValue: 0
+  _unlockHint: ''
+  _unlockHintDe: ''
+  _maxHealthMultiplier: 1
+  _moveSpeedMultiplier: 1
+  _weaponDamageMultiplier: 1
+  _startingScrapBonus: 0
+  _startingTowerId: 
+  _favouredTags:
+  - 0
+  - 7
+  _favouredTagBonus: 0.6
+  _buildTagAffinity: 0.35
+  _spritePath: 
+  _tint: {r: 1, g: 1, b: 1, a: 1}
+  _skillTree: {fileID: 11400000, guid: ae28bec699fe45c88110ac01cd48bc22, type: 2}

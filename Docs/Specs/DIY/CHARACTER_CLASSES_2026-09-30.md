@@ -4,7 +4,7 @@
 them different to each other and what would be the fun playing them and how they can be
 unlocked."*
 
-Answer each decision with its code, e.g. `K1-1, K2-2 ...`. Nothing here is implemented.
+**Decided 2026-09-30:** K1-3, K2-1, K3-2, K4-1, K5-1, K6-2, plus class-specific cards. **Built the same day** - see *As built* at the end; the concept text above it is kept as written.
 
 **Already decided (vision, 2026-09-21):** each playable character has its **own skill tree** and is
 **levelled separately**, so a second character starts at zero. The save already carries a
@@ -190,3 +190,105 @@ apart at a glance in a busy arena fails Vision §19.6 (readability).
 
 **Rough size:** a day for the data, the save split and the select screen; a day per class for
 signature, tree and tuning; the art on top.
+
+---
+
+## As built (2026-09-30)
+
+Owner decisions: **K1-3** (all five), **K2-1** (strong signatures), **K3-2** (account level shared,
+only the tree per class), **K4-1** (free, condition-based), **K5-1** (per-class tag leaning),
+**K6-2** (a sprite per class), and "think as well about class specific cards".
+
+### Data
+
+- `CharacterData` (`Assets/Scripts/MetaProgression/Characters/`) - one asset per class in
+  `Assets/ScriptableObjects/MetaProgression/Characters/`, listed on
+  `MetaProgressionDefinition_Default._characters`. Signature and unlock are enums (append-only).
+- Every class has its own `SkillTree_<Class>.asset`, listed on `_skillTrees`.
+- `CharacterUnlockRules` reads the unlock from quests the ledger already tracks, account-wide.
+
+### K3-2 in the save
+
+Level, XP, Paragon and **Skill Points earned** stay account-wide. **Skill Points spent** and node
+ranks are per class (`_characterSkillPointsSpent`, `SkillNodeRank.CharacterId`), so every class can
+spend the whole account's SP in its own tree. The old `_skillPointsSpent` migrated to `vanguard`.
+Quests stay account-wide under `QuestLedger.QuestOwnerId` (`vanguard`), so any class's run can finish
+any quest and unlock any class. Alloy upgrades stay account-wide, as the concept said.
+
+### Signatures (numbers in `CharacterEffects`)
+
+| Class | Built | Stats and kit |
+| --- | --- | --- |
+| Vanguard | From two copies on, every archetype counts one copy more for its Set Bonus (3 Rapid read as Focused); +3% weapon damage per active Set Bonus tier. | as before |
+| Engineer | Towers within 3 units fire 30% faster (adds to Overclock Beacon). Hold Interact within 1.8 of a tower in combat for 2 s: that tower deals double damage for 5 s and glows gold, once per tower per wave. The channel claims the Interact hold, so the Core guard does not also rise. | weapon damage x0.8; a Sentinel built free in the empty slot nearest the Core |
+| Salvager | Kills drop x1.5 Scrap; +4 pickup magnet range. At each wave start, Scrap above 150 becomes +1% weapon damage per 10 for that wave (notification "Hoard: +N%"). Factory chains resolve at tier 1 at least. | +60 starting Scrap |
+| Custodian | Within 5 units of the Core: a visible beam, the Core takes 30% less damage (cap 60%), shots pierce +1. Leaving the radius sends a shockwave from the Core (radius 4, knockback, 2 damage, 8 s cooldown). | health x1.25, speed x0.9, first Core repair free |
+| Catalyst | Statuses it applies to enemies last x1.5. An enemy dying with two or more different statuses passes all of them to enemies within 2 units. | 10% poison chance on every hit from the start; weapon damage x0.85 |
+
+"Signature power" is the one knob every class shares: tree nodes and class cards raise it, and each
+class scales its headline number by it (the Vanguard's per-tier damage, the Engineer's aura, the
+Salvager's hoard rate, the Custodian's Core reduction and shockwave, the Catalyst's duration).
+
+### Trees
+
+Each class tree is the Vanguard's tree with one **class keystone inserted second** in its heavy
+branch (later nodes in that branch need 4 more branch SP): Engineer *Conductor* (Construction),
+Salvager *Hoarder's Instinct* (Industry), Custodian *Anchor Point* (Command), Catalyst *Virulence*
+(Combat). Each keystone raises signature power by 25% and carries four sub-nodes (the class's
+secondary number, two supporting stats, +10% signature power per rank). The Vanguard's own tree got
+*Full Kit* appended at the end of Combat (largest stack counts one more copy) with *Drill* and
+*Sidearm*; appended, not inserted, so no existing save's ranks move and no respec is forced.
+
+This is a first pass: the other three branches of each class tree are still the Vanguard's. The
+concept's larger ideas (a fifth tower slot, reroll interest, "Shock arcs to poisoned enemies first")
+are not built.
+
+### Class cards
+
+Ten cards, two per class, each with `_requiredCharacterId`. `CardService.CanOfferCard` never offers
+them to another class, and the collection quests do not count them (one class alone could never
+finish them).
+
+| Class | Rare | Epic |
+| --- | --- | --- |
+| Vanguard | Full Kit - largest stack counts +1 copy | Drill Sergeant - signature +50% |
+| Engineer | Double Shift - +1 overcharge per tower per wave | Resonant Coils - signature +50% |
+| Salvager | Deep Pockets - hoard from 100 Scrap | Compound Interest - signature +50% |
+| Custodian | Long Leash - tether +1.5 | Bulwark Protocol - signature +50% |
+| Catalyst | Airborne Strain - contagion +1.5 | Catalytic Bloom - signature +50% |
+
+### K5-1 card leaning
+
+`CardService.ResolveOfferWeight` multiplies a card's weight by 1.6 when it carries one of the class's
+favoured tags, and the class sets the build-synergy knob (Open Topics 5, option b; 0.35 for every
+class for now). Favoured: Vanguard Weapon + Critical, Engineer Tower + Support, Salvager Resource,
+Custodian Support + Status Effect, Catalyst Poison, Shock, Burn, Freeze and Status Effect.
+
+### Select and unlock
+
+The New Run panel shows the class above the weapon list: **Q / Tab or LB / RB** cycles it, Up / Down
+still picks the weapon. A locked class is shown with its unlock condition and cannot be started. An
+unlocked class becomes the profile's selection as soon as it is shown, so the Progression screen then
+opens on its tree; the header reads "Skill Points (Engineer)" and the tree's portrait shows the class.
+The Main Menu status line on New Run announces a newly unlocked class until it has been looked at.
+
+Unlocks: Engineer - any tower's mastery quest; Salvager - Factory quest progress at tier 3;
+Custodian - any "Core untouched" stage quest; Catalyst - the Stage 3 boss defeated.
+
+### Verified in play (autopilot `class <id>`, Profile 2, 2026-09-30)
+
+- **Engineer:** kit tower present at wave 1, amber tint, aura 0.30; 12 overcharges landed over a
+  Stage 1-3 god run (2.0-4.5 s each including the walk); towers dealt 43% of all damage.
+- **Custodian:** health 10 (8 x 1.25), tether beam drawn to the Core, a shockwave fired on leaving.
+- **Salvager:** 70 starting Scrap (10 + 60), +3 per kill instead of 2; handed 200 Scrap the hoard
+  paid +11% then +13% and reset after each wave.
+- **Catalyst:** statuses x1.5, poison without any poison card (11.6 damage by wave 3), 5 contagion
+  spreads in three waves.
+- **Vanguard:** 3 Rapid + 2 Spread resolved as Focused + Aligned (2 active tiers).
+- New Run class line, the Progression header per class and the per-class tree (Engineer and
+  Custodian keystones visible) photographed.
+
+Not verified: the magnet range and the Salvager's tier-1 chain floor (no log line shows them), the
+class cards being offered (they are Rare/Epic and did not come up), German text on screen, the unlock
+announcement on a profile that actually meets a condition, and any balance - the numbers are the
+concept's, untuned.

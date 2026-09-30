@@ -81,7 +81,7 @@ namespace Corebound.MetaProgression
 
                 var alloyName = _metaProgressionService.DefinitionData != null ? _metaProgressionService.DefinitionData.MetaCurrencyLabel : "Alloy";
                 return alloyName + ": " + _metaProgressionService.AlloyBalance
-                    + "     " + LocalizationService.Resolve("Skill Points: ", "Fertigkeitspunkte: ") + _metaProgressionService.SkillPointsAvailable
+                    + "     " + SkillPointText
                     + "     " + AscensionText;
             }
         }
@@ -91,8 +91,28 @@ namespace Corebound.MetaProgression
         public string AlloyText => _metaProgressionService == null ? string.Empty
             : (_metaProgressionService.DefinitionData != null ? _metaProgressionService.DefinitionData.MetaCurrencyLabel : "Alloy") + ": " + _metaProgressionService.AlloyBalance;
 
+        // K3-2 (CHARACTER_CLASSES_2026-09-30): Skill Points are earned by the account but spent per
+        // class, so the header names whose tree and whose balance this is. The class is picked on
+        // the New Run panel.
         public string SkillPointText => _metaProgressionService == null ? string.Empty
-            : LocalizationService.Resolve("Skill Points: ", "Fertigkeitspunkte: ") + _metaProgressionService.SkillPointsAvailable;
+            : LocalizationService.Resolve("Skill Points", "Fertigkeitspunkte") + ActiveClassSuffix + ": " + _metaProgressionService.SkillPointsAvailable;
+
+        private string ActiveClassSuffix
+        {
+            get
+            {
+                var definition = _metaProgressionService.DefinitionData;
+                var save = _metaProgressionService.SaveData;
+
+                if (definition == null || save == null || definition.Characters == null || definition.Characters.Length < 2)
+                {
+                    return string.Empty;
+                }
+
+                var character = definition.FindCharacter(save.SelectedCharacterId);
+                return character != null ? " (" + character.DisplayName + ")" : string.Empty;
+            }
+        }
 
         // Level until the cap, then Paragon level and the Ascension Points it has paid.
         public string AscensionText
@@ -1258,7 +1278,7 @@ namespace Corebound.MetaProgression
                 count++;
                 total += reward;
 
-                if (save.IsQuestCompleted(save.SelectedCharacterId, quest.QuestId))
+                if (save.IsQuestCompleted(QuestLedger.QuestOwnerId, quest.QuestId))
                 {
                     done++;
                     earned += reward;
@@ -1289,7 +1309,7 @@ namespace Corebound.MetaProgression
                     _commands.Add(new RowCommand("  " + DescribeQuestGroup(quest.Group), string.Empty, RowState.Header, string.Empty, null));
                 }
 
-                var completed = save.IsQuestCompleted(save.SelectedCharacterId, quest.QuestId);
+                var completed = save.IsQuestCompleted(QuestLedger.QuestOwnerId, quest.QuestId);
                 var target = quest.Group == QuestGroup.WeaponMastery ? QuestLedger.ResolveMasteryTarget(definition, quest) : quest.Target;
                 var progress = QuestLedger.ResolveProgress(save, definition, quest, _collectedCards);
 

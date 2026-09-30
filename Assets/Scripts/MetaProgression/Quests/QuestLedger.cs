@@ -170,6 +170,11 @@ namespace Corebound.MetaProgression
         public const int StageQuestAlloy = 100;
         private static readonly int[] RarityCollectionAlloy = { 100, 150, 200, 300 };
 
+        // K3-2 (2026-09-30): the account's level is shared between classes, and so are its quests -
+        // a quest done as the Engineer is done. Progress stays keyed by a character id in the save
+        // (P6-1 stored it per character), always this one, so nothing already earned moves.
+        public const string QuestOwnerId = SaveSystem.MetaProgressionSaveData.DefaultCharacterId;
+
         public const string CollectionQuestId = "cards_all";
         public const string FactoryQuestId = "factory_tier4";
 
@@ -318,7 +323,7 @@ namespace Corebound.MetaProgression
                 return 0;
             }
 
-            if (save.IsQuestCompleted(save.SelectedCharacterId, quest.QuestId))
+            if (save.IsQuestCompleted(QuestOwnerId, quest.QuestId))
             {
                 return quest.Group == QuestGroup.WeaponMastery ? ResolveMasteryTarget(definition, quest) : quest.Target;
             }
@@ -333,7 +338,7 @@ namespace Corebound.MetaProgression
                 case QuestGroup.RarityCollection:
                     return Math.Min(CountCollected(definition, collectedCardIds, quest.Rarity), quest.Target);
                 default:
-                    return Math.Min(save.GetQuestProgress(save.SelectedCharacterId, quest.QuestId), quest.Target);
+                    return Math.Min(save.GetQuestProgress(QuestOwnerId, quest.QuestId), quest.Target);
             }
         }
 
@@ -417,13 +422,13 @@ namespace Corebound.MetaProgression
 
         public static bool RecordFactoryTier(MetaProgressionSaveData save, MetaProgressionDefinitionData definition, int tier)
         {
-            if (save == null || save.IsQuestCompleted(save.SelectedCharacterId, FactoryQuestId))
+            if (save == null || save.IsQuestCompleted(QuestOwnerId, FactoryQuestId))
             {
                 return false;
             }
 
-            var best = Math.Max(save.GetQuestProgress(save.SelectedCharacterId, FactoryQuestId), tier);
-            save.SetQuestProgress(save.SelectedCharacterId, FactoryQuestId, best, false);
+            var best = Math.Max(save.GetQuestProgress(QuestOwnerId, FactoryQuestId), tier);
+            save.SetQuestProgress(QuestOwnerId, FactoryQuestId, best, false);
             return best >= FactoryTierTarget && Complete(save, definition, FactoryQuestId);
         }
 
@@ -461,7 +466,7 @@ namespace Corebound.MetaProgression
             {
                 var quest = catalog[index];
 
-                if (quest.Group != QuestGroup.WeaponMastery || save.IsQuestCompleted(save.SelectedCharacterId, quest.QuestId))
+                if (quest.Group != QuestGroup.WeaponMastery || save.IsQuestCompleted(QuestOwnerId, quest.QuestId))
                 {
                     continue;
                 }
@@ -496,13 +501,13 @@ namespace Corebound.MetaProgression
                 var quest = catalog[index];
 
                 if ((quest.Group != QuestGroup.Collection && quest.Group != QuestGroup.RarityCollection)
-                    || save.IsQuestCompleted(save.SelectedCharacterId, quest.QuestId))
+                    || save.IsQuestCompleted(QuestOwnerId, quest.QuestId))
                 {
                     continue;
                 }
 
                 var have = CountCollected(definition, collected, quest.Group == QuestGroup.RarityCollection ? quest.Rarity : (CardRarity?)null);
-                save.SetQuestProgress(save.SelectedCharacterId, quest.QuestId, have, false);
+                save.SetQuestProgress(QuestOwnerId, quest.QuestId, have, false);
 
                 if (have >= quest.Target)
                 {
@@ -531,7 +536,7 @@ namespace Corebound.MetaProgression
 
                 if (!string.IsNullOrEmpty(bossId) && save.HasDefeatedBoss(bossId))
                 {
-                    save.SetQuestProgress(save.SelectedCharacterId, BossQuestId(index + 1), 1, true);
+                    save.SetQuestProgress(QuestOwnerId, BossQuestId(index + 1), 1, true);
                 }
             }
 
@@ -543,7 +548,7 @@ namespace Corebound.MetaProgression
 
         private static void Advance(MetaProgressionSaveData save, MetaProgressionDefinitionData definition, string questId, int amount)
         {
-            var characterId = save.SelectedCharacterId;
+            var characterId = QuestOwnerId;
 
             if (save.IsQuestCompleted(characterId, questId))
             {
@@ -568,7 +573,7 @@ namespace Corebound.MetaProgression
 
         private static bool Complete(MetaProgressionSaveData save, MetaProgressionDefinitionData definition, string questId)
         {
-            var characterId = save.SelectedCharacterId;
+            var characterId = QuestOwnerId;
             var quest = Find(definition, questId);
 
             if (quest == null || save.IsQuestCompleted(characterId, questId))
@@ -632,7 +637,7 @@ namespace Corebound.MetaProgression
 
             for (var index = 0; cards != null && index < cards.Length; index++)
             {
-                if (cards[index] != null && (!rarity.HasValue || cards[index].Rarity == rarity.Value))
+                if (cards[index] != null && !cards[index].IsClassCard && (!rarity.HasValue || cards[index].Rarity == rarity.Value))
                 {
                     count++;
                 }
@@ -648,7 +653,7 @@ namespace Corebound.MetaProgression
 
             for (var index = 0; cards != null && collectedCardIds != null && index < cards.Length; index++)
             {
-                if (cards[index] != null && (!rarity.HasValue || cards[index].Rarity == rarity.Value) && collectedCardIds.Contains(cards[index].CardId))
+                if (cards[index] != null && !cards[index].IsClassCard && (!rarity.HasValue || cards[index].Rarity == rarity.Value) && collectedCardIds.Contains(cards[index].CardId))
                 {
                     count++;
                 }

@@ -35,6 +35,19 @@ namespace Corebound.Gameplay.Cards
 
         public float SentryDrones { get; private set; }
 
+        // Class cards (2026-09-30).
+        public float ClassSignaturePower { get; private set; }
+
+        public float ClassOverchargeCharges { get; private set; }
+
+        public float ClassHoardThresholdReduction { get; private set; }
+
+        public float ClassTetherRadius { get; private set; }
+
+        public float ClassContagionRadius { get; private set; }
+
+        public float ClassSetBonusFocus { get; private set; }
+
         public void Reset()
         {
             PoisonSpreadRadius = 0f;
@@ -45,6 +58,12 @@ namespace Corebound.Gameplay.Cards
             CoreIntermissionRegen = 0f;
             CoreDamageTakenMultiplier = 1f;
             SentryDrones = 0f;
+            ClassSignaturePower = 0f;
+            ClassOverchargeCharges = 0f;
+            ClassHoardThresholdReduction = 0f;
+            ClassTetherRadius = 0f;
+            ClassContagionRadius = 0f;
+            ClassSetBonusFocus = 0f;
             WeaponDamageMultiplier = 1f;
             WeaponFireIntervalMultiplier = 1f;
             ResourceGainMultiplier = 1f;
@@ -112,6 +131,24 @@ namespace Corebound.Gameplay.Cards
                     return;
                 case CardEffectTarget.SentryDrones:
                     SentryDrones = ApplyOperation(SentryDrones, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.ClassSignaturePower:
+                    ClassSignaturePower = ApplyOperation(ClassSignaturePower, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.ClassOverchargeCharges:
+                    ClassOverchargeCharges = ApplyOperation(ClassOverchargeCharges, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.ClassHoardThresholdReduction:
+                    ClassHoardThresholdReduction = ApplyOperation(ClassHoardThresholdReduction, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.ClassTetherRadius:
+                    ClassTetherRadius = ApplyOperation(ClassTetherRadius, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.ClassContagionRadius:
+                    ClassContagionRadius = ApplyOperation(ClassContagionRadius, effect.Operation, effect.Value);
+                    return;
+                case CardEffectTarget.ClassSetBonusFocus:
+                    ClassSetBonusFocus = ApplyOperation(ClassSetBonusFocus, effect.Operation, effect.Value);
                     return;
             }
         }

@@ -55,6 +55,8 @@ namespace Corebound.UI.MainMenu
         [SerializeField] private UnityEngine.Object _inputReaderSource;
         [SerializeField] private MainMenuInputHandler _inputHandler;
 
+        private MainMenuRouteTargetController _routeTargetController;
+
         private Canvas _canvas;
         private RectTransform _rootRect;
         private Image _logoImage;
@@ -539,6 +541,21 @@ namespace Corebound.UI.MainMenu
                 case MainMenuRoute.Continue:
                     return (_continueStateData != null ? _continueStateData.ContinueLabel : selectedEntry.Label) + LocalizationService.Resolve(" resumes the current run.", " setzt den aktuellen Run fort.");
                 case MainMenuRoute.NewRun:
+                    // K4 (CHARACTER_CLASSES_2026-09-30): a class unlocked by the last run is announced
+                    // here until the player has looked at it on the New Run panel.
+                    if (_routeTargetController == null)
+                    {
+                        _routeTargetController = FindFirstObjectByType<MainMenuRouteTargetController>();
+                    }
+
+                    var newClasses = _routeTargetController != null ? _routeTargetController.NewlyUnlockedCharacterNames : string.Empty;
+
+                    if (!string.IsNullOrEmpty(newClasses))
+                    {
+                        return LocalizationService.Resolve("New class unlocked: ", "Neue Klasse freigeschaltet: ") + newClasses
+                            + LocalizationService.Resolve(" - pick it in New Run.", " - wähle sie unter Neuer Run.");
+                    }
+
                     return LocalizationService.Resolve("Start a fresh run from the first active route.", "Startet einen neuen Run ab der ersten aktiven Route.");
                 case MainMenuRoute.Tutorial:
                     return LocalizationService.Resolve("Review the guided tutorial stage.", "Zeigt die gefuehrte Tutorial-Stage.");

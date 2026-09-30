@@ -20,12 +20,13 @@ namespace Corebound.MetaProgression
         private static RunProgressionSnapshot _current;
         private static int _capturedSceneHandle = int.MinValue;
 
-        private RunProgressionSnapshot(SkillModifierSnapshot skills, UpgradeSnapshot upgrades, int weaponSlotCount, string characterId)
+        private RunProgressionSnapshot(SkillModifierSnapshot skills, UpgradeSnapshot upgrades, int weaponSlotCount, string characterId, CharacterData character = null)
         {
             Skills = skills;
             Upgrades = upgrades;
             WeaponSlotCount = weaponSlotCount;
             CharacterId = characterId;
+            Character = character;
         }
 
         public static RunProgressionSnapshot Empty { get; } = new RunProgressionSnapshot(new SkillModifierSnapshot(), UpgradeSnapshot.Empty, 1, MetaProgressionSaveData.DefaultCharacterId);
@@ -44,6 +45,10 @@ namespace Corebound.MetaProgression
         public int WeaponSlotCount { get; }
 
         public string CharacterId { get; }
+
+        // The class this run is played as (CHARACTER_CLASSES_2026-09-30); null in a scene without
+        // a class catalogue, where everything behaves as the Vanguard always did.
+        public CharacterData Character { get; }
 
         // Several skill rules fire "once per stage" (Second Wind, Last Bastion, Forward
         // Foundations, Field Repair). WaveManager reports the stage it is on; each rule asks here
@@ -108,7 +113,7 @@ namespace Corebound.MetaProgression
                 + Mathf.RoundToInt(skills[SkillEffectTarget.WeaponSlots])
                 + definition.CountPurchasedWeaponSlots(save);
 
-            _current = new RunProgressionSnapshot(skills, upgrades, Mathf.Clamp(slots, 1, MaxWeaponSlots), save.SelectedCharacterId);
+            _current = new RunProgressionSnapshot(skills, upgrades, Mathf.Clamp(slots, 1, MaxWeaponSlots), save.SelectedCharacterId, definition.FindCharacter(save.SelectedCharacterId));
             Debug.Log("[Progression] Run snapshot: " + _current.WeaponSlotCount + " weapon slot(s), "
                 + save.SkillNodeRanks.Count + " skill node(s), " + save.UpgradeRanks.Count + " upgrade rank(s), ascension " + save.AscensionRank + ".");
             return _current;

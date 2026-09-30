@@ -192,6 +192,11 @@ namespace Corebound.UI.MainMenu
                 return true;
             }
 
+            if (_activePanelData != null && _pendingPanelRoute == MainMenuRoute.NewRun && !_showingPremise)
+            {
+                return TryCycleCharacter(direction < 0 ? -1 : 1);
+            }
+
             if (_activeTarget is Corebound.Settings.SettingsRouteTargetController settings && settings.IsOpen)
             {
                 settings.SwitchTab(direction);
@@ -634,7 +639,9 @@ namespace Corebound.UI.MainMenu
             {
                 var card = pool.Cards[index];
 
-                if (card != null)
+                // Class cards (CHARACTER_CLASSES_2026-09-30) are left out like the quest leaves them
+                // out, so "collected / total" here stays the quest's number.
+                if (card != null && !card.IsClassCard)
                 {
                     _recordsCards.Add(new RecordsCardEntry(card, collected.Contains(card.CardId)));
                 }
@@ -866,6 +873,12 @@ namespace Corebound.UI.MainMenu
                     return true;
                 }
 
+                // A locked class is shown for its unlock condition; it cannot be started.
+                if (!IsCharacterOptionUnlocked(SelectedCharacterOption))
+                {
+                    return true;
+                }
+
                 SavePreferredStartWeapon();
             }
 
@@ -928,11 +941,187 @@ namespace Corebound.UI.MainMenu
             ? Story.PremiseTitle.Text
             : null;
 
-        public string ActivePanelSubtitleOverride => ActivePanelTitleOverride != null ? string.Empty : null;
+        public string ActivePanelSubtitleOverride
+        {
+            get
+            {
+                if (ActivePanelTitleOverride != null)
+                {
+                    return string.Empty;
+                }
 
-        public string ActivePanelSummaryOverride => _activePanelData != null && _pendingPanelRoute == MainMenuRoute.NewRun && _showingPremise
-            ? LocalizationService.Resolve("Confirm to go on.", "Bestätigen, um fortzufahren.")
-            : null;
+                return IsNewRunClassPage ? BuildCharacterLine() : null;
+            }
+        }
+
+        public string ActivePanelSummaryOverride
+        {
+            get
+            {
+                if (_activePanelData != null && _pendingPanelRoute == MainMenuRoute.NewRun && _showingPremise)
+                {
+                    return LocalizationService.Resolve("Confirm to go on.", "Bestätigen, um fortzufahren.");
+                }
+
+                return IsNewRunClassPage ? BuildCharacterSummary() : null;
+            }
+        }
+
+        // ---- Class select (CHARACTER_CLASSES_2026-09-30) ------------------------------------------
+        // The class is picked on the New Run panel with the tab keys, next to the start weapon picked
+        // with Up / Down. A locked class can be looked at - its unlock condition is the reason to
+        // show it - but not started. An unlocked class becomes the profile's selection as soon as it
+        // is shown, so the Progression screen already opens on that class's tree.
+        private int _characterIndex;
+
+        private bool IsNewRunClassPage => _activePanelData != null && _pendingPanelRoute == MainMenuRoute.NewRun && !_showingPremise
+            && CharacterOptions != null && CharacterOptions.Length > 0;
+
+        private Corebound.MetaProgression.CharacterData[] CharacterOptions
+        {
+            get
+            {
+                var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+                return definition != null ? definition.Characters : null;
+            }
+        }
+
+        private Corebound.MetaProgression.CharacterData SelectedCharacterOption
+        {
+            get
+            {
+                var options = CharacterOptions;
+                return options != null && options.Length > 0 ? options[Mathf.Clamp(_characterIndex, 0, options.Length - 1)] : null;
+            }
+        }
+
+        private SaveSystem.MetaProgressionSaveData LoadMetaSave()
+        {
+            var definition = _metaProgressionService != null ? _metaProgressionService.DefinitionData : null;
+            return SaveManager != null && definition != null ? SaveManager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData()) : null;
+        }
+
+        // No class catalogue at all means the old single-character game: always startable.
+        private bool IsCharacterOptionUnlocked(Corebound.MetaProgression.CharacterData character)
+        {
+            return character == null
+                || Corebound.MetaProgression.CharacterUnlockRules.IsUnlocked(character, LoadMetaSave(), _metaProgressionService != null ? _metaProgressionService.DefinitionData : null);
+        }
+
+        private void ResolveSelectedCharacterIndex()
+        {
+            var options = CharacterOptions;
+            var save = LoadMetaSave();
+            _characterIndex = 0;
+
+            for (var index = 0; options != null && save != null && index < options.Length; index++)
+            {
+                if (options[index] != null && options[index].CharacterId == save.SelectedCharacterId)
+                {
+                    _characterIndex = index;
+                    break;
+                }
+            }
+
+            MarkShownCharacterSeen();
+        }
+
+        private bool TryCycleCharacter(int direction)
+        {
+            var options = CharacterOptions;
+
+            if (options == null || options.Length < 2)
+            {
+                return false;
+            }
+
+            _characterIndex = (_characterIndex + direction + options.Length) % options.Length;
+            var character = SelectedCharacterOption;
+            var save = LoadMetaSave();
+
+            if (character != null && save != null && IsCharacterOptionUnlocked(character) && save.SelectedCharacterId != character.CharacterId)
+            {
+                save.SetSelectedCharacterId(character.CharacterId);
+                SaveManager.SaveMetaProgressionSaveData(save);
+            }
+
+            MarkShownCharacterSeen();
+            RouteTargetChanged?.Invoke();
+            return true;
+        }
+
+        // Looking at an unlocked class on this panel is what "announced" means; the Main Menu's
+        // status line stops calling it new from then on.
+        private void MarkShownCharacterSeen()
+        {
+            var character = SelectedCharacterOption;
+            var save = LoadMetaSave();
+
+            if (character != null && save != null && IsCharacterOptionUnlocked(character) && save.MarkCharacterSeen(character.CharacterId))
+            {
+                SaveManager.SaveMetaProgressionSaveData(save);
+            }
+        }
+
+        private string BuildCharacterLine()
+        {
+            var options = CharacterOptions;
+            var character = SelectedCharacterOption;
+
+            if (character == null)
+            {
+                return null;
+            }
+
+            var state = IsCharacterOptionUnlocked(character) ? string.Empty : LocalizationService.Resolve("   [locked]", "   [gesperrt]");
+            return "<   " + character.DisplayName + "   >" + "     " + character.Role
+                + "     (" + (_characterIndex + 1) + " / " + options.Length + ")" + state;
+        }
+
+        private string BuildCharacterSummary()
+        {
+            var character = SelectedCharacterOption;
+
+            if (character == null)
+            {
+                return null;
+            }
+
+            if (!IsCharacterOptionUnlocked(character))
+            {
+                return LocalizationService.Resolve("Unlock: ", "Freischalten: ") + character.UnlockHint + "\n" + character.Summary;
+            }
+
+            return character.Summary;
+        }
+
+        // For the Main Menu's status line: unlocked classes the player has not looked at yet.
+        public string NewlyUnlockedCharacterNames
+        {
+            get
+            {
+                var options = CharacterOptions;
+                var save = LoadMetaSave();
+
+                if (options == null || save == null)
+                {
+                    return string.Empty;
+                }
+
+                var names = string.Empty;
+
+                foreach (var character in options)
+                {
+                    if (character != null && character.Unlock != Corebound.MetaProgression.CharacterUnlock.Start
+                        && !save.HasSeenCharacter(character.CharacterId) && IsCharacterOptionUnlocked(character))
+                    {
+                        names += (names.Length > 0 ? ", " : string.Empty) + character.DisplayName;
+                    }
+                }
+
+                return names;
+            }
+        }
 
         private string[] BuildPremiseLines()
         {
@@ -989,6 +1178,7 @@ namespace Corebound.UI.MainMenu
             {
                 _startWeaponRowIndex = ResolvePreferredStartWeaponRow();
                 _showingPremise = ShouldShowPremise();
+                ResolveSelectedCharacterIndex();
                 OpenPanel(_executionData != null ? _executionData.NewRunConfirmationPanelData : null, route);
                 return;
             }

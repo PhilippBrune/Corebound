@@ -1061,6 +1061,45 @@ namespace Corebound.Gameplay.Towers
             return _unlockedTowerBuffer[index];
         }
 
+        // Engineer kit (CHARACTER_CLASSES_2026-09-30): the run starts with one tower built, free, in
+        // the empty slot nearest the Core. Persisted like any built tower, so a resumed run keeps it.
+        public bool TryPlaceKitTower(string towerId, Vector3 corePosition)
+        {
+            var towerData = _towerCatalog != null ? _towerCatalog.FindById(towerId) : null;
+
+            if (towerData == null)
+            {
+                return false;
+            }
+
+            var best = -1;
+            var bestDistance = float.MaxValue;
+
+            for (var index = 0; index < _runtimeSlots.Count; index++)
+            {
+                if (_runtimeSlots[index].HasTower)
+                {
+                    continue;
+                }
+
+                var distance = (_runtimeSlots[index].Position - corePosition).sqrMagnitude;
+
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = index;
+                }
+            }
+
+            if (best < 0)
+            {
+                return false;
+            }
+
+            SpawnTowerAtSlot(best, towerData, true, 0);
+            return true;
+        }
+
         private void SpawnTowerAtSlot(int slotIndex, TowerData towerData, bool persist, int upgradeLevel)
         {
             if (towerData == null || slotIndex < 0 || slotIndex >= _runtimeSlots.Count)

@@ -145,6 +145,20 @@ namespace Corebound.Gameplay.Cards
                     return Percent(value) + LocalizationService.Resolve(" Core damage taken", " erlittener Kernschaden");
                 case CardEffectTarget.SentryDrones:
                     return Signed(value) + LocalizationService.Resolve(" sentry drone (", " Wächterdrohne (") + Number(Combat.PlayerSupportRules.DroneDamageFraction * 100f) + LocalizationService.Resolve("% of primary damage)", " % des Primärschadens)");
+
+                // The class cards (CHARACTER_CLASSES_2026-09-30) push the class's own signature.
+                case CardEffectTarget.ClassSignaturePower:
+                    return Signed(value * 100f) + LocalizationService.Resolve("% signature strength", " % Signaturstärke");
+                case CardEffectTarget.ClassOverchargeCharges:
+                    return Signed(value) + LocalizationService.Resolve(" overcharge per tower per wave", " Überladung pro Turm und Welle");
+                case CardEffectTarget.ClassHoardThresholdReduction:
+                    return LocalizationService.Resolve("hoard starts ", "Hort beginnt ") + Number(value) + LocalizationService.Resolve(" Scrap earlier", " Schrott früher");
+                case CardEffectTarget.ClassTetherRadius:
+                    return Signed(value) + LocalizationService.Resolve(" tether range", " Reichweite der Fessel");
+                case CardEffectTarget.ClassContagionRadius:
+                    return Signed(value) + LocalizationService.Resolve(" contagion range", " Reichweite der Ansteckung");
+                case CardEffectTarget.ClassSetBonusFocus:
+                    return Signed(value) + LocalizationService.Resolve(" copy counted for your largest stack", " gezählte Kopie für deinen größten Stapel");
                 default:
                     return null;
             }

@@ -60,6 +60,10 @@ namespace Corebound.SaveSystem
         [SerializeField] private bool _hasSeenPremise;
         [SerializeField] private bool _hasSeenEnding;
 
+        // CHARACTER_CLASSES_2026-09-30: classes the player has already been shown as unlocked, so
+        // the Main Menu announces each newly unlocked class exactly once.
+        [SerializeField] private List<string> _seenCharacterIds = new List<string>();
+
         public int SaveFormatVersion => _saveFormatVersion;
 
         public bool HasSeenTutorial => _hasSeenTutorial;
@@ -77,9 +81,56 @@ namespace Corebound.SaveSystem
 
         public int SkillPointsEarned => _skillPointsEarned;
 
-        public int SkillPointsSpent => _skillPointsSpent;
+        // K3-2 (2026-09-30): the account's level and the Skill Points it earns are shared; each
+        // class spends them in its own tree. So "spent" is per class, and every class can fill its
+        // tree with the same SP. _skillPointsSpent is the pre-classes total, moved to the Vanguard.
+        public int SkillPointsSpent => SkillPointsSpentBy(SelectedCharacterId);
 
-        public int SkillPointsAvailable => Mathf.Max(0, _skillPointsEarned - _skillPointsSpent);
+        public int SkillPointsSpentBy(string characterId)
+        {
+            for (var index = 0; _characterSkillPointsSpent != null && index < _characterSkillPointsSpent.Count; index++)
+            {
+                if (string.Equals(_characterSkillPointsSpent[index].CharacterId, characterId, StringComparison.Ordinal))
+                {
+                    return _characterSkillPointsSpent[index].Spent;
+                }
+            }
+
+            return 0;
+        }
+
+        private void AddSkillPointsSpent(string characterId, int delta)
+        {
+            _characterSkillPointsSpent ??= new List<CharacterSkillSpend>();
+
+            for (var index = 0; index < _characterSkillPointsSpent.Count; index++)
+            {
+                if (string.Equals(_characterSkillPointsSpent[index].CharacterId, characterId, StringComparison.Ordinal))
+                {
+                    _characterSkillPointsSpent[index] = new CharacterSkillSpend(characterId, Mathf.Max(0, _characterSkillPointsSpent[index].Spent + delta));
+                    return;
+                }
+            }
+
+            _characterSkillPointsSpent.Add(new CharacterSkillSpend(characterId, Mathf.Max(0, delta)));
+        }
+
+        [SerializeField] private List<CharacterSkillSpend> _characterSkillPointsSpent = new List<CharacterSkillSpend>();
+
+        [Serializable]
+        public struct CharacterSkillSpend
+        {
+            public string CharacterId;
+            public int Spent;
+
+            public CharacterSkillSpend(string characterId, int spent)
+            {
+                CharacterId = characterId;
+                Spent = spent;
+            }
+        }
+
+        public int SkillPointsAvailable => Mathf.Max(0, _skillPointsEarned - SkillPointsSpent);
 
         public string SelectedCharacterId => string.IsNullOrWhiteSpace(_selectedCharacterId) ? DefaultCharacterId : _selectedCharacterId;
 
@@ -154,6 +205,24 @@ namespace Corebound.SaveSystem
             _hasSeenEnding = true;
         }
 
+        public bool HasSeenCharacter(string characterId)
+        {
+            return _seenCharacterIds != null && _seenCharacterIds.Contains(characterId);
+        }
+
+        public bool MarkCharacterSeen(string characterId)
+        {
+            _seenCharacterIds ??= new List<string>();
+
+            if (string.IsNullOrEmpty(characterId) || _seenCharacterIds.Contains(characterId))
+            {
+                return false;
+            }
+
+            _seenCharacterIds.Add(characterId);
+            return true;
+        }
+
         public MetaProgressionSaveData Clone()
         {
             var clone = (MetaProgressionSaveData)MemberwiseClone();
@@ -165,7 +234,9 @@ namespace Corebound.SaveSystem
             clone._defeatedBossIds = new List<string>(_defeatedBossIds ?? new List<string>());
             clone._discoveredWeaponIds = new List<string>(_discoveredWeaponIds ?? new List<string>());
             clone._quests = CloneList(_quests);
+            clone._characterSkillPointsSpent = new List<CharacterSkillSpend>(_characterSkillPointsSpent ?? new List<CharacterSkillSpend>());
             clone._ascensionNodeRanks = CloneList(_ascensionNodeRanks);
+            clone._seenCharacterIds = new List<string>(_seenCharacterIds ?? new List<string>());
             return clone;
         }
 
@@ -182,6 +253,8 @@ namespace Corebound.SaveSystem
             _defeatedBossIds ??= new List<string>();
             _quests ??= new List<QuestProgress>();
             _ascensionNodeRanks ??= new List<AscensionNodeRank>();
+            _characterSkillPointsSpent ??= new List<CharacterSkillSpend>();
+            _seenCharacterIds ??= new List<string>();
 
             if (_saveFormatVersion < 2)
             {
@@ -205,6 +278,14 @@ namespace Corebound.SaveSystem
             // Every load, not only the migrating one: a brand-new profile is owed its level-1
             // Skill Points too, and this is idempotent once they are paid.
             changed |= SyncLevelSkillPoints();
+            // K3-2 (2026-09-30): SP spent before classes existed were all spent in the Vanguard tree.
+            if (_skillPointsSpent != 0)
+            {
+                AddSkillPointsSpent(DefaultCharacterId, _skillPointsSpent);
+                _skillPointsSpent = 0;
+                changed = true;
+            }
+
             return changed;
         }
 
@@ -661,7 +742,7 @@ namespace Corebound.SaveSystem
                 return false;
             }
 
-            _skillPointsSpent += cost;
+            AddSkillPointsSpent(SelectedCharacterId, cost);
             return true;
         }
 
@@ -711,7 +792,7 @@ namespace Corebound.SaveSystem
                 }
             }
 
-            _skillPointsSpent = Mathf.Max(0, _skillPointsSpent - Mathf.Max(0, refund));
+            AddSkillPointsSpent(characterId, -Mathf.Max(0, refund));
         }
 
         public void SetSkillTreeVersion(int version)

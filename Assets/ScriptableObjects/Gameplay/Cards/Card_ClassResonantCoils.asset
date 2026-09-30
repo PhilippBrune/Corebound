@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04b43e4f37ab4f7ba068087eaf824db0, type: 3}
+  m_Name: Card_ClassResonantCoils
+  m_EditorClassIdentifier: 
+  _cardId: card_class_resonant_coils
+  _displayName: 'Resonant Coils'
+  _displayNameDe: 'Resonanzspulen'
+  _description: 'Overclock is 50% stronger: towers near you fire even faster.'
+  _descriptionDe: 'Übertakten wird um 50 % stärker: Türme in deiner Nähe feuern noch schneller.'
+  _rarity: 2
+  _requiredUnlockId: 
+  _tags:
+  - 2
+  _effects:
+  - {fileID: 11400000, guid: 15ef481c845b4c90b7bf33cdc8f4934e, type: 2}
+  _weaponModifiers: []
+  _stackable: 1
+  _grantedWeapon: {fileID: 0}
+  _requiredCharacterId: engineer

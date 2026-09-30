@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04b43e4f37ab4f7ba068087eaf824db0, type: 3}
+  m_Name: Card_ClassCompoundInterest
+  m_EditorClassIdentifier: 
+  _cardId: card_class_compound_interest
+  _displayName: 'Compound Interest'
+  _displayNameDe: 'Zinseszins'
+  _description: 'Strip for Parts is 50% stronger: every 10 hoarded Scrap is worth more damage.'
+  _descriptionDe: 'Ausschlachten wird um 50 % stärker: je 10 gehorteter Schrott bringt mehr Schaden.'
+  _rarity: 2
+  _requiredUnlockId: 
+  _tags:
+  - 3
+  _effects:
+  - {fileID: 11400000, guid: af16ac4a4ca6495cb1a19eccb19b7711, type: 2}
+  _weaponModifiers: []
+  _stackable: 1
+  _grantedWeapon: {fileID: 0}
+  _requiredCharacterId: salvager
