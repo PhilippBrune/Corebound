@@ -52,7 +52,10 @@ namespace Corebound.UI.MainMenu
         private void Awake()
         {
             _font = ResolveFont();
-            _frameSprite = CreateRuntimeSprite(_skinData != null ? _skinData.ButtonFrameTexture : null, _skinData != null ? _skinData.ButtonFrameBorder : Vector4.zero);
+            // The route panel frame (Asset 29) when the skin has it, else the button frame it borrowed.
+            _frameSprite = _skinData != null && _skinData.RoutePanelFrameTexture != null
+                ? CreateRuntimeSprite(_skinData.RoutePanelFrameTexture, _skinData.RoutePanelFrameBorder)
+                : CreateRuntimeSprite(_skinData != null ? _skinData.ButtonFrameTexture : null, _skinData != null ? _skinData.ButtonFrameBorder : Vector4.zero);
             BuildPanel();
             RegisterWithUIManager();
             Refresh();
@@ -110,7 +113,8 @@ namespace Corebound.UI.MainMenu
             _overlayRect = overlay.rectTransform;
             StretchToParent(_overlayRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-            var panel = CreateImage("RoutePanel", _presenterRoot, _frameSprite, _skinData != null ? _skinData.SelectedFrameTint : Color.white, ResolvePanelImageType(_frameSprite));
+            var panelTint = _skinData == null ? Color.white : (_skinData.RoutePanelFrameTexture != null ? _skinData.RoutePanelFrameTint : _skinData.SelectedFrameTint);
+            var panel = CreateImage("RoutePanel", _presenterRoot, _frameSprite, panelTint, ResolvePanelImageType(_frameSprite));
             _panelImage = panel;
             _panelRect = panel.rectTransform;
             SetAnchoredBox(_panelRect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PanelWidth, PanelHeight));

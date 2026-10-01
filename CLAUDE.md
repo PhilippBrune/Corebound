@@ -38,14 +38,30 @@ found 16 finished sprites and 4 finished boss loops that nothing referenced.
   that stage within a second; `disable` turns it back off. Progress goes to `Editor.log` behind
   `[Autopilot]`, including a `->` line for every wave-state transition, a stall report when nothing
   changes for 12s, and per-sample HUD, shop, arena and enemy-position state.
-- **Autopilot variants** (write into `AutopilotRequest.txt`): `loadoutN` fills all six weapon slots
-  (3 Rapid, 2 Spread, 1 Beam); `progressionN` grants test currency in the main menu and buys a
-  scripted set of skill nodes, upgrades and a slot unlock through the Progression screen;
-  `ascensionN` fills the whole tree and buys an Ascension rank; `godN` turns on god mode so the run
-  reaches the boss. Each starts stage N afterwards. The progression variants **write to the real
-  profile save** - back up `%USERPROFILE%/AppData/LocalLow/DefaultCompany/Corebound/Profile_01/meta.json`
-  first and restore it after. Screenshots of gates, reward, shop, build browser, loadout panel, pause
-  and boss telegraphs are written to `Temp/AutopilotShots/` at the moment each state is reached.
+- **The autopilot only ever plays Profile 2.** The owner plays Profile 3. Since 2026-09-30 the
+  autopilot switches to Profile 2 before it starts and switches back when Play Mode ends; before
+  that, one god run paid into the owner's real save and had to be reconstructed by hand. Do not
+  remove that guard, and never test on Profile 1 or 3. Profile 2 is a scratch profile: back up
+  `%USERPROFILE%/AppData/LocalLow/DefaultCompany/Corebound/Profile_02/` before a variant that wipes
+  it (`campaign`).
+- **Autopilot variants** (write into `AutopilotRequest.txt`; each starts stage N afterwards and
+  combines with the others, e.g. `class custodian god 2`): `loadoutN` fills all six weapon slots
+  (3 Rapid, 2 Spread, 1 Beam), `arsenalN` six different ones; `progressionN` grants test currency
+  and buys a scripted set of nodes, upgrades and a slot unlock through the Progression screen;
+  `ascensionN` fills the tree and buys an Ascension rank; `godN` turns on god mode; `bossN` is god
+  mode plus a skip to every stage's boss, logging each phase (`BOSS END ... in Ns`); `cardsN` applies
+  the ten NEW_CARD_MECHANICS cards and logs what they did per wave; `recordsN` photographs the
+  Records tabs; `padN` plays through a virtual gamepad; `class <id> N` plays that class, unlocked or
+  not, and logs a `CLASS` line per wave state; `campaignK` wipes Profile 2 and plays K real runs
+  from Stage 1 back to back, one `CAMPAIGN` line per run (XP, Alloy, SP, boss times, weapon
+  rarities offered). Without `class`, a run plays the Vanguard. Writing `stop` ends a run that is
+  already playing. Screenshots of gates, reward, shop, build browser, loadout panel, pause, boss
+  telegraphs, premise and ending go to `Temp/AutopilotShots/` at the moment each state is reached;
+  `ScreenCapture` keeps only the last capture of a frame, so two shots in one frame lose the first.
+- **Validate Art Pipeline without a dialog:** write `validate` (or `sync`) into
+  `ArtPipelineRequest.txt` in the project root; the report goes to `Editor.log` behind
+  `[ArtPipeline]`. It checks the StreamingAssets mirror, every `StageThemeData` path, every
+  `SpriteSheetData` cell against its image, and flags frames with an opaque centre.
 - **Three rules the autopilot had to learn the hard way.** It must call `DebugSetUsingGamepad(true)`,
   because `PlayerAimResolver` reads `Aim` as a *screen position* in mouse mode, so a world direction
   aims every shot at a screen corner and looks exactly like "projectiles do no damage". It must bind
@@ -82,6 +98,9 @@ found 16 finished sprites and 4 finished boss loops that nothing referenced.
 - **Runtime art is read as raw bytes from `Assets/StreamingAssets/Art/` first**, falling back to `Assets/Art/` *only inside the Editor*. An unmirrored or stale file therefore looks perfect in the Editor and ships broken. After adding or replacing any art, run **`Corebound > Validate Art Pipeline`**.
 - **`StageThemeData` stores texture paths as plain strings.** A renamed file is a silent null, not a broken reference the Editor flags. The same validator checks these.
 - **Canvas layout is scene-file-driven.** `RewardCanvas`/`ShopCanvas`/`HUDCanvas`/`OverlayCanvas` (boss HUD, notifications, relic reveal - since 2026-09-30) own their own positions; presenters must only *find* elements and repair missing sprites, never reassert anchors, positions or sizes. Several HUD Images intentionally carry no sprite in the scene and receive one at runtime — a partial re-init that skips `CreateRuntimeSprites()` leaves them rendering plain white.
+- **Never `GetComponent<T>() ?? AddComponent<T>()` on a Unity object.** In the Editor a missing
+  component is a fake-null that `??` treats as present, so nothing is added; it broke a stage change
+  on 2026-09-30. Use `gameObject.GetOrAdd<T>()` (`ComponentUtility`), which compares with `!= null`.
 - **Avoid `[`/`]` and other layout-dependent keys.** `Keyboard.leftBracketKey` addresses a US *physical* position, which on the QWERTZ keyboard in use is `ü`. Function keys are safe everywhere.
 
 ## Code conventions

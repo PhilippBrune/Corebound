@@ -21,3 +21,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 527db71bf19e4650b90cc8daa1173952, type: 2}
   - {fileID: 11400000, guid: 4f1c776f04594fa6a1831172ef86d2da, type: 2}
   - {fileID: 11400000, guid: ccc8dbcbc0004d8bac40eb15c11adff6, type: 2}
+  _glyphSheet: {fileID: 11400000, guid: 46e385665ba14dde8edd78b95cb77324, type: 2}

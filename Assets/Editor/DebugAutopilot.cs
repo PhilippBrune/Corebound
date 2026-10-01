@@ -266,6 +266,56 @@ namespace Corebound.EditorTools
                 }
             }
 
+            // "campaign5" (Open Topics 3.1): five real runs back to back from Stage 1, no god mode, on
+            // Profile 2 wiped clean before the first. Each run ends with a CAMPAIGN line (outcome,
+            // stage, time, XP, Alloy, SP, boss fight times, weapon rarities offered) and the next one
+            // is queued through this file as "campaign-next". Back up Profile_02 first if it matters.
+            if (contents.StartsWith("campaign-next", System.StringComparison.OrdinalIgnoreCase))
+            {
+                Debug.Log(LogPrefix + " CAMPAIGN continuing with run " + (SessionState.GetInt(CampaignIndexSessionKey, 0) + 1)
+                    + " of " + SessionState.GetInt(CampaignRunsSessionKey, 0));
+                ClearVariantKeys();
+                SessionState.SetBool(GodModeSessionKey, SessionState.GetBool(CampaignGodSessionKey, false));
+                Enabled = true;
+                StartAutopilot(1);
+                return;
+            }
+
+            if (contents.StartsWith("campaign", System.StringComparison.OrdinalIgnoreCase))
+            {
+                var argument = contents.Substring("campaign".Length).Trim();
+                var god = argument.EndsWith("god", System.StringComparison.OrdinalIgnoreCase);
+                argument = god ? argument.Substring(0, argument.Length - 3).Trim() : argument;
+                var runs = int.TryParse(argument, out var parsedRuns) ? Mathf.Clamp(parsedRuns, 1, 20) : 5;
+                SessionState.SetBool(CampaignGodSessionKey, god);
+                SessionState.SetInt(CampaignRunsSessionKey, runs);
+                SessionState.SetInt(CampaignIndexSessionKey, 0);
+                SessionState.SetString(CampaignResultsSessionKey, string.Empty);
+                Debug.Log(LogPrefix + " CAMPAIGN of " + runs + " runs" + (god ? " in god mode" : string.Empty) + " requested; Profile 2 will be wiped first.");
+                ClearVariantKeys();
+                SessionState.SetBool(GodModeSessionKey, god);
+                Enabled = true;
+                StartAutopilot(1);
+                return;
+            }
+
+            SessionState.SetInt(CampaignRunsSessionKey, 0);
+
+            // "tutorial": the guided run from the New Run panel's tutorial row, with a screenshot
+            // of the first beat (Open Topics 2.1: beats have their own panel since 2026-10-01).
+            var tutorialTest = contents.StartsWith("tutorial", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(TutorialTestSessionKey, tutorialTest);
+
+            if (tutorialTest)
+            {
+                contents = contents.Substring("tutorial".Length).Trim();
+
+                if (contents.Length == 0)
+                {
+                    contents = "1";
+                }
+            }
+
             // "class engineer 1" (CHARACTER_CLASSES_2026-09-30): play as that class, unlocked or not;
             // combines with every other variant ("class custodian god 2"). The Engineer walks to a
             // tower every twelve seconds and holds Interact to overcharge it, and every wave change
@@ -401,6 +451,48 @@ namespace Corebound.EditorTools
         public const string BossTestSessionKey = "Corebound.Autopilot.BossTest";
         public const string RecordsTestSessionKey = "Corebound.Autopilot.RecordsTest";
         public const string ClassTestSessionKey = "Corebound.Autopilot.ClassTest";
+        public const string CampaignRunsSessionKey = "Corebound.Autopilot.CampaignRuns";
+        public const string CampaignIndexSessionKey = "Corebound.Autopilot.CampaignIndex";
+        public const string CampaignResultsSessionKey = "Corebound.Autopilot.CampaignResults";
+        public const string CampaignGodSessionKey = "Corebound.Autopilot.CampaignGod";
+        public const string TutorialTestSessionKey = "Corebound.Autopilot.TutorialTest";
+
+        public static bool IsCampaign => SessionState.GetInt(CampaignRunsSessionKey, 0) > 0;
+
+        // A campaign run is a plain run: every variant flag from an earlier request is cleared.
+        private static void ClearVariantKeys()
+        {
+            SessionState.SetBool(PadTestSessionKey, false);
+            SessionState.SetBool(LoadoutTestSessionKey, false);
+            SessionState.SetBool(ArsenalTestSessionKey, false);
+            SessionState.SetBool(RecordsTestSessionKey, false);
+            SessionState.SetBool(ProgressionTestSessionKey, false);
+            SessionState.SetBool(CardsTestSessionKey, false);
+            SessionState.SetBool(BossTestSessionKey, false);
+            SessionState.SetBool(GodModeSessionKey, false);
+            SessionState.SetBool(AscensionTestSessionKey, false);
+            SessionState.SetString(ClassTestSessionKey, string.Empty);
+        }
+
+        public static void QueueRequest(string command)
+        {
+            try
+            {
+                var text = System.IO.File.Exists(RequestFilePath) ? System.IO.File.ReadAllText(RequestFilePath) : string.Empty;
+                text = System.Text.RegularExpressions.Regex.Replace(text, "(?m)^command: .*$", "command: " + command);
+
+                if (!text.Contains("command: " + command))
+                {
+                    text += System.Environment.NewLine + "command: " + command + System.Environment.NewLine;
+                }
+
+                System.IO.File.WriteAllText(RequestFilePath, text);
+            }
+            catch (System.IO.IOException exception)
+            {
+                Debug.LogWarning(LogPrefix + " could not queue '" + command + "': " + exception.Message);
+            }
+        }
 
         private static string ReadCommand()
         {
@@ -497,7 +589,7 @@ namespace Corebound.EditorTools
             var host = new GameObject("DebugAutopilotRuntime");
             Object.DontDestroyOnLoad(host);
             var runtime = host.AddComponent<DebugAutopilotRuntime>();
-            runtime.Configure(TargetStage, MaxRunSeconds, SessionState.GetBool(LoadoutTestSessionKey, false));
+            runtime.Configure(TargetStage, IsCampaign ? 3600f : MaxRunSeconds, SessionState.GetBool(LoadoutTestSessionKey, false));
             runtime.ConfigureProgressionTest(SessionState.GetBool(ProgressionTestSessionKey, false), SessionState.GetBool(AscensionTestSessionKey, false), SessionState.GetBool(RecordsTestSessionKey, false));
 
             if (SessionState.GetBool(GodModeSessionKey, false))
@@ -689,6 +781,17 @@ namespace Corebound.EditorTools
             // this the run sat in front of the first beat until the time cap (2026-09-23).
             if (Corebound.Gameplay.Tutorial.TutorialService.IsBeatShowing && _inputReader != null)
             {
+                if (!_beatShotTaken)
+                {
+                    _beatShotTaken = true;
+                    _confirmTimer = -1.5f;
+                    var beatRoot = AdditiveCanvasSceneLoader.FindRoot(AdditiveCanvasSceneLoader.OverlayCanvasSceneName, "TutorialBeatCanvas");
+                    var beatPanel = beatRoot != null ? beatRoot.transform.Find("TutorialBeatPanel") : null;
+                    Debug.Log(DebugAutopilot.LogPrefix + " TUTORIAL beat panel active=" + (beatPanel != null && beatPanel.gameObject.activeInHierarchy)
+                        + " pausePanelShown=" + (GameObject.Find("PausePanel") != null));
+                    Shot("tutorial_beat");
+                }
+
                 _confirmTimer += Time.unscaledDeltaTime;
 
                 if (_confirmTimer >= 0.6f)
@@ -959,6 +1062,20 @@ namespace Corebound.EditorTools
                 return;
             }
 
+            if (DebugAutopilot.IsCampaign && !_campaignPrepared)
+            {
+                _campaignPrepared = true;
+                PrepareCampaignRun();
+                _stepTimer = 0f;
+                return;
+            }
+
+            if (SessionState.GetBool(DebugAutopilot.TutorialTestSessionKey, false) && !_tutorialOffered)
+            {
+                _tutorialOffered = true;
+                FindFirstObjectByType<Corebound.MetaProgression.MetaProgressionService>()?.SetHasSeenTutorial(false);
+            }
+
             // The class first, so a progression probe buys into that class's tree.
             if (!_classSelected)
             {
@@ -1067,6 +1184,19 @@ namespace Corebound.EditorTools
                     }
                 }
 
+                // The tutorial variant takes the panel's first row, the guided run.
+                if (SessionState.GetBool(DebugAutopilot.TutorialTestSessionKey, false) && !_tutorialRowPicked)
+                {
+                    var newRunPanel = FindFirstObjectByType<Corebound.UI.MainMenu.MainMenuRouteTargetController>();
+
+                    if (newRunPanel != null && newRunPanel.ActivePanelSelectedIndex >= 0)
+                    {
+                        _tutorialRowPicked = true;
+                        newRunPanel.TrySelectPanelRow(0);
+                        Debug.Log(DebugAutopilot.LogPrefix + " TUTORIAL row picked on the New Run panel");
+                    }
+                }
+
                 // Confirming New Run opens a route panel that needs its own confirm.
                 if (_stepTimer > 1f)
                 {
@@ -1085,6 +1215,7 @@ namespace Corebound.EditorTools
             }
 
             ResolveRuntimeReferences();
+            SnapshotQuests();
             ReportOnce("combat scene loaded");
             Advance(Step.PlayRun);
         }
@@ -1124,6 +1255,7 @@ namespace Corebound.EditorTools
                     return;
                 case WaveState.Failed:
                     Debug.LogWarning(DebugAutopilot.LogPrefix + " run failed at wave " + _waveManager.CurrentWaveNumber);
+                    CaptureCampaignRun("lost");
                     Advance(Step.AfterRun);
                     return;
                 case WaveState.Completed:
@@ -1141,6 +1273,7 @@ namespace Corebound.EditorTools
                     Debug.Log(DebugAutopilot.LogPrefix + " ENDING alpha=" + (endingGroup != null ? endingGroup.alpha.ToString("0.00") : "none") + " timeScale=" + Time.timeScale);
                     Shot("run_completed");
                     Debug.Log(DebugAutopilot.LogPrefix + " run completed");
+                    CaptureCampaignRun("won");
                     Finish();
                     return;
                 default:
@@ -1200,6 +1333,8 @@ namespace Corebound.EditorTools
             {
                 var reached = _bossSequence.ToString().Split('>').Length;
                 var defeated = state != WaveState.Failed;
+                _campaignBossTimes.Append(_campaignBossTimes.Length > 0 ? " " : string.Empty)
+                    .Append('S').Append(_bossStage).Append('=').Append((Time.time - _bossStartTime).ToString("0")).Append("s").Append(defeated ? string.Empty : "(lost)");
                 Debug.Log(DebugAutopilot.LogPrefix + " BOSS END stage=" + _bossStage + " phases=" + _bossSequence
                     + " reached " + reached + "/" + _bossPhaseCount + " outcome=" + state
                     + " in " + (Time.time - _bossStartTime).ToString("0.0") + "s"
@@ -1363,12 +1498,24 @@ namespace Corebound.EditorTools
 
             if (arena != null)
             {
-                var halfExtents = arena.ArenaSize * 0.5f - new Vector2(2.5f, 2.5f);
+                // Away from the walls, but never away from a target that is itself against the
+                // wall: a Relay Warden parked in a corner sat 4 units off, out of the Scorcher's
+                // reach, and wedged the fifth run of the first campaign (2026-10-01).
+                var halfExtents = arena.ArenaSize * 0.5f - new Vector2(1.5f, 1.5f);
+                var targetPosition = (Vector2)target.position;
+                var push = Vector2.zero;
 
-                if (Mathf.Abs(playerPosition.x) > halfExtents.x || Mathf.Abs(playerPosition.y) > halfExtents.y)
+                if (Mathf.Abs(playerPosition.x) > halfExtents.x && Mathf.Abs(targetPosition.x) < Mathf.Abs(playerPosition.x))
                 {
-                    move += -playerPosition.normalized * 2f;
+                    push.x = -Mathf.Sign(playerPosition.x);
                 }
+
+                if (Mathf.Abs(playerPosition.y) > halfExtents.y && Mathf.Abs(targetPosition.y) < Mathf.Abs(playerPosition.y))
+                {
+                    push.y = -Mathf.Sign(playerPosition.y);
+                }
+
+                move += push * 2f;
             }
 
             // Wedged against geometry: reverse the orbit and push hard toward the middle instead of
@@ -1858,6 +2005,16 @@ namespace Corebound.EditorTools
             for (var index = 0; index < cardService.CurrentOffer.Count; index++)
             {
                 var card = cardService.CurrentOffer[index];
+
+                if (card != null && card.IsWeaponCard)
+                {
+                    var rarity = (int)cardService.ResolveOfferedRarity(card);
+
+                    if (rarity >= 0 && rarity < _weaponRaritiesOffered.Length)
+                    {
+                        _weaponRaritiesOffered[rarity]++;
+                    }
+                }
 
                 if (card != null)
                 {
@@ -2462,6 +2619,170 @@ namespace Corebound.EditorTools
             }
         }
 
+        // ---- Quest deltas (Open Topics 4) ------------------------------------------------------------
+        // Every quest's progress when the run starts, compared with the end of the run: the Alloy
+        // quests, the arsenal and collection quests and the stage quests count in real runs only,
+        // and this is the line that shows whether they do.
+
+        private readonly System.Collections.Generic.Dictionary<string, (int Progress, bool Done)> _questsBefore =
+            new System.Collections.Generic.Dictionary<string, (int, bool)>();
+
+        private System.Collections.Generic.IReadOnlyList<Corebound.MetaProgression.QuestDefinition> _questCatalog;
+
+        private Corebound.SaveSystem.MetaProgressionSaveData ReadMetaSave()
+        {
+            var manager = Corebound.SaveSystem.LocalProfileSaveManager.Instance;
+            var definition = UnityEditor.AssetDatabase.LoadAssetAtPath<Corebound.MetaProgression.MetaProgressionDefinitionData>(
+                "Assets/ScriptableObjects/MetaProgression/MetaProgressionDefinition_Default.asset");
+
+            if (manager == null || definition == null)
+            {
+                return null;
+            }
+
+            _questCatalog ??= Corebound.MetaProgression.QuestLedger.BuildCatalog(definition);
+            return manager.LoadMetaProgressionSaveData(definition.CreateDefaultSaveData());
+        }
+
+        private void SnapshotQuests()
+        {
+            _questsBefore.Clear();
+            var save = ReadMetaSave();
+
+            if (save == null || _questCatalog == null)
+            {
+                return;
+            }
+
+            var owner = Corebound.MetaProgression.QuestLedger.QuestOwnerId;
+
+            foreach (var quest in _questCatalog)
+            {
+                _questsBefore[quest.QuestId] = (save.GetQuestProgress(owner, quest.QuestId), save.IsQuestCompleted(owner, quest.QuestId));
+            }
+        }
+
+        private void LogQuestDeltas()
+        {
+            var save = _questsBefore.Count > 0 ? ReadMetaSave() : null;
+
+            if (save == null)
+            {
+                return;
+            }
+
+            var owner = Corebound.MetaProgression.QuestLedger.QuestOwnerId;
+            var builder = new StringBuilder(256);
+            var changed = 0;
+
+            foreach (var quest in _questCatalog)
+            {
+                if (!_questsBefore.TryGetValue(quest.QuestId, out var before))
+                {
+                    continue;
+                }
+
+                var progress = save.GetQuestProgress(owner, quest.QuestId);
+                var done = save.IsQuestCompleted(owner, quest.QuestId);
+
+                if (progress == before.Progress && done == before.Done)
+                {
+                    continue;
+                }
+
+                changed++;
+                builder.Append(changed > 1 ? ", " : string.Empty).Append(quest.QuestId).Append(' ')
+                    .Append(before.Progress).Append("->").Append(progress).Append('/').Append(quest.Target)
+                    .Append(done && !before.Done ? " DONE" : string.Empty);
+            }
+
+            Debug.Log(DebugAutopilot.LogPrefix + " QUESTS " + changed + " changed of " + _questCatalog.Count + (changed > 0 ? ": " + builder : string.Empty));
+        }
+
+        // ---- Campaign (Open Topics 3.1) -------------------------------------------------------------
+
+        private bool _campaignPrepared;
+        private bool _tutorialOffered;
+        private bool _tutorialRowPicked;
+        private bool _beatShotTaken;
+        private bool _campaignCaptured;
+        private readonly StringBuilder _campaignBossTimes = new StringBuilder(64);
+        private readonly int[] _weaponRaritiesOffered = new int[4];
+
+        // Run 1 wipes Profile 2 so the numbers are a new player's; every run marks the tutorial
+        // seen, because a fresh profile's New Run panel offers the tutorial as its first row and
+        // the campaign measures real runs.
+        private void PrepareCampaignRun()
+        {
+            var index = SessionState.GetInt(DebugAutopilot.CampaignIndexSessionKey, 0);
+
+            if (index == 0)
+            {
+                Corebound.SaveSystem.ProfileSelection.DeleteProfile(Corebound.SaveSystem.ProfileSelection.ActiveIndex);
+                Debug.Log(DebugAutopilot.LogPrefix + " CAMPAIGN wiped profile " + Corebound.SaveSystem.ProfileSelection.ActiveIndex + " for a fresh start");
+            }
+
+            var service = FindFirstObjectByType<Corebound.MetaProgression.MetaProgressionService>();
+
+            if (service != null)
+            {
+                service.SetHasSeenTutorial(true);
+                var save = service.SaveData;
+                Debug.Log(DebugAutopilot.LogPrefix + " CAMPAIGN run " + (index + 1) + " starts at level " + save.Level + " (" + save.Experience + " xp)"
+                    + " paragon=" + save.ParagonLevel + " alloy=" + save.AlloyBalance + " sp=" + save.SkillPointsAvailable);
+            }
+        }
+
+        private void CaptureCampaignRun(string outcome)
+        {
+            if (!DebugAutopilot.IsCampaign || _campaignCaptured || _waveManager == null)
+            {
+                return;
+            }
+
+            _campaignCaptured = true;
+            var index = SessionState.GetInt(DebugAutopilot.CampaignIndexSessionKey, 0);
+            var line = "run " + (index + 1) + ": " + outcome
+                + " stage " + _waveManager.StageIndex + " wave " + _waveManager.CurrentWaveNumber
+                + " time " + _elapsed.ToString("0") + "s"
+                + " xp +" + Corebound.MetaProgression.MetaRewardLedger.RunExperience
+                + " levels +" + Corebound.MetaProgression.MetaRewardLedger.RunLevelsGained
+                + " sp +" + Corebound.MetaProgression.MetaRewardLedger.RunSkillPoints
+                + " alloy +" + Corebound.MetaProgression.MetaRewardLedger.RunAlloy
+                + " bosses[" + _campaignBossTimes + "]"
+                + " weaponOffers[C" + _weaponRaritiesOffered[0] + " R" + _weaponRaritiesOffered[1] + " E" + _weaponRaritiesOffered[2] + " L" + _weaponRaritiesOffered[3] + "]"
+                + " loadout " + DescribeLoadout();
+            Debug.Log(DebugAutopilot.LogPrefix + " CAMPAIGN " + line);
+            var results = SessionState.GetString(DebugAutopilot.CampaignResultsSessionKey, string.Empty);
+            SessionState.SetString(DebugAutopilot.CampaignResultsSessionKey, results + (results.Length > 0 ? "\n" : string.Empty) + line);
+        }
+
+        private void QueueNextCampaignRun()
+        {
+            if (!DebugAutopilot.IsCampaign)
+            {
+                return;
+            }
+
+            if (!_campaignCaptured)
+            {
+                CaptureCampaignRun("unfinished (" + _step + ")");
+            }
+
+            var index = SessionState.GetInt(DebugAutopilot.CampaignIndexSessionKey, 0) + 1;
+            var total = SessionState.GetInt(DebugAutopilot.CampaignRunsSessionKey, 0);
+            SessionState.SetInt(DebugAutopilot.CampaignIndexSessionKey, index);
+
+            if (index < total)
+            {
+                DebugAutopilot.QueueRequest("campaign-next");
+                return;
+            }
+
+            Debug.Log(DebugAutopilot.LogPrefix + " CAMPAIGN DONE (" + total + " runs)\n" + SessionState.GetString(DebugAutopilot.CampaignResultsSessionKey, string.Empty));
+            SessionState.SetInt(DebugAutopilot.CampaignRunsSessionKey, 0);
+        }
+
         // ---- Class variant (CHARACTER_CLASSES_2026-09-30) ------------------------------------------
 
         private bool _classSelected;
@@ -2634,6 +2955,8 @@ namespace Corebound.EditorTools
 
         private void Finish()
         {
+            LogQuestDeltas();
+            QueueNextCampaignRun();
             _step = Step.Done;
             Corebound.MetaProgression.CharacterUnlockRules.DebugUnlockAll = false;
             Debug.Log(DebugAutopilot.LogPrefix + " finished after " + _elapsed.ToString("0.0") + "s. sawShop=" + _sawShopOpen);

@@ -59,5 +59,16 @@ namespace Corebound.Gameplay.Waves
             _holder = null;
             Time.timeScale = 1f;
         }
+
+        // Every session starts unfrozen. In the Editor, Time.timeScale outlives Play Mode: stopping
+        // Play while a pause, reward or tutorial beat held the freeze started the next session -
+        // main menu included - at 0, where anything on scaled time waits forever (2026-10-01: three
+        // autopilot runs sat at "Press Start" until this). ForceRelease on run start never helped
+        // the menu, which comes first.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnSessionStart()
+        {
+            ForceRelease();
+        }
     }
 }

@@ -55,6 +55,7 @@ namespace Corebound.Gameplay.Tutorial
         {
             var runSaveData = SaveManager != null ? SaveManager.LoadRunSaveData() : null;
             _isActive = runSaveData != null && runSaveData.IsTutorialRun && _sequenceData != null && _sequenceData.Steps != null && _sequenceData.Steps.Length > 0;
+            Corebound.Gameplay.Shared.SpriteSheetData.Register(_sequenceData != null ? _sequenceData.GlyphSheet : null);
 
             if (!_isActive)
             {

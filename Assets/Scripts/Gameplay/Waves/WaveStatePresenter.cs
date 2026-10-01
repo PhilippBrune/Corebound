@@ -2246,6 +2246,14 @@ namespace Corebound.Gameplay.Waves
             // step 1). The assignment used to sit here bare, a hundred lines from its matching
             // restore, with every overlay path able to route between them.
             GameplayTimeScaleGuard.TryAcquire(this);
+
+            // A tutorial beat draws in its own panel (Open Topics 2.1); the pause overlay is only the
+            // fallback for a scene without the overlay canvas.
+            if (overlayMode == OverlayMode.Tutorial && Corebound.Gameplay.Tutorial.TutorialBeatPresenter.TryShow(title, body))
+            {
+                return;
+            }
+
             LayoutPauseOverlay(overlayMode == OverlayMode.Pause);
 
             if (_pausePanel != null)
@@ -2274,6 +2282,7 @@ namespace Corebound.Gameplay.Waves
 
             _overlayMode = OverlayMode.None;
             GameplayTimeScaleGuard.Release(this);
+            Corebound.Gameplay.Tutorial.TutorialBeatPresenter.Hide();
 
             if (_pausePanel != null)
             {

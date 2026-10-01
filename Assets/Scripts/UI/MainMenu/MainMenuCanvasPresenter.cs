@@ -56,6 +56,7 @@ namespace Corebound.UI.MainMenu
         [SerializeField] private MainMenuInputHandler _inputHandler;
 
         private MainMenuRouteTargetController _routeTargetController;
+        private Sprite _glyphHintSprite;
 
         private Canvas _canvas;
         private RectTransform _rootRect;
@@ -215,7 +216,11 @@ namespace Corebound.UI.MainMenu
             var glyphHintRect = glyphHintObject.GetComponent<RectTransform>();
             SetAnchoredBox(glyphHintRect, new Vector2(1f, 0f), new Vector2(-GlyphHintRight, GlyphHintBottom), new Vector2(GlyphHintWidth, GlyphHintHeight));
             _glyphHintBar = glyphHintObject.GetComponent<MainMenuGlyphHintBar>();
-            _glyphHintBar.Initialize(_font, _buttonFrameSprite, _skinData);
+            // The hint capsule (Asset 30) when the skin has it, else the button frame it borrowed.
+            _glyphHintSprite = _skinData != null && _skinData.GlyphHintCapsuleTexture != null
+                ? CreateRuntimeSpriteRect(_skinData.GlyphHintCapsuleTexture, _skinData.GlyphHintCapsuleRect, Vector4.zero)
+                : null;
+            _glyphHintBar.Initialize(_font, _glyphHintSprite != null ? _glyphHintSprite : _buttonFrameSprite, _skinData);
         }
 
         private Vector2Int _sizedForScreen;
@@ -475,6 +480,7 @@ namespace Corebound.UI.MainMenu
             DestroyRuntimeSprite(_backgroundSprite);
             DestroyRuntimeSprite(_logoSprite);
             DestroyRuntimeSprite(_buttonFrameSprite);
+            DestroyRuntimeSprite(_glyphHintSprite);
 
             if (_focusMarkerSprite != null)
             {

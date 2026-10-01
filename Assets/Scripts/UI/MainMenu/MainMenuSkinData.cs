@@ -9,6 +9,20 @@ namespace Corebound.UI.MainMenu
         [SerializeField] private Texture2D _backgroundTexture;
         [SerializeField] private Texture2D _logoTexture;
         [SerializeField] private Texture2D _buttonFrameTexture;
+
+        // Open Topics 2.1 (2026-10-01): Assets 29 and 30. The route panels (New Run, Records,
+        // Profile, Quit) and the glyph hints had borrowed the button frame since the menu was
+        // built. Left empty, both fall back to it.
+        [SerializeField] private Texture2D _routePanelFrameTexture;
+        [SerializeField] private Vector4 _routePanelFrameBorder = new Vector4(140f, 130f, 140f, 130f);
+
+        // The frame's steel-blue body is lighter than the panels it replaces; darkened so the light
+        // label colours keep their contrast on it.
+        [SerializeField] private Color _routePanelFrameTint = new Color(0.62f, 0.68f, 0.78f, 1f);
+        [SerializeField] private Texture2D _glyphHintCapsuleTexture;
+
+        // One of the three small capsules on the sheet (bottom left), bottom-left pixel origin.
+        [SerializeField] private Rect _glyphHintCapsuleRect = new Rect(47f, 37f, 404f, 132f);
         [SerializeField] private Texture2D _focusMarkerTexture;
         [SerializeField] private ControllerGlyphData _controllerGlyphData;
         [SerializeField] private MainMenuAudioCueData _audioCueData;
@@ -33,6 +47,16 @@ namespace Corebound.UI.MainMenu
         public Texture2D LogoTexture => _logoTexture;
 
         public Texture2D ButtonFrameTexture => _buttonFrameTexture;
+
+        public Texture2D RoutePanelFrameTexture => _routePanelFrameTexture;
+
+        public Vector4 RoutePanelFrameBorder => _routePanelFrameBorder;
+
+        public Color RoutePanelFrameTint => _routePanelFrameTint;
+
+        public Texture2D GlyphHintCapsuleTexture => _glyphHintCapsuleTexture;
+
+        public Rect GlyphHintCapsuleRect => _glyphHintCapsuleRect;
 
         public Texture2D FocusMarkerTexture => _focusMarkerTexture;
 

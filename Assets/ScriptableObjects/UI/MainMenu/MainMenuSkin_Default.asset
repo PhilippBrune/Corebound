@@ -33,3 +33,12 @@ MonoBehaviour:
   _glyphHintFrameTint: {r: 0.84, g: 0.9, b: 0.97, a: 0.88}
   _glyphHintActionColor: {r: 0.08, g: 0.12, b: 0.17, a: 0.95}
   _glyphHintKeyColor: {r: 1, g: 0.87, b: 0.46, a: 1}
+  _routePanelFrameTexture: {fileID: 2800000, guid: bffb7911122a86d4583fe72f710cb598, type: 3}
+  _routePanelFrameBorder: {x: 140, y: 130, z: 140, w: 130}
+  _glyphHintCapsuleTexture: {fileID: 2800000, guid: 0f07cae0ab6e8ed48999a86981ef4037, type: 3}
+  _glyphHintCapsuleRect:
+    serializedVersion: 2
+    x: 47
+    y: 37
+    width: 404
+    height: 132

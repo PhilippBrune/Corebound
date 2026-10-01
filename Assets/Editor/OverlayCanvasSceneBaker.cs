@@ -63,7 +63,7 @@ namespace Corebound.EditorTools
             Bake();
         }
 
-        private static readonly string[] CanvasRootNames = { "BossHudCanvas", "NotificationCanvas", "RelicRevealCanvas", "CoreVoiceCanvas", "EndingCanvas" };
+        private static readonly string[] CanvasRootNames = { "BossHudCanvas", "NotificationCanvas", "RelicRevealCanvas", "CoreVoiceCanvas", "EndingCanvas", "TutorialBeatCanvas" };
 
         // A canvas added to the overlay after the scene was first baked (2026-09-30: the Core's
         // voice and the ending card) is added to the existing scene - built into it, saved, and
@@ -101,6 +101,12 @@ namespace Corebound.EditorTools
                 added.Add("EndingCanvas");
             }
 
+            if (!present.Contains("TutorialBeatCanvas"))
+            {
+                BuildTutorialBeat(font, scene);
+                added.Add("TutorialBeatCanvas");
+            }
+
             if (added.Count > 0)
             {
                 EditorSceneManager.SaveScene(scene);
@@ -124,6 +130,7 @@ namespace Corebound.EditorTools
             BuildRelicReveal(font, scene);
             BuildCoreVoice(font, scene);
             BuildEndingCard(font, scene);
+            BuildTutorialBeat(font, scene);
 
             // A new additive scene becomes the active one, so anything that lazily creates a
             // GameObject while it is (the first bake caught a UIManager singleton) lands in it.
@@ -328,6 +335,31 @@ namespace Corebound.EditorTools
             var body = CreateRect("EndingText", panel, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
             Stretch(body, new Vector2(0f, 0.06f), new Vector2(1f, 0.78f), new Vector2(60f, 0f), new Vector2(-60f, 0f));
             AddText(body, font, 25, FontStyle.Normal, TextAnchor.MiddleCenter, new Color(0.9f, 0.93f, 0.97f, 1f), string.Empty);
+        }
+
+        // Open Topics 2.1 (2026-10-01): a tutorial beat's own panel, low and centred so the arena
+        // stays visible behind it. Sprites arrive at runtime (TutorialBeatPresenter), so the scene
+        // only holds the places; inactive until a beat opens it.
+        private static void BuildTutorialBeat(Font font, Scene scene)
+        {
+            var root = CreateCanvas("TutorialBeatCanvas", 460, scene, false);
+
+            var panel = CreateRect("TutorialBeatPanel", root, new Vector2(0.5f, 0.3f), new Vector2(0.5f, 0.3f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(980f, 330f));
+            AddImage(panel, new Color(0.04f, 0.06f, 0.09f, 0.94f));
+
+            var title = CreateRect("BeatTitle", panel, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            Stretch(title, new Vector2(0f, 0.6f), new Vector2(1f, 0.76f), new Vector2(110f, 0f), new Vector2(-110f, 0f));
+            AddText(title, font, 32, FontStyle.Bold, TextAnchor.MiddleLeft, new Color(1f, 0.86f, 0.5f, 1f), string.Empty);
+
+            var body = CreateRect("BeatBody", panel, Vector2.zero, Vector2.one, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+            Stretch(body, new Vector2(0f, 0.17f), new Vector2(1f, 0.58f), new Vector2(110f, 0f), new Vector2(-110f, 0f));
+            AddText(body, font, 22, FontStyle.Normal, TextAnchor.UpperLeft, new Color(0.9f, 0.93f, 0.97f, 1f), string.Empty);
+
+            // The Confirm tile shows both the pad button and the key, so it needs no device switch.
+            var glyph = CreateRect("ConfirmGlyph", panel, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-110f, 40f), new Vector2(86f, 104f));
+            AddImage(glyph, Color.white);
+
+            panel.gameObject.SetActive(false);
         }
 
         private static void BuildRelicReveal(Font font, Scene scene)
