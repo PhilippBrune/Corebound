@@ -38,7 +38,6 @@ namespace Corebound.UI.MainMenu
         private readonly Text[] _tabLabels = new Text[4];
         private readonly Image[] _tabUnderlines = new Image[4];
         private readonly Text _cardDetail;
-        private readonly Font _font;
         private readonly Color _selectedColor;
         private readonly Color _idleColor;
         private readonly List<RectTransform> _cells = new List<RectTransform>();
@@ -48,11 +47,15 @@ namespace Corebound.UI.MainMenu
         private int _builtCount = -1;
         private int _builtCollected = -1;
 
-        public RecordsPanelView(RectTransform panel, Font font, Color selectedColor, Color idleColor)
+        // Open Topics 3.2 (2026-10-01): the first main-menu view on UIThemeData. Its font and its two
+        // text colours come from the theme through ProceduralUIBuilder instead of being handed in
+        // from the menu skin; the theme's accent and secondary colours are the skin's selected and
+        // idle colours to within a few percent, so the page looks the same. The card faces keep
+        // their own tints below - those are the card art's colours, not the UI's.
+        public RecordsPanelView(RectTransform panel)
         {
-            _font = font;
-            _selectedColor = selectedColor;
-            _idleColor = idleColor;
+            _selectedColor = ProceduralUIBuilder.ResolveAccentColor();
+            _idleColor = ProceduralUIBuilder.ResolveSecondaryTextColor();
 
             _root = new GameObject("RecordsView", typeof(RectTransform)).GetComponent<RectTransform>();
             _root.SetParent(panel, false);
@@ -66,7 +69,7 @@ namespace Corebound.UI.MainMenu
 
             for (var index = 0; index < _tabLabels.Length; index++)
             {
-                var label = ProceduralUIFactory.CreateText("Tab" + index, _tabsRoot, _font, 26, FontStyle.Bold, _idleColor, TextAnchor.MiddleCenter);
+                var label = ProceduralUIBuilder.CreateText("Tab" + index, _tabsRoot, 26, FontStyle.Bold, TextAnchor.MiddleCenter, _idleColor);
                 var rect = label.rectTransform;
                 rect.anchorMin = new Vector2(0f, 0f);
                 rect.anchorMax = new Vector2(0f, 1f);
@@ -75,7 +78,7 @@ namespace Corebound.UI.MainMenu
                 rect.anchoredPosition = new Vector2(index * (TabWidth + 16f), 0f);
                 _tabLabels[index] = label;
 
-                var underline = ProceduralUIFactory.CreateImage("TabUnderline" + index, _tabsRoot, null, _selectedColor, Image.Type.Simple);
+                var underline = ProceduralUIBuilder.CreateImage("TabUnderline" + index, _tabsRoot, null, _selectedColor, Image.Type.Simple);
                 underline.raycastTarget = false;
                 var underlineRect = underline.rectTransform;
                 underlineRect.anchorMin = new Vector2(0f, 0f);
@@ -89,7 +92,7 @@ namespace Corebound.UI.MainMenu
             _gridRoot = new GameObject("CardGrid", typeof(RectTransform)).GetComponent<RectTransform>();
             _gridRoot.SetParent(_root, false);
 
-            _cardDetail = ProceduralUIFactory.CreateText("CardDetail", _root, _font, 21, FontStyle.Normal, _idleColor, TextAnchor.MiddleLeft);
+            _cardDetail = ProceduralUIBuilder.CreateText("CardDetail", _root, 21, FontStyle.Normal, TextAnchor.MiddleLeft, _idleColor);
             _cardDetail.horizontalOverflow = HorizontalWrapMode.Wrap;
             _cardDetail.verticalOverflow = VerticalWrapMode.Overflow;
             _cardDetail.supportRichText = true;
@@ -258,7 +261,7 @@ namespace Corebound.UI.MainMenu
 
         private void AddHaloEdge(string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
         {
-            var edge = ProceduralUIFactory.CreateImage(name, _selectionHalo, null, _selectedColor, Image.Type.Simple);
+            var edge = ProceduralUIBuilder.CreateImage(name, _selectionHalo, null, _selectedColor, Image.Type.Simple);
             edge.raycastTarget = false;
             var rect = edge.rectTransform;
             rect.anchorMin = anchorMin;
@@ -270,7 +273,7 @@ namespace Corebound.UI.MainMenu
         private void BuildCard(RectTransform cell, RecordsCardEntry entry, Vector2 size)
         {
             var card = entry.Card;
-            var frame = ProceduralUIFactory.CreateImage("Frame", cell, _frames[Mathf.Clamp((int)card.Rarity, 0, 3)],
+            var frame = ProceduralUIBuilder.CreateImage("Frame", cell, _frames[Mathf.Clamp((int)card.Rarity, 0, 3)],
                 entry.Collected ? Color.white : UncollectedFrameTint, Image.Type.Sliced);
             frame.raycastTarget = false;
             // The frame's 27 px border was sized for a 282 px reward card; at a fifth of that size
@@ -309,7 +312,7 @@ namespace Corebound.UI.MainMenu
                 return;
             }
 
-            var image = ProceduralUIFactory.CreateImage(name, cell, sprite, color, Image.Type.Simple);
+            var image = ProceduralUIBuilder.CreateImage(name, cell, sprite, color, Image.Type.Simple);
             image.preserveAspect = true;
             image.raycastTarget = false;
             var rect = image.rectTransform;
@@ -322,7 +325,7 @@ namespace Corebound.UI.MainMenu
 
         private void AddName(RectTransform cell, string name, string text, Vector2 centre, Vector2 band, Color color, FontStyle style)
         {
-            var label = ProceduralUIFactory.CreateText(name, cell, _font, 13, style, color, TextAnchor.MiddleCenter);
+            var label = ProceduralUIBuilder.CreateText(name, cell, 13, style, TextAnchor.MiddleCenter, color);
             label.text = text;
             label.raycastTarget = false;
             label.horizontalOverflow = HorizontalWrapMode.Wrap;

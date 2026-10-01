@@ -146,11 +146,7 @@ namespace Corebound.UI.MainMenu
             _footerText = CreateText("Footer", _panelRect, FooterFontSize, FontStyle.Italic, _skinData != null ? _skinData.IdleLabelColor : Color.white, TextAnchor.LowerRight);
             StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(230f, 140f), new Vector2(-230f, 195f));
 
-            _recordsView = new RecordsPanelView(
-                _panelRect,
-                _font,
-                _skinData != null ? _skinData.SelectedLabelColor : Color.white,
-                _skinData != null ? _skinData.IdleLabelColor : Color.white);
+            _recordsView = new RecordsPanelView(_panelRect);
             ApplyDefaultLayout();
         }
 
