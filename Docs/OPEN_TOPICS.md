@@ -1,142 +1,121 @@
 # Open Topics — Corebound
 
-Version 2.2 · 2026-09-30 · **The single live list.** Closed topics are deleted, not archived — git
+Version 2.3 · 2026-10-01 · **The single live list.** Closed topics are deleted, not archived — git
 history holds what was fixed and why. Do not start a new report file; add here.
 
 `08_IMPLEMENTATION_BACKLOG.md` is the plan. This is the punch list. Every open point carries a
 suggestion; points that need an owner decision are marked **Decide**.
 
-**Closed 2026-09-30** (overnight session, all committed; details in the commits and the linked
-docs):
-- **Alloy quests** built as decided (A1-2, A2, A3-1, A4-1, A5-1): weapon tracks at base 3, 31 Alloy
-  quests in a second section of the Quests tab — `Specs/DIY/LEVELLING_QUESTS_PARAGON_2026-09-29.md`.
-- **New card mechanics** built as decided (C1-1 … C6-1): Poison, Shock, Target Painter, four
-  support cards, Sentry Drone — `Specs/DIY/NEW_CARD_MECHANICS_2026-09-29.md`.
-- **Playtest 2026-09-29:** XP per wave (25 × stage) and a boss lump (250 × stage), shown on the
-  wave banner and the run-end screen; quest-list scrolling; the Core never spawns within 4.5 units
-  of a gate; the aim jump (three causes, all fixed — see the session log below).
-- **3.1 → 1** hardware cursor; **3.2 → 3** diegetic stage change (the arena crossfades, the Core
-  holds its place); **3.3** tower slot traits (option 3, built 2026-09-29).
-- **Section 4, all five decided items:** `bossN` autopilot variant with phase logging (a);
-  `StageEnemyPoolData` deleted (a); card offers weighted by tag with one knob (a); every
-  multi-cell sheet's grid in `SpriteSheetData` assets (a); Boss HUD, notification and relic reveal
-  in the authored `OverlayCanvas` scene (b).
-- **Found and fixed on the way:** weapon cards in rewards had never rolled a rarity since
-  2026-09-25 (misplaced code); the autopilot kited at 5.5 units with the 2.7-unit Scorcher and lost
-  every run in wave 1; the autopilot never targeted the boss itself; Poison, Shock and the mark
-  first used colours VFX.md reserves; five art prompts wrongly said "not wired".
+**Closed 2026-09-30 / 10-01** (second session, all committed; details in the commits and the
+linked docs):
+- **Character classes** built as decided (K1-3, K2-1, K3-2, K4-1, K5-1, K6-2) with ten class cards —
+  `Specs/DIY/CHARACTER_CLASSES_2026-09-30.md`, "As built".
+- **Story** built as decided (S1-2, S2-1, S3-2, S4-1, S5-1): the Core's voice, premise, ending,
+  Core Logs and credits — `Specs/DIY/STORY_2026-09-30.md`, "As built". Audio 24 (victory sting) and
+  Audio 25 (credits loop) are wired, so all 28 audio cues are in use.
+- **Assets 108 and 109** delivered and wired (Poison/Shock/Support/Summon tag icons, the drone).
+- **1.3** the 23 superseded files deleted.
+- **Section 3, all five:** the five-run campaign (3.1, results below), the Records view on the UI
+  theme (3.2), the three remaining god-object cuts (3.3: stage transitions, spawn gates, health
+  bars), stage ground and prop sheets in `SpriteSheetData` (3.4), skill-graph positions baked (3.5).
+- **Section 5, all six decided items:** the relic reveal waits for "Boss Defeated" (b); weapon
+  rarities watched in the campaign (a); boss times measured on a fresh profile (a); tag affinity
+  per class (b); `GetOrAdd` helper and a 21-site sweep (a); Stage 1 is the Foundry, every stage has
+  a German name (a).
+- **Section 2.1:** tutorial beats have their own panel (Assets 06 and 28); the main-menu route
+  panels and glyph hints use Assets 29 and 30.
+- **Section 4:** Validate Art Pipeline runs from `ArtPipelineRequest.txt` without a dialog; every
+  autopilot run logs its quest deltas (the Alloy, arsenal and collection quests count in real runs);
+  a death at the Stage 1 boss paid +204 and +206 XP (≈ 210 expected); the main-menu profile label
+  matched the save in every menu screenshot (Level 3, Paragon 113 and 115).
 
 ---
 
-## 1 · Decide — new concepts
+## 1 · Decide
 
-### 1.1 Character classes — **Decide K1–K6**
+### 1.1 Balance from the campaign — **Decide**
 
-`Specs/DIY/CHARACTER_CLASSES_2026-09-30.md`: five classes (Vanguard, Engineer, Salvager,
-Custodian, Catalyst), each a signature rule plus its own tree, kit, card leaning and small stat
-differences; free unlocks through quests that already exist.
-**Suggestion:** K1-1 (Engineer as the only second class first), K2-1, K3-1, K4-1, K5-1, K6-2 for
-Engineer. Engineer uses only finished systems and is the most different from Vanguard.
+The campaign (3.1) ran twice on a wiped Profile 2, as the Vanguard with the start weapon and no
+Skill Points or Alloy spent between runs (the autopilot does not shop between runs):
 
-### 1.2 Story — **Decide S1–S5**
+| | Real runs (`campaign5`, no god mode) | Full clears (`campaign2 god`) |
+| --- | --- | --- |
+| Outcome | 4 runs: died Stage 1 wave 4, wave 4, boss, boss; the 5th wedged (autopilot bug, fixed) | 2 of 2 cleared all five stages |
+| Time | 121 / 107 / 175 / 424 s | 755 / 678 s |
+| XP | +105 / +99 / +204 / +206 | **+6,556 / +6,550** (estimate was ~6,500) |
+| Levels, SP | level 3 after four runs; +2 SP per boss-reaching run | +10 / +5 levels (to 11, then 16); +28 / +10 SP |
+| Alloy | +0 / +0 / +2 / +2 | +1,117 / +217 (first clears pay one-time quests) |
+| Bosses | Stage 1 boss lost in 12–13 s, twice | S1 20–30 s, S2 14 s, S3 8–9 s, S4 6–9 s, S5 6 s |
+| Weapon offers | 8 offers: 7 Common, 1 Rare | 36 offers: 21 Common, 12 Rare, 3 Epic, 0 Legendary |
 
-`Specs/DIY/STORY_2026-09-30.md`: the Core speaks in one or two lines at moments the game already
-pauses; the full story (premise, five stages, boss lines EN/DE, ending, twelve Core Logs) is
-written. **Suggestion:** S1-2, S2-1, S3-1, S4-1, S5-1. The in-run lines are half a day of wiring
-and would be the first thing a player notices.
+Three of the four real losses were "Core destroyed". The first clear's Alloy is inflated twice by
+the test itself: god mode completes all five "Core untouched" quests, and a one-slot loadout all
+five "one weapon type" quests; the repeatable part of a clear is boss and elite Alloy, about 50–70.
 
-### 1.3 Files that can go — **Decide** (nothing is deleted without your word)
+Four numbers to decide:
+- **Paragon cost.** A clear pays ~6,550 XP; a Paragon level costs 2,500, so a clear is ~2.6
+  Paragon levels, not the intended "about one". (a) Raise it to ~6,500. (b) Keep 2,500 and let
+  Ascension come faster. Level 70 needs ~205,000 XP, about 31 clears either way.
+- **Boss health (Open Topics 5 (a), measured).** From Stage 3 on, bosses die in 6–9 s even on a
+  fresh profile with no tree — the cards and weapons a run collects are enough. (a) Raise Stage 3–5
+  boss health (×2 would put them at 12–18 s). (b) Scale boss health with the weapon slots filled,
+  as suggested before.
+- **Stage 1 for a new player.** The autopilot, weaker than a person and spending nothing, never
+  beat the Stage 1 boss in four tries. (a) Wait for a human first run before touching it. (b)
+  Soften waves 4–7 and the boss now.
+- **Legendary weapon cards (5 (a), watched).** None in 44 offers; at the configured chance about
+  one was expected. (a) Keep watching. (b) Log the roll itself, not only the result.
 
-- `weapon_rapid_sprite.png`, `weapon_spread_sprite.png`, `weapon_beam_sprite.png` — superseded by
-  the two projectile sheets.
-- `combat_vfx_sheet_essentials.png` — superseded on 2026-09-08 by the individual VFX files; only
-  code comments still name it.
-- The ten `WeaponModifier_*` and nine `CardEffect_*` assets the old repurposed cards used
-  (listed in NEW_CARD_MECHANICS "As built") — referenced by nothing since 2026-09-30.
+**Suggestion:** Paragon (a); bosses wait for a human full run; Stage 1 (a); Legendary (b).
 
-**Suggestion:** delete all of them in one commit; git keeps them.
+### 1.2 Class trees are a first pass — **Decide**
+
+Each class tree is the Vanguard's tree with one class keystone inserted; the other three branches
+are still the Vanguard's. The concept's bigger nodes (a fifth tower slot, reroll interest, "Shock
+arcs to poisoned enemies first") are not built.
+(a) Play the classes first and decide per class what its tree is missing.
+(b) Build the concept's three bigger nodes now.
+**Suggestion:** (a) — none of the five has been played by a human yet.
+
+### 1.3 Profile 1 — **Decide**
+
+`Profile_01` holds an old test profile (last written 2026-09-29, with a
+`run.json.bak_before_fresh_test`). The autopilot no longer touches it.
+(a) Delete it. (b) Keep it.
+**Suggestion:** your call; nothing depends on it.
 
 ---
 
 ## 2 · Art and audio
 
-### 2.1 Art wired to nothing (8 files; 4 of them are 1.3)
+### 2.1 Art to deliver
 
-Re-audited 2026-09-30 with code comments excluded: **112 files, 104 wired, 8 unwired.** Five that
-the last version listed are wired now (four skill-graph frames, the factory tier indicator).
+- **Assets 110–113** — Engineer, Salvager, Custodian and Catalyst top-down sprites (K6-2). Until
+  then each class wears the Vanguard sprite in its colour. **Suggestion:** Engineer first; after
+  delivery, mirror and run Validate Art Pipeline.
 
-- **Tutorial (2):** `tutorial_prompt_panel.png`, `tutorial_glyph_strip.png` — tutorial beats reuse
-  the pause overlay. **Suggestion:** give the beats their own small panel in the `OverlayCanvas`
-  scene (authored since today), with the glyph strip showing the button for the current device.
-- **Main menu (2):** `route_panel_frame.png`, `glyph_hint_capsule.png` — nobody is blocked.
-  **Suggestion:** wire the frame behind the route panels and the capsule behind each glyph hint;
-  one screenshot pass of the main menu.
-
-### 2.2 Art to deliver
-
-- **Asset 108** — third row of the card tag icon sheet (Poison, Shock, Support, Summon). Until
-  then those tags borrow existing icons.
-- **Asset 109** — the Sentry Drone sprite (a cyan diamond until then).
-
-**Suggestion:** both prompts are in GRAPHICS_ASSET_PROMPTS with delivery notes; after delivery,
-mirror and run Validate Art Pipeline.
-
-### 2.3 Audio still open (2 cues)
-
-**28 cues — 26 wired, 2 unwired**, both blocked on a missing moment:
-- **Audio 24, run victory sting** — **Suggestion:** play it on the story's ending card (S4-1),
-  which is the first-clear moment it was written for.
-- **Audio 25, credits loop** — **Suggestion:** a plain scrolling credits panel reachable from the
-  ending card and the Records screen.
-
-### 2.4 Art still wrong
+### 2.2 Art still wrong
 
 - `tower_info_card_frame.png` bakes English "Strong against / Weak against" into the art, so the
-  German build shows English. **Suggestion:** re-render without text; the presenter already
-  draws labels.
-- `stage2/3/4/5_ground_tileset.png` are JPEG data behind a `.png` name. **Suggestion:** leave
-  until one of them needs transparency, then re-export as real PNG.
-- The splash sheet is a seven-frame mine, not the five-frame shockwave Asset 104 asked for; it now
-  plays all eight cells (2026-09-30). **Suggestion:** keep; it reads well at speed.
+  German build shows English. **Suggestion:** re-render without text; the presenter already draws
+  labels.
+- `stage2/3/4/5_ground_tileset.png` are JPEG data behind a `.png` name. **Suggestion:** leave until
+  one needs transparency, then re-export as real PNG.
+- The validator flags five frames with an opaque centre (`gameplay_modal_frame`,
+  `tower_info_card_frame`, `button_primary_frame`, `route_panel_frame`, `skill_node_sub_frame`). All
+  five are used as panels with their fill, where an opaque centre is right. **Suggestion:** keep;
+  teach the validator a "panel" exception list rather than re-rendering.
 
 ---
 
 ## 3 · Agreed work still open
 
-### 3.1 Five-run test campaign — **still open**
+### 3.1 UI theme unification — **three presenters done**
 
-Never run. It is now also the only way to settle three numbers that are arithmetic today: XP per
-complete run (~6,500 estimated), Alloy per run (~60), and whether the Paragon cost (2,500, set for
-the old XP) still means "about one run".
-**Suggestion:** an autopilot `campaignN` variant that plays N runs back to back on a scratch
-profile without god mode, and logs XP, Alloy, SP, stage reached and time per run. Then retune
-from real numbers.
-
-### 3.2 UI theme unification — **started**
-
-`ProceduralUIBuilder` resolves `UIThemeData`; one presenter migrated. **Suggestion:** do the
-Records panel next (it gained the Cards tab and would gain the Logs tab of S1-2), one presenter per
-session with a screenshot between each. The Boss HUD, notification and relic reveal no longer
-need this — they are authored now.
-
-### 3.3 God-object refactors — **step 1 of 4 done**
-
-Open: HUD bars out of `WaveStatePresenter`, spawn-gate visuals out of `StageArenaArtPresenter`,
-stage-transition orchestration out of `WaveManager`.
-**Suggestion:** stage transitions next. Today's crossfade added a second path through
-`AdvanceToNextStage` (fade vs. instant rebuild), which is exactly the seam to cut along.
-
-### 3.4 Stage atlases onto `SpriteSheetData`
-
-The six multi-cell sheets moved into data today; the stage ground tilesets (8 × 4 constants) and
-the prop sheets (a 47-entry pixel-rect dictionary in `StageArenaArtPresenter`) did not.
-**Suggestion:** one sheet asset per stage prop set with named cells; it also shrinks the presenter
-for 3.3.
-
-### 3.5 Skill graph authored positions
-
-The computed layout is readable; `_graphPosition` values are unset.
-**Suggestion:** leave until a layout complaint.
+`ProceduralUIBuilder` resolves `UIThemeData`; the skill graph, the Factory chain indicator and the
+Records view are on it.
+**Suggestion:** next the route panel itself (`MainMenuRoutePanelPresenter`), one presenter per
+session with a screenshot between each.
 
 ---
 
@@ -144,62 +123,67 @@ The computed layout is readable; `_graphPosition` values are unset.
 
 Each line says what is missing and how to close it.
 
-- **Card mechanics:** the two heals (the autopilot never dropped below full health before the
-  boss), Overclock Beacon, Core Aegis regeneration, Target Painter stacking, the mark ring and
-  poison tint on screen. **Suggestion:** a `cards` run without god mode on Stage 3, plus a
-  screenshot probe at the first poisoned or marked enemy.
-- **Alloy quest counters and the arsenal / collection quests** in a real run. **Suggestion:**
-  log quest progress deltas at run end in every autopilot run.
-- **Per-wave XP after a real death** at the Stage 1 boss (≈ 210 XP expected). **Suggestion:** read
-  it off the Run Failed screen in your next playtest — one glance.
-- **Hardware cursor** (3.1 → 1): screenshots cannot capture the OS cursor. **Needs your eyes.**
-- **Main-menu profile label** showed "Level 5" at level 70 after leaving the Progression screen
-  (2026-09-29). The summary now flushes queued saves before reading; not re-checked.
-- **Validate Art Pipeline** now checks sprite sheets, but its dialog is modal, so no agent can run
-  it. **Suggestion:** a request-file trigger that writes the report to the log without a dialog.
+- **Classes:** the Salvager's magnet range and tier-1 chain floor (no log line shows either), the
+  class cards actually being offered (Rare/Epic, none came up in the probes), and the unlock
+  announcement on a profile that really meets a condition. **Suggestion:** one `class salvager`
+  run with a Factory log line, and the announcement in your first playtest of a class.
+- **Card mechanics:** Leech Rounds and Field Dressing are verified (2026-10-01: after two probe hits
+  the player healed on 9 kills and 2 wave clears); Poison, Shock, the drone and Reactive Plating
+  are verified by their counters. Still open: Overclock Beacon's tower speed-up, Core Aegis
+  regeneration (the Core was never hurt in an intermission), Target Painter stacking, and the mark
+  ring and poison tint on screen — the probe photographs both moments, but at capture scale they
+  cannot be told apart from the impacts around them. **Needs your eyes** for the two visuals;
+  the other three need a counter each.
+- **Story:** the victory sting and the credits loop by ear, and the German lines on screen.
+  **Needs your ears and eyes** — switch the language once in Settings.
+- **Hardware cursor** (3.1 → 1 of 2026-09-30): screenshots cannot capture the OS cursor. **Needs
+  your eyes.**
+- **The tutorial beat panel** was photographed at the first beat only. **Suggestion:** the
+  `tutorial` variant through to the end, one screenshot per beat.
+- **Health bars after the 3.3 move:** drawn after a stage change, but their drain and hit flash
+  were not re-observed (god mode takes no damage). **Suggestion:** any non-god run's screenshot
+  after a hit.
 
 ---
 
 ## 5 · Smaller items — two suggestions each
 
-**"Boss Defeated" notice overlaps the relic reveal** (both appear at once after a boss).
-(a) Move the notice lower in `OverlayCanvas` — a scene edit, no code. (b) Hold the relic reveal
-until the notice has faded.
+**The loadout HUD shows the Vanguard's counted copies** — 3 Rapid read "Rapid x4", because the
+Set Bonus counts one more.
+(a) Show "3 (+1)" so the bonus is visible as a bonus. (b) Leave it; the tier name is what matters.
 
-**Weapon cards now really roll Rare/Epic/Legendary** (they never did before 2026-09-30), so runs
-will see stronger weapon copies than anyone has played with.
-(a) Watch it in the campaign (3.1) before touching numbers. (b) Halve the Legendary chance to 1%
-now as a precaution.
+**The skill-tree version is account-wide** while trees are now per class: bumping one class's
+tree version would hand every class a free respec.
+(a) Store the version per class next to the node ranks. (b) Keep one version and bump all five
+trees together by convention.
 
-**Bosses die in 5–12 s** in `bossN` — but Profile 2's tree is full from the ascension test.
-(a) Measure with `boss1` on a fresh profile first. (b) If it holds, scale boss health with the
-number of weapon slots filled.
+**Records hides the ten class cards**, so the collection grid and quest agree.
+(a) A class row under the grid, counted separately. (b) Leave them out.
 
-**Tag affinity default +0.35.**
-(a) Keep and log how often offered cards match the build (the OFFER log already prints weights).
-(b) Make it per class (K5-1).
+**The campaign autopilot never spends Skill Points or Alloy**, so five campaign runs are five
+first runs with more XP, not a player growing.
+(a) Let the campaign buy the cheapest available node and upgrade after each run. (b) Keep it as
+the worst case and read it that way.
 
-**`GetComponent<T>() ?? AddComponent<T>()` on native components** — in the Editor a missing
-component is a fake-null that `??` treats as present. It broke today's stage change once;
-`CardRewardPresenter`, `ShopPresenter`, `WaveStatePresenter` and `ProceduralUIFactory` use the same
-pattern on `CanvasGroup`, `CanvasRenderer`, `Image` and `Text`.
-(a) One `GetOrAdd<T>` helper and a sweep. (b) Leave the ones on components that are always present
-and fix only `CanvasGroup`.
-
-**Stage 1 is named "Stage 1"** while Stages 2–5 have names (and the art and story call it the
-Foundry).
-(a) Rename it "Foundry". (b) Keep numbers everywhere and show names as subtitles.
+**Profile 3 was repaired by hand on 2026-09-30** after one autopilot god run played on it (see
+the session log). Two values in the repair are best estimates: the Scorcher kill counter (25) and
+total playtime (≈ 584 s). Both the repaired and the unrepaired save are kept in
+`%USERPROFILE%/AppData/LocalLow/DefaultCompany/Corebound/Backups_2026-09-30/`.
+(a) Keep the repaired save. (b) Put the unrepaired one back and keep what the god run paid
+(1,101 Alloy, 19 SP, ten quests).
 
 ---
 
 ## 6 · Unplayed
 
 Verified to compile and, where an autopilot run reaches it, to run — but not played by a human:
-- **2026-09-30:** all ten new cards; the stage crossfade; tag-weighted offers and rolled weapon
-  rarities; the three canvases moved to `OverlayCanvas`; the sheet-driven projectiles and icons;
-  Poison/mark/shock colours.
-- **2026-09-29:** Alloy quests; the quest scroll fix; XP per wave; Core placement away from
-  gates; the aim-jump fixes and the hardware cursor.
+- **2026-09-30 / 10-01:** all five classes and their ten cards; the New Run class picker and the
+  per-class Progression screen; the Core's voice, the premise, the ending, Core Logs and credits; the
+  relic reveal held behind the boss notice; the tutorial beat panel; the new main-menu frames.
+- **2026-09-30 (overnight):** the ten new cards; the stage crossfade; tag-weighted offers and rolled
+  weapon rarities; the canvases in `OverlayCanvas`; the sheet-driven projectiles and icons.
+- **2026-09-29:** Alloy quests; the quest scroll fix; XP per wave; Core placement away from gates;
+  the aim-jump fixes and the hardware cursor.
 - **2026-09-27/28:** the enemy stuck-watchdog, tower projectiles, the 5-second spawn delay, the
   reward layout, relic text fitting, HUD scale in the pause menu, and the second attempt at the
   profile-swap Continue fix — worth a deliberate check, because the first attempt looked correct
@@ -208,6 +192,29 @@ Verified to compile and, where an autopilot run reaches it, to run — but not p
 ---
 
 ## Session log
+
+**2026-09-30 → 10-01 (second session).** Built the five classes with their trees and ten class
+cards, the story, Assets 108/109, the 1.3 deletions, all six Section 5 decisions, all five Section
+3 items, the four Section 2.1 UI files, and the open Section 4 probes; rewrote this file (v2.3).
+Verified with the autopilot on Profile 2 throughout — new variants `class`, `campaign`, `tutorial`,
+`records` and `stop` — see each item above for what was seen and what was not.
+
+Three things went wrong and are worth knowing:
+- **One god run played on the owner's Profile 3** (2026-09-30, `boss1`): the active profile had
+  been switched back for the owner and nothing switched it again before the next run, so it paid
+  1,101 Alloy, 19 SP and ten quests into the real save. Profile 3 was rebuilt by hand from
+  `history.json.bak` and the run's own history entry; two values are estimates (see Section 5).
+  The autopilot now always switches to Profile 2 and restores the owner's profile when Play ends.
+  Both saves are in `%USERPROFILE%/AppData/LocalLow/DefaultCompany/Corebound/Backups_2026-09-30/`.
+- **`Time.timeScale` outlives Play Mode in the Editor.** Stopping Play while an overlay held the
+  freeze started the next session — main menu included — at 0. It cost three stalled runs before
+  it was found; every session now starts unfrozen.
+- **The fifth real campaign run wedged** in front of a Relay Warden in a corner: the autopilot's
+  wall push held it out of the Scorcher's reach. Fixed; Play Mode was then ended from outside the
+  autopilot, so that run has no record.
+
+Profile 2 was wiped twice for the campaign and restored afterwards from its backup (Paragon 115,
+full trees).
 
 **2026-09-30 (overnight).** Implemented both decided concepts, the playtest fixes, both decided
 transitions and all five Section-4 items; wrote the class and story concepts. Verified with the

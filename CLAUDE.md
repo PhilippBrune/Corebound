@@ -98,6 +98,10 @@ found 16 finished sprites and 4 finished boss loops that nothing referenced.
 - **Runtime art is read as raw bytes from `Assets/StreamingAssets/Art/` first**, falling back to `Assets/Art/` *only inside the Editor*. An unmirrored or stale file therefore looks perfect in the Editor and ships broken. After adding or replacing any art, run **`Corebound > Validate Art Pipeline`**.
 - **`StageThemeData` stores texture paths as plain strings.** A renamed file is a silent null, not a broken reference the Editor flags. The same validator checks these.
 - **Canvas layout is scene-file-driven.** `RewardCanvas`/`ShopCanvas`/`HUDCanvas`/`OverlayCanvas` (boss HUD, notifications, relic reveal - since 2026-09-30) own their own positions; presenters must only *find* elements and repair missing sprites, never reassert anchors, positions or sizes. Several HUD Images intentionally carry no sprite in the scene and receive one at runtime — a partial re-init that skips `CreateRuntimeSprites()` leaves them rendering plain white.
+- **`Time.timeScale` survives the end of Play Mode in the Editor.** Stopping Play while a pause,
+  reward or tutorial beat holds the freeze used to start the next session - main menu included - at
+  0. `GameplayTimeScaleGuard` now resets it at every session start; anything new that freezes time
+  must go through that guard.
 - **Never `GetComponent<T>() ?? AddComponent<T>()` on a Unity object.** In the Editor a missing
   component is a fake-null that `??` treats as present, so nothing is added; it broke a stage change
   on 2026-09-30. Use `gameObject.GetOrAdd<T>()` (`ComponentUtility`), which compares with `!= null`.
