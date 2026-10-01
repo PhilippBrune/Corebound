@@ -29,30 +29,11 @@ Every `Target:` path in this file was checked against disk. Each asset now carri
 
 ### Needs attention
 
-**Misnamed (doubled extension).** These load today only because the code carries an explicit
-fallback path for the doubled name. Renaming them to the target name and re-running
-`Corebound > Sync StreamingAssets Art Mirror` would let those fallbacks be deleted:
-
-- `Assets/Art/Towers/tower_ballista_topdown.png`
-- `Assets/Art/UI/HUD/shop_offer_panel.png`
-
-**Present only in the StreamingAssets mirror.** The runtime reads the mirror first, so these
-work in a build and in play, but the source copy under `Assets/Art` is gone. That is a silent
-single-point-of-failure: clearing the mirror would lose the asset entirely.
-- `Assets/Art/Combat/VFX/ranged_pressure_telegraph.png`
-
-**Not created yet.**
-- `Assets/Art/UI/MainMenu/glyph_hint_capsule.png`
-- `Assets/Art/Characters/Enemies/enemy_zone_denier_topdown.png`
-- `Assets/Art/Characters/Enemies/enemy_zone_denier_stage2_topdown.png`
-- `Assets/Art/Characters/Enemies/enemy_zone_denier_stage3_topdown.png`
-- `Assets/Art/Characters/Enemies/enemy_zone_denier_stage4_topdown.png`
-- `Assets/Art/Characters/Enemies/enemy_zone_denier_stage5_topdown.png`
-- `Assets/Art/Characters/Enemies/enemy_relay_warden_topdown.png`
-- `Assets/Art/Characters/Enemies/enemy_relay_warden_stage2_topdown.png`
-- `Assets/Art/Characters/Enemies/enemy_relay_warden_stage3_topdown.png`
-- `Assets/Art/Characters/Enemies/enemy_relay_warden_stage4_topdown.png`
-- `Assets/Art/Characters/Enemies/enemy_relay_warden_stage5_topdown.png`
+**Re-checked 2026-10-01: nothing.** Every item the 2026-09-21 audit listed here is resolved - the
+two doubled-extension files carry their target names, all eleven "not created" sprites (the
+glyph hint capsule and the ten zone denier and relay warden sprites) exist and are wired, and the
+ranged pressure telegraph (Asset 37) was superseded by design on 2026-09-16. Per-asset status
+lines below are the current truth.
 
 **Recovered 2026-09-21:** all 15 `enemy_*_topdown.png` sprites were missing from
 `Assets/Art/Characters/Enemies/` when this audit ran - deleted from the working tree with
@@ -122,7 +103,8 @@ Create a modular 2D HUD frame panel for a top-down action-defense roguelite. It 
 
 Target: Assets/Art/UI/Tutorial/tutorial_prompt_panel.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELIVERED and wired (2026-10-01). The tutorial beat panel (`TutorialBeatCanvas` in the
+`OverlayCanvas` scene) draws with it, nine-sliced from its opaque area; `TutorialBeatPresenter`.
 
 Prompt:
 
@@ -414,7 +396,9 @@ Create a 2D UI banner for wave start, elite warning and boss warning in a contro
 
 Target: Assets/Art/UI/Tutorial/tutorial_glyph_strip.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELIVERED and wired (2026-10-01). Five tiles - Move, Confirm, Cancel, Fire, Interact - each
+with the pad and the keyboard glyph, sliced by `SpriteSheet_TutorialGlyphs`; the beat panel shows
+the Confirm tile.
 
 Prompt:
 
@@ -424,7 +408,9 @@ Create a clean icon strip for controller and keyboard hints used in a Unity top-
 
 Target: Assets/Art/UI/MainMenu/route_panel_frame.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELIVERED and wired (2026-10-01). Every main-menu route panel (New Run, Records, Profile,
+Quit) uses it through `MainMenuSkinData._routePanelFrameTexture`, tinted darker so the light
+labels keep their contrast on its steel-blue body.
 
 Prompt:
 
@@ -434,7 +420,8 @@ Create a large modular 2D overlay panel frame for the main menu of a controller-
 
 Target: Assets/Art/UI/MainMenu/glyph_hint_capsule.png
 
-**Status:** DELIVERED but NOT WIRED - the file exists and nothing references it by name or guid.
+**Status:** DELIVERED and wired (2026-10-01). The sheet holds one large and three small capsules; the
+main-menu glyph hints use the first small one (`MainMenuSkinData._glyphHintCapsuleRect`).
 
 Prompt:
 
@@ -504,7 +491,8 @@ Create a top-down Stage 1 enemy spawn gate marker for a sci-fantasy defense rogu
 
 Target: Assets/Art/Combat/VFX/ranged_pressure_telegraph.png
 
-**Status:** NOT ON DISK - the Target path does not exist.
+**Status:** SUPERSEDED (2026-09-16 playtest): the ranged telegraph flies the enemy bolt sprite itself, so
+the warning looks like the shot that follows. The file is gone and nothing needs it.
 
 Prompt:
 

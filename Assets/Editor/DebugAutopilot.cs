@@ -1546,6 +1546,7 @@ namespace Corebound.EditorTools
             }
 
             TickClassShot();
+            TickCardsShots();
             TickEngineerOvercharge(playerPosition, ref move);
             var clampedMove = move.sqrMagnitude > 1f ? move.normalized : move;
 
@@ -1967,6 +1968,12 @@ namespace Corebound.EditorTools
             if (args.EffectType == Corebound.Gameplay.Combat.StatusEffectType.Poison)
             {
                 _poisonApplied++;
+
+                // A moment later, so the tint has been applied and the enemy is still alive.
+                if (_poisonShotAt < 0f && !_poisonShotTaken && SessionState.GetBool(DebugAutopilot.CardsTestSessionKey, false))
+                {
+                    _poisonShotAt = Time.unscaledTime + 0.15f;
+                }
             }
         }
 
@@ -2864,6 +2871,69 @@ namespace Corebound.EditorTools
 
         private float _lastHoard = 1f;
         private bool _hoardScrapGranted;
+
+        private float _poisonShotAt = -1f;
+        private bool _poisonShotTaken;
+        private bool _markShotTaken;
+        private float _nextMarkCheck;
+
+        // The poison tint and the Target Painter ring are only provable on screen.
+        private int _probeHits;
+        private float _nextProbeHit;
+
+        // Two hits of 30% max health in the second combat wave - the first is often spent by the
+        // Reactive Plating shield - so the heals have something to heal.
+        private void TickHealProbe()
+        {
+            if (_probeHits >= 2 || _playerCombat == null || _waveManager == null || _waveManager.CurrentWaveNumber < 2
+                || _waveManager.State != WaveState.Combat || Time.unscaledTime < _nextProbeHit)
+            {
+                return;
+            }
+
+            _nextProbeHit = Time.unscaledTime + 0.8f;
+            _probeHits++;
+            _playerCombat.ReceiveHit(null, new DamageContext(DamageSourceType.Enemy, DamageKind.Direct, _playerCombat.MaxHealth * 0.3f,
+                _playerTransform.position, Vector2.zero, null, false, "autopilot_heal_probe"));
+            Debug.Log(DebugAutopilot.LogPrefix + " CARDS probe hit " + _probeHits + ": playerHp now " + _playerCombat.CurrentHealthNormalized.ToString("0.00"));
+        }
+
+        private void TickCardsShots()
+        {
+            if (!SessionState.GetBool(DebugAutopilot.CardsTestSessionKey, false))
+            {
+                return;
+            }
+
+            TickHealProbe();
+
+            if (_poisonShotAt > 0f && Time.unscaledTime >= _poisonShotAt)
+            {
+                _poisonShotAt = -1f;
+                _poisonShotTaken = true;
+                Debug.Log(DebugAutopilot.LogPrefix + " CARDS first poisoned enemy - screenshot");
+                Shot("cards_poisoned");
+                return;
+            }
+
+            if (_markShotTaken || Time.unscaledTime < _nextMarkCheck)
+            {
+                return;
+            }
+
+            _nextMarkCheck = Time.unscaledTime + 0.25f;
+
+            foreach (var renderer in FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None))
+            {
+                if (renderer != null && renderer.name == "VulnerableMark" && renderer.enabled && renderer.gameObject.activeInHierarchy)
+                {
+                    _markShotTaken = true;
+                    Debug.Log(DebugAutopilot.LogPrefix + " CARDS first marked enemy at " + (Vector2)renderer.transform.position + " - screenshot");
+                    Shot("cards_marked");
+                    return;
+                }
+            }
+        }
 
         private void TickClassShot()
         {
