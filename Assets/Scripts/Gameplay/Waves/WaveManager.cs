@@ -175,6 +175,15 @@ namespace Corebound.Gameplay.Waves
 
         private ISaveManager SaveManager => SaveManagerResolver.Resolve(_saveManagerSource);
 
+        private StageTransitionCoordinator _stageTransition;
+
+        // Lazy: OnEnable (InitializeFromSave) can need it before Awake-order guarantees anything.
+        private StageTransitionCoordinator StageTransition => _stageTransition ??= new StageTransitionCoordinator(
+            () => SaveManager,
+            () => _resourceWalletService,
+            () => _towerService,
+            () => _runPersistenceController);
+
         private IInputReader InputReader => _inputReaderSource as IInputReader;
 
         private void Awake()
@@ -310,7 +319,7 @@ namespace Corebound.Gameplay.Waves
         private void Start()
         {
             ApplyRunStartBonuses(SaveManager != null ? SaveManager.LoadRunSaveData() : null);
-            ApplyStageStartBonus();
+            StageTransition.PayStageStartBonus(StageIndex);
         }
 
         private void OnDisable()
@@ -387,20 +396,10 @@ namespace Corebound.Gameplay.Waves
             {
                 _stageData = resolvedStageData;
 
-                // StageArenaArtPresenter.Awake() (BuildArenaVisuals) runs before WaveManager's own
-                // OnEnable() (this method) in Unity's activation order - by the time _stageData is
-                // reassigned here, the arena has already built with the scene's default Stage 1
-                // theme. RebuildForNewStage() re-reads WaveManager.StageDataAsset, which is now the
-                // resolved stage, so this brings the visuals in line with the save immediately
-                // instead of showing Stage 1's arena under a Stage 2+ HUD until the next transition.
-                FindFirstObjectByType<StageArenaArtPresenter>()?.RebuildForNewStage();
-
-                // Tower slots need the same correction on this path. Now that a stage's slot
-                // layout comes from its StageArenaLayoutData BuildableZones, resuming a Stage 3
-                // save would otherwise place Stage 1's slots on Stage 3's arena. Unity runs every
-                // Awake before any OnEnable, so TowerService has already built its initial slots
-                // by the time this runs on the same GameObject.
-                _towerService?.RebuildSlotsForNewStage();
+                // StageArenaArtPresenter.Awake() and TowerService's initial slots run before this
+                // OnEnable in Unity's activation order, so both were built for the scene's default
+                // Stage 1. Rebuilt at once, not crossfaded: nothing has been on screen yet.
+                StageTransition.RebuildWorld(false);
             }
 
             if (_stageData == null || _stageData.Waves == null || _stageData.Waves.Length == 0)
@@ -412,7 +411,7 @@ namespace Corebound.Gameplay.Waves
 
             RestoreCoreHealthFromSave(runSaveData);
             _currentWaveIndex = runSaveData != null ? Mathf.Max(0, runSaveData.WaveIndex - 1) : 0;
-            RunProgressionSnapshot.Current.SetStage(StageIndex);
+            StageTransition.BeginStage(StageIndex);
             ApplyPersistenceContext();
             RaiseStageStartedIfNeeded(WaveEncounterLabelResolver.ResolveStageStartDetail(_stageData, _currentWaveIndex, TotalWaveCount, _state, _bossRuntimeController, runSaveData));
 
@@ -861,7 +860,7 @@ namespace Corebound.Gameplay.Waves
         // so the newest record on disk was still the previous stage's last wave.
         private void AdvanceToNextStage()
         {
-            var nextStageData = _stageData != null ? _stageData.NextStageData : null;
+            var nextStageData = StageTransitionCoordinator.ResolveNextStage(_stageData);
 
             if (nextStageData == null)
             {
@@ -871,27 +870,19 @@ namespace Corebound.Gameplay.Waves
 
             _stageData = nextStageData;
             _currentWaveIndex = 0;
-            RunProgressionSnapshot.Current.SetStage(StageIndex);
-            ApplyStageStartBonus();
+            StageTransition.BeginStage(StageIndex);
+            StageTransition.PayStageStartBonus(StageIndex);
             _remainingAliveEnemies = 0;
             _spawnGroups.Clear();
             _intermissionTimer = 0f;
             _requiresIntermissionShopAction = false;
             _requiresIntermissionTowerAction = false;
 
-            // Crossfaded (Open Topics 3.2, option 3): the old stage fades away around a Core that
-            // holds its place, instead of a hard cut to a different room.
-            var arenaPresenter = FindFirstObjectByType<StageArenaArtPresenter>();
-            arenaPresenter?.RebuildForNewStage(true);
-            _towerService?.RebuildSlotsForNewStage();
-
+            StageTransition.RebuildWorld(true);
             StartCurrentWave();
 
-            // After StartCurrentWave, so ApplyPersistenceContext has already pushed the new stage
-            // and wave into the persistence controller. Without this the save still described the
-            // previous stage's last wave until a wave finished here, and quitting in between
-            // resumed the player a whole stage back (playtest 2026-09-28).
-            _runPersistenceController?.WriteStageEntrySnapshot();
+            // After StartCurrentWave, which has pushed the new stage and wave into persistence.
+            StageTransition.CheckpointStageEntry();
         }
 
         private void OnConfirmPressed()
@@ -1383,34 +1374,6 @@ namespace Corebound.Gameplay.Waves
             {
                 Debug.Log("[Progression] Run start bonuses: +" + startingScrap + " Scrap, " + relics + " relic(s).");
             }
-        }
-
-        // Dividend / Supply Drop: Scrap at the start of every stage, paid once per stage.
-        private void ApplyStageStartBonus()
-        {
-            if (SaveManager == null || _resourceWalletService == null)
-            {
-                return;
-            }
-
-            var runSaveData = SaveManager.LoadRunSaveData();
-
-            if (runSaveData == null || runSaveData.IsTutorialRun || runSaveData.StageStartBonusPaidStageIndex >= StageIndex)
-            {
-                return;
-            }
-
-            var amount = Mathf.RoundToInt(RunProgressionSnapshot.Current.Skills[SkillEffectTarget.StageStartScrap]);
-
-            if (amount > 0)
-            {
-                _resourceWalletService.AddFlat(amount);
-                NotificationPresenter.Show("+" + amount + LocalizationService.Resolve(" Scrap (stage start)", " Schrott (Stagebeginn)"));
-            }
-
-            runSaveData = SaveManager.LoadRunSaveData() ?? runSaveData;
-            runSaveData.MarkStageStartBonusPaid(StageIndex);
-            SaveManager.SaveRunSaveData(runSaveData);
         }
 
         private void GrantEliteKillReward(EnemyRuntimeController enemy)

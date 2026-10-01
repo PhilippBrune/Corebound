@@ -1702,102 +1702,24 @@ namespace Corebound.Gameplay.Waves
                 : LocalizationService.Resolve("Resources: --", "Ressourcen: --");
         }
 
-        // Owner 2026-09-25: "make instead of % a HP bar with feedback on hit for player and core".
-        // The bars are drawn under their existing labels, which keep the exact numbers - a bar
-        // answers "how bad is it" at a glance, the number answers "how much exactly".
-        private static readonly Color PlayerBarColor = new Color(0.45f, 0.85f, 0.5f, 1f);
-        private static readonly Color CoreBarColor = new Color(0.45f, 0.72f, 1f, 1f);
-        private static readonly Color BarTrackColor = new Color(0.05f, 0.07f, 0.1f, 0.85f);
-        private static readonly Color BarHitFlashColor = new Color(1f, 0.35f, 0.3f, 1f);
-        private const float BarHitFlashSeconds = 0.35f;
-        private const float BarHeight = 8f;
-
-        private Image _playerBarFill;
-        private Image _coreBarFill;
-        private float _playerBarShown = 1f;
-        private float _coreBarShown = 1f;
-        private float _playerFlashTimer;
-        private float _coreFlashTimer;
-
-        private void EnsureHealthBars()
-        {
-            if (_playerBarFill != null || _playerHealthText == null || _coreHealthText == null)
-            {
-                return;
-            }
-
-            _playerBarFill = CreateHealthBar(_playerHealthText, PlayerBarColor);
-            _coreBarFill = CreateHealthBar(_coreHealthText, CoreBarColor);
-        }
-
-        // The bar hangs off the bottom edge of its label's rect, so it follows the HUD layout the
-        // scene owns instead of introducing a second set of coordinates.
-        private Image CreateHealthBar(Text label, Color fillColor)
-        {
-            var track = ProceduralUIFactory.CreateImage(label.name + "BarTrack", label.rectTransform, null, BarTrackColor, Image.Type.Simple);
-            track.raycastTarget = false;
-            var trackRect = track.rectTransform;
-            trackRect.anchorMin = new Vector2(0.08f, 0f);
-            trackRect.anchorMax = new Vector2(0.92f, 0f);
-            trackRect.pivot = new Vector2(0.5f, 1f);
-            trackRect.anchoredPosition = new Vector2(0f, 1f);
-            trackRect.sizeDelta = new Vector2(0f, BarHeight);
-
-            var fill = ProceduralUIFactory.CreateImage("Fill", trackRect, null, fillColor, Image.Type.Simple);
-            fill.raycastTarget = false;
-            var fillRect = fill.rectTransform;
-            fillRect.anchorMin = Vector2.zero;
-            fillRect.anchorMax = new Vector2(1f, 1f);
-            fillRect.pivot = new Vector2(0f, 0.5f);
-            fillRect.offsetMin = Vector2.zero;
-            fillRect.offsetMax = Vector2.zero;
-            return fill;
-        }
+        // Open Topics 3.3: the bars themselves live in HudHealthBars; this only feeds them.
+        private HudHealthBars _healthBars;
 
         private void UpdateHealthBars()
         {
-            EnsureHealthBars();
-
-            if (_playerBarFill == null)
+            if (_healthBars == null || !_healthBars.IsAlive)
             {
-                return;
+                _healthBars = HudHealthBars.TryCreate(_playerHealthText, _coreHealthText);
+
+                if (_healthBars == null)
+                {
+                    return;
+                }
             }
 
-            var playerHealth = _playerCombatController != null ? _playerCombatController.CurrentHealthNormalized : 1f;
-            var coreHealth = ResolveCoreHealthNormalized();
-            ApplyBar(_playerBarFill, playerHealth, ref _playerBarShown, ref _playerFlashTimer, PlayerBarColor);
-            ApplyBar(_coreBarFill, coreHealth, ref _coreBarShown, ref _coreFlashTimer, CoreBarColor);
-        }
-
-        // The fill drains toward the real value rather than snapping, and flashes red on any drop,
-        // so a hit is visible even when it costs a sliver.
-        private void ApplyBar(Image fill, float target, ref float shown, ref float flashTimer, Color baseColor)
-        {
-            if (fill == null)
-            {
-                return;
-            }
-
-            target = Mathf.Clamp01(target);
-
-            if (target < shown - 0.0005f)
-            {
-                flashTimer = BarHitFlashSeconds;
-            }
-
-            shown = Mathf.MoveTowards(shown, target, Mathf.Max(0.35f, Mathf.Abs(shown - target) * 6f) * Time.unscaledDeltaTime);
-            var rect = fill.rectTransform;
-            rect.anchorMax = new Vector2(Mathf.Clamp01(shown), 1f);
-
-            if (flashTimer > 0f)
-            {
-                flashTimer = Mathf.Max(0f, flashTimer - Time.unscaledDeltaTime);
-                fill.color = Color.Lerp(baseColor, BarHitFlashColor, flashTimer / BarHitFlashSeconds);
-                return;
-            }
-
-            // Low health reads as a warning colour without needing a second element.
-            fill.color = shown <= 0.3f ? Color.Lerp(BarHitFlashColor, baseColor, shown / 0.3f) : baseColor;
+            _healthBars.Show(
+                _playerCombatController != null ? _playerCombatController.CurrentHealthNormalized : 1f,
+                ResolveCoreHealthNormalized());
         }
 
         private Text _runTimerText;
