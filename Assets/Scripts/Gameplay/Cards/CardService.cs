@@ -53,10 +53,8 @@ namespace Corebound.Gameplay.Cards
         }
 
         // 62 / 26 / 10 / 2 - a Legendary copy (x1.75 damage before anything else) stays a story.
-        private CardRarity RollWeaponRarity()
+        public static CardRarity WeaponRarityForRoll(float roll)
         {
-            var roll = UnityEngine.Random.value;
-
             if (roll < 0.62f)
             {
                 return CardRarity.Common;
@@ -68,6 +66,19 @@ namespace Corebound.Gameplay.Cards
             }
 
             return roll < 0.98f ? CardRarity.Epic : CardRarity.Legendary;
+        }
+
+        // Every roll, not only its result (Open Topics 1.1, 2026-10-07): no Legendary weapon came up
+        // in the first 44 offers, which at 2% happens four times in ten - the roll is what tells
+        // "unlucky" from "cannot happen". The autopilot logs and counts these.
+        public static event Action<CardData, float, CardRarity> WeaponRarityRolled;
+
+        private CardRarity RollWeaponRarity(CardData card)
+        {
+            var roll = UnityEngine.Random.value;
+            var rarity = WeaponRarityForRoll(roll);
+            WeaponRarityRolled?.Invoke(card, roll, rarity);
+            return rarity;
         }
 
         // Set by the loadout owner. Null in a scene without a player, where weapon cards are then
@@ -206,7 +217,7 @@ namespace Corebound.Gameplay.Cards
 
                 if (offered != null && offered.IsWeaponCard && !_rolledWeaponRarities.ContainsKey(offered.CardId))
                 {
-                    _rolledWeaponRarities[offered.CardId] = RollWeaponRarity();
+                    _rolledWeaponRarities[offered.CardId] = RollWeaponRarity(offered);
                 }
             }
 

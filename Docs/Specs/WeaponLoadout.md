@@ -141,6 +141,12 @@ Weapons are acquired the same ways cards are, per the vision's already-settled a
 
 When all six slots are full and a new weapon is acquired, the player is asked which slot to replace, or may decline. Declining must always be possible.
 
+### Rolled rarity
+
+A weapon card offered as a reward rolls the tier its copy starts at: **Common 62%, Rare 26%, Epic 10%, Legendary 2%** (`CardService.WeaponRarityForRoll`, one uniform roll per offer). Every roll raises `CardService.WeaponRarityRolled` with the card, the roll and the result, so a run can be audited without reading the offer screen.
+
+As measured 2026-10-07: 200,000 rolls through the same function gave 61.84 / 26.13 / 10.03 / 1.99%, and two four-stage autopilot runs rolled 15 and 18 times with one and two Legendary results. The 0 Legendary in 44 offers of 2026-10-01 was chance (41% at 2%).
+
 ### Selling
 
 A weapon in a slot may be sold during Intermission for **50% of its purchase price**, rounded down. This exists so a player who over-committed to an archetype is not locked out of the run, and it is the only Scrap *income* outside combat.
@@ -196,6 +202,7 @@ A full loadout panel:
 
 - Six slots, navigable with the d-pad, each showing weapon name, archetype, and rarity.
 - The active Set Bonus for each represented archetype, with its effect in plain words and the next tier's requirement ("3/4 toward Focused").
+- The copy count is what is equipped; a class that counts extra copies (the Vanguard counts one more) shows them as a bonus beside it, "Rapid x3 (+1)", so the bonus reads as a bonus and the count matches the slots (Open Topics 5 (a), 2026-10-07).
 - Sell and rearrange actions.
 - The projectile budget, shown as a used-of-total figure, so a player who is hitting the cap can see why their damage stopped scaling.
 
