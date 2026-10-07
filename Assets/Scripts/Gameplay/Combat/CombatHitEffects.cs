@@ -58,6 +58,14 @@ namespace Corebound.Gameplay.Combat
             TowerAuraFireRate = Math.Max(0f, towerAuraFireRate);
         }
 
+#if UNITY_EDITOR
+        // Autopilot counters (Open Topics 4): tower shots sped up by an aura, hits that a mark
+        // amplified, and the Core health Core Aegis mended in intermissions.
+        public static int DebugTowerAuraBoosts;
+        public static int DebugMarkedHits;
+        public static float DebugCoreRegenFraction;
+#endif
+
         // The divisor a tower at this position applies to its fire interval.
         public static float ResolveTowerAuraRateMultiplier(UnityEngine.Vector2 towerPosition)
         {
@@ -70,9 +78,16 @@ namespace Corebound.Gameplay.Combat
             }
 
             var offset = (UnityEngine.Vector2)AuraCenter.position - towerPosition;
-            return offset.sqrMagnitude <= PlayerSupportRules.TowerAuraRadius * PlayerSupportRules.TowerAuraRadius
-                ? 1f + rate
-                : 1f;
+
+            if (offset.sqrMagnitude > PlayerSupportRules.TowerAuraRadius * PlayerSupportRules.TowerAuraRadius)
+            {
+                return 1f;
+            }
+
+#if UNITY_EDITOR
+            DebugTowerAuraBoosts++;
+#endif
+            return 1f + rate;
         }
     }
 

@@ -205,6 +205,21 @@ namespace Corebound.EditorTools
                 return;
             }
 
+            // "rollcheck" (Edit Mode): the weapon-rarity thresholds against 200,000 rolls of the same
+            // Random.value the game uses, plus the exact boundaries - proof that Legendary can come up.
+            if (!EditorApplication.isPlaying && System.IO.File.Exists(RequestFilePath))
+            {
+                var pending = ReadCommand();
+
+                if (pending != null && pending.Equals("rollcheck", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    WriteIdleRequestFile();
+                    RunRarityRollCheck();
+                    _nextRequestPoll = EditorApplication.timeSinceStartup + 1.0;
+                    return;
+                }
+            }
+
             // "stop" is the one command read during Play: it ends a probe that has already seen
             // what it came for, instead of waiting out the whole run.
             if (EditorApplication.isPlaying)
@@ -300,6 +315,30 @@ namespace Corebound.EditorTools
             }
 
             SessionState.SetInt(CampaignRunsSessionKey, 0);
+
+            // "steam 3": captures for the Steam page - the Game view fixed at 1920 x 1080, debug
+            // overlays hidden, extra combat shots named steam_*. "trailer 3": the same setup, and
+            // 30 fps JPEG frame sequences of combat and boss moments under Temp/Trailer/ for the
+            // trailer cut (Docs/STEAM_PAGE.md). "spendtest": the campaign's between-run spending
+            // on granted currency, then stop.
+            var steamShots = contents.StartsWith("steam", System.StringComparison.OrdinalIgnoreCase);
+            var trailer = contents.StartsWith("trailer", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(SteamShotsSessionKey, steamShots);
+            SessionState.SetBool(TrailerSessionKey, trailer);
+
+            if (steamShots || trailer)
+            {
+                contents = contents.Substring(steamShots ? "steam".Length : "trailer".Length).Trim();
+                GameViewSizeUtility.TrySetFixedResolution(1920, 1080, "Steam 1080p");
+            }
+
+            var spendTest = contents.StartsWith("spendtest", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(SpendTestSessionKey, spendTest);
+
+            if (spendTest)
+            {
+                contents = "1";
+            }
 
             // "tutorial": the guided run from the New Run panel's tutorial row, with a screenshot
             // of the first beat (Open Topics 2.1: beats have their own panel since 2026-10-01).
@@ -456,6 +495,28 @@ namespace Corebound.EditorTools
         public const string CampaignResultsSessionKey = "Corebound.Autopilot.CampaignResults";
         public const string CampaignGodSessionKey = "Corebound.Autopilot.CampaignGod";
         public const string TutorialTestSessionKey = "Corebound.Autopilot.TutorialTest";
+        public const string SteamShotsSessionKey = "Corebound.Autopilot.SteamShots";
+        public const string TrailerSessionKey = "Corebound.Autopilot.Trailer";
+        public const string SpendTestSessionKey = "Corebound.Autopilot.SpendTest";
+
+        public static bool IsCaptureSession => SessionState.GetBool(SteamShotsSessionKey, false) || SessionState.GetBool(TrailerSessionKey, false);
+
+        private static void RunRarityRollCheck()
+        {
+            const int Samples = 200000;
+            var counts = new int[4];
+
+            for (var index = 0; index < Samples; index++)
+            {
+                counts[(int)CardService.WeaponRarityForRoll(Random.value)]++;
+            }
+
+            Debug.Log(LogPrefix + " ROLLCHECK " + Samples + " rolls: Common " + (counts[0] * 100f / Samples).ToString("0.00") + "%, Rare "
+                + (counts[1] * 100f / Samples).ToString("0.00") + "%, Epic " + (counts[2] * 100f / Samples).ToString("0.00") + "%, Legendary "
+                + (counts[3] * 100f / Samples).ToString("0.00") + "% (configured 62/26/10/2). Boundaries: 0.9799 -> "
+                + CardService.WeaponRarityForRoll(0.9799f) + ", 0.98 -> " + CardService.WeaponRarityForRoll(0.98f) + ", 0.9999 -> "
+                + CardService.WeaponRarityForRoll(0.9999f));
+        }
 
         public static bool IsCampaign => SessionState.GetInt(CampaignRunsSessionKey, 0) > 0;
 
@@ -573,6 +634,11 @@ namespace Corebound.EditorTools
 
         private static void OnPlayModeStateChanged(PlayModeStateChange change)
         {
+            if (change == PlayModeStateChange.EnteredEditMode && IsCaptureSession && SessionState.GetInt(CampaignRunsSessionKey, 0) == 0)
+            {
+                GameViewSizeUtility.RestorePrevious();
+            }
+
             if (change == PlayModeStateChange.EnteredEditMode)
             {
                 RestoreOwnerProfile();
@@ -589,8 +655,11 @@ namespace Corebound.EditorTools
             var host = new GameObject("DebugAutopilotRuntime");
             Object.DontDestroyOnLoad(host);
             var runtime = host.AddComponent<DebugAutopilotRuntime>();
-            runtime.Configure(TargetStage, IsCampaign ? 3600f : MaxRunSeconds, SessionState.GetBool(LoadoutTestSessionKey, false));
+            // Captures need the whole run: the first Steam session stopped 55 s into Stage 5.
+            runtime.Configure(TargetStage, IsCampaign || IsCaptureSession ? 3600f : MaxRunSeconds, SessionState.GetBool(LoadoutTestSessionKey, false));
             runtime.ConfigureProgressionTest(SessionState.GetBool(ProgressionTestSessionKey, false), SessionState.GetBool(AscensionTestSessionKey, false), SessionState.GetBool(RecordsTestSessionKey, false));
+
+            Corebound.DebugOverlay.Hidden = IsCaptureSession;
 
             if (SessionState.GetBool(GodModeSessionKey, false))
             {
@@ -779,7 +848,17 @@ namespace Corebound.EditorTools
             // A tutorial beat blocks everything until it is confirmed. It can appear in Combat,
             // where DriveNonCombat never runs, so it is handled before the step machine - without
             // this the run sat in front of the first beat until the time cap (2026-09-23).
-            if (Corebound.Gameplay.Tutorial.TutorialService.IsBeatShowing && _inputReader != null)
+            var beatShowing = Corebound.Gameplay.Tutorial.TutorialService.IsBeatShowing;
+
+            if (beatShowing && !_beatWasShowing)
+            {
+                _beatShotTaken = false;
+                _beatIndex++;
+            }
+
+            _beatWasShowing = beatShowing;
+
+            if (beatShowing && _inputReader != null)
             {
                 if (!_beatShotTaken)
                 {
@@ -789,7 +868,7 @@ namespace Corebound.EditorTools
                     var beatPanel = beatRoot != null ? beatRoot.transform.Find("TutorialBeatPanel") : null;
                     Debug.Log(DebugAutopilot.LogPrefix + " TUTORIAL beat panel active=" + (beatPanel != null && beatPanel.gameObject.activeInHierarchy)
                         + " pausePanelShown=" + (GameObject.Find("PausePanel") != null));
-                    Shot("tutorial_beat");
+                    Shot("tutorial_beat_" + _beatIndex);
                 }
 
                 _confirmTimer += Time.unscaledDeltaTime;
@@ -1062,6 +1141,22 @@ namespace Corebound.EditorTools
                 return;
             }
 
+            if (SessionState.GetBool(DebugAutopilot.SpendTestSessionKey, false))
+            {
+                var spendService = FindFirstObjectByType<Corebound.MetaProgression.MetaProgressionService>();
+
+                if (spendService != null)
+                {
+                    spendService.DebugGrant(30, 400);
+                    Debug.Log(DebugAutopilot.LogPrefix + " SPENDTEST granted 30 SP + 400 Alloy: sp=" + spendService.SaveData.SkillPointsAvailable + " alloy=" + spendService.SaveData.AlloyBalance);
+                    CampaignSpend(spendService);
+                }
+
+                SessionState.SetBool(DebugAutopilot.SpendTestSessionKey, false);
+                Finish();
+                return;
+            }
+
             if (DebugAutopilot.IsCampaign && !_campaignPrepared)
             {
                 _campaignPrepared = true;
@@ -1119,6 +1214,14 @@ namespace Corebound.EditorTools
 
             if (menuController.IsIntroVisible)
             {
+                if (DebugAutopilot.IsCaptureSession && !_titleShotTaken)
+                {
+                    _titleShotTaken = true;
+                    Shot("steam_title");
+                    _stepTimer = -1f;
+                    return;
+                }
+
                 menuController.AcknowledgeIntro();
                 Debug.Log(DebugAutopilot.LogPrefix + " acknowledged intro");
                 _stepTimer = 0f;
@@ -1230,6 +1333,7 @@ namespace Corebound.EditorTools
             }
 
             ResolveRuntimeReferences();
+            TickCaptureSession();
             ApplyLoadoutTestOnce();
             ApplyCardsTestOnce();
             NoteShopVisibility();
@@ -1950,6 +2054,11 @@ namespace Corebound.EditorTools
                     + " applied=" + applied + " text=\"" + (card != null ? CardEffectDescriber.Describe(card) : string.Empty) + "\"");
             }
 
+            // A second Target Painter: its mark bonus is per copy (15% each), which is the stacking
+            // Open Topics 4 asked to see.
+            var painter = UnityEditor.AssetDatabase.LoadAssetAtPath<CardData>("Assets/ScriptableObjects/Gameplay/Cards/Card_AssemblyLine.asset");
+            Debug.Log(DebugAutopilot.LogPrefix + " CARD Target Painter (second copy) applied=" + (painter != null && cardService.TryApplyCard(painter))
+                + " markBonus=" + Corebound.Gameplay.Combat.RunCombatEffects.VulnerableDamageBonus.ToString("0.00"));
             Debug.Log(DebugAutopilot.LogPrefix + " CARDS state: shieldStacks=" + cardService.ShieldStacks + " drones=" + cardService.SentryDrones
                 + " healWave=" + cardService.HealOnWaveClear + " healKill=" + cardService.HealPerKill + " aura=" + cardService.TowerAuraFireRate
                 + " coreRegen=" + cardService.CoreIntermissionRegen + " spread=" + Corebound.Gameplay.Combat.RunCombatEffects.PoisonSpreadRadius
@@ -1989,6 +2098,11 @@ namespace Corebound.EditorTools
                 + " shieldBlocks=" + Corebound.Gameplay.Combat.PlayerSupportEffects.DebugShieldBlocks
                 + " killHeals=" + Corebound.Gameplay.Combat.PlayerSupportEffects.DebugKillHeals
                 + " waveHeals=" + Corebound.Gameplay.Combat.PlayerSupportEffects.DebugWaveHeals
+                + " auraBoosts=" + Corebound.Gameplay.Combat.RunCombatEffects.DebugTowerAuraBoosts
+                + " markedHits=" + Corebound.Gameplay.Combat.RunCombatEffects.DebugMarkedHits
+                + " markBonus=" + Corebound.Gameplay.Combat.RunCombatEffects.VulnerableDamageBonus.ToString("0.00")
+                + " coreRegen=" + Corebound.Gameplay.Combat.RunCombatEffects.DebugCoreRegenFraction.ToString("0.000")
+                + " coreHp=" + ResolveCoreHealth()
                 + " playerHp=" + (_playerCombat != null ? _playerCombat.CurrentHealthNormalized.ToString("0.00") : "-"));
         }
 
@@ -2097,6 +2211,7 @@ namespace Corebound.EditorTools
         {
             Corebound.Gameplay.Combat.CombatEvents.DamageTaken += OnSummaryDamage;
             Corebound.Gameplay.Combat.CombatEvents.StatusApplied += OnCardsStatus;
+            CardService.WeaponRarityRolled += OnWeaponRarityRolled;
             Corebound.Gameplay.Combat.CombatEvents.CombatantDied += OnSummaryDeath;
         }
 
@@ -2104,7 +2219,28 @@ namespace Corebound.EditorTools
         {
             Corebound.Gameplay.Combat.CombatEvents.DamageTaken -= OnSummaryDamage;
             Corebound.Gameplay.Combat.CombatEvents.CombatantDied -= OnSummaryDeath;
+            CardService.WeaponRarityRolled -= OnWeaponRarityRolled;
             Corebound.Gameplay.Combat.CombatEvents.StatusApplied -= OnCardsStatus;
+        }
+
+        // Open Topics 1.1 (2026-10-07): every weapon-rarity roll, so "no Legendary yet" can be read
+        // as luck or as a bug. Legendary is a roll of 0.98 or more.
+        private readonly int[] _rarityRolls = new int[4];
+        private float _highestRarityRoll;
+
+        private void OnWeaponRarityRolled(CardData card, float roll, CardRarity rarity)
+        {
+            _rarityRolls[Mathf.Clamp((int)rarity, 0, 3)]++;
+            _highestRarityRoll = Mathf.Max(_highestRarityRoll, roll);
+            Debug.Log(DebugAutopilot.LogPrefix + " ROLL " + (card != null ? card.CardId : "?") + " r=" + roll.ToString("0.0000") + " -> " + rarity
+                + (rarity == CardRarity.Legendary ? "  <-- LEGENDARY" : string.Empty));
+        }
+
+        private string DescribeRarityRolls()
+        {
+            var total = _rarityRolls[0] + _rarityRolls[1] + _rarityRolls[2] + _rarityRolls[3];
+            return "rolls[" + total + ": C" + _rarityRolls[0] + " R" + _rarityRolls[1] + " E" + _rarityRolls[2] + " L" + _rarityRolls[3]
+                + (total > 0 ? " max r=" + _highestRarityRoll.ToString("0.000") : string.Empty) + "]";
         }
 
         private void OnSummaryDamage(Corebound.Gameplay.Combat.DamageEventArgs args)
@@ -2203,6 +2339,7 @@ namespace Corebound.EditorTools
                 .Append(" (").Append((100f * _damageByTower / totalDamage).ToString("0")).Append("%)")
                 .Append(" taken=").Append(_damageToPlayerAndCore.ToString("0")).Append(']');
             builder.Append("  kills=").Append(_enemiesKilled);
+            builder.Append("  ").Append(DescribeRarityRolls());
             builder.Append("  peakProjectiles=").Append(_peakLiveProjectiles);
 
             if (_playerCombat != null)
@@ -2254,7 +2391,7 @@ namespace Corebound.EditorTools
             for (var index = 0; index < loadout.ActiveSetBonuses.Count; index++)
             {
                 var bonus = loadout.ActiveSetBonuses[index];
-                builder.Append(bonus.Weapon.WeaponId.Replace("weapon_", string.Empty)).Append('x').Append(bonus.Copies)
+                builder.Append(bonus.Weapon.WeaponId.Replace("weapon_", string.Empty)).Append('x').Append(bonus.EquippedCopies).Append(bonus.Copies > bonus.EquippedCopies ? "(+" + (bonus.Copies - bonus.EquippedCopies) + ")" : string.Empty)
                     .Append('=').Append(bonus.Tier != null ? bonus.Tier.DisplayName : "none").Append(' ');
             }
 
@@ -2719,12 +2856,98 @@ namespace Corebound.EditorTools
             Debug.Log(DebugAutopilot.LogPrefix + " QUESTS " + changed + " changed of " + _questCatalog.Count + (changed > 0 ? ": " + builder : string.Empty));
         }
 
+        // ---- Steam screenshots and trailer frames (2026-10-07) ---------------------------------------
+
+        private bool _titleShotTaken;
+        private float _nextSteamShot = 8f;
+        private readonly System.Collections.Generic.Dictionary<int, int> _steamShotsPerStage = new System.Collections.Generic.Dictionary<int, int>();
+        private readonly System.Collections.Generic.Dictionary<int, int> _trailerSegmentsPerStage = new System.Collections.Generic.Dictionary<int, int>();
+        private bool _recording;
+        private int _segmentIndex;
+        private int _lastBossClipStage = -1;
+        private string _trailerFolder;
+
+        private void TickCaptureSession()
+        {
+            if (!DebugAutopilot.IsCaptureSession || _waveManager == null)
+            {
+                return;
+            }
+
+            var stage = _waveManager.StageIndex;
+            var alive = FindObjectsByType<Corebound.Gameplay.Enemies.EnemyRuntimeController>(FindObjectsSortMode.None).Length;
+            var inCombat = _waveManager.State == WaveState.Combat;
+
+            // A busy moment of every stage: at least six enemies on screen, three shots a stage.
+            if (SessionState.GetBool(DebugAutopilot.SteamShotsSessionKey, false) && inCombat && alive >= 6 && _elapsed >= _nextSteamShot)
+            {
+                _steamShotsPerStage.TryGetValue(stage, out var taken);
+
+                if (taken < 3)
+                {
+                    _steamShotsPerStage[stage] = taken + 1;
+                    _nextSteamShot = _elapsed + 9f;
+                    Shot("steam_s" + stage + "_combat" + (taken + 1));
+                }
+            }
+
+            if (!SessionState.GetBool(DebugAutopilot.TrailerSessionKey, false) || _recording)
+            {
+                return;
+            }
+
+            // Two five-second combat clips a stage, and the first seven seconds of every boss.
+            if (_waveManager.State == WaveState.BossCombat && _lastBossClipStage != stage)
+            {
+                _lastBossClipStage = stage;
+                StartCoroutine(RecordSegment("s" + stage + "_boss", 7f));
+                return;
+            }
+
+            _trailerSegmentsPerStage.TryGetValue(stage, out var segments);
+
+            if (inCombat && alive >= 5 && segments < 2 && _elapsed >= _nextSteamShot)
+            {
+                _trailerSegmentsPerStage[stage] = segments + 1;
+                _nextSteamShot = _elapsed + 20f;
+                StartCoroutine(RecordSegment("s" + stage + "_combat" + (segments + 1), 5f));
+            }
+        }
+
+        // 30 fps whatever the editor manages in real time: captureFramerate steps game time by a
+        // fixed 1/30 s per frame, so a slow JPEG encode stretches the wall clock, not the clip.
+        private System.Collections.IEnumerator RecordSegment(string tag, float seconds)
+        {
+            _recording = true;
+            _trailerFolder ??= System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", "Temp", "Trailer",
+                System.DateTime.Now.ToString("yyyyMMdd_HHmmss")));
+            var folder = System.IO.Path.Combine(_trailerFolder, (++_segmentIndex).ToString("00") + "_" + tag);
+            System.IO.Directory.CreateDirectory(folder);
+            var frames = Mathf.RoundToInt(seconds * 30f);
+            Time.captureFramerate = 30;
+            Debug.Log(DebugAutopilot.LogPrefix + " TRAILER recording " + tag + " (" + frames + " frames) to " + folder);
+
+            for (var frame = 0; frame < frames; frame++)
+            {
+                yield return new WaitForEndOfFrame();
+                var texture = ScreenCapture.CaptureScreenshotAsTexture();
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(folder, "f" + frame.ToString("00000") + ".jpg"), texture.EncodeToJPG(90));
+                Destroy(texture);
+            }
+
+            Time.captureFramerate = 0;
+            _recording = false;
+            Debug.Log(DebugAutopilot.LogPrefix + " TRAILER done " + tag);
+        }
+
         // ---- Campaign (Open Topics 3.1) -------------------------------------------------------------
 
         private bool _campaignPrepared;
         private bool _tutorialOffered;
         private bool _tutorialRowPicked;
         private bool _beatShotTaken;
+        private bool _beatWasShowing;
+        private int _beatIndex;
         private bool _campaignCaptured;
         private readonly StringBuilder _campaignBossTimes = new StringBuilder(64);
         private readonly int[] _weaponRaritiesOffered = new int[4];
@@ -2747,10 +2970,129 @@ namespace Corebound.EditorTools
             if (service != null)
             {
                 service.SetHasSeenTutorial(true);
+
+                if (index > 0)
+                {
+                    CampaignSpend(service);
+                }
+
                 var save = service.SaveData;
                 Debug.Log(DebugAutopilot.LogPrefix + " CAMPAIGN run " + (index + 1) + " starts at level " + save.Level + " (" + save.Experience + " xp)"
                     + " paragon=" + save.ParagonLevel + " alloy=" + save.AlloyBalance + " sp=" + save.SkillPointsAvailable);
             }
+        }
+
+        // Open Topics 5 (a), 2026-10-07: between runs the campaign spends what it earned, as a player
+        // would - every Skill Point on the cheapest node it can buy, every Alloy on the cheapest
+        // upgrade of its start weapon and then of the towers. A fixed, simple policy: the point is a
+        // profile that grows from run to run, not an optimal one.
+        private static void CampaignSpend(Corebound.MetaProgression.MetaProgressionService service)
+        {
+            var save = service.SaveData;
+            var definition = service.DefinitionData;
+            var tree = definition != null ? definition.FindSkillTree(save.SelectedCharacterId) : null;
+            var nodes = 0;
+            var upgrades = 0;
+
+            while (tree != null && tree.Branches != null)
+            {
+                var bestCost = int.MaxValue;
+                System.Func<bool> bestPurchase = null;
+
+                foreach (var branch in tree.Branches)
+                {
+                    foreach (var key in branch.KeyNodes)
+                    {
+                        if (Corebound.MetaProgression.SkillTreeRules.ResolveKeyNodeState(save, tree, branch, key) == Corebound.MetaProgression.SkillNodeState.Available && key.Cost < bestCost)
+                        {
+                            var b = branch;
+                            var k = key;
+                            bestCost = key.Cost;
+                            bestPurchase = () => Corebound.MetaProgression.SkillTreeRules.TryPurchaseKeyNode(save, tree, b, k);
+                        }
+
+                        foreach (var sub in key.SubNodes)
+                        {
+                            if (Corebound.MetaProgression.SkillTreeRules.ResolveSubNodeState(save, tree, key, sub) == Corebound.MetaProgression.SkillNodeState.Available && sub.CostPerRank < bestCost)
+                            {
+                                var k = key;
+                                var n = sub;
+                                bestCost = sub.CostPerRank;
+                                bestPurchase = () => Corebound.MetaProgression.SkillTreeRules.TryPurchaseSubNode(save, tree, k, n);
+                            }
+                        }
+                    }
+                }
+
+                if (bestPurchase == null || bestCost > save.SkillPointsAvailable || !bestPurchase())
+                {
+                    break;
+                }
+
+                nodes++;
+            }
+
+            var tracks = definition != null && definition.UpgradeCatalog != null ? definition.UpgradeCatalog.Tracks : null;
+            var weaponId = string.IsNullOrEmpty(save.PreferredStartWeaponId) ? "weapon_rapid" : save.PreferredStartWeaponId;
+            var weapon = definition != null && definition.UpgradeWeapons != null ? definition.UpgradeWeapons.FindById(weaponId) : null;
+
+            while (tracks != null)
+            {
+                var bestCost = int.MaxValue;
+                Corebound.MetaProgression.UpgradeTrackData bestTrack = null;
+                var bestItem = string.Empty;
+
+                foreach (var track in tracks)
+                {
+                    if (track == null)
+                    {
+                        continue;
+                    }
+
+                    if (track.AppliesTo == Corebound.MetaProgression.UpgradeTargetKind.Weapon && weapon != null
+                        && Corebound.MetaProgression.UpgradeRules.IsTrackApplicable(track, weapon)
+                        && Corebound.MetaProgression.UpgradeRules.Evaluate(save, track, weapon.WeaponId, true) == Corebound.MetaProgression.UpgradePurchaseResult.Purchased)
+                    {
+                        var cost = track.CostForRank(save.GetUpgradeRank(weapon.WeaponId, (int)track.Stat) + 1);
+
+                        if (cost < bestCost)
+                        {
+                            bestCost = cost;
+                            bestTrack = track;
+                            bestItem = weapon.WeaponId;
+                        }
+                    }
+
+                    if (track.AppliesTo == Corebound.MetaProgression.UpgradeTargetKind.Tower && definition.UpgradeTowers != null)
+                    {
+                        foreach (var tower in definition.UpgradeTowers.Towers)
+                        {
+                            if (tower != null && Corebound.MetaProgression.UpgradeRules.Evaluate(save, track, tower.TowerId, service.IsTowerUnlocked(tower)) == Corebound.MetaProgression.UpgradePurchaseResult.Purchased)
+                            {
+                                var cost = track.CostForRank(save.GetUpgradeRank(tower.TowerId, (int)track.Stat) + 1);
+
+                                if (cost < bestCost)
+                                {
+                                    bestCost = cost;
+                                    bestTrack = track;
+                                    bestItem = tower.TowerId;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (bestTrack == null || Corebound.MetaProgression.UpgradeRules.TryPurchase(save, bestTrack, bestItem, true) != Corebound.MetaProgression.UpgradePurchaseResult.Purchased)
+                {
+                    break;
+                }
+
+                upgrades++;
+            }
+
+            service.Commit();
+            Debug.Log(DebugAutopilot.LogPrefix + " CAMPAIGN spent between runs: " + nodes + " node rank(s), " + upgrades + " upgrade(s); left sp="
+                + save.SkillPointsAvailable + " alloy=" + save.AlloyBalance);
         }
 
         private void CaptureCampaignRun(string outcome)
@@ -2770,7 +3112,7 @@ namespace Corebound.EditorTools
                 + " sp +" + Corebound.MetaProgression.MetaRewardLedger.RunSkillPoints
                 + " alloy +" + Corebound.MetaProgression.MetaRewardLedger.RunAlloy
                 + " bosses[" + _campaignBossTimes + "]"
-                + " weaponOffers[C" + _weaponRaritiesOffered[0] + " R" + _weaponRaritiesOffered[1] + " E" + _weaponRaritiesOffered[2] + " L" + _weaponRaritiesOffered[3] + "]"
+                + " weaponOffers[C" + _weaponRaritiesOffered[0] + " R" + _weaponRaritiesOffered[1] + " E" + _weaponRaritiesOffered[2] + " L" + _weaponRaritiesOffered[3] + "] " + DescribeRarityRolls()
                 + " loadout " + DescribeLoadout();
             Debug.Log(DebugAutopilot.LogPrefix + " CAMPAIGN " + line);
             var results = SessionState.GetString(DebugAutopilot.CampaignResultsSessionKey, string.Empty);
@@ -2864,6 +3206,10 @@ namespace Corebound.EditorTools
                 + " overcharges=" + CharacterSignatureRuntime.DebugOverchargeCount
                 + " scrapX=" + CharacterEffects.ScrapDropMultiplier.ToString("0.0")
                 + " hoard=" + CharacterEffects.HoardDamageMultiplier.ToString("0.00")
+                + " magnet=" + (FindFirstObjectByType<Corebound.Gameplay.Resources.ResourceWalletService>() != null
+                    ? FindFirstObjectByType<Corebound.Gameplay.Resources.ResourceWalletService>().AutoPickupRange.ToString("0.0") : "?")
+                + " chainTier=" + (FindFirstObjectByType<Corebound.Gameplay.Factory.FactoryService>() != null
+                    ? FindFirstObjectByType<Corebound.Gameplay.Factory.FactoryService>().HighestChainTier.ToString() : "?")
                 + " tethered=" + CharacterEffects.IsTethered
                 + " shockwaves=" + CharacterSignatureRuntime.DebugShockwaveCount
                 + " statusX=" + CharacterEffects.StatusDurationMultiplier.ToString("0.00")
@@ -2891,13 +3237,28 @@ namespace Corebound.EditorTools
         private float _nextMarkCheck;
 
         // The poison tint and the Target Painter ring are only provable on screen.
+        private static string ResolveCoreHealth()
+        {
+            var core = GameObject.Find(CombatHitReceiver.CoreAnchorObjectName);
+            var receiver = core != null ? core.GetComponent<CombatHitReceiver>() : null;
+            return receiver != null ? receiver.CurrentHealthNormalized.ToString("0.000") : "?";
+        }
+
         private int _probeHits;
         private float _nextProbeHit;
 
         // Two hits of 30% max health in the second combat wave - the first is often spent by the
         // Reactive Plating shield - so the heals have something to heal.
+        private float _barsShotAt = -1f;
+
         private void TickHealProbe()
         {
+            if (_barsShotAt > 0f && Time.unscaledTime >= _barsShotAt)
+            {
+                _barsShotAt = -1f;
+                Shot("health_bars_after_hit");
+            }
+
             if (_probeHits >= 2 || _playerCombat == null || _waveManager == null || _waveManager.CurrentWaveNumber < 2
                 || _waveManager.State != WaveState.Combat || Time.unscaledTime < _nextProbeHit)
             {
@@ -2908,7 +3269,25 @@ namespace Corebound.EditorTools
             _probeHits++;
             _playerCombat.ReceiveHit(null, new DamageContext(DamageSourceType.Enemy, DamageKind.Direct, _playerCombat.MaxHealth * 0.3f,
                 _playerTransform.position, Vector2.zero, null, false, "autopilot_heal_probe"));
+
+            if (_probeHits == 2)
+            {
+                var core = GameObject.Find(CombatHitReceiver.CoreAnchorObjectName);
+                var coreReceiver = core != null ? core.GetComponent<CombatHitReceiver>() : null;
+
+                if (coreReceiver != null)
+                {
+                    coreReceiver.ReceiveHit(null, new DamageContext(DamageSourceType.Enemy, DamageKind.Direct, 8f,
+                        core.transform.position, Vector2.zero, null, false, "autopilot_core_probe"));
+                    Debug.Log(DebugAutopilot.LogPrefix + " CARDS probe hit the Core: coreHp now " + ResolveCoreHealth());
+                }
+            }
             Debug.Log(DebugAutopilot.LogPrefix + " CARDS probe hit " + _probeHits + ": playerHp now " + _playerCombat.CurrentHealthNormalized.ToString("0.00"));
+
+            if (_probeHits == 2)
+            {
+                _barsShotAt = Time.unscaledTime + 0.12f;
+            }
         }
 
         private void TickCardsShots()

@@ -151,6 +151,9 @@ namespace Corebound.Gameplay.Combat
 
                 if (_coreHitReceiver != null && _coreHitReceiver.TryRepairFraction(regen * Time.deltaTime))
                 {
+#if UNITY_EDITOR
+                    RunCombatEffects.DebugCoreRegenFraction += regen * Time.deltaTime;
+#endif
                     StateChanged?.Invoke();
                 }
             }

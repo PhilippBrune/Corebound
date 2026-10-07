@@ -55,7 +55,12 @@ found 16 finished sprites and 4 finished boss loops that nothing referenced.
   not, and logs a `CLASS` line per wave state; `campaignK` wipes Profile 2 and plays K real runs
   from Stage 1 back to back, one `CAMPAIGN` line per run (XP, Alloy, SP, boss times, weapon
   rarities offered). Without `class`, a run plays the Vanguard. Writing `stop` ends a run that is
-  already playing. Screenshots of gates, reward, shop, build browser, loadout panel, pause, boss
+  already playing. `tutorialN` plays the guided run with a shot per beat; `rollcheck` (Edit Mode)
+  rolls the weapon rarity 200,000 times through the game's own function; `spendtest` grants SP and
+  Alloy and runs the campaign's between-run spending, then stops. `steamN` and `trailerN` are
+  capture sessions: the Game view is fixed at 1920 × 1080, debug overlays are hidden, the 420 s run
+  cap is lifted, and the view is restored when Play ends; `steam` adds `steam_*` combat shots,
+  `trailer` records 30 fps JPEG clips of combat and every boss under `Temp/Trailer/<time>/`. Screenshots of gates, reward, shop, build browser, loadout panel, pause, boss
   telegraphs, premise and ending go to `Temp/AutopilotShots/` at the moment each state is reached;
   `ScreenCapture` keeps only the last capture of a frame, so two shots in one frame lose the first.
 - **Validate Art Pipeline without a dialog:** write `validate` (or `sync`) into
@@ -75,6 +80,9 @@ found 16 finished sprites and 4 finished boss loops that nothing referenced.
   `Time.frameCount` guard.
 - **`Assets/Editor` compiles into `Assembly-CSharp-Editor.dll`**, not `Assembly-CSharp.dll`. When
   verifying a build by DLL timestamp, check the one that actually contains your file.
+- **A second Unity project may be open on this machine** (`sudoku_rouge_like`). Anything that
+  focuses "the Unity window" to refresh or click must match the window title `Corebound*`, or the
+  keystroke lands in the other Editor.
 - **The asset watcher ignores same-size rewrites.** A refresh that logs
   `RefreshV2(NoUpdateAssetOptions)` picked up nothing. Changing the file's *length* (not just its
   mtime) reliably wakes it; `SetForegroundWindow` alone is not enough, and Windows' foreground lock

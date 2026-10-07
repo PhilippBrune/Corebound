@@ -223,6 +223,9 @@ namespace Corebound.Gameplay.Combat
             if (!IsCoreReceiver && IsMarked)
             {
                 damageContext = damageContext.WithAmount(damageContext.Amount * (1f + RunCombatEffects.VulnerableDamageBonus));
+#if UNITY_EDITOR
+                RunCombatEffects.DebugMarkedHits++;
+#endif
             }
 
             // Core Aegis: the Core itself takes less.

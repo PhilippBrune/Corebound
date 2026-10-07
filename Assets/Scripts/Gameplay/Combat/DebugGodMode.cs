@@ -60,7 +60,7 @@ namespace Corebound.Gameplay.Combat
 
         private void OnGUI()
         {
-            if (!DebugGodMode.IsEnabled)
+            if (!DebugGodMode.IsEnabled || Corebound.DebugOverlay.Hidden)
             {
                 return;
             }
