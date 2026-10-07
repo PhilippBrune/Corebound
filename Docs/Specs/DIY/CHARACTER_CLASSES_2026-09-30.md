@@ -215,6 +215,11 @@ spend the whole account's SP in its own tree. The old `_skillPointsSpent` migrat
 Quests stay account-wide under `QuestLedger.QuestOwnerId` (`vanguard`), so any class's run can finish
 any quest and unlock any class. Alloy upgrades stay account-wide, as the concept said.
 
+Since 2026-10-07 the **skill-tree version and the free respec** are per class too
+(`_characterTreeVersions`, one `{characterId, version, freeRespecUsedVersion}` entry each), so a
+content update that bumps one class's tree hands only that class a free respec. The old single
+`_skillTreeVersion` / `_freeRespecUsedTreeVersion` migrate to the `vanguard` entry on load.
+
 ### Signatures (numbers in `CharacterEffects`)
 
 | Class | Built | Stats and kit |
@@ -247,7 +252,9 @@ are not built.
 
 Ten cards, two per class, each with `_requiredCharacterId`. `CardService.CanOfferCard` never offers
 them to another class, and the collection quests do not count them (one class alone could never
-finish them).
+finish them). Records shows them in their own row after the 42 collection cards, and the tab count
+stays the collection's; a selected class card names its class and the class-card count
+("Class card - Engineer · Rare · class cards 3 / 10").
 
 | Class | Rare | Epic |
 | --- | --- | --- |
@@ -288,7 +295,21 @@ Custodian - any "Core untouched" stage quest; Catalyst - the Stage 3 boss defeat
 - New Run class line, the Progression header per class and the per-class tree (Engineer and
   Custodian keystones visible) photographed.
 
-Not verified: the magnet range and the Salvager's tier-1 chain floor (no log line shows them), the
-class cards being offered (they are Rare/Epic and did not come up), German text on screen, the unlock
+Verified 2026-10-07 (`class salvager`, German): magnet range 5.8 in the CLASS line; the chain floor
+(tier 1 at the first Reward with no tower built yet - only the floor gives that); the class name
+"Verwerter" on the New Run panel.
+
+Not verified: the class cards being offered (they are Rare/Epic and did not come up), the unlock
 announcement on a profile that actually meets a condition, and any balance - the numbers are the
 concept's, untuned.
+
+### Sprites (K6-2, delivered 2026-10-07)
+
+Assets 110-113 (Engineer, Salvager, Custodian, Catalyst) and a redrawn Asset 14 (Vanguard) live in
+`Assets/Art/Characters/Player/` and the StreamingAssets mirror. `CharacterData._spritePath` names
+each class's sprite (empty for the Vanguard, which uses the base sprite);
+`PlayerController.ApplyPlayerSprite` loads it through `DebugSpriteFactory.LoadProjectSpriteTrimmed`,
+which crops to the figure's opaque bounds, so all five stand at the same on-screen size (0.5 units)
+whatever the canvas around them. The hitbox no longer follows the sprite: it is the collider radius,
+the same for every class. Textures are mipmapped (trilinear), which removed the grain at arena zoom.
+The class tint stays as a fallback for a missing file.

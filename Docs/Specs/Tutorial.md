@@ -140,4 +140,5 @@ und 28), nicht mehr im Pause-Overlay. Ein Beat öffnet **nie über der Kartenbel
 `WaveStatePresenter.TryShowTutorialBeat` lehnt ab, solange der Wave-State `Reward` ist oder eines der
 beiden offen ist, und der Tutorial-Service versucht es jedes Frame erneut - der Beat wartet also, bis
 der Bildschirm zu ist. Anlass: im Tutorial-Probe vom 2026-10-07 öffneten Beat 6 und 7 auf der
-Kartenbelohnung und verdeckten die Wahl, die gerade getroffen werden sollte.
+Kartenbelohnung und verdeckten die Wahl, die gerade getroffen werden sollte. Im erneuten Probe
+öffneten beide über der Arena in der Intermission.
