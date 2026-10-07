@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5d5ec13c89c4146953d6072f26106f6, type: 3}
   m_Name: BossPhase_Stage3_P1
   m_EditorClassIdentifier:
-  _phaseLabel: SalvageOverseer P1
+  _phaseLabel: Reclamation
+  _phaseLabelDe: Rückgewinnung
   _triggerHealthNormalized: 1
   _attackPatternData: {fileID: 11400000, guid: 1a587f3f3f7d4a6e89644362bde7d011, type: 2}
   _helperSpawnGroups: []

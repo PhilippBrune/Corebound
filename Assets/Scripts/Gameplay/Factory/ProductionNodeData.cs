@@ -18,6 +18,7 @@ namespace Corebound.Gameplay.Factory
     {
         [SerializeField] private string _nodeId = "node_default";
         [SerializeField] private string _displayName = "Production Node";
+        [SerializeField] private string _displayNameDe = string.Empty;
         [SerializeField] private ProductionTriggerType _triggerType = ProductionTriggerType.EnemyKilled;
         [SerializeField] private int _baseAmount = 1;
         [SerializeField] private int _maxAmountPerTrigger;
@@ -42,7 +43,7 @@ namespace Corebound.Gameplay.Factory
 
         public string NodeId => _nodeId;
 
-        public string DisplayName => _displayName;
+        public string DisplayName => Corebound.UI.LocalizationService.Resolve(_displayName, _displayNameDe);
 
         public ProductionTriggerType TriggerType => _triggerType;
 

@@ -77,3 +77,5 @@ MonoBehaviour:
       _value: 1
     - _target: 12
       _value: 0.25
+  _displayNameDe: Strahlwaffe
+  _summaryDe: 'Gebündelte, wuchtige Schüsse für präzise Salven und Durchschlag.'

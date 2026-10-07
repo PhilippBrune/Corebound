@@ -16,9 +16,9 @@ MonoBehaviour:
   _title: Profile
   _titleDe: Profil
   _subtitle: Three separate save states
-  _subtitleDe: Drei getrennte Spielstaende
+  _subtitleDe: Drei getrennte Spielstände
   _summary: Each profile keeps its own meta progression, settings, statistics and continuable run. Pick one with Up and Down, Confirm to switch.
-  _summaryDe: Jedes Profil hat eigenen Meta-Fortschritt, eigene Einstellungen, Statistiken und einen eigenen fortsetzbaren Run. Mit Hoch und Runter waehlen, mit Bestaetigen wechseln.
+  _summaryDe: Jedes Profil hat eigenen Meta-Fortschritt, eigene Einstellungen, Statistiken und einen eigenen fortsetzbaren Run. Mit Hoch und Runter wählen, mit Bestätigen wechseln.
   _detailLines:
   - Profile 1
   - Profile 2
@@ -28,4 +28,4 @@ MonoBehaviour:
   - Profil 2
   - Profil 3
   _footerHint: Confirm switches profile.  Q (or LB) twice deletes the selected profile.  Cancel returns.
-  _footerHintDe: Bestaetigen wechselt das Profil.  Q (oder LB) zweimal loescht das gewaehlte Profil.  Abbrechen kehrt zurueck.
+  _footerHintDe: Bestätigen wechselt das Profil.  Q (oder LB) zweimal löscht das gewählte Profil.  Abbrechen kehrt zurück.

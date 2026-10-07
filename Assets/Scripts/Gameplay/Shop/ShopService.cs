@@ -211,7 +211,7 @@ namespace Corebound.Gameplay.Shop
             return true;
         }
 
-        // Shop.md: "Pools, Gewichtungen und Stage-spezifische Verfuegbarkeiten". Offers used to
+        // Shop.md: "Pools, Gewichtungen und Stage-spezifische Verfügbarkeiten". Offers used to
         // be taken in array order until the cap, so the first three available entries were the
         // only three a player ever saw. Now every available offer competes by weight, drawn
         // without replacement - the same approach CardService already uses for rarity.

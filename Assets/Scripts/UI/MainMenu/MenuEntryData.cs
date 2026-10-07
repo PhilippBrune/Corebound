@@ -6,10 +6,13 @@ namespace Corebound.UI.MainMenu
     public sealed class MenuEntryData : ScriptableObject
     {
         [SerializeField] private string _label = string.Empty;
+
+        // German was missing on the main menu's own buttons (seen on screen 2026-10-07).
+        [SerializeField] private string _labelDe = string.Empty;
         [SerializeField] private MainMenuRoute _route = MainMenuRoute.NewRun;
         [SerializeField] private MainMenuEntryAvailability _availability = MainMenuEntryAvailability.Always;
 
-        public string Label => _label;
+        public string Label => Corebound.UI.LocalizationService.Resolve(_label, _labelDe);
 
         public MainMenuRoute Route => _route;
 

@@ -83,6 +83,13 @@ Boss-UI zeigt mindestens:
 
 Die Anzeige darf das Sichtfeld des Players nicht überladen.
 
+Der Phasenname steht auf der Boss-Leiste und ist deshalb ein Name, keine Id: `BossPhaseData` trägt
+`_phaseLabel` und `_phaseLabelDe` (seit 2026-10-07; vorher zeigten Stage 2-5 "ReactorSentinel P1").
+Stage 1 Eröffnungssalve / Wutausbruch, Stage 2 Eindämmungsschwenk / Überlast, Stage 3
+Rückgewinnung / Schrottsturm, Stage 4 Kalte Wacht / Tiefenfrost, Stage 5 Nexus-Sperre / Letztes
+Protokoll (englisch: Opening Volley / Enrage Burst, Containment Sweep / Overload, Reclamation /
+Scrap Storm, Cold Watch / Deep Freeze, Nexus Lock / Final Protocol).
+
 ## Audio
 
 Bosses besitzen priorisierte Audio-Inszenierung für Intro, Phasenwechsel, Großangriffe und Niederlage.

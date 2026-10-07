@@ -16,7 +16,7 @@ MonoBehaviour:
   _displayName: Split Barrel
   _displayNameDe: Geteilter Lauf
   _description: Fire one additional projectile, spread a little wider.
-  _descriptionDe: Feuert ein zusaetzliches Projektil, dafuer etwas breiter gestreut.
+  _descriptionDe: Feuert ein zusätzliches Projektil, dafür etwas breiter gestreut.
   _rarity: 2
   _requiredUnlockId:
   _tags:

@@ -96,7 +96,7 @@ namespace Corebound.Gameplay.Towers
             switch (trait)
             {
                 case TowerSlotTrait.Elevated:
-                    return LocalizationService.Resolve("Elevated", "Erhoeht");
+                    return LocalizationService.Resolve("Elevated", "Erhöht");
                 case TowerSlotTrait.Shielded:
                     return LocalizationService.Resolve("Shielded", "Abgeschirmt");
                 case TowerSlotTrait.Cramped:
@@ -113,7 +113,7 @@ namespace Corebound.Gameplay.Towers
                 case TowerSlotTrait.Elevated:
                     return LocalizationService.Resolve(
                         "Elevated  ·  +25 % range",
-                        "Erhoeht  ·  +25 % Reichweite");
+                        "Erhöht  ·  +25 % Reichweite");
                 case TowerSlotTrait.Shielded:
                     return LocalizationService.Resolve(
                         "Shielded  ·  the tower here takes no damage",
@@ -121,7 +121,7 @@ namespace Corebound.Gameplay.Towers
                 case TowerSlotTrait.Cramped:
                     return LocalizationService.Resolve(
                         "Cramped  ·  15 % cheaper to build",
-                        "Beengt  ·  15 % guenstiger im Bau");
+                        "Beengt  ·  15 % günstiger im Bau");
                 default:
                     return string.Empty;
             }

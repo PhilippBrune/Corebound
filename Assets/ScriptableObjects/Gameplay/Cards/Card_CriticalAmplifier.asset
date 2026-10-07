@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   _cardId: card_critical_amplifier
   _displayName: Critical Amplifier
-  _displayNameDe: Kritischer Verstaerker
+  _displayNameDe: Kritischer Verstärker
   _description: Critical hits deal considerably more damage. Worthless without critical chance.
   _descriptionDe: Kritische Treffer richten deutlich mehr Schaden an. Ohne kritische Chance wertlos.
   _rarity: 2

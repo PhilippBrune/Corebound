@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5d5ec13c89c4146953d6072f26106f6, type: 3}
   m_Name: BossPhase_Stage4_P2
   m_EditorClassIdentifier:
-  _phaseLabel: CryoWarden P2
+  _phaseLabel: Deep Freeze
+  _phaseLabelDe: Tiefenfrost
   _triggerHealthNormalized: 0.5
   _attackPatternData: {fileID: 11400000, guid: 6fe1b9cb58d24ba695cc7eb92bb631c9, type: 2}
   _helperSpawnGroups: []

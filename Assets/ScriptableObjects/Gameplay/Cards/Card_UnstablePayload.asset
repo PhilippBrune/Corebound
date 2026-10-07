@@ -16,7 +16,7 @@ MonoBehaviour:
   _displayName: Unstable Payload
   _displayNameDe: Instabile Ladung
   _description: Trade reliable status effects for a sharp damage increase.
-  _descriptionDe: Tauscht zuverlaessige Statuseffekte gegen einen deutlichen Schadensanstieg.
+  _descriptionDe: Tauscht zuverlässige Statuseffekte gegen einen deutlichen Schadensanstieg.
   _rarity: 2
   _requiredUnlockId:
   _tags:

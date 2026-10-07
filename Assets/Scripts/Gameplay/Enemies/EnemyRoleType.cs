@@ -9,7 +9,7 @@ namespace Corebound.Gameplay.Enemies
         // Appended, never inserted: this enum is serialized by index in the
         // EnemyBehaviour_*.asset files, so an insert would silently repoint every existing
         // enemy to the wrong role. The two names come from Enemies.md's own list of example
-        // roles - "Flaechenkontrolle oder Support fuer andere Enemies" - and close the
+        // roles - "Flächenkontrolle oder Support für andere Enemies" - and close the
         // Vision Section 9 target of five distinct enemy types.
 
         // Ignores the Player entirely, advances on the Core until it reaches its hold

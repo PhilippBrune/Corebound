@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: BossPhase_01
   m_EditorClassIdentifier: 
   _phaseLabel: Opening Volley
+  _phaseLabelDe: Eröffnungssalve
   _triggerHealthNormalized: 1
   _attackPatternData: {fileID: 11400000, guid: 68ef00946fa44f8fa6041712dced2840, type: 2}
   _helperSpawnGroups: []

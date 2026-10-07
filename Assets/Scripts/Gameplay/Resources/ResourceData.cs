@@ -7,13 +7,14 @@ namespace Corebound.Gameplay.Resources
     {
         [SerializeField] private string _resourceId = "resource_primary";
         [SerializeField] private string _displayName = "Resource";
+        [SerializeField] private string _displayNameDe = string.Empty;
         [SerializeField] private Color _displayColor = new Color(1f, 0.83f, 0.34f, 1f);
         [SerializeField] private float _autoPickupRange = 1.8f;
         [SerializeField] private float _pickupMoveSpeed = 4.5f;
 
         public string ResourceId => _resourceId;
 
-        public string DisplayName => _displayName;
+        public string DisplayName => Corebound.UI.LocalizationService.Resolve(_displayName, _displayNameDe);
 
         public Color DisplayColor => _displayColor;
 

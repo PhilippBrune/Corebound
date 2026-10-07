@@ -20,3 +20,4 @@ MonoBehaviour:
   _requiredChainTier: 2
   _pulseIntervalSeconds: 8
   _requiredTowerId: tower_support
+  _displayNameDe: Relais-Stützpuls

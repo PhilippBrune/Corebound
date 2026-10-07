@@ -132,3 +132,12 @@ vorhandene Events; Tutorial-Code greift weiterhin nicht in Combat, Player oder T
 **Keine Meta-Belohnung (2026-09-22).** Ein Tutorial-Run zahlt weder Skill Points noch Legierung.
 `MetaRewardLedger` lehnt jede Auszahlung ab, solange `RunSaveData.IsTutorialRun` gesetzt ist - die
 Prüfung liegt dort und nicht bei den Aufrufern, damit keine Quelle sie vergisst.
+
+## Beat-Panel (2026-10-01 / 10-07)
+
+Jeder Schritt erklärt sich in einem eigenen, pausierenden Panel (`TutorialBeatPresenter`, Assets 06
+und 28), nicht mehr im Pause-Overlay. Ein Beat öffnet **nie über der Kartenbelohnung oder dem Shop**:
+`WaveStatePresenter.TryShowTutorialBeat` lehnt ab, solange der Wave-State `Reward` ist oder eines der
+beiden offen ist, und der Tutorial-Service versucht es jedes Frame erneut - der Beat wartet also, bis
+der Bildschirm zu ist. Anlass: im Tutorial-Probe vom 2026-10-07 öffneten Beat 6 und 7 auf der
+Kartenbelohnung und verdeckten die Wahl, die gerade getroffen werden sollte.

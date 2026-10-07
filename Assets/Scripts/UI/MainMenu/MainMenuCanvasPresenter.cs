@@ -395,8 +395,8 @@ namespace Corebound.UI.MainMenu
             var introVisible = _mainMenuController.IsIntroVisible;
             _logoImage.enabled = _logoSprite != null && (!introVisible || (_introFlowData != null && _introFlowData.ShowLogoOnIntro));
             _promptText.text = introVisible
-                ? (_introFlowData != null ? _introFlowData.PromptText : LocalizationService.Resolve("Press Start", "Starten druecken"))
-                : LocalizationService.Resolve("Choose the next route for your Corebound run.", "Waehle die naechste Route fuer deinen Corebound-Run.");
+                ? (_introFlowData != null ? _introFlowData.PromptText : LocalizationService.Resolve("Press Start", "Starten drücken"))
+                : LocalizationService.Resolve("Choose the next route for your Corebound run.", "Wähle die nächste Route für deinen Corebound-Run.");
 
             for (var index = 0; index < _entryViews.Count; index++)
             {
@@ -527,7 +527,7 @@ namespace Corebound.UI.MainMenu
         {
             if (introVisible)
             {
-                return LocalizationService.Resolve("Confirm or Start opens the command routes.", "Bestaetigen oder Start oeffnet die Kommando-Routen.");
+                return LocalizationService.Resolve("Confirm or Start opens the command routes.", "Bestätigen oder Start öffnet die Kommando-Routen.");
             }
 
             if (_mainMenuController.VisibleEntries.Count == 0)
@@ -539,7 +539,7 @@ namespace Corebound.UI.MainMenu
 
             if (selectedEntry == null)
             {
-                return LocalizationService.Resolve("Select a route.", "Waehle eine Route.");
+                return LocalizationService.Resolve("Select a route.", "Wähle eine Route.");
             }
 
             switch (selectedEntry.Route)
@@ -564,7 +564,7 @@ namespace Corebound.UI.MainMenu
 
                     return LocalizationService.Resolve("Start a fresh run from the first active route.", "Startet einen neuen Run ab der ersten aktiven Route.");
                 case MainMenuRoute.Tutorial:
-                    return LocalizationService.Resolve("Review the guided tutorial stage.", "Zeigt die gefuehrte Tutorial-Stage.");
+                    return LocalizationService.Resolve("Review the guided tutorial stage.", "Zeigt die geführte Tutorial-Stage.");
                 case MainMenuRoute.Settings:
                     return LocalizationService.Resolve("Adjust controls, audio and presentation.", "Steuerung, Audio und Darstellung anpassen.");
                 case MainMenuRoute.MetaProgression:
@@ -587,17 +587,17 @@ namespace Corebound.UI.MainMenu
                 case MainMenuRoute.NewRun:
                     return LocalizationService.Resolve("Preparing a new run.", "Neuer Run wird vorbereitet.");
                 case MainMenuRoute.Tutorial:
-                    return LocalizationService.Resolve("Opening the tutorial route.", "Tutorial-Route wird geoeffnet.");
+                    return LocalizationService.Resolve("Opening the tutorial route.", "Tutorial-Route wird geöffnet.");
                 case MainMenuRoute.Settings:
-                    return LocalizationService.Resolve("Opening settings.", "Einstellungen werden geoeffnet.");
+                    return LocalizationService.Resolve("Opening settings.", "Einstellungen werden geöffnet.");
                 case MainMenuRoute.MetaProgression:
-                    return LocalizationService.Resolve("Opening meta progression.", "Meta-Progression wird geoeffnet.");
+                    return LocalizationService.Resolve("Opening meta progression.", "Meta-Progression wird geöffnet.");
                 case MainMenuRoute.Records:
-                    return LocalizationService.Resolve("Opening records.", "Aufzeichnungen werden geoeffnet.");
+                    return LocalizationService.Resolve("Opening records.", "Aufzeichnungen werden geöffnet.");
                 case MainMenuRoute.Quit:
                     return LocalizationService.Resolve("Closing the current session.", "Sitzung wird beendet.");
                 default:
-                    return LocalizationService.Resolve("Route confirmed.", "Route bestaetigt.");
+                    return LocalizationService.Resolve("Route confirmed.", "Route bestätigt.");
             }
         }
 

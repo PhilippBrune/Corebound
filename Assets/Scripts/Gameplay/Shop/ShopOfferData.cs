@@ -15,7 +15,7 @@ namespace Corebound.Gameplay.Shop
         [SerializeField] private int _minStageIndex = 1;
         [SerializeField] private int _maxStageIndex = 99;
 
-        // Shop.md asks for "Pools, Gewichtungen und Stage-spezifische Verfuegbarkeiten".
+        // Shop.md asks for "Pools, Gewichtungen und Stage-spezifische Verfügbarkeiten".
         // MinStageIndex/MaxStageIndex were the availability half; this is the weighting half.
         // 1 is the neutral weight, so every existing asset keeps its current odds relative to
         // every other existing asset. 0 makes an offer unreachable without deleting it.

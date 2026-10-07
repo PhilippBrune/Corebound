@@ -39,7 +39,7 @@ MonoBehaviour:
   _damageProfile: {fileID: 11400000, guid: 69f70f457c6d4411e967afe4bdd66c72, type: 2}
   _projectile: {fileID: 11400000, guid: 6c731c3a0ece6ee468c7a1799b3f8049, type: 2}
   _strengths: Single hard targets. Reliable damage on Bruisers and bosses.
-  _strengthsDe: Einzelne harte Ziele. Verlaesslicher Schaden gegen Bruiser und Bosse.
+  _strengthsDe: Einzelne harte Ziele. Verlässlicher Schaden gegen Bruiser und Bosse.
   _weaknesses: Wasted on crowds. One target at a time.
   _weaknessesDe: Verschwendet gegen Gruppen. Immer nur ein Ziel.
   _debugColor: {r: 1, g: 0.93, b: 0.52, a: 1}

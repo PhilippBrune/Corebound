@@ -39,7 +39,7 @@ MonoBehaviour:
   _damageProfile: {fileID: 11400000, guid: e86b620b5ec7475d825388753edb17e6, type: 2}
   _projectile: {fileID: 11400000, guid: 27b38e9489e541ca8f89ab7c56c3388d, type: 2}
   _strengths: Fast swarms. High rate of fire shreds Chasers.
-  _strengthsDe: Schnelle Schwaerme. Hohe Feuerrate zerlegt Chaser.
+  _strengthsDe: Schnelle Schwärme. Hohe Feuerrate zerlegt Chaser.
   _weaknesses: Low damage per shot. Struggles against armour.
   _weaknessesDe: Wenig Schaden pro Schuss. Schwach gegen Panzerung.
   _debugColor: {r: 0.4, g: 0.85, b: 1, a: 1}

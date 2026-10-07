@@ -101,7 +101,7 @@ namespace Corebound.MetaProgression
 
             UI.NotificationPresenter.Show(UI.LocalizationService.Resolve(
                 "First " + what + " earned - spend them in Progression, from the Main Menu. They are kept when a run ends.",
-                "Erste " + what + " verdient - ausgeben im Fortschritt-Menue im Hauptmenue. Sie bleiben erhalten, wenn ein Run endet."));
+                "Erste " + what + " verdient - ausgeben im Fortschritt-Menü im Hauptmenü. Sie bleiben erhalten, wenn ein Run endet."));
         }
 
         // Owner 2026-09-22: "Tutorial should not give any Alloy or SP". The guided first run uses

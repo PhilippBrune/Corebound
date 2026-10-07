@@ -75,3 +75,5 @@ MonoBehaviour:
       _value: 1
     - _target: 8
       _value: 6
+  _displayNameDe: Schnellfeuerwaffe
+  _summaryDe: 'Schnelle Einzelschüsse für stetiges, controllerfreundliches Feuer.'

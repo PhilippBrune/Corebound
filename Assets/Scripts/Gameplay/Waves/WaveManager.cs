@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Corebound.Gameplay.Bosses;
 using Corebound.Gameplay.Cards;
@@ -143,7 +143,7 @@ namespace Corebound.Gameplay.Waves
         public bool RequiresIntermissionTowerAction => _requiresIntermissionTowerAction;
 
         public string FailureCauseLabel => _wasCoreDestroyedOnFailure
-            ? LocalizationService.Resolve("Core Destroyed", "Core zerstört")
+            ? LocalizationService.Resolve("Core Destroyed", "Kern zerstört")
             : LocalizationService.Resolve("Player Died", "Spieler gestorben");
 
         public StageData StageDataAsset => _stageData;
@@ -1211,7 +1211,7 @@ namespace Corebound.Gameplay.Waves
             var endedBy = completed
                 ? LocalizationService.Resolve("Run completed", "Run abgeschlossen")
                 : (_wasCoreDestroyedOnFailure
-                    ? LocalizationService.Resolve("Core destroyed", "Core zerstoert")
+                    ? LocalizationService.Resolve("Core destroyed", "Kern zerstört")
                     : LocalizationService.Resolve("Player died", "Spieler gestorben"));
 
             _historyCardIds.Clear();

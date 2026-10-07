@@ -75,3 +75,5 @@ MonoBehaviour:
       _value: 1
     - _target: 10
       _value: 1
+  _displayNameDe: Streuwaffe
+  _summaryDe: 'Breiter Mehrfachschuss, der Druck aus nächster Nähe und Massenkontrolle belohnt.'

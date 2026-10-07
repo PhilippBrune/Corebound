@@ -48,7 +48,7 @@ namespace Corebound.Gameplay.Cards
                 + LocalizationService.Resolve("  ·  Alloy +", "  ·  Legierung +") + Corebound.MetaProgression.MetaRewardLedger.RunAlloy
             : string.Empty;
 
-        public string TowerSummary => _towerService != null ? LocalizationService.Resolve("Active Towers: ", "Aktive Tuerme: ") + _towerService.BuiltTowerCount : string.Empty;
+        public string TowerSummary => _towerService != null ? LocalizationService.Resolve("Active Towers: ", "Aktive Türme: ") + _towerService.BuiltTowerCount : string.Empty;
 
         public string SelectedDescription => _cardService != null && _cardService.CurrentOffer.Count > 0 && _selectedIndex >= 0 && _selectedIndex < _cardService.CurrentOffer.Count
             ? CardEffectDescriber.Describe(_cardService.CurrentOffer[_selectedIndex])

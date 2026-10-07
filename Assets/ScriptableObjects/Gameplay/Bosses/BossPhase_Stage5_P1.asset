@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5d5ec13c89c4146953d6072f26106f6, type: 3}
   m_Name: BossPhase_Stage5_P1
   m_EditorClassIdentifier:
-  _phaseLabel: CoreNexus P1
+  _phaseLabel: Nexus Lock
+  _phaseLabelDe: Nexus-Sperre
   _triggerHealthNormalized: 1
   _attackPatternData: {fileID: 11400000, guid: c7149956e2544cddb07cf682d964e6db, type: 2}
   _helperSpawnGroups: []

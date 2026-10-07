@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Corebound.Gameplay.Cards;
 using Corebound.Gameplay.Combat;
 using Corebound.Gameplay.Resources;
@@ -1794,7 +1794,7 @@ namespace Corebound.Gameplay.Waves
         private string ResolveCoreHealthText()
         {
             return _coreHitReceiver != null
-                ? "Core " + (_coreHitReceiver.CurrentHealthNormalized * 100f).ToString("0") + "%"
+                ? Corebound.UI.LocalizationService.Resolve("Core ", "Kern ") + (_coreHitReceiver.CurrentHealthNormalized * 100f).ToString("0") + "%"
                 : "Core --";
         }
 
@@ -2228,6 +2228,16 @@ namespace Corebound.Gameplay.Waves
         public bool TryShowTutorialBeat(string title, string body, System.Action onDismissed)
         {
             if (_overlayMode != OverlayMode.None)
+            {
+                return false;
+            }
+
+            // A beat opened over the card reward or the shop covers the choice the player is making
+            // (tutorial run 2026-10-07: beats 6 and 7 opened on the reward screen). The tutorial
+            // retries every frame, so refusing here only holds the beat until the screen closes.
+            if ((_waveManager != null && _waveManager.State == WaveState.Reward)
+                || (_cardRewardController != null && _cardRewardController.IsOpen)
+                || (_shopService != null && _shopService.IsOpen))
             {
                 return false;
             }

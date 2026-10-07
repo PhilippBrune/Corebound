@@ -39,7 +39,7 @@ MonoBehaviour:
   _damageProfile: {fileID: 11400000, guid: 0d9ee73df45c4a719b2cf0a3c8744dcf, type: 2}
   _projectile: {fileID: 11400000, guid: 2073db8e6fef3a743bb08ab4e30ab8f0, type: 2}
   _strengths: Everything else. Pulses resources and boosts the network.
-  _strengthsDe: Alles andere. Erzeugt Ressourcen und staerkt das Netz.
+  _strengthsDe: Alles andere. Erzeugt Ressourcen und stärkt das Netz.
   _weaknesses: Deals almost no damage. Needs other towers to matter.
-  _weaknessesDe: Macht kaum Schaden. Braucht andere Tuerme, um zu wirken.
+  _weaknessesDe: Macht kaum Schaden. Braucht andere Türme, um zu wirken.
   _debugColor: {r: 0.58, g: 0.92, b: 1, a: 1}

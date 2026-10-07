@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: BossPhase_02
   m_EditorClassIdentifier: 
   _phaseLabel: Enrage Burst
+  _phaseLabelDe: Wutausbruch
   _triggerHealthNormalized: 0.5
   _attackPatternData: {fileID: 11400000, guid: 4788cebb5a154bf3ab6b42e545054e16, type: 2}
   _helperSpawnGroups:
