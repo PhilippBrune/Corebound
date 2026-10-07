@@ -49,9 +49,9 @@ At the cap with every quest done, the tree is exactly complete and can never be 
   **6,500 XP**, so the cap is about **32 complete runs**; early runs end sooner, which is where the
   rest of the originally intended ~70 hours goes.
 
-> **Still unmeasured:** these per-run figures are arithmetic, not a count. No complete run has been
-> recorded yet (Open Topics, five-run campaign). The Paragon cost below was set against the old
-> 2,500-XP estimate of a full run and is now about 0.4 of one; revisit it once runs are measured.
+> **Measured 2026-10-01** (autopilot campaign, fresh profile): a full clear paid +6,556 and +6,550 XP,
+> a death at the Stage 1 boss +204 and +206. The Paragon cost below was raised to 6,500 on
+> 2026-10-07 so one clear is about one Paragon level, as intended.
 
 ### Bosses (P3-2)
 
@@ -82,7 +82,8 @@ XP lump of 250 × stage, and Alloy exactly as before.
 
 ### Paragon and Ascension (P7-3)
 
-- Past level 70, XP fills **Paragon levels** at a flat **2,500 XP** each (about one full run). Each
+- Past level 70, XP fills **Paragon levels** at a flat **6,500 XP** each (about one full clear;
+  raised from 2,500 on 2026-10-07 after the campaign measured ~6,550 XP per clear). Each
   pays **1 Ascension Point (AP)**. The 4,480 XP of the last level-up would have halved the pace, so
   the flat cost is set per full run instead.
 - **Ascension unlocks at the cap**, no longer at tree completion.

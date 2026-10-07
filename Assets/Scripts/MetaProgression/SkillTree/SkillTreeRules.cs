@@ -139,7 +139,7 @@ namespace Corebound.MetaProgression
 
         public static bool IsNextRespecFree(MetaProgressionSaveData save, SkillTreeDefinitionData tree)
         {
-            return save != null && tree != null && save.FreeRespecUsedTreeVersion != tree.TreeVersion;
+            return save != null && tree != null && save.FreeRespecUsedTreeVersionOf(tree.CharacterId) != tree.TreeVersion;
         }
 
         // The player-initiated respec: free once per tree version, then PaidRespecAlloyCost.
@@ -155,7 +155,7 @@ namespace Corebound.MetaProgression
 
             if (IsNextRespecFree(save, tree))
             {
-                save.MarkFreeRespecUsed(tree.TreeVersion);
+                save.MarkFreeRespecUsed(tree.CharacterId, tree.TreeVersion);
             }
             else if (!save.TrySpendAlloy(tree.PaidRespecAlloyCost))
             {
@@ -177,19 +177,21 @@ namespace Corebound.MetaProgression
         // A content update that changed the tree grants one free respec automatically.
         public static bool ApplyTreeVersion(MetaProgressionSaveData save, SkillTreeDefinitionData tree)
         {
-            if (save == null || tree == null || save.SkillTreeVersion == tree.TreeVersion)
+            var known = save != null && tree != null ? save.SkillTreeVersionOf(tree.CharacterId) : 0;
+
+            if (save == null || tree == null || known == tree.TreeVersion)
             {
                 return false;
             }
 
             var hadNodes = ResolveTotalTreeSpend(save, tree) > 0;
 
-            if (hadNodes && save.SkillTreeVersion != 0)
+            if (hadNodes && known != 0)
             {
                 Respec(save, tree);
             }
 
-            save.SetSkillTreeVersion(tree.TreeVersion);
+            save.SetSkillTreeVersion(tree.CharacterId, tree.TreeVersion);
             return true;
         }
 

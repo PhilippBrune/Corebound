@@ -278,7 +278,14 @@ namespace Corebound.MetaProgression
             _saveData = SaveManager != null ? SaveManager.LoadMetaProgressionSaveData(defaults) : defaults;
 
             // SkillTree.md: a content update that changes the tree grants a free respec.
-            var changed = _definitionData != null && SkillTreeRules.ApplyTreeVersion(_saveData, _definitionData.FindSkillTree(_saveData.SelectedCharacterId));
+            // Every class's tree, not only the selected one: a class that is not played this session
+            // still gets its free respec the day its tree changes.
+            var changed = false;
+
+            for (var index = 0; _definitionData != null && _definitionData.SkillTrees != null && index < _definitionData.SkillTrees.Length; index++)
+            {
+                changed |= SkillTreeRules.ApplyTreeVersion(_saveData, _definitionData.SkillTrees[index]);
+            }
 
             // Quests that can be judged from what the profile already has: bosses killed before the
             // quests existed (done, not paid again), weapons already fully upgraded and a card

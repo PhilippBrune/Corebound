@@ -38,6 +38,11 @@ namespace Corebound.SaveSystem
         // Owner decision 2026-09-22: one free respec per tree version; later ones cost Alloy.
         // Holds the tree version whose free respec has been used (0 = none yet).
         [SerializeField] private int _freeRespecUsedTreeVersion;
+
+        // Open Topics 5 (a), 2026-10-07: with a tree per class the version and its free respec are
+        // per class too - one account-wide number would hand every class a respec when one class's
+        // tree changed. The two fields above are the pre-classes values, moved to the Vanguard.
+        [SerializeField] private List<CharacterTreeVersion> _characterTreeVersions = new List<CharacterTreeVersion>();
         [SerializeField] private int _ascensionRank;
         [SerializeField] private string _preferredStartWeaponId = string.Empty;
 
@@ -118,6 +123,27 @@ namespace Corebound.SaveSystem
         [SerializeField] private List<CharacterSkillSpend> _characterSkillPointsSpent = new List<CharacterSkillSpend>();
 
         [Serializable]
+        public struct CharacterTreeVersion
+        {
+            [SerializeField] private string _characterId;
+            [SerializeField] private int _treeVersion;
+            [SerializeField] private int _freeRespecUsedVersion;
+
+            public CharacterTreeVersion(string characterId, int treeVersion, int freeRespecUsedVersion)
+            {
+                _characterId = characterId;
+                _treeVersion = treeVersion;
+                _freeRespecUsedVersion = freeRespecUsedVersion;
+            }
+
+            public string CharacterId => _characterId;
+
+            public int TreeVersion => _treeVersion;
+
+            public int FreeRespecUsedVersion => _freeRespecUsedVersion;
+        }
+
+        [Serializable]
         public struct CharacterSkillSpend
         {
             public string CharacterId;
@@ -136,14 +162,60 @@ namespace Corebound.SaveSystem
 
         public IReadOnlyList<SkillNodeRank> SkillNodeRanks => _skillNodeRanks;
 
-        public int SkillTreeVersion => _skillTreeVersion;
-
-        public int FreeRespecUsedTreeVersion => _freeRespecUsedTreeVersion;
-
-        public void MarkFreeRespecUsed(int treeVersion)
+        public int SkillTreeVersionOf(string characterId)
         {
-            _freeRespecUsedTreeVersion = treeVersion;
+            var index = FindTreeVersion(characterId);
+            return index >= 0 ? _characterTreeVersions[index].TreeVersion : 0;
         }
+
+        public int FreeRespecUsedTreeVersionOf(string characterId)
+        {
+            var index = FindTreeVersion(characterId);
+            return index >= 0 ? _characterTreeVersions[index].FreeRespecUsedVersion : 0;
+        }
+
+        public void SetSkillTreeVersion(string characterId, int version)
+        {
+            var index = FindOrAddTreeVersion(characterId);
+            var entry = _characterTreeVersions[index];
+            _characterTreeVersions[index] = new CharacterTreeVersion(entry.CharacterId, version, entry.FreeRespecUsedVersion);
+        }
+
+        public void MarkFreeRespecUsed(string characterId, int treeVersion)
+        {
+            var index = FindOrAddTreeVersion(characterId);
+            var entry = _characterTreeVersions[index];
+            _characterTreeVersions[index] = new CharacterTreeVersion(entry.CharacterId, entry.TreeVersion, treeVersion);
+        }
+
+        private int FindTreeVersion(string characterId)
+        {
+            for (var index = 0; _characterTreeVersions != null && index < _characterTreeVersions.Count; index++)
+            {
+                if (string.Equals(_characterTreeVersions[index].CharacterId, characterId, StringComparison.Ordinal))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private int FindOrAddTreeVersion(string characterId)
+        {
+            _characterTreeVersions ??= new List<CharacterTreeVersion>();
+            var index = FindTreeVersion(characterId);
+
+            if (index >= 0)
+            {
+                return index;
+            }
+
+            _characterTreeVersions.Add(new CharacterTreeVersion(characterId, 0, 0));
+            return _characterTreeVersions.Count - 1;
+        }
+
+
 
         public int AscensionRank => _ascensionRank;
 
@@ -237,6 +309,7 @@ namespace Corebound.SaveSystem
             clone._characterSkillPointsSpent = new List<CharacterSkillSpend>(_characterSkillPointsSpent ?? new List<CharacterSkillSpend>());
             clone._ascensionNodeRanks = CloneList(_ascensionNodeRanks);
             clone._seenCharacterIds = new List<string>(_seenCharacterIds ?? new List<string>());
+            clone._characterTreeVersions = new List<CharacterTreeVersion>(_characterTreeVersions ?? new List<CharacterTreeVersion>());
             return clone;
         }
 
@@ -255,6 +328,16 @@ namespace Corebound.SaveSystem
             _ascensionNodeRanks ??= new List<AscensionNodeRank>();
             _characterSkillPointsSpent ??= new List<CharacterSkillSpend>();
             _seenCharacterIds ??= new List<string>();
+            _characterTreeVersions ??= new List<CharacterTreeVersion>();
+
+            // The account-wide tree version and free respec belonged to the only tree there was.
+            if (_characterTreeVersions.Count == 0 && (_skillTreeVersion != 0 || _freeRespecUsedTreeVersion != 0))
+            {
+                _characterTreeVersions.Add(new CharacterTreeVersion(DefaultCharacterId, _skillTreeVersion, _freeRespecUsedTreeVersion));
+                _skillTreeVersion = 0;
+                _freeRespecUsedTreeVersion = 0;
+                changed = true;
+            }
 
             if (_saveFormatVersion < 2)
             {
@@ -414,18 +497,19 @@ namespace Corebound.SaveSystem
 
         // P2: linear-growing rather than geometric, so the cap is reachable at all. Retuned with the
         // XP sources on 2026-09-29: the first level costs 250, which a Stage 1 run that dies at the
-        // boss now reaches (6 waves x 25 plus its kills). The 69th level-up costs 5,690, and the road
-        // to 70 is 204,930 XP - about 30 full runs at the ~7,000 XP a full run should now pay. That
-        // figure is still an estimate; no full run has been counted.
+        // boss reaches (measured 2026-10-01: +204 and +206 XP). The 69th level-up costs 5,690, and
+        // the road to 70 is 204,930 XP - about 31 full clears at the ~6,550 XP the campaign measured
+        // for a clear (2026-10-01).
         private const int FirstLevelCost = 250;
         private const int LevelCostStep = 80;
 
-        // About a third of a full run per Ascension Point, so Paragon keeps paying at a steady pace
-        // instead of at the price of the most expensive level (5,690).
-        public const int ParagonLevelCost = 2500;
+        // About one full clear per Paragon level and Ascension Point - the pace the levelling spec
+        // intended. It was 2,500 against an estimated run; the 2026-10-01 campaign measured ~6,550
+        // XP per clear, which made a clear 2.6 Paragon levels (Open Topics 1.1, decided (a)).
+        public const int ParagonLevelCost = 6500;
 
-        // Levels are per profile today; the vision's per-character levelling arrives with the
-        // second character. Quest progress is already keyed by character (P6).
+        // Levels, XP and earned Skill Points belong to the account (K3-2, 2026-09-30); only spent
+        // Skill Points and node ranks are per class.
         [SerializeField] private int _levelSkillPointsPaid;
         [SerializeField] private int _paragonLevel;
         [SerializeField] private int _paragonExperience;
@@ -795,10 +879,6 @@ namespace Corebound.SaveSystem
             AddSkillPointsSpent(characterId, -Mathf.Max(0, refund));
         }
 
-        public void SetSkillTreeVersion(int version)
-        {
-            _skillTreeVersion = version;
-        }
 
         public void AddAscensionRank(string chosenBonusId)
         {

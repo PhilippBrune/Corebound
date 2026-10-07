@@ -121,7 +121,7 @@ A Key Node becomes purchasable when **both** hold:
 
 ## Ascension (the Paragon equivalent)
 
-**Changed 2026-09-29:** Ascension unlocks at the **level cap (70)**, not at tree completion. Past the cap, experience fills Paragon levels (2,500 XP each); each pays one **Ascension Point**. Points buy ranks on the **Ascension ring**, two repeatable bonuses per branch drawn on the skill graph, at 1 AP per rank plus one per ten ranks. Every tenth Paragon level grants a **Keystone**: the choice of three below, applied ×5. The original list rules follow, as they still govern the Keystone offer.
+**Changed 2026-09-29:** Ascension unlocks at the **level cap (70)**, not at tree completion. Past the cap, experience fills Paragon levels (6,500 XP each - about one full clear, since 2026-10-07); each pays one **Ascension Point**. Points buy ranks on the **Ascension ring**, two repeatable bonuses per branch drawn on the skill graph, at 1 AP per rank plus one per ten ranks. Every tenth Paragon level grants a **Keystone**: the choice of three below, applied ×5. The original list rules follow, as they still govern the Keystone offer.
 
 - Ascension is a flat, endless list of **Ascension Ranks**, not a second tree.
 - Each rank costs `5 + floor(rank / 10)` SP, so the curve stretches slowly rather than walling.
@@ -147,7 +147,7 @@ Ascension bonuses are deliberately small and numeric, because they are the part 
 
 - Full respec only; no partial refunds. Partial respec turns every choice into a temporary one.
 - Refunds 100% of SP spent in the tree. Ascension ranks are **not** refunded, because their offers were rolled.
-- Costs nothing the first time per "tree version"; a content update that changes the tree grants a free respec automatically.
+- Costs nothing the first time per "tree version"; a content update that changes the tree grants a free respec automatically. Since 2026-10-07 the version and the free respec are tracked **per class** (`MetaProgressionSaveData._characterTreeVersions`), so bumping one class's tree frees only that class's respec; the old account-wide version migrated to the Vanguard.
 - Available only from the main menu, never mid-run, so a player cannot respec around a boss.
 
 ---
