@@ -80,3 +80,4 @@ Editor.log
 # Autopilot trigger file, written by hand or by an agent and consumed by the Editor.
 AutopilotRequest.txt
 ArtPipelineRequest.txt
+VirtualPadRequest.txt
