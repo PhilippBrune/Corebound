@@ -1395,7 +1395,10 @@ Create a horizontal 2D UI indicator for a production-chain tier in a sci-fantasy
 
 Target: Assets/Art/UI/HUD/tower_info_card_frame.png
 
-**Status:** DELIVERED and wired.
+**Status:** DELIVERED and wired. The delivered image had English "Strong against / Weak against"
+baked in despite "no text"; it was painted out by hand on 2026-10-07 (original kept as
+`be_tower_info_card_frame.png`) and the presenter draws the labels in both languages. A re-render
+should keep the two empty label areas beside the boxes.
 
 Needed because:
 

@@ -322,6 +322,8 @@ namespace Corebound.Gameplay.Towers
                 Place(card.Weaknesses.rectTransform, 525f, 525f, 80f, 356f, 450f, 402f);
                 Place(card.StrongMark.rectTransform, 525f, 525f, 72f, 415f, 128f, 470f);
                 Place(card.WeakMark.rectTransform, 525f, 525f, 282f, 415f, 338f, 470f);
+                Place(card.StrongLabel.rectTransform, 525f, 525f, 136f, 415f, 274f, 470f);
+                Place(card.WeakLabel.rectTransform, 525f, 525f, 346f, 415f, 450f, 470f);
             }
             else
             {
@@ -336,6 +338,10 @@ namespace Corebound.Gameplay.Towers
             card.Weaknesses.gameObject.SetActive(isSelected);
             card.StrongMark.gameObject.SetActive(isSelected);
             card.WeakMark.gameObject.SetActive(isSelected);
+            card.StrongLabel.gameObject.SetActive(isSelected);
+            card.WeakLabel.gameObject.SetActive(isSelected);
+            card.StrongLabel.text = LocalizationService.Resolve("Strong against", "Stark gegen");
+            card.WeakLabel.text = LocalizationService.Resolve("Weak against", "Schwach gegen");
             card.DamageValue.gameObject.SetActive(isSelected);
             card.RangeValue.gameObject.SetActive(isSelected);
 
@@ -425,6 +431,10 @@ namespace Corebound.Gameplay.Towers
             card.StrongMark.text = "+";
             card.WeakMark.text = "·";
 
+            // The boxes are decoration on the upgrade card: its rows are numbers, not pros and cons.
+            card.StrongLabel.gameObject.SetActive(false);
+            card.WeakLabel.gameObject.SetActive(false);
+
             _hintText.text = canUpgrade
                 ? _towerService.BuildInteractKeyLabel + LocalizationService.Resolve("  upgrade     ", "  verbessern     ") + _towerService.LoadoutKeyLabel + LocalizationService.Resolve("  weapons", "  Waffen")
                 : _towerService.LoadoutKeyLabel + LocalizationService.Resolve("  weapons", "  Waffen");
@@ -498,7 +508,13 @@ namespace Corebound.Gameplay.Towers
             weakMark.text = "-";
             weakMark.fontStyle = FontStyle.Bold;
 
-            return new CardView(root, frame, name, cost, icon, damageSlot, damageFill, damageValue, rangeSlot, rangeFill, rangeValue, strengths, weaknesses, strongMark, weakMark);
+            // The card art used to bake "Strong against / Weak against" in English beside the two
+            // boxes (Open Topics 2.2); the art is clean since 2026-10-07 and the words come from here.
+            return new CardView(root, frame, name, cost, icon, damageSlot, damageFill, damageValue, rangeSlot, rangeFill, rangeValue, strengths, weaknesses, strongMark, weakMark)
+            {
+                StrongLabel = CreateText("StrongLabel", root, 17, TextAnchor.MiddleLeft, PlateTextColor),
+                WeakLabel = CreateText("WeakLabel", root, 17, TextAnchor.MiddleLeft, PlateTextColor),
+            };
         }
 
         // One of the card's three square wells: a vertical fill for the stat, its number on top.
@@ -582,6 +598,10 @@ namespace Corebound.Gameplay.Towers
             public Text StrongMark { get; }
 
             public Text WeakMark { get; }
+
+            public Text StrongLabel { get; set; }
+
+            public Text WeakLabel { get; set; }
         }
     }
 }

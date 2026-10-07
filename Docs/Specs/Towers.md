@@ -41,6 +41,7 @@ Gelöst über eine zweite, vom bestehenden Tower Slot Cycling (Positions-Auswahl
 - Neue Towers erweitern vorhandene Kategorien, statt neue Subsysteme einzuführen.
 - Sobald mehr als ein Tower-Typ gleichzeitig freigeschaltet ist, muss der Player den zu bauenden Typ aktiv wählen können — ein automatisches „immer der erste freigeschaltete Katalog-Eintrag" ist nur für genau einen verfügbaren Typ zulässig.
 - Die Tower-Typ-Auswahl bleibt controller-first und cursorlos. Erlaubt sind eine Cycling-Geste **oder** ein Build-Browser, solange er am Slot öffnet, per D-Pad navigiert wird und mit Cancel schließt (Owner-Entscheidung 2026-09-22). Umgesetzt ist der Browser (`TowerBuildBrowserPresenter`) mit Roster, Kosten und Upgrade-Karte; die Actions heißen `PreviousTowerType`/`NextTowerType` in `InputSystem_Actions.inputactions` (Build-Map).
+- Die Kartengrafik (`tower_info_card_frame.png`) enthält **keinen Text**; "Strong against / Weak against" bzw. "Stark gegen / Schwach gegen" zeichnet der Presenter neben die beiden Kästchen der großen Baukarte (seit 2026-10-07; vorher war der englische Text ins Bild gebacken). Auf der Upgrade-Karte sind die Kästchen Dekor und bleiben unbeschriftet, weil ihre Zeilen Zahlen sind, keine Vor- und Nachteile.
 
 ## Data Model
 
