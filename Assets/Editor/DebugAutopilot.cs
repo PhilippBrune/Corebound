@@ -2290,7 +2290,20 @@ namespace Corebound.EditorTools
             System.IO.Directory.CreateDirectory(directory);
             var path = System.IO.Path.GetFullPath(System.IO.Path.Combine(directory, name + ".png"));
             ScreenCapture.CaptureScreenshot(path);
-            Debug.Log(DebugAutopilot.LogPrefix + " SHOT " + path);
+
+            // Where the player is in the picture (pixels from the top left), so a crop on the
+            // player does not need guessing.
+            var player = Object.FindFirstObjectByType<PlayerCombatController>();
+            var camera = Camera.main;
+            var where = string.Empty;
+
+            if (player != null && camera != null)
+            {
+                var screen = camera.WorldToScreenPoint(player.transform.position);
+                where = " player@(" + Mathf.RoundToInt(screen.x) + "," + Mathf.RoundToInt(Screen.height - screen.y) + ") of " + Screen.width + "x" + Screen.height;
+            }
+
+            Debug.Log(DebugAutopilot.LogPrefix + " SHOT " + path + where);
         }
 
         private Transform FindNearestEnemy()

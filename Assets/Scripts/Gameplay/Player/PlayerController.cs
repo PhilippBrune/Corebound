@@ -97,8 +97,23 @@ namespace Corebound.Gameplay.Player
             }
         }
 
-        // K6-2 (2026-09-30): each class has its own top-down sprite. Until a class's art exists it
-        // wears the Vanguard's sprite in its colour, so it can still be told apart in a busy arena.
+        // 2026-10-07: all five player sprites - the Vanguard's base sprite and the four classes' -
+        // go through one path, and only the picture depends on the file:
+        // - each PNG is cropped to its visible figure and drawn with the figure's longer side at
+        //   FigureWorldSize, centred on the transform;
+        // - the transform's scale is a constant, so nothing parented to the player rescales;
+        // - the collider's world radius is a constant too: the radius the game has been tuned with
+        //   since the first player sprite (CollisionRadius x 2 at that sprite's fit scale).
+        // Before this the whole canvas was fitted, so the figure's size and the hitbox both followed
+        // the transparent padding in the PNG - the redelivered 911 px Vanguard made the hitbox 20%
+        // larger, and its imported slice still described the old 1088 x 606 file.
+        private const float TransformScale = 0.0836f;
+        private const float FigureWorldSize = 0.5f;
+
+        private float HitboxWorldRadius => (_playerData != null ? _playerData.CollisionRadius : 0.35f) * 2f * TransformScale;
+
+        // K6-2 (2026-09-30): each class has its own top-down sprite (Assets 110-113, delivered
+        // 2026-10-06). A class without one wears the Vanguard's sprite in its colour.
         public void ApplyCharacterLook(Corebound.MetaProgression.CharacterData character)
         {
             if (character == null || _spriteRenderer == null || _playerData == null)
@@ -106,21 +121,28 @@ namespace Corebound.Gameplay.Player
                 return;
             }
 
-            var sprite = string.IsNullOrWhiteSpace(character.SpritePath) ? null : DebugSpriteFactory.LoadProjectSprite(character.SpritePath);
-
-            if (sprite != null)
+            if (!string.IsNullOrWhiteSpace(character.SpritePath) && ApplyPlayerSprite(character.SpritePath))
             {
-                // Fitting rescales the transform, and the collider with it; the hitbox must not
-                // change size just because a class's sprite is drawn with more or less padding.
-                var worldRadius = _circleCollider2D.radius * Mathf.Abs(transform.localScale.x);
-                _spriteRenderer.sprite = sprite;
                 _spriteRenderer.color = Color.white;
-                DebugSpriteFactory.FitTransformToSprite(transform, sprite, Vector2.one * (_playerData.CollisionRadius * 2.6f));
-                _circleCollider2D.radius = worldRadius / Mathf.Max(0.0001f, Mathf.Abs(transform.localScale.x));
                 return;
             }
 
             _spriteRenderer.color = character.Tint;
+        }
+
+        private bool ApplyPlayerSprite(string path)
+        {
+            var sprite = DebugSpriteFactory.LoadProjectSpriteTrimmed(path, FigureWorldSize / TransformScale);
+
+            if (sprite == null)
+            {
+                return false;
+            }
+
+            _spriteRenderer.sprite = sprite;
+            transform.localScale = new Vector3(TransformScale, TransformScale, 1f);
+            _circleCollider2D.radius = HitboxWorldRadius / TransformScale;
+            return true;
         }
 
         private void ApplyVisualDefaults()
@@ -130,15 +152,21 @@ namespace Corebound.Gameplay.Player
                 return;
             }
 
-            _circleCollider2D.radius = _playerData.CollisionRadius * 2f;
-
-            var sprite = _playerData.Sprite != null ? _playerData.Sprite : DebugSpriteFactory.LoadProjectSprite(PlayerSpritePath);
-
-            if (sprite != null)
+            if (ApplyPlayerSprite(PlayerSpritePath))
             {
-                _spriteRenderer.sprite = sprite;
                 _spriteRenderer.color = Color.white;
-                DebugSpriteFactory.FitTransformToSprite(transform, sprite, Vector2.one * (_playerData.CollisionRadius * 2.6f));
+                return;
+            }
+
+            // The file could not be read (no StreamingAssets mirror in a build): the imported sprite,
+            // then a plain square, both at the same constant scale and hitbox.
+            transform.localScale = new Vector3(TransformScale, TransformScale, 1f);
+            _circleCollider2D.radius = HitboxWorldRadius / TransformScale;
+
+            if (_playerData.Sprite != null)
+            {
+                _spriteRenderer.sprite = _playerData.Sprite;
+                _spriteRenderer.color = Color.white;
             }
             else if (_spriteRenderer.sprite == null)
             {

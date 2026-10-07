@@ -61,14 +61,17 @@ namespace Corebound.Gameplay.Shared
             return _ringSprite;
         }
 
-        public static Texture2D LoadTextureFromProjectFile(string projectRelativePath)
+        // mipmaps: for art drawn far below its file size (a 900 px player sprite shown at ~35 px);
+        // without a mip chain the downscale aliases into noise.
+        public static Texture2D LoadTextureFromProjectFile(string projectRelativePath, bool mipmaps = false)
         {
             if (!TryReadArtBytes(projectRelativePath, out var bytes))
             {
                 return null;
             }
 
-            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, mipmaps);
+            texture.filterMode = mipmaps ? FilterMode.Trilinear : texture.filterMode;
             texture.name = Path.GetFileNameWithoutExtension(projectRelativePath);
             texture.hideFlags = HideFlags.DontSaveInEditor;
 
@@ -170,6 +173,62 @@ namespace Corebound.Gameplay.Shared
             }
 
             SpriteCache[projectRelativePath] = sprite;
+            return sprite;
+        }
+
+        // The file cropped to its visible figure (alpha above alphaThreshold), pivot in the figure's
+        // centre, and sized so its longer side is longerSideUnits at scale 1. For art that will be
+        // redrawn and redelivered with different padding (the player sprites, 2026-10-07): the
+        // figure keeps its size and stays centred on the transform however much empty canvas the
+        // next file brings.
+        public static Sprite LoadProjectSpriteTrimmed(string projectRelativePath, float longerSideUnits, float alphaThreshold = 0.08f)
+        {
+            if (string.IsNullOrWhiteSpace(projectRelativePath) || longerSideUnits <= 0f)
+            {
+                return null;
+            }
+
+            var cacheKey = projectRelativePath + "#trimmed#" + longerSideUnits.ToString("0.####");
+
+            if (SpriteCache.TryGetValue(cacheKey, out var cachedSprite) && cachedSprite != null)
+            {
+                return cachedSprite;
+            }
+
+            var texture = LoadTextureFromProjectFile(projectRelativePath, true);
+
+            if (texture == null)
+            {
+                return null;
+            }
+
+            var pixels = texture.GetPixels32();
+            var threshold = (byte)Mathf.Clamp(Mathf.RoundToInt(alphaThreshold * 255f), 0, 255);
+            int minX = texture.width, minY = texture.height, maxX = -1, maxY = -1;
+
+            for (var y = 0; y < texture.height; y++)
+            {
+                for (var x = 0; x < texture.width; x++)
+                {
+                    if (pixels[y * texture.width + x].a <= threshold)
+                    {
+                        continue;
+                    }
+
+                    minX = Mathf.Min(minX, x);
+                    maxX = Mathf.Max(maxX, x);
+                    minY = Mathf.Min(minY, y);
+                    maxY = Mathf.Max(maxY, y);
+                }
+            }
+
+            var rect = maxX < 0
+                ? new Rect(0f, 0f, texture.width, texture.height)
+                : new Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
+            var pixelsPerUnit = Mathf.Max(rect.width, rect.height) / longerSideUnits;
+            var sprite = Sprite.Create(texture, rect, new Vector2(0.5f, 0.5f), pixelsPerUnit);
+            sprite.hideFlags = HideFlags.DontSaveInEditor;
+            SpriteCache[cacheKey] = sprite;
             return sprite;
         }
 
