@@ -428,7 +428,7 @@ namespace Corebound.UI.MainMenu
 
                 for (var index = 0; index < _recordsCards.Count; index++)
                 {
-                    if (_recordsCards[index].Collected)
+                    if (_recordsCards[index].Collected && !_recordsCards[index].Card.IsClassCard)
                     {
                         count++;
                     }
@@ -615,8 +615,59 @@ namespace Corebound.UI.MainMenu
                 step = navigationInput.y > 0f ? -RecordsCardColumns : RecordsCardColumns;
             }
 
-            var next = _recordsCardIndex + step;
+            var next = Mathf.Abs(step) == RecordsCardColumns ? ResolveRecordsRowStep(_recordsCardIndex, step > 0 ? 1 : -1) : _recordsCardIndex + step;
             return step != 0 && next >= 0 && next < _recordsCards.Count && TrySelectRecordsCard(next);
+        }
+
+        // The class cards start a fresh row, so the grid has a gap before them; Up and Down move by
+        // grid slot, not by list index, and land on the nearest card in the row above or below.
+        public static int RecordsSlotOf(System.Collections.Generic.IReadOnlyList<RecordsCardEntry> cards, int index)
+        {
+            var firstClass = -1;
+
+            for (var cursor = 0; cursor < cards.Count; cursor++)
+            {
+                if (cards[cursor].Card.IsClassCard)
+                {
+                    firstClass = cursor;
+                    break;
+                }
+            }
+
+            if (firstClass < 0 || index < firstClass)
+            {
+                return index;
+            }
+
+            var gap = (RecordsCardColumns - firstClass % RecordsCardColumns) % RecordsCardColumns;
+            return index + gap;
+        }
+
+        private int ResolveRecordsRowStep(int index, int direction)
+        {
+            var targetSlot = RecordsSlotOf(_recordsCards, index) + direction * RecordsCardColumns;
+            var best = -1;
+            var bestDistance = int.MaxValue;
+
+            for (var candidate = 0; candidate < _recordsCards.Count; candidate++)
+            {
+                var slot = RecordsSlotOf(_recordsCards, candidate);
+
+                if (slot / RecordsCardColumns != targetSlot / RecordsCardColumns)
+                {
+                    continue;
+                }
+
+                var distance = Mathf.Abs(slot - targetSlot);
+
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = candidate;
+                }
+            }
+
+            return best;
         }
 
         // "Collected" comes from CardCollectionRecord, the same source the "collect every card"
@@ -639,17 +690,29 @@ namespace Corebound.UI.MainMenu
             {
                 var card = pool.Cards[index];
 
-                // Class cards (CHARACTER_CLASSES_2026-09-30) are left out like the quest leaves them
-                // out, so "collected / total" here stays the quest's number.
-                if (card != null && !card.IsClassCard)
+                if (card != null)
                 {
                     _recordsCards.Add(new RecordsCardEntry(card, collected.Contains(card.CardId)));
                 }
             }
 
-            // Rarity bands read as rows of one colour; the name inside a band is stable.
+            // Rarity bands read as rows of one colour; the name inside a band is stable. Class cards
+            // (Open Topics 5 (a), 2026-10-07) come last, on a row of their own, and are counted
+            // apart from the 42 the collection quest counts.
             _recordsCards.Sort((left, right) =>
             {
+                var byClass = left.Card.IsClassCard.CompareTo(right.Card.IsClassCard);
+
+                if (byClass != 0)
+                {
+                    return byClass;
+                }
+
+                if (left.Card.IsClassCard && left.Card.RequiredCharacterId != right.Card.RequiredCharacterId)
+                {
+                    return string.CompareOrdinal(left.Card.RequiredCharacterId, right.Card.RequiredCharacterId);
+                }
+
                 var byRarity = left.Card.Rarity.CompareTo(right.Card.Rarity);
                 return byRarity != 0 ? byRarity : string.CompareOrdinal(left.Card.DisplayName, right.Card.DisplayName);
             });
@@ -763,7 +826,7 @@ namespace Corebound.UI.MainMenu
         // self-evident that the mode exists, which key changes it, and what it is currently set to.
         private void OnGUI()
         {
-            if (!IsDebugModeAvailable)
+            if (!IsDebugModeAvailable || Corebound.DebugOverlay.Hidden)
             {
                 return;
             }

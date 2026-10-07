@@ -33,7 +33,6 @@ namespace Corebound.UI.MainMenu
         private Text _summaryText;
         private Text _footerText;
         private VerticalLayoutGroup _detailLayout;
-        private Font _font;
         private Sprite _frameSprite;
         private UIManagedPanel _managedPanel;
         private Image _panelImage;
@@ -51,7 +50,6 @@ namespace Corebound.UI.MainMenu
 
         private void Awake()
         {
-            _font = ResolveFont();
             // The route panel frame (Asset 29) when the skin has it, else the button frame it borrowed.
             _frameSprite = _skinData != null && _skinData.RoutePanelFrameTexture != null
                 ? CreateRuntimeSprite(_skinData.RoutePanelFrameTexture, _skinData.RoutePanelFrameBorder)
@@ -119,13 +117,13 @@ namespace Corebound.UI.MainMenu
             _panelRect = panel.rectTransform;
             SetAnchoredBox(_panelRect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(PanelWidth, PanelHeight));
 
-            _titleText = CreateText("Title", _panelRect, TitleFontSize, FontStyle.Bold, _skinData != null ? _skinData.SelectedLabelColor : Color.white, TextAnchor.UpperLeft);
+            _titleText = CreateText("Title", _panelRect, TitleFontSize, FontStyle.Bold, ProceduralUIBuilder.ResolveAccentColor(), TextAnchor.UpperLeft);
             StretchToParent(_titleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -235f), new Vector2(-230f, -165f));
 
-            _subtitleText = CreateText("Subtitle", _panelRect, SubtitleFontSize, FontStyle.Normal, _skinData != null ? _skinData.PromptLabelColor : Color.white, TextAnchor.UpperLeft);
+            _subtitleText = CreateText("Subtitle", _panelRect, SubtitleFontSize, FontStyle.Normal, ProceduralUIBuilder.ResolvePrimaryTextColor(), TextAnchor.UpperLeft);
             StretchToParent(_subtitleText.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(230f, -280f), new Vector2(-230f, -245f));
 
-            _summaryText = CreateText("Summary", _panelRect, SummaryFontSize, FontStyle.Normal, _skinData != null ? _skinData.StatusLabelColor : Color.white, TextAnchor.UpperLeft);
+            _summaryText = CreateText("Summary", _panelRect, SummaryFontSize, FontStyle.Normal, ProceduralUIBuilder.ResolveSecondaryTextColor(), TextAnchor.UpperLeft);
             // Summary strings here run long enough to wrap 2-3 lines (e.g. the New Run body) -
             // the previous 55px band was sized for one line and crowded straight into the detail
             // list below it with no visible gap.
@@ -147,7 +145,7 @@ namespace Corebound.UI.MainMenu
             _detailLayout.childForceExpandHeight = false;
             _detailLayout.childForceExpandWidth = true;
 
-            _footerText = CreateText("Footer", _panelRect, FooterFontSize, FontStyle.Italic, _skinData != null ? _skinData.IdleLabelColor : Color.white, TextAnchor.LowerRight);
+            _footerText = CreateText("Footer", _panelRect, FooterFontSize, FontStyle.Italic, ProceduralUIBuilder.ResolveSecondaryTextColor(), TextAnchor.LowerRight);
             StretchToParent(_footerText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(230f, 140f), new Vector2(-230f, 195f));
 
             _recordsView = new RecordsPanelView(_panelRect);
@@ -351,9 +349,7 @@ namespace Corebound.UI.MainMenu
             for (var index = 0; index < detailLines.Length; index++)
             {
                 var isSelected = index == selectedIndex;
-                var color = isSelected
-                    ? (_skinData != null ? _skinData.SelectedLabelColor : Color.white)
-                    : (_skinData != null ? _skinData.IdleLabelColor : Color.white);
+                var color = isSelected ? ProceduralUIBuilder.ResolveAccentColor() : ProceduralUIBuilder.ResolveSecondaryTextColor();
                 var detailText = CreateText("Detail" + index, _detailLayout.transform as RectTransform, DetailFontSize, isSelected ? FontStyle.Bold : FontStyle.Normal, color, TextAnchor.UpperLeft);
                 // A blank line is a spacer; a bullet on it read as a stray dash (Records, 2026-09-29).
                 detailText.text = string.IsNullOrEmpty(detailLines[index]) ? string.Empty : (isSelected ? "> " : "- ") + detailLines[index];
@@ -367,14 +363,18 @@ namespace Corebound.UI.MainMenu
             }
         }
 
-        private Text CreateText(string name, RectTransform parent, int fontSize, FontStyle fontStyle, Color color, TextAnchor anchor)
+        // Open Topics 3.1 (2026-10-07): the route panel is the fourth presenter on UIThemeData. Its
+        // text takes the theme's font and colours - accent for the title and the selected row,
+        // primary for the subtitle, secondary for everything else - which are the menu skin's
+        // selected, prompt and idle colours to within a few percent. The frame stays the skin's.
+        private static Text CreateText(string name, RectTransform parent, int fontSize, FontStyle fontStyle, Color color, TextAnchor anchor)
         {
-            return ProceduralUIFactory.CreateText(name, parent, _font, fontSize, fontStyle, color, anchor);
+            return ProceduralUIBuilder.CreateText(name, parent, fontSize, fontStyle, anchor, color);
         }
 
         private static Image CreateImage(string name, RectTransform parent, Sprite sprite, Color color, Image.Type imageType)
         {
-            return ProceduralUIFactory.CreateImage(name, parent, sprite, color, imageType);
+            return ProceduralUIBuilder.CreateImage(name, parent, sprite, color, imageType);
         }
 
         private static Image.Type ResolvePanelImageType(Sprite sprite)
@@ -423,10 +423,6 @@ namespace Corebound.UI.MainMenu
             return sprite;
         }
 
-        private static Font ResolveFont()
-        {
-            return UIFontResolver.Resolve();
-        }
 
         private static void StretchToParent(RectTransform rectTransform, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
         {

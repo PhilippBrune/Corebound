@@ -115,6 +115,15 @@ namespace Corebound.EditorTools
         // Naming convention decides what is expected, which keeps the check data-free: a file whose
         // name ends in _frame, _icon, _badge, _pips or _indicator must have transparent corners, and
         // a *_frame must also have a transparent centre.
+        // Frames that are drawn as filled panels or buttons, where an opaque centre is the design:
+        // the pause/modal panel, the tower info card, the menu buttons, the route panels and the skill
+        // sub-node discs (checked in screenshots, Open Topics 2.2, 2026-10-07). Their corners are still
+        // checked.
+        private static readonly HashSet<string> FilledPanelFrames = new HashSet<string>
+        {
+            "gameplay_modal_frame", "tower_info_card_frame", "button_primary_frame", "route_panel_frame", "skill_node_sub_frame",
+        };
+
         private static string ValidateArtContent()
         {
             var suspects = new List<string>();
@@ -123,7 +132,7 @@ namespace Corebound.EditorTools
             foreach (var sourcePath in EnumerateMirroredSourceFiles())
             {
                 var name = Path.GetFileNameWithoutExtension(sourcePath).ToLowerInvariant();
-                var isFrame = name.EndsWith("_frame");
+                var isFrame = name.EndsWith("_frame") && !FilledPanelFrames.Contains(name);
                 var isCutout = isFrame || name.EndsWith("_icon") || name.EndsWith("_badge")
                     || name.EndsWith("_pips") || name.EndsWith("_indicator");
 

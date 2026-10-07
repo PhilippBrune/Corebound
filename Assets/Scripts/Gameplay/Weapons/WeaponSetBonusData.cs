@@ -85,17 +85,22 @@ namespace Corebound.Gameplay.Weapons
 
     public readonly struct ActiveSetBonus
     {
-        public ActiveSetBonus(WeaponData weapon, int copies, WeaponSetBonusData tier, WeaponSetBonusData nextTier)
+        public ActiveSetBonus(WeaponData weapon, int copies, WeaponSetBonusData tier, WeaponSetBonusData nextTier, int equippedCopies = -1)
         {
             Weapon = weapon;
             Copies = copies;
+            EquippedCopies = equippedCopies >= 0 ? equippedCopies : copies;
             Tier = tier;
             NextTier = nextTier;
         }
 
         public WeaponData Weapon { get; }
 
+        // The copies the Set Bonus counts. For the Vanguard that is one more than are equipped
+        // (Loadout Discipline), so panels show both: "x3 (+1)" (Open Topics 5, (a), 2026-10-07).
         public int Copies { get; }
+
+        public int EquippedCopies { get; }
 
         public WeaponSetBonusData Tier { get; }
 
@@ -185,7 +190,7 @@ namespace Corebound.Gameplay.Weapons
 
                 if (tier != null || nextTier != null)
                 {
-                    result.Add(new ActiveSetBonus(counted[index], effective, tier, nextTier));
+                    result.Add(new ActiveSetBonus(counted[index], effective, tier, nextTier, copies[index]));
                 }
             }
 

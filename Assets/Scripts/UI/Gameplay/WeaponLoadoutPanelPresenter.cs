@@ -551,7 +551,14 @@ namespace Corebound.UI.Gameplay
             for (var index = 0; index < bonuses.Count; index++)
             {
                 var bonus = bonuses[index];
-                _builder.Append('\n').Append(bonus.Weapon.DisplayName).Append(" x").Append(bonus.Copies).Append(": ");
+                _builder.Append('\n').Append(bonus.Weapon.DisplayName).Append(" x").Append(bonus.EquippedCopies);
+
+                if (bonus.Copies > bonus.EquippedCopies)
+                {
+                    _builder.Append(" <color=#FFC75A>(+").Append(bonus.Copies - bonus.EquippedCopies).Append(")</color>");
+                }
+
+                _builder.Append(": ");
 
                 if (bonus.Tier != null)
                 {

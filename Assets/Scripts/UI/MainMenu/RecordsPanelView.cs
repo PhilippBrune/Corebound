@@ -131,7 +131,14 @@ namespace Corebound.UI.MainMenu
             var cards = source.RecordsCards;
             var collected = source.RecordsCollectedCount;
             _tabLabels[0].text = LocalizationService.Resolve("Runs", "Runs");
-            _tabLabels[1].text = LocalizationService.Resolve("Cards  ", "Karten  ") + collected + " / " + cards.Count;
+            var questCards = 0;
+
+            for (var index = 0; index < cards.Count; index++)
+            {
+                questCards += cards[index].Card.IsClassCard ? 0 : 1;
+            }
+
+            _tabLabels[1].text = LocalizationService.Resolve("Cards  ", "Karten  ") + collected + " / " + questCards;
             _tabLabels[2].text = LocalizationService.Resolve("Core Logs  ", "Kern-Logs  ") + source.RecordsLogUnlockedCount + " / " + source.RecordsLogCount;
             _tabLabels[3].text = LocalizationService.Resolve("Credits", "Credits");
 
@@ -225,7 +232,8 @@ namespace Corebound.UI.MainMenu
             _selectionHalo = null;
 
             var columns = MainMenuRouteTargetController.RecordsCardColumns;
-            var rows = Mathf.Max(1, Mathf.CeilToInt(cards.Count / (float)columns));
+            var lastSlot = cards.Count > 0 ? MainMenuRouteTargetController.RecordsSlotOf(cards, cards.Count - 1) : 0;
+            var rows = Mathf.Max(1, lastSlot / columns + 1);
             var area = _gridRoot.rect.size;
             var cellWidth = area.x / columns;
             var cellHeight = Mathf.Min(MaxCellHeight, area.y / rows);
@@ -245,8 +253,9 @@ namespace Corebound.UI.MainMenu
 
             for (var index = 0; index < cards.Count; index++)
             {
-                var column = index % columns;
-                var row = index / columns;
+                var slot = MainMenuRouteTargetController.RecordsSlotOf(cards, index);
+                var column = slot % columns;
+                var row = slot / columns;
                 var cell = new GameObject("Card" + index, typeof(RectTransform)).GetComponent<RectTransform>();
                 cell.SetParent(_gridRoot, false);
                 SetTopLeft(cell);
@@ -370,6 +379,28 @@ namespace Corebound.UI.MainMenu
 
             var entry = cards[selected];
             var rarity = RarityName(entry.Card.Rarity);
+
+            // A class card says whose it is, and counts apart from the collection quest.
+            if (entry.Card.IsClassCard)
+            {
+                var classCards = 0;
+                var classCollected = 0;
+
+                for (var index = 0; index < cards.Count; index++)
+                {
+                    if (cards[index].Card.IsClassCard)
+                    {
+                        classCards++;
+                        classCollected += cards[index].Collected ? 1 : 0;
+                    }
+                }
+
+                var service = Object.FindFirstObjectByType<Corebound.MetaProgression.MetaProgressionService>();
+                var character = service != null && service.DefinitionData != null ? service.DefinitionData.FindCharacter(entry.Card.RequiredCharacterId) : null;
+                var owner = character != null && character.CharacterId == entry.Card.RequiredCharacterId ? character.DisplayName : entry.Card.RequiredCharacterId;
+                rarity = LocalizationService.Resolve("Class card - ", "Klassenkarte - ") + owner + "   ·   " + rarity
+                    + "   ·   " + LocalizationService.Resolve("class cards ", "Klassenkarten ") + classCollected + " / " + classCards;
+            }
 
             if (!entry.Collected)
             {

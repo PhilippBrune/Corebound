@@ -41,12 +41,14 @@ namespace Corebound.Gameplay.Factory
         {
             CombatEvents.CombatantDied += OnCombatantDied;
             WaveEvents.WaveCompleted += OnWaveCompleted;
+            WaveEvents.WaveStarted += OnWaveStarted;
         }
 
         private void OnDisable()
         {
             CombatEvents.CombatantDied -= OnCombatantDied;
             WaveEvents.WaveCompleted -= OnWaveCompleted;
+            WaveEvents.WaveStarted -= OnWaveStarted;
         }
 
         private void Update()
@@ -124,6 +126,14 @@ namespace Corebound.Gameplay.Factory
             {
                 HandleTrigger(chain, node, node.ClampAmount(node.BaseAmount), "zero_amount");
             });
+        }
+
+        // A tier can rise without production: the Salvager's floor (tier 1 from the start) is known
+        // once the run's class is set up, and towers built in the intermission count too. Evaluated
+        // at each wave start, so the HUD and the tier announcement do not wait for the first kill.
+        private void OnWaveStarted(WaveProgressEventArgs eventArgs)
+        {
+            EvaluateAllChainTiers();
         }
 
         private void OnWaveCompleted(WaveProgressEventArgs eventArgs)
@@ -334,7 +344,7 @@ namespace Corebound.Gameplay.Factory
 
                 if (HasActiveAmplifier(chain, tier))
                 {
-                    builder.Append(Corebound.UI.LocalizationService.Resolve(" amplified", " verstaerkt"));
+                    builder.Append(Corebound.UI.LocalizationService.Resolve(" amplified", " verstärkt"));
                 }
 
                 var nextRequirement = DescribeNextTierRequirement(chain, tier);
@@ -382,7 +392,7 @@ namespace Corebound.Gameplay.Factory
             {
                 return Corebound.UI.LocalizationService.Resolve("+", "+")
                     + (next.RequiredTowersBuilt - towersBuilt)
-                    + Corebound.UI.LocalizationService.Resolve(" towers", " Tuerme");
+                    + Corebound.UI.LocalizationService.Resolve(" towers", " Türme");
             }
 
             _lifetimeProducedByChain.TryGetValue(chain.ChainId, out var produced);
