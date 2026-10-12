@@ -60,7 +60,12 @@ found 16 finished sprites and 4 finished boss loops that nothing referenced.
   Alloy and runs the campaign's between-run spending, then stops. `steamN` and `trailerN` are
   capture sessions: the Game view is fixed at 1920 × 1080, debug overlays are hidden, the 420 s run
   cap is lifted, and the view is restored when Play ends; `steam` adds `steam_*` combat shots,
-  `trailer` records 30 fps JPEG clips of combat and every boss under `Temp/Trailer/<time>/`. Screenshots of gates, reward, shop, build browser, loadout panel, pause, boss
+  `trailer` records 30 fps JPEG clips of combat and every boss under `Temp/Trailer/<time>/`.
+  `coreN` probes the Core-protection layer: a `CORE` line per wave state (hits, hit sounds, edge
+  pulses, threat lines, danger state, hurt lines, guard charge and pulses, intercepts,
+  untouched-wave bonus and streak) and `core_*` screenshots of each first; it raises the Guard in
+  waves 2-4, pretends the Core is off-screen in waves 3-4, and lowers the Core to 48 % / 27 % in
+  waves 4-5 (a restore, not a hit). With `god` the Stage 1 boss sets it to 74 % for the carry banner. Screenshots of gates, reward, shop, build browser, loadout panel, pause, boss
   telegraphs, premise and ending go to `Temp/AutopilotShots/` at the moment each state is reached;
   `ScreenCapture` keeps only the last capture of a frame, so two shots in one frame lose the first.
 - **Validate Art Pipeline without a dialog:** write `validate` (or `sync`) into

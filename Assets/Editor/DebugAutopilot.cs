@@ -422,6 +422,20 @@ namespace Corebound.EditorTools
             // "cards2": stage 2 with the ten NEW_CARD_MECHANICS cards (2026-09-29) applied at the
             // start of the run, and a per-wave line of what they did: poison, shock and drone
             // damage, shield blocks, heals. Combine with god for a run that reaches the boss.
+            // "core1" (CORE_PROTECTION_FEEL_2026-10-07): a CORE line at every wave state with what the
+            // protection layer did - hits, hit sounds, edge pulses, threat lines, danger states, the
+            // Core's hurt lines, guard charges and pulses, intercepts, untouched-wave bonuses - and a
+            // screenshot of each first. The Guard is held up in waves 2 and 3 so it charges. With god
+            // the Core is never hit, every wave is untouched, and the Stage 1 boss sets the Core to
+            // 74% so the next stage's banner shows what it carried.
+            var coreTest = contents.StartsWith("core", System.StringComparison.OrdinalIgnoreCase);
+            SessionState.SetBool(CoreTestSessionKey, coreTest);
+
+            if (coreTest)
+            {
+                contents = contents.Substring("core".Length).Trim();
+            }
+
             var cardsTest = contents.StartsWith("cards", System.StringComparison.OrdinalIgnoreCase);
             SessionState.SetBool(CardsTestSessionKey, cardsTest);
 
@@ -498,6 +512,7 @@ namespace Corebound.EditorTools
         public const string SteamShotsSessionKey = "Corebound.Autopilot.SteamShots";
         public const string TrailerSessionKey = "Corebound.Autopilot.Trailer";
         public const string SpendTestSessionKey = "Corebound.Autopilot.SpendTest";
+        public const string CoreTestSessionKey = "Corebound.Autopilot.CoreTest";
 
         public static bool IsCaptureSession => SessionState.GetBool(SteamShotsSessionKey, false) || SessionState.GetBool(TrailerSessionKey, false);
 
@@ -529,6 +544,7 @@ namespace Corebound.EditorTools
             SessionState.SetBool(RecordsTestSessionKey, false);
             SessionState.SetBool(ProgressionTestSessionKey, false);
             SessionState.SetBool(CardsTestSessionKey, false);
+            SessionState.SetBool(CoreTestSessionKey, false);
             SessionState.SetBool(BossTestSessionKey, false);
             SessionState.SetBool(GodModeSessionKey, false);
             SessionState.SetBool(AscensionTestSessionKey, false);
@@ -1334,6 +1350,7 @@ namespace Corebound.EditorTools
 
             ResolveRuntimeReferences();
             TickCaptureSession();
+            TickCoreProbe();
             ApplyLoadoutTestOnce();
             ApplyCardsTestOnce();
             NoteShopVisibility();
@@ -1478,6 +1495,7 @@ namespace Corebound.EditorTools
             _lastLoggedState = state;
             LogCardsWave(state.ToString());
             LogClassState(state.ToString());
+            LogCoreWave(state.ToString());
 
             if (ClassTestId == "salvager" && state == WaveState.Intermission && !_hoardScrapGranted)
             {
@@ -2854,6 +2872,227 @@ namespace Corebound.EditorTools
             }
 
             Debug.Log(DebugAutopilot.LogPrefix + " QUESTS " + changed + " changed of " + _questCatalog.Count + (changed > 0 ? ": " + builder : string.Empty));
+        }
+
+        // ---- Core protection probe (CORE_PROTECTION_FEEL_2026-10-07) --------------------------------
+
+        private bool _coreProbeStarted;
+        private readonly System.Collections.Generic.HashSet<string> _coreShotsTaken = new System.Collections.Generic.HashSet<string>();
+        private readonly System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, float>> _coreShotQueue
+            = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, float>>();
+        private int _coreSeenEdgePulses;
+        private int _coreSeenGuardPulses;
+        private int _coreSeenIntercepts;
+        private int _coreSeenHurtLines;
+        private bool _coreCarrySet;
+        private int _coreLoweredForWave;
+        private bool _corePulseChecked;
+
+        private static bool IsCoreProbe => SessionState.GetBool(DebugAutopilot.CoreTestSessionKey, false);
+
+        private void TickCoreProbe()
+        {
+            if (!IsCoreProbe || _waveManager == null)
+            {
+                // Statics: never let a probe's raised Guard or pretended camera leak into a later run.
+                Corebound.Gameplay.Combat.CoreGuardController.DebugForceGuard = false;
+                Corebound.UI.Gameplay.CoreThreatPresenter.DebugForceOffscreen = false;
+                return;
+            }
+
+            if (!_coreProbeStarted)
+            {
+                _coreProbeStarted = true;
+                Corebound.Gameplay.Waves.CoreDefenseDirector.DebugCoreHits = 0;
+                Corebound.Gameplay.Waves.CoreDefenseDirector.DebugHitCues = 0;
+                Corebound.Gameplay.Waves.CoreDefenseDirector.DebugIntercepts = 0;
+                Corebound.Gameplay.Waves.CoreDefenseDirector.DebugInterceptScrap = 0;
+                Corebound.Gameplay.Waves.CoreDefenseDirector.DebugUntouchedWaves = 0;
+                Corebound.Gameplay.Waves.CoreDefenseDirector.DebugUntouchedScrap = 0;
+                Corebound.UI.Gameplay.CoreThreatPresenter.DebugLineActivations = 0;
+                Corebound.UI.Gameplay.CoreThreatPresenter.DebugMaxLinesAtOnce = 0;
+                Corebound.UI.Gameplay.CoreThreatPresenter.DebugEdgePulses = 0;
+                Corebound.UI.Gameplay.CoreThreatPresenter.DebugAlertSeconds = 0f;
+                Corebound.UI.Gameplay.CoreThreatPresenter.DebugCoreOffscreenSeconds = 0f;
+                Corebound.UI.Gameplay.CoreThreatPresenter.DebugMaxDangerState = 0;
+                Corebound.Story.StoryDirector.DebugHurtLines = 0;
+                Corebound.Gameplay.Combat.CoreGuardController.DebugBlockedHits = 0;
+                Corebound.Gameplay.Combat.CoreGuardController.DebugPulses = 0;
+                Corebound.Gameplay.Combat.CoreGuardController.DebugPulseEnemiesReached = 0;
+                Debug.Log(DebugAutopilot.LogPrefix + " CORE probe started");
+            }
+
+            var state = _waveManager.State;
+            var fighting = state == WaveState.Combat || state == WaveState.BossCombat;
+            var wave = _waveManager.CurrentWaveNumber;
+
+            // The Guard held up in waves 2 to 4 of the first stage, so blocked hits charge it.
+            Corebound.Gameplay.Combat.CoreGuardController.DebugForceGuard = fighting && _waveManager.StageIndex == 1 && wave >= 2 && wave <= 4;
+
+            // The edge alert in waves 3 and 4: the camera never loses the Core, so the probe pretends it did.
+            Corebound.UI.Gameplay.CoreThreatPresenter.DebugForceOffscreen = fighting && _waveManager.StageIndex == 1 && (wave == 3 || wave == 4);
+
+            if (Corebound.UI.Gameplay.CoreThreatPresenter.DebugAlertSeconds > 0.3f)
+            {
+                QueueCoreShot("core_edge_alert", 0f);
+            }
+
+            // A strong profile keeps the Core near full, so the probe lowers it - a restore, not a
+            // hit - at the start of waves 4 and 5; the next real hit then speaks the hurt lines and
+            // the glow shows amber and red.
+            if (!SessionState.GetBool(DebugAutopilot.GodModeSessionKey, false) && state == WaveState.Combat && _waveManager.StageIndex == 1
+                && (wave == 4 || wave == 5) && _coreLoweredForWave != wave)
+            {
+                _coreLoweredForWave = wave;
+                var lowered = Corebound.Gameplay.Combat.CoreController.Active;
+
+                if (lowered != null && lowered.HitReceiver != null)
+                {
+                    lowered.HitReceiver.RestoreHealthNormalized(wave == 4 ? 0.48f : 0.27f);
+                    Debug.Log(DebugAutopilot.LogPrefix + " CORE set the Core to " + (wave == 4 ? "48%" : "27%") + " for the danger glow and hurt lines");
+                }
+            }
+
+            // God mode never lets the Core be hit; to see the carried integrity, the Stage 1 boss
+            // sets it to 74% once (a restore, not damage, so no hit fires).
+            if (SessionState.GetBool(DebugAutopilot.GodModeSessionKey, false) && !_coreCarrySet && state == WaveState.BossCombat && _waveManager.StageIndex == 1)
+            {
+                _coreCarrySet = true;
+                var core = Corebound.Gameplay.Combat.CoreController.Active;
+
+                if (core != null && core.HitReceiver != null)
+                {
+                    core.HitReceiver.RestoreHealthNormalized(0.74f);
+                    Debug.Log(DebugAutopilot.LogPrefix + " CORE set the Core to 74% for the carry banner");
+                }
+            }
+
+            // The first real guard pulse fired into empty air (ranged enemies hit from outside its 4
+            // units), so the overlap is checked on its own: the same Release, no damage, no shove,
+            // the first time an enemy stands within 3.5 units of the Core.
+            if (!_corePulseChecked && state == WaveState.Combat && Corebound.Gameplay.Combat.CoreController.Active != null)
+            {
+                var coreAt = (Vector2)Corebound.Gameplay.Combat.CoreController.Active.transform.position;
+
+                foreach (var enemy in FindObjectsByType<Corebound.Gameplay.Enemies.EnemyRuntimeController>(FindObjectsSortMode.None))
+                {
+                    if (enemy != null && enemy.IsAlive && ((Vector2)enemy.transform.position - coreAt).sqrMagnitude <= 3.5f * 3.5f)
+                    {
+                        _corePulseChecked = true;
+                        var reached = Corebound.Gameplay.Combat.CoreShockwave.Release(gameObject, coreAt, 4f, 0f, 0f, "probe_pulse_check");
+                        Debug.Log(DebugAutopilot.LogPrefix + " CORE pulse check: an enemy " + Vector2.Distance(enemy.transform.position, coreAt).ToString("0.0")
+                            + " from the Core, the pulse reached " + reached);
+                        break;
+                    }
+                }
+            }
+
+            if (Corebound.UI.Gameplay.CoreThreatPresenter.LiveLineCount >= 2)
+            {
+                QueueCoreShot("core_threat_lines", 0f);
+            }
+
+            if (Corebound.UI.Gameplay.CoreThreatPresenter.DebugEdgePulses > _coreSeenEdgePulses)
+            {
+                _coreSeenEdgePulses = Corebound.UI.Gameplay.CoreThreatPresenter.DebugEdgePulses;
+                QueueCoreShot("core_edge_pulse", 0.05f);
+            }
+
+            if (Corebound.UI.Gameplay.CoreThreatPresenter.DebugDangerState == 1)
+            {
+                QueueCoreShot("core_danger_amber", 0.4f);
+            }
+            else if (Corebound.UI.Gameplay.CoreThreatPresenter.DebugDangerState == 2)
+            {
+                QueueCoreShot("core_danger_red", 0.4f);
+            }
+
+            if (Corebound.Gameplay.Combat.CoreGuardController.DebugPulses > _coreSeenGuardPulses)
+            {
+                _coreSeenGuardPulses = Corebound.Gameplay.Combat.CoreGuardController.DebugPulses;
+                Debug.Log(DebugAutopilot.LogPrefix + " CORE guard pulse " + _coreSeenGuardPulses + " reached "
+                    + Corebound.Gameplay.Combat.CoreGuardController.DebugPulseEnemiesReached + " enemies so far");
+                QueueCoreShot("core_guard_pulse", 0.06f);
+            }
+
+            if (Corebound.Gameplay.Waves.CoreDefenseDirector.DebugIntercepts > _coreSeenIntercepts)
+            {
+                _coreSeenIntercepts = Corebound.Gameplay.Waves.CoreDefenseDirector.DebugIntercepts;
+                QueueCoreShot("core_intercept", 0.08f);
+            }
+
+            if (Corebound.Story.StoryDirector.DebugHurtLines > _coreSeenHurtLines)
+            {
+                _coreSeenHurtLines = Corebound.Story.StoryDirector.DebugHurtLines;
+                Debug.Log(DebugAutopilot.LogPrefix + " CORE hurt line " + _coreSeenHurtLines + " at Core " + ResolveCoreHealth());
+                QueueCoreShot("core_hurt_line_" + _coreSeenHurtLines, 0.9f);
+            }
+
+            // One capture per frame: ScreenCapture keeps only the last of a frame.
+            for (var index = 0; index < _coreShotQueue.Count; index++)
+            {
+                if (Time.unscaledTime >= _coreShotQueue[index].Value)
+                {
+                    var name = _coreShotQueue[index].Key;
+                    _coreShotQueue.RemoveAt(index);
+                    Shot(name);
+                    break;
+                }
+            }
+        }
+
+        private void QueueCoreShot(string name, float delay)
+        {
+            if (_coreShotsTaken.Add(name))
+            {
+                _coreShotQueue.Add(new System.Collections.Generic.KeyValuePair<string, float>(name, Time.unscaledTime + delay));
+            }
+        }
+
+        private void LogCoreWave(string label)
+        {
+            if (!IsCoreProbe || _waveManager == null)
+            {
+                return;
+            }
+
+            var defense = _waveManager.CoreDefense;
+            var clear = defense != null ? defense.LastWaveClear : default;
+
+            // The wave banner after an untouched wave, and the first banner of a new stage.
+            if (label == "Reward" && clear.Untouched)
+            {
+                QueueCoreShot("core_untouched_banner", 0.15f);
+            }
+
+            if (label == "Combat" && _waveManager.StageIndex > 1 && _waveManager.CurrentWaveNumber == 1)
+            {
+                QueueCoreShot("core_stage_carry", 0.1f);
+            }
+
+            var guard = FindFirstObjectByType<Corebound.Gameplay.Combat.CoreGuardController>();
+            Debug.Log(DebugAutopilot.LogPrefix + " CORE " + label + " stage=" + _waveManager.StageIndex + " wave=" + _waveManager.CurrentWaveNumber
+                + " coreHp=" + ResolveCoreHealth()
+                + " hits=" + Corebound.Gameplay.Waves.CoreDefenseDirector.DebugCoreHits
+                + " hitCues=" + Corebound.Gameplay.Waves.CoreDefenseDirector.DebugHitCues
+                + " edgePulses=" + Corebound.UI.Gameplay.CoreThreatPresenter.DebugEdgePulses
+                + " lines=" + Corebound.UI.Gameplay.CoreThreatPresenter.DebugLineActivations
+                + " maxLines=" + Corebound.UI.Gameplay.CoreThreatPresenter.DebugMaxLinesAtOnce
+                + " danger=" + Corebound.UI.Gameplay.CoreThreatPresenter.DebugDangerState
+                + "/" + Corebound.UI.Gameplay.CoreThreatPresenter.DebugMaxDangerState
+                + " hurtLines=" + Corebound.Story.StoryDirector.DebugHurtLines
+                + " blocked=" + Corebound.Gameplay.Combat.CoreGuardController.DebugBlockedHits
+                + " charge=" + (guard != null ? guard.Charge : -1)
+                + " guardPulses=" + Corebound.Gameplay.Combat.CoreGuardController.DebugPulses
+                + " intercepts=" + Corebound.Gameplay.Waves.CoreDefenseDirector.DebugIntercepts
+                + "/" + Corebound.Gameplay.Waves.CoreDefenseDirector.DebugInterceptScrap + "s"
+                + " untouched=" + Corebound.Gameplay.Waves.CoreDefenseDirector.DebugUntouchedWaves
+                + "/" + Corebound.Gameplay.Waves.CoreDefenseDirector.DebugUntouchedScrap + "s"
+                + " streak=" + (defense != null ? defense.UntouchedStreak : -1)
+                + " lastClear=" + (clear.Untouched ? "untouched x" + clear.Streak + " +" + clear.Scrap : "hit")
+                + " offscreen=" + Corebound.UI.Gameplay.CoreThreatPresenter.DebugCoreOffscreenSeconds.ToString("0.0") + "s"
+                + " alert=" + Corebound.UI.Gameplay.CoreThreatPresenter.DebugAlertSeconds.ToString("0.0") + "s"
+                + " scrap=" + (FindFirstObjectByType<Corebound.Gameplay.Resources.ResourceWalletService>() is Corebound.Gameplay.Resources.ResourceWalletService wallet ? wallet.CurrentAmount : -1));
         }
 
         // ---- Steam screenshots and trailer frames (2026-10-07) ---------------------------------------
