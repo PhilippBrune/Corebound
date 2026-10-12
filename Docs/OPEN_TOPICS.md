@@ -1,10 +1,22 @@
 # Open Topics — Corebound
 
-Version 2.4 · 2026-10-07 · **The single live list.** Closed topics are deleted, not archived — git
+Version 2.5 · 2026-10-12 · **The single live list.** Closed topics are deleted, not archived — git
 history holds what was fixed and why. Do not start a new report file; add here.
 
 `08_IMPLEMENTATION_BACKLOG.md` is the plan. This is the punch list. Every open point carries a
 suggestion; points that need an owner decision are marked **Decide**.
+
+**Closed 2026-10-12:**
+- **Protecting the Core (old 1.1), decided P1-1, P2-1, P3-1, P4-1 and built:** threat lines, the
+  Core's danger glow, an off-screen edge alert, a hit sound, a screen-edge pulse, two hurt lines,
+  a Guard that charges a counter-pulse, intercept and untouched-wave Scrap, and the Core's health on
+  the next stage's first banner — with a **Core Alerts** setting. Rules in `Specs/Core.md`,
+  "Protecting the Core"; what was verified in `Specs/DIY/CORE_PROTECTION_FEEL_2026-10-07.md`,
+  "As built".
+- **Settings that never saved:** `SettingsSaveData.Clone()` skipped `_showRunTimer` and
+  `_inputDeviceIndex`, so "Show Run Timer" and "Input Device" reverted on every Apply. Fixed.
+- **Banners that wrapped under the plate:** a message longer than the plate's one line (German
+  ones, "Core untouched +25 XP") now shrinks its font to fit instead of wrapping.
 
 **Closed 2026-10-07** (third session; details in the commits and the linked docs):
 - **Assets 110–113 and a redrawn Asset 14** delivered and wired: all five classes wear their own
@@ -47,13 +59,7 @@ suggestion; points that need an owner decision are marked **Decide**.
 
 ## 1 · Decide
 
-### 1.1 Protecting the Core should feel like protecting something — **Decide**
-
-`Specs/DIY/CORE_PROTECTION_FEEL_2026-10-07.md`: twelve suggestions in four groups (see the threat,
-feel the hit, act on it, be rewarded), with four decisions P1–P4.
-**Suggestion:** P1-1, P2-1, P3-1, P4-1 — about a day and a half, plus one audio cue.
-
-### 1.2 Balance still waiting for a human — **Decide when you have played**
+### 1.1 Balance still waiting for a human — **Decide when you have played**
 
 - **Boss health from Stage 3 on.** Bosses die in 6–9 s with a collected build (5.0–8.0 s for Stages
   3–5 in the two 2026-10-07 god runs, six weapons each). (a) ×2 health for Stages 3–5. (b) Scale with filled weapon slots.
@@ -61,14 +67,14 @@ feel the hit, act on it, be rewarded), with four decisions P1–P4.
   for your first run. (b) Soften waves 4–7 and the boss now.
 **Suggestion:** both wait for one human full run; note the boss times you see.
 
-### 1.3 Class trees are a first pass — **Decide**
+### 1.2 Class trees are a first pass — **Decide**
 
 Each class tree is the Vanguard's tree with one class keystone inserted; the concept's bigger nodes
 (a fifth tower slot, reroll interest, "Shock arcs to poisoned enemies first") are not built.
 (a) Play the classes first and decide per class what its tree is missing. (b) Build the three now.
 **Suggestion:** (a).
 
-### 1.4 Files to delete — **Decide** (nothing is deleted without you)
+### 1.3 Files to delete — **Decide** (nothing is deleted without you)
 
 - **`Docs/AI/` agent scaffold, 36 files:** `agents/`, `prompts/`, `Registry/`, `workflows/`,
   `MASTER_PROMPT.md`, `BOOTSTRAP.md`, `SESSION_START.md`, `system.md`, `rules.md`, `context.md`,
@@ -89,20 +95,33 @@ Each class tree is the Vanguard's tree with one class keystone inserted; the con
   one needs transparency, then re-export as real PNG.
 - **Steam capsules and achievement icons** do not exist (sizes in `STEAM_PAGE.md`). **Suggestion:**
   prompts when you start the store page.
-- **A Core-hit sound** if 1.1 is decided P2-1 or P2-2 (one `AUDIO_ASSET_PROMPTS` entry).
+- **Audio 29, the Core-hit sound** (`AUDIO_ASSET_PROMPTS`): wired as a procedural low tone until the
+  file exists. **Suggestion:** generate it; add the clip to `AudioCue_CoreHit`'s Clip Variations.
+- **Core crack overlays** (Core protection A3, "cracks a little more"): no art, so the danger state
+  is the glow alone. **Suggestion:** only if the glow reads too weak in your playtest.
 
 ---
 
 ## 3 · Agreed work still open
 
-### 3.0 Two layout flaws the Steam captures show
+### 3.0 Three layout flaws the captures show
 
 - **Shop:** the hint line "Confirm or click buys. Cancel or right click skips the shop" runs across
   the top of the three cards and clips the first card's title (`09_foundry_exchange.jpg`).
 - **Card reward:** the selected card's stat line ("Damage 0.5 · 2x every 0.09 s · …") sits on the
   frame's lower edge instead of inside the bottom plate (`05_card_reward.jpg`).
-**Suggestion:** move both lines in the scene files (`ShopCanvas`, `RewardCanvas` — layout is
-scene-driven), one screenshot each to confirm.
+- **Wave banner under the notification strip:** the top notification line ("+3 · Salvage Trickle")
+  covers the upper half of the wave banner plate whenever both show (every `core_*` probe shot).
+**Suggestion:** move the three in the scene files (`ShopCanvas`, `RewardCanvas`, `HUDCanvas` /
+`OverlayCanvas` — layout is scene-driven), one screenshot each to confirm.
+
+### 3.0b German still missing
+
+- **Wave plates** read "Wave 4", "Wave 5 Elite" in the German build: the encounter labels come from
+  the wave assets with no German field.
+- **The Settings screen's option names and descriptions** are English-only in
+  `SettingsDefinition_Default` (only "An"/"Aus" and the buttons are translated).
+**Suggestion:** a `_labelDe` beside each, as for the menu entries.
 
 ### 3.1 UI theme unification — **four presenters done**
 
@@ -125,12 +144,19 @@ still a plain dark box.
   in the build browser (the probe photographed the upgrade card, which hides them on purpose).
 - **Salvager chain tier at wave start:** the floor is proven, but the autopilot's first Combat line
   is sampled before wave 1 starts, so "tier 1 from the first second" is reasoned, not seen.
+- **Core protection:** the hit sound by ear (procedural until Audio 29), the Core Alerts toggle
+  turning the lines, marker and pulse off, and the second hurt line on screen (spoken per the
+  counter, not photographed). The edge alert is proven only with the probe pretending the Core
+  was off-screen — the arena camera never loses it. **Needs your ears and one Settings toggle.**
 
 ---
 
 ## 5 · Unplayed
 
 Verified to compile and, where an autopilot run reaches it, to run — but not played by a human:
+- **2026-10-12:** the whole Core-protection layer — whether the lines and the pulse help or clutter,
+  whether 3/6 Scrap per untouched wave and +1 per intercept are worth chasing, and whether a Guard
+  that charges a pulse makes guarding feel like a counter-attack.
 - **2026-10-07:** the five class sprites; the "x3 (+1)" loadout readout; Records' class row; the
   per-class tree version (and its migration from the old single version); the localized boss phases.
 - **2026-09-30 / 10-01:** all five classes and their ten cards; the New Run class picker and the
@@ -148,6 +174,13 @@ Verified to compile and, where an autopilot run reaches it, to run — but not p
 ---
 
 ## Session log
+
+**2026-10-12.** Built the Core-protection decisions (P1-1, P2-1, P3-1, P4-1) and verified them with
+the new autopilot variant `core N` on Profile 2: four runs with and without god mode, a `CORE` line
+per wave state and a screenshot of every first. Two existing bugs found on the way (the settings
+clone, the wrapping banner). The owner asked to use a newly installed "ECC" library; none was
+found on this machine (not under `~/.claude/plugins`, `~/.claude/skills`, the project's `.claude/`
+or `~/.codex`), so the work used the usual tools.
 
 **2026-10-07 (third session).** Wired Assets 110–113 and the new Asset 14, regrouped the art
 register, logged the weapon-rarity roll, implemented every v2.3 suggestion (Sections 1.1, 2.2, 3.1,
