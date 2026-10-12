@@ -1,6 +1,6 @@
 # Corebound in Steamworks — step by step
 
-Version 1.0 · 2026-10-12 · App **5420920** · Store item **1372998**
+Version 1.1 · 2026-10-13 (reviewed against the live pages) · App **5420920** · Store item **1372998**
 
 - App admin: <https://partner.steamgames.com/apps/view/5420920>
 - Store page: <https://partner.steamgames.com/admin/game/edit/1372998>
@@ -16,6 +16,71 @@ If a field is somewhere else, the Steamworks search box finds it by name.
 
 ---
 
+## Review of the live pages — 2026-10-13
+
+Read in a separate browser window you signed into; nothing was clicked or saved. Steamworks shows
+its labels in German for this account, so they are given as you see them.
+
+**Correct already:** app type Game, name Corebound, Windows + 64-bit only; developer and publisher
+Kratossos; genres Action, Indie, Strategy; 20 tags; feature Single-player; install folder
+`Corebound`; depot **5420921 "Corebound Content"** attached to the packages; all eight store and
+library images uploaded at the right sizes; 5+ screenshots and the trailer (Valve's checklist ticks
+both); release date 24 Dec 2026, 19:00 CET, shown as "Bald verfügbar"; Steam Input left alone
+(correct — the game handles controllers itself).
+
+**Wrong — change these:**
+1. **Languages** (Allgemeine Informationen → Unterstützte Sprachen): English and German are ticked
+   as **Volle Audiounterstützung**. The game has no voice-over — untick it; tick only **Oberfläche**
+   for both. (Untertitel also stays off: there is no spoken dialogue to subtitle. Section 2.1 of this
+   guide said otherwise and is corrected.)
+2. **Early Access is not set.** The genre list has "Early Access" unticked, so the page would sell
+   a full release. Tick **Early Access** among the genres; the Early Access tab then needs the six
+   answers from 2.4.
+3. **"Steam-Errungenschaften" is ticked as a feature** while there are 0 achievements and the game
+   cannot unlock any yet. Either untick it until they work (recommended — it also clears the
+   "Errungenschaft konfiguriert" item), or keep it and have Steamworks.NET + the achievements built
+   before release (section 6).
+4. **System requirements:** the OS field reads " Windows 10 64-bit" with a leading space; DirectX
+   is "N/A" — choose **11**; memory is empty — **4 GB** is a safe estimate for this 2D game until
+   measured (2.6). The checklist already accepts what is there; these make it accurate.
+
+**Missing — required before "Coming soon":**
+5. **Descriptions** (Beschreibung): the short description and "Über dieses Produkt" are empty —
+   paste 2.2 and 2.3.
+6. **Support information** (Beschreibung tab, above "Über dieses Produkt"): enter a **Support-E-Mail**
+   (a support website URL works too). Required.
+7. **Controller support** (Allgemeine Informationen → Controllerunterstützung): answer the short
+   questionnaire — Xbox controllers: full support; every menu navigable by pad.
+8. **Content survey** (Inhaltsbefragung und Alterskennzeichen): it is an *unpublished draft* —
+   finish it, including the AI disclosure from 2.5, and submit it.
+9. **Library header** (Grafische Elemente → Bibliothekskopfzeile, 920 × 430): this is a slot of its
+   own, separate from the store header capsule. Upload `header_capsule_920x430.png` there as well.
+   Then open the **Positionierungswerkzeug** for the library logo once and save a position.
+10. **App icon and shortcut icon** (Steamworks-Einstellungen → Clientbilder): both empty and both
+    required. `Docs/Steam/store_art/app_icon_184x184.jpg` for the *Anwendungssymbol*,
+    `shortcut_icon.ico` (or `shortcut_icon_256x256.png`) for the *Verknüpfungssymbol*.
+
+**Missing — required before release:**
+11. **Launch option** (Installation → Allgemeine Installation → Startoptionen): none. Add
+    `Corebound.exe`, Windows, 64-bit.
+12. **Main languages of the depot** (SteamPipe → Depots → Verwaltung der Hauptsprachen): only English
+    is ticked; tick **German** too — the build carries both.
+13. **A build** (SteamPipe → Builds): none uploaded yet — section 3.3.
+14. **Price** (package "Corebound - 1871267", hidden, no price): propose one (3.6) and get it approved.
+
+**Recommended:** Steam Cloud (quota is 0 / 0 files — 3.4 has the values), German store localization
+(the Lokalisierung tab: translate the short description and "Über dieses Produkt").
+
+**After every change in the app admin:** Veröffentlichen → Auf Veröffentlichung vorbereiten →
+Veröffentlichen (3.8). Store-page edits are saved per tab and reviewed when you submit the page.
+
+**Worth a second thought:** 24 December falls inside Steam's Winter Sale, when new releases are
+easily buried, and the store page has to be approved and public by 10 December for the two-week
+"Coming soon" rule. A date in January or February gives the review rounds room and the launch more
+visibility.
+
+---
+
 ## 0 · What is ready and what is not
 
 | Item | State | Where |
@@ -28,7 +93,7 @@ If a field is somewhere else, the Steamworks search box finds it by name.
 | Windows build | ready to upload | `Builds/Windows/` (Corebound > Build > Windows Player) |
 | Achievements unlocking in game | **not built** | needs Steamworks.NET, section 6 |
 | System requirements | **not measured** | section 2.6 |
-| Price, release date, developer name | **yours** | sections 2.1, 3.6 |
+| Price, release date | **yours** (developer and publisher: Kratossos) | sections 2.1, 3.6 |
 | Content survey, AI disclosure | **yours to answer** (drafts below) | section 2.5 |
 
 The order that works: store page first (it needs Valve's review and must be public as "Coming
@@ -61,11 +126,16 @@ It syncs the art mirror first and writes `Builds/Windows/` (about 280 MB). Never
 ### 2.1 Basic info
 
 - **Game name:** Corebound
-- **Developer / Publisher:** your name or studio name (as it should appear on the page).
+- **Developer:** Kratossos · **Publisher:** Kratossos (owner, 2026-10-12).
 - **Supported operating systems:** Windows (64-bit only — the build is x86_64).
-- **Genres:** Action, Strategy, Indie; tick **Early Access**.
-- **Languages** (the table): English — Interface ✔, Full Audio ✗, Subtitles ✔ · German — Interface ✔,
-  Full Audio ✗, Subtitles ✔. There is no voice-over.
+- **Genres:** Action, Strategy, Indie, and **Early Access** (it is a genre box on Steam, not a tab
+  setting).
+- **Languages** (the table): English — Interface ✔ only · German — Interface ✔ only. No Full Audio
+  (there is no voice-over) and no Subtitles (Steam means subtitles for spoken dialogue, and there is
+  none).
+- **Features:** Single-player. Tick *Steam Achievements* only once the game unlocks them (section 6),
+  *Steam Cloud* once 3.4 is set up.
+- **Support information** (on the Description tab): a support e-mail address or website — required.
 - **Controller support:** Full controller support (Xbox controllers; every menu is navigable). Do
   not claim PlayStation glyphs — the game shows generic pad glyphs.
 - **Website:** leave empty unless you have one.
@@ -154,7 +224,8 @@ with six weapons, and note CPU, GPU, RAM and whether it holds 60 fps. Until then
 certain:
 
 - **OS:** Windows 10 64-bit
-- **Graphics:** DirectX 11 compatible
+- **Memory:** 4 GB (an estimate for a 2D game of this size — replace it once measured)
+- **Graphics:** DirectX 11 compatible; **DirectX version:** 11
 - **Storage:** 1 GB available space (the build is 281 MB)
 
 ### 2.7 Tags (Steam takes up to 20; the first five weigh most)
@@ -175,9 +246,11 @@ Upload from `Docs/Steam/store_art/` — every file is already at Steam's size:
 | Vertical capsule | `vertical_capsule_748x896.png` | draft |
 | Page background | `page_background_1438x810.png` | optional |
 | Library capsule | `library_capsule_600x900.png` | draft |
+| Library header (*Bibliothekskopfzeile*) | `header_capsule_920x430.png` | a slot of its own, same file as the store header |
 | Library hero | `library_hero_3840x1240.png` | draft, upscaled ~3× — soft; no logo by Steam's rule |
-| Library logo | `library_logo_1280x720.png` | transparent PNG; position it over the hero in the preview |
-| Community icon | `community_icon_184x184.jpg` | the Core crystal from the logo |
+| Library logo | `library_logo_1280x720.png` | transparent PNG; save a position with the positioning tool |
+
+The app icon and the shortcut icon go into the app admin, not the store page — section 3.7.
 
 They are built from the main-menu art. That art carries a small translucent star in its
 lower-right corner — an image generator's mark; the script paints it out, and a faint smudge
@@ -211,7 +284,7 @@ count from then.
 
 ## 3 · App admin — <https://partner.steamgames.com/apps/view/5420920>
 
-App settings changes only take effect after **Publish** (section 3.7).
+App settings changes only take effect after **Publish** (section 3.8).
 
 ### 3.1 Installation → General
 
@@ -221,9 +294,9 @@ App settings changes only take effect after **Publish** (section 3.7).
 
 ### 3.2 SteamPipe → Depots
 
-The app has a default depot; its ID is usually the App ID + 1 — **5420921** — check it on this page
-and use the real number in the script below. Operating system: Windows; language: all languages
-(the build carries both).
+The default depot is **5420921 "Corebound Content"** (checked 2026-10-13). Operating system:
+Windows; language: all languages. Under *Verwaltung der Hauptsprachen* tick **English and German** —
+the build carries both, and Steam tells the game which one the player uses.
 
 ### 3.3 Upload the build with SteamCMD
 
@@ -292,7 +365,17 @@ nothing is visible to players before release.
 - **Release date:** on the store page's *Release* section. While unsure, a vague date ("Q2 2027") is
   allowed for "Coming soon"; a real date is needed to release.
 
-### 3.7 Publish
+### 3.7 Client images (Steamworks-Einstellungen → Clientbilder)
+
+Both required for the community checklist:
+- **Anwendungssymbol** (app icon, also the community icon): `Docs/Steam/store_art/app_icon_184x184.jpg`
+  (184 × 184 JPG).
+- **Verknüpfungssymbol** (shortcut icon): `Docs/Steam/store_art/shortcut_icon.ico` (256 px plus the
+  small sizes) or `shortcut_icon_256x256.png`.
+
+Both are cut from the logo's crystal until Asset 116 (game icon) exists.
+
+### 3.8 Publish
 
 **Publish → Prepare for publishing → Publish to Steam.** Every app-admin change above (install,
 depots, cloud, achievements) waits until this is done.
@@ -316,7 +399,7 @@ depots, cloud, achievements) waits until this is done.
 | Short description, about, EA answers, AI disclosure | this guide, section 2 |
 | Screenshots | `Docs/Steam/screenshots/01…10_*.jpg` |
 | Trailer | `Builds/Steam/corebound_trailer_roughcut.mp4` |
-| Capsules, library art, community icon | `Docs/Steam/store_art/` |
+| Capsules, library art, app and shortcut icons | `Docs/Steam/store_art/` |
 | Build | `Builds/Windows/` (Corebound > Build > Windows Player) |
 | Upload script | section 3.3 |
 | Achievement list | `Docs/STEAM_PAGE.md` §1 |

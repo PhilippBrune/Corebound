@@ -256,7 +256,8 @@ Difficult, Character Customization, Indie.
   | Library capsule | 600 × 900 |
   | Library hero | 3840 × 1240 |
   | Library logo (transparent) | 1280 × 720 |
-  | Community icon | 184 × 184 |
+  | App icon (also the community icon) | 184 × 184 JPG |
+  | Shortcut icon | 256 × 256 PNG or ICO |
 
   Capsules must show the game's name legibly at the small size. The upload steps for all of it are
   in **Docs/Steam/STEAMWORKS_GUIDE.md** (App 5420920, store item 1372998).

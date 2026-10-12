@@ -191,6 +191,14 @@ Verified to compile and, where an autopilot run reaches it, to run — but not p
 
 ## Session log
 
+**2026-10-13.** Reviewed the live Steamworks pages (App 5420920, store item 1372998) in a separate
+browser window the owner signed into; read only, window and profile deleted afterwards. Fourteen
+findings — wrong full-audio language flags, Early Access genre unticked, achievements feature
+ticked with none built, empty descriptions and support info, controller questionnaire, content
+survey still a draft, library header and client icons missing, launch option, German depot
+language, no build, no price — are listed with their fixes at the top of
+`Docs/Steam/STEAMWORKS_GUIDE.md` (v1.1). App and shortcut icons added to `Docs/Steam/store_art/`.
+
 **2026-10-12 (later).** Window modes (Frameless Window added, Windowed fitted to the screen),
 verified in the first Windows player build on Profile 2 (the build's own profile switch restored
 to 3 afterwards). The Steamworks pages could not be opened — sign-in required — so the upload is a

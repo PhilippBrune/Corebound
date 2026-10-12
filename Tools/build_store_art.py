@@ -111,10 +111,24 @@ canvas.alpha_composite(mark, ((1280 - mark.width) // 2, (720 - mark.height) // 2
 canvas.save(OUT + 'library_logo_1280x720.png', optimize=True)
 print('library_logo_1280x720.png', canvas.size)
 
-# Community icon: the Core crystal from the logo's centre, square.
-icon_source = logo.crop((int(logo.width * 0.37), int(logo.height * 0.08), int(logo.width * 0.63), int(logo.height * 0.56)))
+# Icons, until Asset 116 exists: the Core crystal from the logo's centre.
+crystal = logo.crop((int(logo.width * 0.37), int(logo.height * 0.08), int(logo.width * 0.63), int(logo.height * 0.56)))
+
+# App icon (Steamworks > Client images > "Anwendungssymbol", also used as the community icon):
+# 184 x 184 JPG, no transparency, so on the game's dark slate.
 icon = Image.new('RGBA', (184, 184), (20, 26, 38, 255))
-icon_source.thumbnail((168, 168), Image.LANCZOS)
-icon.alpha_composite(icon_source, ((184 - icon_source.width) // 2, (184 - icon_source.height) // 2))
-icon.convert('RGB').save(OUT + 'community_icon_184x184.jpg', quality=95)
-print('community_icon_184x184.jpg (184, 184)')
+mark = crystal.copy()
+mark.thumbnail((168, 168), Image.LANCZOS)
+icon.alpha_composite(mark, ((184 - mark.width) // 2, (184 - mark.height) // 2))
+icon.convert('RGB').save(OUT + 'app_icon_184x184.jpg', quality=95)
+print('app_icon_184x184.jpg (184, 184)')
+
+# Shortcut icon ("Verknüpfungssymbol"): a 256 x 256 PNG with transparency, and an ICO with the
+# smaller sizes Windows uses for desktop shortcuts.
+shortcut = Image.new('RGBA', (256, 256), (0, 0, 0, 0))
+mark = crystal.copy()
+mark.thumbnail((240, 240), Image.LANCZOS)
+shortcut.alpha_composite(mark, ((256 - mark.width) // 2, (256 - mark.height) // 2))
+shortcut.save(OUT + 'shortcut_icon_256x256.png', optimize=True)
+shortcut.save(OUT + 'shortcut_icon.ico', sizes=[(256, 256), (128, 128), (64, 64), (48, 48), (32, 32), (16, 16)])
+print('shortcut_icon_256x256.png, shortcut_icon.ico')

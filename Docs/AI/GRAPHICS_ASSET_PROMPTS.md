@@ -1642,7 +1642,7 @@ Create a tall key art illustration (1800 x 2700) of the same scene as Corebound'
 
 Target: Docs/Steam/store_art/source/game_icon_1024.png
 
-**Status:** NOT DELIVERED · the exe still shows Unity's icon and the community icon is cut from the
+**Status:** NOT DELIVERED · the exe still shows Unity's icon, and the Steam app icon and shortcut icon are cut from the
 logo's crystal. On delivery: Unity *Player Settings > Icon*, and a 32/256 px `.ico` for the Steam
 client icon.
 
