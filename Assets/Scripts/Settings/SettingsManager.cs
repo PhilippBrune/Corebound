@@ -217,21 +217,23 @@ namespace Corebound.Settings
             QualitySettings.SetQualityLevel(Mathf.Clamp(settings.QualityPresetIndex, 0, QualitySettings.names.Length > 0 ? QualitySettings.names.Length - 1 : 0), true);
             QualitySettings.vSyncCount = settings.VSyncEnabled ? 1 : 0;
 
-            switch (settings.FullscreenModeIndex)
+            // Display Mode: Windowed, Borderless Fullscreen, Exclusive Fullscreen, Frameless Window.
+            var resolutionPreset = ResolutionPresets[Mathf.Clamp(settings.ResolutionPresetIndex, 0, ResolutionPresets.Length - 1)];
+            WindowModeController.Apply(settings.FullscreenModeIndex, resolutionPreset.Width, resolutionPreset.Height, PresetSizes);
+        }
+
+        private static readonly Vector2Int[] PresetSizes = BuildPresetSizes();
+
+        private static Vector2Int[] BuildPresetSizes()
+        {
+            var sizes = new Vector2Int[ResolutionPresets.Length];
+
+            for (var index = 0; index < ResolutionPresets.Length; index++)
             {
-                case 0:
-                    Screen.fullScreenMode = FullScreenMode.Windowed;
-                    break;
-                case 1:
-                    Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
-                    break;
-                default:
-                    Screen.fullScreenMode = FullScreenMode.ExclusiveFullScreen;
-                    break;
+                sizes[index] = new Vector2Int(ResolutionPresets[index].Width, ResolutionPresets[index].Height);
             }
 
-                    var resolutionPreset = ResolutionPresets[Mathf.Clamp(settings.ResolutionPresetIndex, 0, ResolutionPresets.Length - 1)];
-                    Screen.SetResolution(resolutionPreset.Width, resolutionPreset.Height, Screen.fullScreenMode);
+            return sizes;
         }
 
         private static int AdjustChoice(int currentIndex, SettingsDefinitionData.OptionDefinition optionDefinition, int direction)

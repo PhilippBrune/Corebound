@@ -128,9 +128,11 @@ namespace Corebound.SaveSystem
             _resolutionPresetIndex = Mathf.Max(0, value);
         }
 
+        // 0 Windowed, 1 Borderless Fullscreen, 2 Exclusive Fullscreen, 3 Frameless Window
+        // (appended 2026-10-12; see WindowModeController).
         public void SetFullscreenModeIndex(int value)
         {
-            _fullscreenModeIndex = Mathf.Clamp(value, 0, 2);
+            _fullscreenModeIndex = Mathf.Clamp(value, 0, 3);
         }
 
         public void SetVSyncEnabled(bool value)

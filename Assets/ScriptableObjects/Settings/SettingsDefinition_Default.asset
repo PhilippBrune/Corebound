@@ -81,8 +81,8 @@ MonoBehaviour:
       - 1600x900
       - 1920x1080
     - _key: 5
-      _label: Fullscreen Mode
-      _description: Chooses the desktop presentation mode for the game window.
+      _label: Display Mode
+      _description: Windowed has a title bar; Frameless Window has none and sits centred at the chosen resolution; the two fullscreen modes cover the whole display.
       _optionKind: 2
       _minValue: 0
       _maxValue: 0
@@ -92,8 +92,9 @@ MonoBehaviour:
       _defaultChoiceIndex: 1
       _choiceLabels:
       - Windowed
-      - Borderless
-      - Exclusive
+      - Borderless Fullscreen
+      - Exclusive Fullscreen
+      - Frameless Window
     - _key: 6
       _label: VSync
       _description: Locks presentation to the display refresh for steadier pacing.
