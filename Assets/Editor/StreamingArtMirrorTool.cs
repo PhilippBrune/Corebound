@@ -243,7 +243,7 @@ namespace Corebound.EditorTools
             AssetDatabase.Refresh();
         }
 
-        private static string SyncMirror(bool applyChanges)
+        internal static string SyncMirror(bool applyChanges)
         {
             if (!Directory.Exists(SourceRoot))
             {

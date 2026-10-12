@@ -68,6 +68,12 @@ found 16 finished sprites and 4 finished boss loops that nothing referenced.
   waves 4-5 (a restore, not a hit). With `god` the Stage 1 boss sets it to 74 % for the carry banner. Screenshots of gates, reward, shop, build browser, loadout panel, pause, boss
   telegraphs, premise and ending go to `Temp/AutopilotShots/` at the moment each state is reached;
   `ScreenCapture` keeps only the last capture of a frame, so two shots in one frame lose the first.
+- **Windows player build without a dialog:** write `windows` into `BuildRequest.txt` (or
+  *Corebound > Build > Windows Player*); it syncs the art mirror, builds `Builds/Windows/` and logs
+  `[Build] Succeeded/Failed`. Anything behind `#if UNITY_STANDALONE_WIN && !UNITY_EDITOR` (the
+  frameless window) only compiles and runs there. The player reads the **active profile** from
+  `LocalLow/DefaultCompany/Corebound/profile.json` like the Editor does - set it to 2 before
+  launching a test build and restore it afterwards; its log is `Player.log` in the same folder.
 - **Validate Art Pipeline without a dialog:** write `validate` (or `sync`) into
   `ArtPipelineRequest.txt` in the project root; the report goes to `Editor.log` behind
   `[ArtPipeline]`. It checks the StreamingAssets mirror, every `StageThemeData` path, every
