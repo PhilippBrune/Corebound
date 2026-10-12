@@ -76,6 +76,9 @@ namespace Corebound.Settings
                 case SettingsOptionKey.Language:
                     saveData.SetLanguageIndex(optionDefinition.DefaultChoiceIndex);
                     return;
+                case SettingsOptionKey.ShowCoreAlerts:
+                    saveData.SetShowCoreAlerts(optionDefinition.DefaultToggleValue);
+                    return;
             }
         }
 

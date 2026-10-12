@@ -41,6 +41,14 @@ namespace Corebound.Story
         private float _endingTimer = -1f;
         private int _announcedStage;
         private WaveState _lastState = (WaveState)(-1);
+        private int _hurtStage = -1;
+        private bool _saidHurtFirst;
+        private bool _saidHurtSecond;
+
+#if UNITY_EDITOR
+        // Autopilot "core" probe.
+        public static int DebugHurtLines;
+#endif
 
         public void Bind(WaveManager waveManager)
         {
@@ -55,6 +63,7 @@ namespace Corebound.Story
             AdditiveCanvasSceneLoader.CanvasSceneReady += OnCanvasSceneReady;
             BossEvents.OnBossSpawned += OnBossSpawned;
             BossEvents.OnBossDefeated += OnBossDefeated;
+            Corebound.Gameplay.Combat.CoreController.CoreHit += OnCoreHit;
         }
 
         private void OnDisable()
@@ -63,6 +72,56 @@ namespace Corebound.Story
             AdditiveCanvasSceneLoader.CanvasSceneReady -= OnCanvasSceneReady;
             BossEvents.OnBossSpawned -= OnBossSpawned;
             BossEvents.OnBossDefeated -= OnBossDefeated;
+            Corebound.Gameplay.Combat.CoreController.CoreHit -= OnCoreHit;
+        }
+
+        // CORE_PROTECTION_FEEL B6 (owner decision P2-1): the one exception to "never during a wave".
+        // The story made the Core a character; when it is hurt it says so - once below half and
+        // once below a quarter, each at most once per stage, so a long fight does not become a
+        // monologue. A line spoken while the Core is still falling is the point, so it does not wait.
+        private void OnCoreHit(Corebound.Gameplay.Combat.CoreHitInfo hit)
+        {
+            if (IsSilent)
+            {
+                return;
+            }
+
+            var stage = _waveManager.StageIndex;
+
+            if (stage != _hurtStage)
+            {
+                _hurtStage = stage;
+                _saidHurtFirst = false;
+                _saidHurtSecond = false;
+            }
+
+            var tuning = Corebound.Gameplay.Combat.CoreController.Tuning;
+
+            if (!_saidHurtSecond && hit.HealthNormalized <= tuning.HurtLineSecondThreshold)
+            {
+                // Falling past both at once speaks the worse line only.
+                _saidHurtSecond = true;
+                _saidHurtFirst = true;
+                SayHurt(_story.CoreHurtSecond);
+            }
+            else if (!_saidHurtFirst && hit.HealthNormalized <= tuning.HurtLineFirstThreshold)
+            {
+                _saidHurtFirst = true;
+                SayHurt(_story.CoreHurtFirst);
+            }
+        }
+
+        private void SayHurt(StoryLine line)
+        {
+            if (line == null || line.IsEmpty)
+            {
+                return;
+            }
+
+            Say(line);
+#if UNITY_EDITOR
+            DebugHurtLines++;
+#endif
         }
 
         private void OnCanvasSceneReady(string sceneName)

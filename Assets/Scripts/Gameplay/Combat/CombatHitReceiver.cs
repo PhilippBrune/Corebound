@@ -113,6 +113,10 @@ namespace Corebound.Gameplay.Combat
             _guardDamageMultiplier = Mathf.Clamp01(multiplier);
         }
 
+        // True while the Core Guard is raised: a hit that lands now was blocked, and charges the
+        // guard's counter-pulse (CORE_PROTECTION_FEEL C7).
+        public bool IsGuardActive => _guardDamageMultiplier < 1f;
+
         // Restores a fraction of maximum health. Returns false when nothing could be restored -
         // a full Core, or a destroyed one - so a caller that charged for it can roll the payment
         // back rather than taking money for no effect.

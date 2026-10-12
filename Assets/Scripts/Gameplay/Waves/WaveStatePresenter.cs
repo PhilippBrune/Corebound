@@ -1578,6 +1578,16 @@ namespace Corebound.Gameplay.Waves
         private void OnWaveStarted(WaveProgressEventArgs eventArgs)
         {
             var label = string.IsNullOrWhiteSpace(eventArgs.Label) ? LocalizationService.Resolve("Wave ", "Welle ") + eventArgs.WaveIndex : eventArgs.Label;
+
+            // CORE_PROTECTION_FEEL D11: what the Core carried out of the last stage, on the first
+            // banner of the new one - the transition's own banner is replaced by this one in the
+            // same frame, so this is the one the player actually sees.
+            if (_stageEnteredByTransition && eventArgs.WaveIndex == 1 && _coreHitReceiver != null)
+            {
+                label += "   ·   " + LocalizationService.Resolve("Core ", "Kern ") + Mathf.RoundToInt(_coreHitReceiver.CurrentHealthNormalized * 100f) + "%";
+            }
+
+            _stageEnteredByTransition = false;
             ShowBanner(label, ResolveBannerColor(eventArgs.IsEliteEncounter, false));
 
             if (!_hasShownStartOverlay && eventArgs.WaveIndex == 1 && _overlayMode != OverlayMode.Tutorial)
@@ -1592,7 +1602,16 @@ namespace Corebound.Gameplay.Waves
         private void OnWaveCompleted(WaveProgressEventArgs eventArgs)
         {
             var experience = Corebound.MetaProgression.MetaRewardLedger.ResolveWaveExperience(_waveManager != null ? _waveManager.StageIndex : 1);
-            ShowBanner(LocalizationService.Resolve("Wave Clear", "Welle geschafft") + "   +" + experience + " XP", new Color(0.84f, 0.97f, 0.9f, 0.98f));
+
+            // CORE_PROTECTION_FEEL D10: a whole Core takes the banner's headline in place of "Wave
+            // Clear" - the banner's text area holds one short line (664 px at 30 pt), and "Wave Clear
+            // +25 XP · Core untouched" wrapped onto a second line under the plate (probe 2026-10-12).
+            // The Scrap it paid and the streak go to the notification line.
+            var defense = _waveManager != null ? _waveManager.CoreDefense : null;
+            var headline = defense != null && defense.LastWaveClear.Untouched
+                ? LocalizationService.Resolve("Core untouched", "Kern unversehrt")
+                : LocalizationService.Resolve("Wave Clear", "Welle geschafft");
+            ShowBanner(headline + "   +" + experience + " XP", new Color(0.84f, 0.97f, 0.9f, 0.98f));
         }
 
         private void OnIntermissionStarted(WaveProgressEventArgs eventArgs)
@@ -1613,8 +1632,13 @@ namespace Corebound.Gameplay.Waves
             ShowBanner(detailLabel, new Color(0.95f, 0.96f, 1f, 0.98f));
         }
 
+        private bool _stageEnteredByTransition;
+        private int _bannerBaseFontSize;
+
         private void OnStageTransitioned(StageEventArgs eventArgs)
         {
+            _stageEnteredByTransition = !eventArgs.IsFinalStage;
+
             if (string.IsNullOrWhiteSpace(eventArgs.DetailLabel))
             {
                 return;
@@ -1633,7 +1657,27 @@ namespace Corebound.Gameplay.Waves
             }
 
             _bannerImage.color = tint;
+
+            // The plate shows one line, and a longer message - "Core untouched +25 XP", many German
+            // ones - wrapped its last word under the plate (core probe 2026-10-12). Best Fit cannot
+            // catch it: the text rect is taller than the plate, so two lines "fit". The one-line
+            // width is measured instead and the font shrinks just enough, never above the scene's
+            // size; position and size stay the scene's.
+            if (_bannerBaseFontSize <= 0)
+            {
+                _bannerBaseFontSize = _bannerText.fontSize;
+            }
+
+            _bannerText.fontSize = _bannerBaseFontSize;
             _bannerText.text = message;
+            var available = _bannerText.rectTransform.rect.width;
+            var needed = _bannerText.preferredWidth;
+
+            if (available > 1f && needed > available)
+            {
+                _bannerText.fontSize = Mathf.Max(16, Mathf.FloorToInt(_bannerBaseFontSize * available / needed));
+            }
+
             _bannerImage.gameObject.SetActive(true);
 
             // Playtest 2026-09-28: "wave banner is behind the HUD". Draw order inside a canvas is

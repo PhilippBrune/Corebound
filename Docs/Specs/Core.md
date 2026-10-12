@@ -144,3 +144,29 @@ player who has taken no Core damage has nothing to buy here, which is the correc
 `CoreRepairService` owns this. Proximity is the discovery mechanism: reusing one input by
 position keeps the control scheme from growing a key per verb, and gives the Core a physical
 place the player has to go to.
+
+---
+
+## Protecting the Core (2026-10-12)
+
+Owner decisions P1-1, P2-1, P3-1 and P4-1 of `Specs/DIY/CORE_PROTECTION_FEEL_2026-10-07.md`: the
+player should defend a thing, not a health bar. Every number is on `CoreData` (section "See the
+threat coming" onward); the defaults below are `CoreData_Default`.
+
+| What | Rule | Owner |
+| --- | --- | --- |
+| Threat lines (A1) | A thin red line from every enemy whose target is the Core, for its first 1 s of approach and again while it is within 4 units. At most 24 at once. | `CoreThreatPresenter` |
+| Edge alert (A2) | When the Core is off-screen and an enemy is within 3 units of it (or it was hit in the last 0.75 s), a pulsing arrow on the screen edge toward it - Core blue, red while it is hit. | `CoreThreatPresenter` |
+| Danger states (A3) | The Core's glow: blue above 60 %, amber below, red below 30 %, flickering harder as it drops; it flashes on every hit. Always on (it is the Core's look). | `CoreThreatPresenter` |
+| Hit sound (B4) | `AudioCue_CoreHit`, at most once per 0.4 s. Until Audio 29 is delivered it is a procedural low tone. | `CoreDefenseDirector` |
+| Edge pulse (B5) | A Core-blue flash on the screen edges, weighted toward the Core's side, stronger as health drops, scaled by Effects Intensity. | `CoreThreatPresenter` |
+| Hurt lines (B6) | The Core speaks once below 50 % ("They are inside the ring.") and once below 25 % ("I cannot hold this alone."), each at most once per stage. The one exception to the story's "never during a wave". | `StoryDirector`, `StoryData` |
+| Guard payoff (C7) | Every hit the raised Guard blocks charges it; the 5th releases the Custodian's shockwave from the Core (radius 4, 2 damage, impulse 6) and the charge starts over. The charge is kept while the Guard is lowered. | `CoreGuardController`, `CoreShockwave` |
+| Intercept (C9) | An enemy killed by the player or a tower (status ticks count as the player's) within 5 units of the Core, that was heading for it in the last 3 s, pays +1 Scrap: "Intercepted +1". | `CoreDefenseDirector` |
+| Untouched wave (D10) | A wave cleared without a Core hit pays 3 Scrap, 6 from the third in a row; its banner reads "Core untouched +N XP", the notification gives Scrap and streak. Boss encounters do not count. The streak lives for the session. | `CoreDefenseDirector`, `WaveStatePresenter` |
+| Carried integrity (D11) | The first wave banner of a stage entered from the previous one shows the Core's health: "Wave 1 · Core 74%". | `WaveStatePresenter` |
+
+`CoreController.CoreHit` is the one event all of these listen to (position, amount, health after,
+guarded). Threat lines, edge alert and edge pulse follow the **Core Alerts** setting
+(Accessibility, on by default). D12 (the Core growing with the run) is deliberately not built -
+it waits for a human playtest, as the concept recommended.

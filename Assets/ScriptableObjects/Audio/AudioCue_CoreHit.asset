@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2454c4bc552c43248007165f393ed78c, type: 3}
+  m_Name: AudioCue_CoreHit
+  m_EditorClassIdentifier:
+  _clipVariations: []
+  _frequencyVariations:
+  - 98
+  - 92.5
+  - 103.8
+  _durationSeconds: 0.26
+  _volume: 0.32
+  _pitchRange: {x: 0.94, y: 1.02}

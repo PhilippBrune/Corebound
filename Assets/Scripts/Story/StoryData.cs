@@ -16,6 +16,18 @@ namespace Corebound.Story
         [SerializeField] private string _en = string.Empty;
         [SerializeField] private string _de = string.Empty;
 
+        public StoryLine()
+        {
+        }
+
+        // For field defaults in code: a line added after the asset was last saved still has its
+        // words (CLAUDE.md: German belongs in the C# default, not only in the asset).
+        public StoryLine(string en, string de)
+        {
+            _en = en;
+            _de = de;
+        }
+
         public string Text => LocalizationService.Resolve(_en, _de);
 
         public bool IsEmpty => string.IsNullOrWhiteSpace(_en);
@@ -86,6 +98,10 @@ namespace Corebound.Story
         [Header("The descent")]
         [SerializeField] private StageStory[] _stages = Array.Empty<StageStory>();
 
+        [Header("The Core hurt (CORE_PROTECTION_FEEL P2-1: once per stage each, mid-wave)")]
+        [SerializeField] private StoryLine _coreHurtFirst = new StoryLine("They are inside the ring.", "Sie sind schon im Ring.");
+        [SerializeField] private StoryLine _coreHurtSecond = new StoryLine("I cannot hold this alone.", "Allein halte ich das nicht.");
+
         [Header("Run end")]
         [SerializeField] private StoryLine[] _runLostLines = Array.Empty<StoryLine>();
         [SerializeField] private StoryLine _runWonLine = new StoryLine();
@@ -104,6 +120,11 @@ namespace Corebound.Story
         public StoryLine PremiseTitle => _premiseTitle;
 
         public StoryLine[] Premise => _premise;
+
+        // Spoken when the Core falls below CoreData's first and second hurt thresholds (50% / 25%).
+        public StoryLine CoreHurtFirst => _coreHurtFirst;
+
+        public StoryLine CoreHurtSecond => _coreHurtSecond;
 
         public StoryLine[] RunLostLines => _runLostLines;
 

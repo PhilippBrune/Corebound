@@ -58,6 +58,12 @@ Der erste MainMenu-Slice nutzt einen echten SettingsManager mit datengetriebenen
 
 AudioManager, InputRebindManager sowie Screen- und QualitySettings werden im ersten Slice bereits direkt durch Settings-Werte angesteuert. Damit sind Audio-Kategorien, Control-Profile, Auflösung, Fullscreen und VSync nicht nur UI-Platzhalter.
 
+**Core Alerts (2026-10-12, Accessibility, Standard: an).** Schaltet die Bedrohungslinien zum Kern, die Randmarkierung bei einem Kern außerhalb des Bildes und den Bildschirmrand-Puls bei einem Kerntreffer (`Specs/Core.md`, "Protecting the Core"). Das Glühen des Kerns bleibt immer an. `SettingsOptionKey.ShowCoreAlerts` (angehängt, Index 15), `SettingsSaveData._showCoreAlerts`.
+
+**`SettingsSaveData.Clone()` muss jedes Feld kopieren.** "Übernehmen" speichert einen Klon der bearbeiteten Kopie; ein Feld, das im Klon fehlt, fällt beim Speichern still auf den Standard zurück. Bis 2026-10-12 fehlten `_showRunTimer` und `_inputDeviceIndex` - "Show Run Timer" und "Input Device" ließen sich deshalb nie dauerhaft setzen.
+
+**Offen:** Die Beschriftungen und Beschreibungen der Optionen stehen nur auf Englisch im Asset (`SettingsDefinition_Default`) und erscheinen auch in der deutschen Fassung englisch; nur die Werte ("An"/"Aus") und die Knöpfe sind übersetzt.
+
 ## Dependencies
 
 - Audio

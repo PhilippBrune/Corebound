@@ -3,7 +3,8 @@
 **Owner request:** *"Create suggestions how the player can get more the feeling of protecting the
 core."*
 
-Answer each decision with its code, e.g. `P1-2, P2-1 ...`. Nothing here is implemented.
+**Decided 2026-10-08: P1-1, P2-1, P3-1, P4-1** (all four recommendations). Built 2026-10-12 — see
+"As built" at the end; the rules live in `Specs/Core.md`, "Protecting the Core".
 
 ---
 
@@ -138,3 +139,68 @@ and the Custodian and may make the Core too safe.
 
 **Rough size:** a day for P1–P2 (most of it the threat presenter), half a day for P3 and P4, the
 audio cue on top.
+
+---
+
+## As built (2026-10-12)
+
+Everything in P1-1, P2-1, P3-1 and P4-1, with the numbers from the suggestions above. The table of
+rules is in `Specs/Core.md`, "Protecting the Core"; every number is a field on `CoreData`.
+
+### Code
+
+| Piece | Where |
+| --- | --- |
+| `CoreController.CoreHit` - one static event per landed hit (position, amount, health after, guarded); `CoreController.Active` and `.Tuning` | `Gameplay/Combat/CoreController.cs` |
+| Threat lines, danger glow, edge pulse, edge alert (A1-A3, B5), on their own overlay canvas | `UI/Gameplay/CoreThreatPresenter.cs` |
+| Hit sound, intercept bonus, per-wave untouched bonus and streak (B4, C9, D10) | `Gameplay/Waves/CoreDefenseDirector.cs` |
+| Hurt lines (B6) - `StoryData._coreHurtFirst/_coreHurtSecond`, EN/DE | `Story/StoryDirector.cs` |
+| Guard charge and counter-pulse (C7); the shockwave shared with the Custodian | `Gameplay/Combat/CoreGuardController.cs`, `CoreShockwave.cs` |
+| "Core untouched +N XP" and "Wave 1 · Core 74%" banners (D10, D11) | `Gameplay/Waves/WaveStatePresenter.cs` |
+| Enemies expose `IsHeadingForCore`, `CoreApproachStartedAt`, `LastHeadingForCoreAt` | `Gameplay/Enemies/EnemyRuntimeController.cs` |
+| The Core Alerts setting | `SettingsOptionKey.ShowCoreAlerts`, `SettingsSaveData`, `SettingsDefinition_Default` |
+| The hit cue (procedural until Audio 29 exists) | `ScriptableObjects/Audio/AudioCue_CoreHit.asset` |
+
+WaveManager attaches the director and the presenter at runtime, as it does `StoryDirector`; no scene
+was edited.
+
+### Choices the concept left open
+
+- **Hurt lines** follow the Core's established voice (no contractions): "They are inside the ring." /
+  "Sie sind schon im Ring.", "I cannot hold this alone." / "Allein halte ich das nicht."
+- **Intercept** counts kills by the player or a tower (poison and burn ticks are the player's) of an
+  enemy that was heading for the Core **within the last 3 s** - an enemy the player shoots turns on
+  the player, so "heading for the Core at the moment of death" would almost never be true.
+- **Guard charge** is kept while the Guard is lowered, so stepping out to shoot does not waste it.
+- **The untouched banner** reads "Core untouched +25 XP" in place of "Wave Clear +25 XP"; the Scrap
+  and the streak go to the notification line ("Core untouched ×3 · +6 Scrap"). The banner holds
+  one line, and longer messages now shrink to fit instead of wrapping under the plate (that
+  affected German banners before this too).
+- **Crack overlays** (A3 "cracks a little more") are not built: there is no art. The glow carries
+  the danger state alone; a crack overlay would be one art prompt and a few lines in
+  `CoreThreatPresenter.UpdateGlow`.
+- **D12** (the Core grows with the run) stays out, as recommended.
+
+### Verified (autopilot `core` probe, Profile 2, 2026-10-12)
+
+Four runs; counters from the `CORE` lines, every visual from a screenshot:
+- 24 Core hits → 22 hit sounds (the 0.4 s limit held two back) and 24 edge pulses.
+- Threat lines: 195 shown over four stages, up to 7 at once; drawn from each attacker to the Core.
+- Danger glow amber at 48 %, red at 24 % (the probe lowers the Core with a restore, not a hit,
+  because this profile's full skill tree keeps it near 100 %).
+- Hurt lines: both spoken, the first at 25.1 % and the second at 23.1 % (counter). The first is
+  photographed on the voice panel in English and German ("Sie sind schon im Ring."); the second
+  queued behind it and was not photographed.
+- Guard: 5 blocked hits → 1 pulse ("Guard pulse"); one pulse reached an enemy, another fired with
+  none in range (ranged enemies hit from outside 4 units). A separate zero-damage check confirmed
+  the pulse finds an enemy 3.5 units away.
+- Intercepts: 64 in one run, +64 Scrap, "Intercepted +1" at each.
+- Untouched waves: +3, +3, then +6 from the third in a row; the streak resets on a hit.
+- Carried integrity: "Wave 1 · Core 74%" / "Welle 1 · Kern 24%" on the next stage's first banner.
+- Edge alert: the camera shows every arena whole, so the Core is **never** off-screen in play; with
+  the probe pretending it was, the arrow appeared on the screen edge toward the Core, red while it
+  was hit.
+
+Not verified: how the hit sound sounds (procedural until Audio 29; nobody here can hear it), the
+Settings toggle switching the alerts off (code path only), and any balance - 3/6 Scrap per untouched
+wave and +1 per intercept are the concept's numbers, untuned.

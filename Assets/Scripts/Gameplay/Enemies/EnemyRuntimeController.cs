@@ -87,6 +87,18 @@ namespace Corebound.Gameplay.Enemies
 
         public bool IsAlive => _hitReceiver != null && _hitReceiver.IsAlive;
 
+        // Read by the Core-protection layer (CORE_PROTECTION_FEEL_2026-10-07): which enemies are
+        // going for the Core (threat lines, A1), since when, and how recently (intercepts, C9 - an
+        // enemy the player shoots turns on the player, so "heading for the Core" has to mean
+        // "was, a moment ago" by the time it dies).
+        public bool IsHeadingForCore => IsAlive && _coreTarget != null && _currentTarget == _coreTarget;
+
+        public Transform CoreTarget => _coreTarget;
+
+        public float CoreApproachStartedAt { get; private set; } = -100f;
+
+        public float LastHeadingForCoreAt { get; private set; } = -100f;
+
         public int ResourceRewardAmount => _enemyData != null && _enemyData.RewardData != null
             ? Mathf.RoundToInt(_enemyData.RewardData.ResourceRewardAmount * (_eliteModifierData != null ? _eliteModifierData.RewardMultiplier : 1f))
             : 0;
@@ -128,6 +140,8 @@ namespace Corebound.Gameplay.Enemies
             _chargeTimer = 0f;
             _chargeCooldownTimer = 0f;
             _currentTarget = null;
+            CoreApproachStartedAt = -100f;
+            LastHeadingForCoreAt = -100f;
             _avoidanceSteerSign = GetInstanceID() % 2 == 0 ? 1 : -1;
 
             EnsureComponents();
@@ -232,10 +246,20 @@ namespace Corebound.Gameplay.Enemies
             {
                 _currentTarget = target;
 
+                if (target != null && target == _coreTarget)
+                {
+                    CoreApproachStartedAt = Time.time;
+                }
+
                 if (target != null)
                 {
                     EnemyEvents.RaiseEnemyTargetChanged(new EnemyTargetChangedEventArgs(gameObject, _enemyData, target, target == _playerTarget));
                 }
+            }
+
+            if (target != null && target == _coreTarget)
+            {
+                LastHeadingForCoreAt = Time.time;
             }
 
             if (target == null)

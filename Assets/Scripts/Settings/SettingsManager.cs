@@ -121,6 +121,9 @@ namespace Corebound.Settings
                 case SettingsOptionKey.ShowRunTimer:
                     candidate.SetShowRunTimer(!candidate.ShowRunTimer);
                     return;
+                case SettingsOptionKey.ShowCoreAlerts:
+                    candidate.SetShowCoreAlerts(!candidate.ShowCoreAlerts);
+                    return;
                 case SettingsOptionKey.ControllerAimAssistStrength:
                     candidate.SetControllerAimAssistStrength(candidate.ControllerAimAssistStrength + optionDefinition.StepValue * direction);
                     return;
@@ -164,6 +167,10 @@ namespace Corebound.Settings
                     return string.Format("{0:0.00}x", settings.HudScale);
                 case SettingsOptionKey.ShowRunTimer:
                     return settings.ShowRunTimer
+                        ? UI.LocalizationService.Resolve("On", "An")
+                        : UI.LocalizationService.Resolve("Off", "Aus");
+                case SettingsOptionKey.ShowCoreAlerts:
+                    return settings.ShowCoreAlerts
                         ? UI.LocalizationService.Resolve("On", "An")
                         : UI.LocalizationService.Resolve("Off", "Aus");
                 case SettingsOptionKey.ControllerAimAssistStrength:

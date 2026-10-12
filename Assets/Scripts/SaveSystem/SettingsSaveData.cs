@@ -25,6 +25,10 @@ namespace Corebound.SaveSystem
         [SerializeField] private int _languageIndex;
         [SerializeField] private int _inputDeviceIndex;
 
+        // Core alerts (CORE_PROTECTION_FEEL P1-1). True by default - a settings file written before
+        // the field existed loads it as true too, since JsonUtility keeps the initialiser.
+        [SerializeField] private bool _showCoreAlerts = true;
+
         public int SaveFormatVersion => _saveFormatVersion;
 
         public float MusicVolume => _musicVolume;
@@ -60,11 +64,21 @@ namespace Corebound.SaveSystem
         // 0 = automatic, 1 = controller, 2 = mouse and keyboard (spec review A12).
         public int InputDeviceIndex => _inputDeviceIndex;
 
+        public bool ShowCoreAlerts => _showCoreAlerts;
+
         public void SetInputDeviceIndex(int value)
         {
             _inputDeviceIndex = Mathf.Clamp(value, 0, 2);
         }
 
+        public void SetShowCoreAlerts(bool value)
+        {
+            _showCoreAlerts = value;
+        }
+
+        // Every field. Apply saves a clone of the edited copy, so a field missing here is a setting
+        // that silently reverts: _showRunTimer and _inputDeviceIndex were missing until 2026-10-12,
+        // which made "Show Run Timer" and "Input Device" impossible to keep.
         public SettingsSaveData Clone()
         {
             return new SettingsSaveData
@@ -80,9 +94,12 @@ namespace Corebound.SaveSystem
                 _screenShakeIntensity = _screenShakeIntensity,
                 _effectsIntensity = _effectsIntensity,
                 _hudScale = _hudScale,
+                _showRunTimer = _showRunTimer,
                 _controllerAimAssistStrength = _controllerAimAssistStrength,
                 _controlProfileIndex = _controlProfileIndex,
-                _languageIndex = _languageIndex
+                _languageIndex = _languageIndex,
+                _inputDeviceIndex = _inputDeviceIndex,
+                _showCoreAlerts = _showCoreAlerts
             };
         }
 

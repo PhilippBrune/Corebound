@@ -73,6 +73,12 @@ MonoBehaviour:
     _bossDefeat:
       _en: 'The door is open. Put me down, Binder. Let me grow.'
       _de: 'Die Tür ist offen. Setz mich ab, Binder. Lass mich wachsen.'
+  _coreHurtFirst:
+    _en: 'They are inside the ring.'
+    _de: 'Sie sind schon im Ring.'
+  _coreHurtSecond:
+    _en: 'I cannot hold this alone.'
+    _de: 'Allein halte ich das nicht.'
   _runLostLines:
   - _en: 'Again. Come back to me.'
     _de: 'Noch einmal. Komm zu mir zurück.'

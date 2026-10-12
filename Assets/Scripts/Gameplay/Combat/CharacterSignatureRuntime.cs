@@ -20,7 +20,6 @@ namespace Corebound.Gameplay.Combat
     {
         private static readonly Color ChannelColor = new Color(1f, 0.82f, 0.35f, 0.9f);
         private static readonly Color TetherColor = new Color(0.6f, 0.9f, 1f, 0.55f);
-        private static readonly Collider2D[] ShockwaveBuffer = new Collider2D[48];
 
         private PlayerCombatController _player;
         private IInputReader _input;
@@ -280,43 +279,11 @@ namespace Corebound.Gameplay.Combat
         private void ReleaseShockwave()
         {
             _shockwaveCooldown = CharacterEffects.ShockwaveCooldownSeconds;
-            var centre = (Vector2)_core.position;
-            CombatVfxSpawner.SpawnNovaRing(centre);
 #if UNITY_EDITOR
             DebugShockwaveCount++;
 #endif
-            var count = Physics2D.OverlapCircleNonAlloc(centre, CharacterEffects.ShockwaveRadius, ShockwaveBuffer);
-
-            for (var index = 0; index < count; index++)
-            {
-                var collider = ShockwaveBuffer[index];
-
-                if (collider == null)
-                {
-                    continue;
-                }
-
-                var owner = collider.attachedRigidbody != null ? collider.attachedRigidbody.gameObject : collider.gameObject;
-
-                if (owner.GetComponent<Corebound.Gameplay.Enemies.EnemyRuntimeController>() == null)
-                {
-                    continue;
-                }
-
-                var direction = ((Vector2)owner.transform.position - centre).normalized;
-                var receiver = owner.GetComponent<CombatHitReceiver>();
-
-                if (receiver != null && receiver.IsAlive)
-                {
-                    receiver.ReceiveHit(gameObject, new DamageContext(DamageSourceType.Player, DamageKind.Direct,
-                        CharacterEffects.ShockwaveDamage * CharacterEffects.SignaturePower, owner.transform.position, direction, null, false, "custodian_shockwave"));
-                }
-
-                if (collider.attachedRigidbody != null)
-                {
-                    collider.attachedRigidbody.AddForce(direction * CharacterEffects.ShockwaveImpulse, ForceMode2D.Impulse);
-                }
-            }
+            CoreShockwave.Release(gameObject, _core.position, CharacterEffects.ShockwaveRadius,
+                CharacterEffects.ShockwaveDamage * CharacterEffects.SignaturePower, CharacterEffects.ShockwaveImpulse, "custodian_shockwave");
         }
 
         // A thin beam of quads from the player to the Core while tethered.

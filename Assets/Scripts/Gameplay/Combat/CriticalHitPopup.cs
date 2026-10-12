@@ -17,25 +17,34 @@ namespace Corebound.Gameplay.Combat
         private TextMesh _text;
         private Vector3 _start;
         private float _age;
+        private Color _color = PopupColor;
+        private float _lifetime = LifetimeSeconds;
 
         public static void Spawn(Vector2 position, float damage)
         {
-            if (_livePopups >= MaxLivePopups)
+            SpawnLabel(position, "CRIT " + Mathf.RoundToInt(damage), PopupColor, LifetimeSeconds, 0.06f);
+        }
+
+        // The same rising, fading word for other moments the world should name: "Intercepted +1"
+        // and the Guard's counter-pulse (CORE_PROTECTION_FEEL_2026-10-07). Shares the crit cap.
+        public static void SpawnLabel(Vector2 position, string label, Color color, float lifetimeSeconds = 0.9f, float characterSize = 0.05f)
+        {
+            if (_livePopups >= MaxLivePopups || string.IsNullOrEmpty(label))
             {
                 return;
             }
 
-            var popupObject = new GameObject("CriticalHitPopup");
+            var popupObject = new GameObject("WorldLabelPopup");
             var jitter = new Vector3(Random.Range(-0.2f, 0.2f), 0.25f, 0f);
             popupObject.transform.position = (Vector3)position + jitter;
             var text = popupObject.AddComponent<TextMesh>();
-            text.text = "CRIT " + Mathf.RoundToInt(damage);
+            text.text = label;
             text.fontSize = 48;
-            text.characterSize = 0.06f;
+            text.characterSize = characterSize;
             text.anchor = TextAnchor.MiddleCenter;
             text.alignment = TextAlignment.Center;
             text.fontStyle = FontStyle.Bold;
-            text.color = PopupColor;
+            text.color = color;
 
             // A TextMesh made in code has no font and no material and would draw nothing.
             var font = Corebound.UI.UIFontResolver.Resolve();
@@ -52,19 +61,21 @@ namespace Corebound.Gameplay.Combat
             var popup = popupObject.AddComponent<CriticalHitPopup>();
             popup._text = text;
             popup._start = popupObject.transform.position;
+            popup._color = color;
+            popup._lifetime = Mathf.Max(0.2f, lifetimeSeconds);
             _livePopups++;
         }
 
         private void Update()
         {
             _age += Time.deltaTime;
-            var progress = Mathf.Clamp01(_age / LifetimeSeconds);
+            var progress = Mathf.Clamp01(_age / _lifetime);
             transform.position = _start + Vector3.up * (RiseDistance * progress);
 
             // Pops in large, then settles, then fades - reads as an impact rather than a label.
             var scale = progress < 0.15f ? Mathf.Lerp(1.5f, 1f, progress / 0.15f) : 1f;
             transform.localScale = Vector3.one * scale;
-            var color = PopupColor;
+            var color = _color;
             color.a = 1f - Mathf.SmoothStep(0.4f, 1f, progress);
             _text.color = color;
 

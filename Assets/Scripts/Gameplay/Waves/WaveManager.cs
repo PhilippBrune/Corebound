@@ -233,12 +233,22 @@ namespace Corebound.Gameplay.Waves
                 gameObject.AddComponent<Corebound.Story.StoryDirector>().Bind(this);
             }
 
+            // Protecting the Core (CORE_PROTECTION_FEEL_2026-10-07): the bonuses and the hit sound,
+            // and what the player sees of the threat.
+            _coreDefense = gameObject.GetOrAdd<CoreDefenseDirector>();
+            _coreDefense.Bind(_resourceWalletService);
+            gameObject.GetOrAdd<Corebound.UI.Gameplay.CoreThreatPresenter>().Bind(this);
+
             // Captured now because the run save is wiped the moment the run is lost, before the
             // history is written (see RunHistoryRecorder.RunBuild).
             _isTutorialRun = runSaveData != null && runSaveData.IsTutorialRun;
         }
 
         private bool _isTutorialRun;
+        private CoreDefenseDirector _coreDefense;
+
+        // This wave's "Core untouched" result, for the wave banner.
+        public CoreDefenseDirector CoreDefense => _coreDefense;
 
         private void OnEnable()
         {
@@ -686,6 +696,14 @@ namespace Corebound.Gameplay.Waves
             _resourcePickupPool?.ForceCollectAll();
             _cardService?.NotifyWaveCleared();
             MetaRewardLedger.GrantExperience(SaveManager, _metaProgressionDefinitionData, MetaRewardLedger.ResolveWaveExperience(StageIndex));
+
+            // Before the event, so the banner that announces the clear already knows (D10), and
+            // before the snapshot below, so the bonus Scrap is in the save.
+            if (_coreDefense != null)
+            {
+                _coreDefense.ResolveWaveClear();
+            }
+
             WaveEvents.RaiseWaveCompleted(CreateEventArgs(CurrentWaveNumber, WaveEncounterLabelResolver.ResolveCurrentEncounterLabel(_stageData, _currentWaveIndex, _state, _bossRuntimeController), WaveEncounterLabelResolver.ResolveCurrentEncounterIsElite(_stageData, _currentWaveIndex, _state)));
 
             if (_runPersistenceController != null)

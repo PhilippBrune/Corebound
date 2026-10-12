@@ -15,3 +15,22 @@ MonoBehaviour:
   _displayName: Core
   _combatTargetData: {fileID: 11400000, guid: ce70814c5b494a3093e54cb06e997e55, type: 2}
   _criticalHealthThreshold: 0.35
+  _threatLineSeconds: 1
+  _threatLineNearDistance: 4
+  _edgeAlertRadius: 3
+  _dangerAmberThreshold: 0.6
+  _dangerRedThreshold: 0.3
+  _hitCue: {fileID: 11400000, guid: 79e639e8f89248f9add5de1265d5e4df, type: 2}
+  _hitCueMinInterval: 0.4
+  _hurtLineFirstThreshold: 0.5
+  _hurtLineSecondThreshold: 0.25
+  _guardPulseHits: 5
+  _guardPulseRadius: 4
+  _guardPulseDamage: 2
+  _guardPulseImpulse: 6
+  _interceptRadius: 5
+  _interceptRecentSeconds: 3
+  _interceptScrap: 1
+  _untouchedWaveScrap: 3
+  _untouchedStreakLength: 3
+  _untouchedStreakScrap: 6

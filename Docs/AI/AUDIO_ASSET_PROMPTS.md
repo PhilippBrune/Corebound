@@ -367,3 +367,22 @@ Target: Assets/Audio/SFX/sfx_objective_lost.mp3
 Prompt:
 
 A short deflating sound for a salvage container expiring uncollected in a sci-fantasy industrial defense game. A soft downward two-note fall with a faint mechanical powering-down undertone. It must read as a missed opportunity, not as damage or failure - disappointed, never punishing. Roughly 0.25 seconds, mono, no reverb tail.
+
+## Protecting the Core (2026-10-12)
+
+`Specs/DIY/CORE_PROTECTION_FEEL_2026-10-07.md`, decision P2-1: a Core under attack was silent,
+so a player fighting elsewhere learned about it from the health bar, too late. The hit sound has to
+be heard *over* combat without being mistaken for it.
+
+### Audio 29 - Core Hit
+
+Target: Assets/Audio/SFX/sfx_core_hit.mp3
+
+**Status:** NOT DELIVERED · wired: `AudioCue_CoreHit.asset` plays on every Core hit (at most once per
+0.4 s, from `CoreDefenseDirector`) as a procedural low tone until this file exists. On delivery,
+add the clip to the cue's Clip Variations; audio is an imported asset, so there is no
+StreamingAssets mirror to update.
+
+Prompt:
+
+A deep, resonant impact for a crystalline energy Core being struck in a sci-fantasy industrial defense game - the sound of something precious and alive taking a hit. A low, heavy thud with a short glassy resonance ringing above it, like a bell inside a reactor, clearly distinct from every weapon, enemy and tower sound and from the boss warning (Audio 11). It must cut through busy combat as an alarm without being shrill, and stay pleasant when it repeats every half second during a swarm. Roughly 0.3 seconds, mono, a short natural decay, no long reverb tail.

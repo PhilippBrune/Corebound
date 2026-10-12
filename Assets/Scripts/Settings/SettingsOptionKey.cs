@@ -30,6 +30,11 @@ namespace Corebound.Settings
         // default: a permanent clock turns a roguelite into a speedrun for players who did not
         // ask for one, and Vision section 19's readability boundary argues against another
         // always-on number. Players who want it will find the toggle.
-        ShowRunTimer
+        ShowRunTimer,
+
+        // Appended 2026-10-12 (CORE_PROTECTION_FEEL P1-1): threat lines, the off-screen Core marker
+        // and the screen-edge pulse on a Core hit. On by default; the concept promised a switch
+        // for players who find them busy.
+        ShowCoreAlerts
     }
 }
