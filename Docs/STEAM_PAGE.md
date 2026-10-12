@@ -244,7 +244,7 @@ Difficult, Character Customization, Indie.
 - **Languages:** English and German, interface and subtitles; no voice.
 - **Controller support:** "Full controller support" is accurate (controller-first, every menu
   navigable). Steam Deck: unverified; the 1280 × 800 screen needs a HUD-scale check before applying.
-- **Capsule art** (none exists; one prompt each in the art register when you start the page):
+- **Capsule art** - drafts at every size since 2026-10-12 in `Docs/Steam/store_art/`, built by
 
   | Asset | Size (px) |
   | --- | --- |
@@ -258,12 +258,12 @@ Difficult, Character Customization, Indie.
   | Library logo (transparent) | 1280 × 720 |
   | Community icon | 184 × 184 |
 
-  The main menu's key art (the Core on its platform, the logo) is the natural source; capsules must
-  show the game's name legibly at the small size.
+  Capsules must show the game's name legibly at the small size. The upload steps for all of it are
+  in **Docs/Steam/STEAMWORKS_GUIDE.md** (App 5420920, store item 1372998).
 
 ### Order of work
 
-1. Steamworks partner account and the Steam Direct fee; app created → App ID.
+1. Steamworks partner account and the Steam Direct fee; app created → App ID **5420920** (done).
 2. "Coming soon" page with capsules, these screenshots and a trailer — Steam wants it live at least
    two weeks before release, and wishlists only start counting once it is.
 3. Steamworks.NET + `SteamAchievementService` + the eleven counters; achievement icons.

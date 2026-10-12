@@ -17,6 +17,13 @@ suggestion; points that need an owner decision are marked **Decide**.
   `_inputDeviceIndex`, so "Show Run Timer" and "Input Device" reverted on every Apply. Fixed.
 - **Banners that wrapped under the plate:** a message longer than the plate's one line (German
   ones, "Core untouched +25 XP") now shrinks its font to fit instead of wrapping.
+- **Window modes:** Settings → Display Mode now has Windowed (never larger than the screen),
+  Borderless Fullscreen, Exclusive Fullscreen and a new **Frameless Window** (no title bar, centred,
+  at the chosen resolution). Measured in a Windows player build (Settings.md).
+- **Steam:** the Steamworks pages need your sign-in, so `Docs/Steam/STEAMWORKS_GUIDE.md` walks
+  through both (App 5420920, store item 1372998) with paste-ready text and the SteamPipe script;
+  draft capsules at every size are in `Docs/Steam/store_art/`; *Corebound > Build > Windows Player*
+  builds what gets uploaded.
 
 **Closed 2026-10-07** (third session; details in the commits and the linked docs):
 - **Assets 110–113 and a redrawn Asset 14** delivered and wired: all five classes wear their own
@@ -99,6 +106,12 @@ Each class tree is the Vanguard's tree with one class keystone inserted; the con
   file exists. **Suggestion:** generate it; add the clip to `AudioCue_CoreHit`'s Clip Variations.
 - **Core crack overlays** (Core protection A3, "cracks a little more"): no art, so the danger state
   is the glow alone. **Suggestion:** only if the glow reads too weak in your playtest.
+- **The main-menu background carries a watermark:** a small translucent four-point star (an image
+  generator's mark) at about (1256, 648) of `mainmenu_background.png`. In the menu it sits under the
+  bottom-right buttons; the store-art script paints it out of the capsules. **Decide:** clean the
+  game asset too (original kept as `be_mainmenu_background.png`), or regenerate it.
+- **Steam key art, game icon, achievement icons** (Assets 114–117): prompts written; the capsules are
+  drafts until they exist.
 
 ---
 
@@ -144,6 +157,9 @@ still a plain dark box.
   in the build browser (the probe photographed the upgrade card, which hides them on purpose).
 - **Salvager chain tier at wave start:** the floor is proven, but the autopilot's first Combat line
   is sampled before wave 1 starts, so "tier 1 from the first second" is reasoned, not seen.
+- **Display modes:** switching between them while the game runs (Frameless → Windowed gives the
+  frame back first) and Exclusive Fullscreen were not tried in the player — the test set each mode
+  in the settings file before launch. **Needs one pass through Settings in a build.**
 - **Core protection:** the hit sound by ear (procedural until Audio 29), the Core Alerts toggle
   turning the lines, marker and pulse off, and the second hurt line on screen (spoken per the
   counter, not photographed). The edge alert is proven only with the probe pretending the Core
@@ -174,6 +190,11 @@ Verified to compile and, where an autopilot run reaches it, to run — but not p
 ---
 
 ## Session log
+
+**2026-10-12 (later).** Window modes (Frameless Window added, Windowed fitted to the screen),
+verified in the first Windows player build on Profile 2 (the build's own profile switch restored
+to 3 afterwards). The Steamworks pages could not be opened — sign-in required — so the upload is a
+step-by-step guide plus draft store art and a build tool.
 
 **2026-10-12.** Built the Core-protection decisions (P1-1, P2-1, P3-1, P4-1) and verified them with
 the new autopilot variant `core N` on Profile 2: four runs with and without god mode, a `CORE` line

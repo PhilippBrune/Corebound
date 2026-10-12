@@ -1,0 +1,339 @@
+# Corebound in Steamworks — step by step
+
+Version 1.0 · 2026-10-12 · App **5420920** · Store item **1372998**
+
+- App admin: <https://partner.steamgames.com/apps/view/5420920>
+- Store page: <https://partner.steamgames.com/admin/game/edit/1372998>
+
+**Why this is a guide and not done:** both pages sit behind a Steamworks sign-in with Steam Guard,
+and an agent has no session there — fetching them returns the sign-in page. Several answers also
+have to come from you as the account owner (the content survey, the AI-content disclosure, price,
+release date, your name as developer). Everything that can be prepared is prepared below: paste the
+text, upload the files, run the scripts.
+
+Steamworks moves and renames its tabs now and then; the names here are the ones in use in 2025.
+If a field is somewhere else, the Steamworks search box finds it by name.
+
+---
+
+## 0 · What is ready and what is not
+
+| Item | State | Where |
+| --- | --- | --- |
+| Store text (short description, about, tags) | ready to paste | section 2 below |
+| Screenshots (10, 1920 × 1080) | ready | `Docs/Steam/screenshots/` |
+| Trailer (43 s rough cut) | ready, but replace before launch | `Builds/Steam/corebound_trailer_roughcut.mp4` |
+| Capsules and library art | **drafts** from the menu art | `Docs/Steam/store_art/` (`Tools/build_store_art.py`) |
+| Achievements (40) | specified, no icons | `Docs/STEAM_PAGE.md` §1 |
+| Windows build | ready to upload | `Builds/Windows/` (Corebound > Build > Windows Player) |
+| Achievements unlocking in game | **not built** | needs Steamworks.NET, section 6 |
+| System requirements | **not measured** | section 2.6 |
+| Price, release date, developer name | **yours** | sections 2.1, 3.6 |
+| Content survey, AI disclosure | **yours to answer** (drafts below) | section 2.5 |
+
+The order that works: store page first (it needs Valve's review and must be public as "Coming
+soon" for at least two weeks before release), the build in parallel, achievements once the game can
+unlock them.
+
+---
+
+## 1 · Before the first upload: three project settings
+
+Open **Edit > Project Settings > Player** in Unity.
+
+1. **Version** (`bundleVersion`, now `1.0`): set `0.1.0` for the first Early Access build and raise
+   it with every upload, so a bug report names its build.
+2. **Company Name** (now `DefaultCompany`): the save folder is
+   `%USERPROFILE%/AppData/LocalLow/<Company Name>/Corebound`. Change it *before* anyone else plays,
+   and **copy your own `DefaultCompany/Corebound` folder to the new name first**, or your Profile 3
+   will look empty.
+3. **Icon**: the exe still has Unity's icon. Asset 116 (game icon) in the art register is the
+   prompt; set it under *Icon* when it exists.
+
+Then build: **Corebound > Build > Windows Player** (or write `windows` into `BuildRequest.txt`).
+It syncs the art mirror first and writes `Builds/Windows/` (about 280 MB). Never upload the folder
+`Corebound_BurstDebugInformation_DoNotShip` — the script in section 3.3 excludes it.
+
+---
+
+## 2 · Store page — <https://partner.steamgames.com/admin/game/edit/1372998>
+
+### 2.1 Basic info
+
+- **Game name:** Corebound
+- **Developer / Publisher:** your name or studio name (as it should appear on the page).
+- **Supported operating systems:** Windows (64-bit only — the build is x86_64).
+- **Genres:** Action, Strategy, Indie; tick **Early Access**.
+- **Languages** (the table): English — Interface ✔, Full Audio ✗, Subtitles ✔ · German — Interface ✔,
+  Full Audio ✗, Subtitles ✔. There is no voice-over.
+- **Controller support:** Full controller support (Xbox controllers; every menu is navigable). Do
+  not claim PlayStation glyphs — the game shows generic pad glyphs.
+- **Website:** leave empty unless you have one.
+
+### 2.2 Short description (paste; 247 of 300 characters)
+
+```
+Fight, build and engineer your way through five stages to protect a living energy Core. Corebound mixes twin-stick combat with deckbuilding, tower defence and a production network — every card, tower and weapon changes what the other three can do.
+```
+
+### 2.3 About This Game (paste; Steam's markup)
+
+```
+[h2]Protect the Core[/h2]
+The makers built the Works to rebuild a dead world and put its last seed in a single Core. Then they were gone, and the machines forgot what they were for. You are a Binder, bound to the Core: if it breaks, it brings you back - and you try again. Fight with up to six weapons at once, build towers around it, and turn your defence into a production network that pays for the next fight.
+
+[h2]Fight[/h2]
+[list]
+[*]Direct, twin-stick combat - nine weapons, each with its own rhythm, and Set Bonuses for running copies of one.
+[*]Elite enemies, arena objectives and five bosses with their own telegraphs and phases.
+[/list]
+
+[h2]Build[/h2]
+[list]
+[*]Four tower types, placed and upgraded between waves.
+[*]A Factory chain: towers feed production that pays Scrap and grows in tiers.
+[*]Guard the Core yourself - block hits, charge a counter-pulse, intercept what gets close.
+[/list]
+
+[h2]Draft[/h2]
+[list]
+[*]42 cards to collect, plus ten class cards - each changes weapons, towers, the Core or each other.
+[*]Every run is a different build.
+[/list]
+
+[h2]Grow[/h2]
+[list]
+[*]Five classes with their own signatures and skill trees.
+[*]Account levels, Paragon and Ascension for the long run.
+[/list]
+
+Controller-first, with full mouse and keyboard. English and German.
+```
+
+### 2.4 Early Access questions (drafts — edit the brackets)
+
+**Why Early Access?** "Corebound is built by one developer. The core loop — combat, towers,
+cards, the Factory and five stages with bosses — is complete and playable, and the next steps
+(balance, difficulty and more content) are best shaped by the people playing it."
+
+**How long?** "[About 6–12 months.]"
+
+**How will the full version differ?** "More stages, enemies and bosses; deeper class skill trees;
+higher difficulty tiers; achievements and Steam Cloud from the start of Early Access, Steam Deck
+support; balance based on player feedback."
+
+**Current state?** "Five stages with five bosses, five playable classes, nine weapons, four tower
+types, 52 cards, a Factory production chain, account progression with Paragon and Ascension, a
+guided first run, English and German."
+
+**Price during and after?** "[The price will rise moderately for the full release.]"
+
+**Community?** "[Steam discussions and a Discord; patch notes for every update.]"
+
+### 2.5 Content survey and AI disclosure (answer yourself)
+
+Answer the survey from what is in the game. As far as the project shows: stylised sci-fi combat
+against machines and creatures, no realistic violence, no sexual content, no gambling, no real-world
+money in the game, no user-generated content, no online features. Check each against your own
+knowledge of the game before ticking.
+
+**AI generation disclosure — draft for "pre-generated content":**
+
+```
+The game's 2D artwork (sprites, backgrounds, interface frames and icons), its music and sound effects, and parts of its text were made with the help of generative AI tools, then selected, edited and assembled by the developer. The program code was written with the assistance of AI coding agents and reviewed by the developer.
+```
+
+**Live-generated content:** none — the game does not generate anything with AI while it runs.
+
+Steam takes this disclosure seriously: an AI-made game that does not declare it can be removed.
+
+### 2.6 System requirements (measure before filling in)
+
+Not measured yet. Run `Builds/Windows/Corebound.exe` on the weakest PC you can get, play Stage 5
+with six weapons, and note CPU, GPU, RAM and whether it holds 60 fps. Until then use only what is
+certain:
+
+- **OS:** Windows 10 64-bit
+- **Graphics:** DirectX 11 compatible
+- **Storage:** 1 GB available space (the build is 281 MB)
+
+### 2.7 Tags (Steam takes up to 20; the first five weigh most)
+
+Action Roguelike, Tower Defense, Deckbuilding, Top-Down Shooter, Automation, Roguelite, Twin Stick
+Shooter, Base Building, Sci-fi, 2D, Singleplayer, Replay Value, Strategy, Action, Controller, Early
+Access, Stylized, Difficult, Character Customization, Indie.
+
+### 2.8 Graphical assets (Store page → Graphical Assets, then Library assets)
+
+Upload from `Docs/Steam/store_art/` — every file is already at Steam's size:
+
+| Slot | File | Note |
+| --- | --- | --- |
+| Header capsule | `header_capsule_920x430.png` | draft |
+| Small capsule | `small_capsule_462x174.png` | draft; check the logo reads at this size |
+| Main capsule | `main_capsule_1232x706.png` | draft |
+| Vertical capsule | `vertical_capsule_748x896.png` | draft |
+| Page background | `page_background_1438x810.png` | optional |
+| Library capsule | `library_capsule_600x900.png` | draft |
+| Library hero | `library_hero_3840x1240.png` | draft, upscaled ~3× — soft; no logo by Steam's rule |
+| Library logo | `library_logo_1280x720.png` | transparent PNG; position it over the hero in the preview |
+| Community icon | `community_icon_184x184.jpg` | the Core crystal from the logo |
+
+They are built from the main-menu art. That art carries a small translucent star in its
+lower-right corner — an image generator's mark; the script paints it out, and a faint smudge
+remains in the main capsule's corner. For launch, generate the key art (Assets 114 and 115 in the
+art register) and rebuild: `python Tools/build_store_art.py <landscape> <portrait>`.
+
+Steam's rule for capsules: artwork, the game's name and nothing else — no review quotes, awards,
+discount text or "Early Access" banners; Steam marks Early Access itself.
+
+### 2.9 Screenshots (Store page → Screenshots)
+
+Upload all ten from `Docs/Steam/screenshots/` in their number order — the first few are what
+search and hover previews show. `10_class_select.jpg` shows "Profile 2 · Paragon 115" in a corner;
+crop it or leave it out. All are god-mode captures (the HUD reads 100%); a human run with the Core
+in danger would sell better (see `STEAM_PAGE.md` §2).
+
+### 2.10 Trailer (Store page → Trailers)
+
+Upload `Builds/Steam/corebound_trailer_roughcut.mp4` (H.264, 1920 × 1080, 30 fps, AAC). Steam
+transcodes it and autoplays it **muted** — the cards in the cut are written for that. Treat it as a
+placeholder: nobody has heard its music against the picture yet. `STEAM_PAGE.md` §3 has the plan
+for a human-played trailer.
+
+### 2.11 Submit for review
+
+When every required field is green, **Submit for review** on the store page. Valve reviews within a
+few business days; after approval you choose when the "Coming soon" page goes public. Wishlists only
+count from then.
+
+---
+
+## 3 · App admin — <https://partner.steamgames.com/apps/view/5420920>
+
+App settings changes only take effect after **Publish** (section 3.7).
+
+### 3.1 Installation → General
+
+- **Install folder:** `Corebound`
+- **Launch option 1:** executable `Corebound.exe`, operating system Windows, CPU architecture 64-bit.
+  No arguments.
+
+### 3.2 SteamPipe → Depots
+
+The app has a default depot; its ID is usually the App ID + 1 — **5420921** — check it on this page
+and use the real number in the script below. Operating system: Windows; language: all languages
+(the build carries both).
+
+### 3.3 Upload the build with SteamCMD
+
+1. Download the **Steamworks SDK** (Steamworks → *Downloads*) and unpack it, e.g. to `C:\steamworks_sdk`.
+2. In `C:\steamworks_sdk\tools\ContentBuilder\scripts\` create `app_build_5420920.vdf`:
+
+```
+"AppBuild"
+{
+	"AppID" "5420920"
+	"Desc" "Corebound 0.1.0"
+	"ContentRoot" "C:\Users\Philipp\Documents\Corebound\Builds\Windows\"
+	"BuildOutput" "..\output\"
+	"Depots"
+	{
+		"5420921"
+		{
+			"FileMapping"
+			{
+				"LocalPath" "*"
+				"DepotPath" "."
+				"recursive" "1"
+			}
+			"FileExclusion" "*.pdb"
+			"FileExclusion" "Corebound_BurstDebugInformation_DoNotShip\*"
+		}
+	}
+}
+```
+
+3. Build the game (section 1), then in a terminal:
+
+```
+cd C:\steamworks_sdk\tools\ContentBuilder\builder
+steamcmd.exe +login <your Steamworks account> +run_app_build ..\scripts\app_build_5420920.vdf +quit
+```
+
+   The first login asks for your password and the Steam Guard code; SteamCMD remembers the login
+   afterwards. Use the account that has upload rights for the app.
+4. In **SteamPipe → Builds** the new build appears with its description. Set it live on a branch:
+   a private `beta` branch with a password for your own testing, the `default` branch once you are
+   ready for release (Valve checks the default build in the release review).
+5. Test it from Steam: add the beta password under the game's *Properties → Betas*, install, play.
+
+### 3.4 Steam Cloud (recommended)
+
+**Steam Cloud → Steam Cloud settings:** byte quota 10 MB, files 200. **Auto-Cloud → Root
+overrides / paths:** root `WinAppDataLocalLow`, subdirectory `DefaultCompany/Corebound` (or the new
+company name from section 1), pattern `*.json`, recursive. That carries profiles, settings and runs
+between PCs without any code.
+
+### 3.5 Stats & Achievements
+
+Add the 40 achievements from `Docs/STEAM_PAGE.md` §1: for each, **API name** exactly as listed
+(e.g. `ACH_BOSS_1`), display name and description in English, then *Localize* for German, the
+**Hidden** flag where the table says so, and two 256 × 256 icons (achieved / unachieved grey). The
+icons do not exist yet (Asset 117 in the art register is the prompt).
+
+The game cannot unlock any of them yet — that needs section 6. Achievements can be set up first;
+nothing is visible to players before release.
+
+### 3.6 Pricing and release date
+
+- **Pricing:** the app's base package → *Propose pricing*; Steam suggests regional prices from your
+  US price. Early Access prices are usually a little below the planned full price.
+- **Release date:** on the store page's *Release* section. While unsure, a vague date ("Q2 2027") is
+  allowed for "Coming soon"; a real date is needed to release.
+
+### 3.7 Publish
+
+**Publish → Prepare for publishing → Publish to Steam.** Every app-admin change above (install,
+depots, cloud, achievements) waits until this is done.
+
+---
+
+## 4 · Release checklist
+
+1. Store page approved and public as "Coming soon" for at least 14 days.
+2. A build on the `default` branch, tested from Steam on a clean PC.
+3. **Release** checklist in Steamworks all green → *Request build review*; Valve launches the
+   build and checks the store page matches it (a few business days).
+4. Press **Release** on the release day.
+
+---
+
+## 5 · Files you will need, in one place
+
+| Need | File |
+| --- | --- |
+| Short description, about, EA answers, AI disclosure | this guide, section 2 |
+| Screenshots | `Docs/Steam/screenshots/01…10_*.jpg` |
+| Trailer | `Builds/Steam/corebound_trailer_roughcut.mp4` |
+| Capsules, library art, community icon | `Docs/Steam/store_art/` |
+| Build | `Builds/Windows/` (Corebound > Build > Windows Player) |
+| Upload script | section 3.3 |
+| Achievement list | `Docs/STEAM_PAGE.md` §1 |
+| Art still to generate | `Docs/AI/GRAPHICS_ASSET_PROMPTS.md`, "Steam store and library" (Assets 114–117) |
+
+---
+
+## 6 · What the game itself still needs for Steam
+
+- **Steamworks.NET** (MIT): add it via Unity's Package Manager from its Git URL
+  (`https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net`), put
+  `steam_appid.txt` containing `5420920` next to the exe **for local testing only** (not in the
+  upload), and add one `SteamAchievementService` that turns the game's existing events into
+  achievements (design in `STEAM_PAGE.md` §1, "Wiring").
+- **Restart through Steam:** `SteamAPI.RestartAppIfNecessary(5420920)` at startup, so a copy started
+  outside Steam relaunches through it.
+- **Steam Deck:** request a compatibility review once the HUD scale reads at 1280 × 800.
+
+Ask and these can be built in the project the same way as everything else; only the uploads and
+the answers in sections 2–3 need you.

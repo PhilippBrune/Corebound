@@ -67,6 +67,7 @@ numbers are unchanged, so every reference to "Asset NN" elsewhere still holds.
 | [In-run HUD and panels](#in-run-hud-and-panels) | 5, 12, 27, 33, 41, 42, 43, 90, 91, 92, 93, 94, 95, 99 |
 | [Main menu and progression](#main-menu-and-progression) | 1, 2, 3, 4, 29, 30, 85, 86, 87, 88, 89, 100 |
 | [Tutorial](#tutorial) | 6, 28 |
+| [Steam store and library](#steam-store-and-library) | 114, 115, 116, 117 |
 
 ---
 
@@ -1603,3 +1604,65 @@ the Confirm tile.
 Prompt:
 
 Create a clean icon strip for controller and keyboard hints used in a Unity top-down roguelite tutorial. Include a neutral presentation style that matches a sci-fantasy interface and supports later mapping to Confirm, Cancel, Move, Fire and Interact actions. The asset should be highly legible at small size, use transparent background and avoid decorative clutter.
+
+## Steam store and library
+
+*Notes from the "Steam page (2026-10-12)" batch:*
+
+Art for Steam, not for the game: it lives in `Docs/Steam/store_art/`, and
+`Tools/build_store_art.py` crops and sizes it into every capsule (`Docs/Steam/STEAMWORKS_GUIDE.md`,
+2.8). Until these exist, the capsules are drafts built from the main-menu background and the logo. Steam's rules: capsules show artwork and the game's name only - no
+quotes, awards or banners; the library hero carries no text or logo. So the key art itself must
+have **no text and no logo** - the script adds the logo where Steam wants it.
+
+### Asset 114 - Key Art, Landscape
+
+Target: Docs/Steam/store_art/source/key_art_landscape.png
+
+**Status:** NOT DELIVERED · the capsules are built from `mainmenu_background.png` meanwhile, which
+is 1376 x 768 (the library hero is upscaled ~3x) and carries an image generator's translucent star
+mark in its lower-right corner. On delivery: `python Tools/build_store_art.py <this file> <Asset 115>`.
+
+Prompt:
+
+Create a wide, high-resolution key art illustration (3840 x 2160) for a sci-fantasy industrial defense roguelite called Corebound, in the same painted, slightly stylized look as its main menu: a glowing amber Core crystal standing on a circular steel-blue platform in a vast, foggy industrial chasm, ringed by four defensive towers (a ballista turret, a mortar, a sentinel post, a relay pylon), amber energy conduits running across the platform. A lone armored defender figure stands in front of the Core, weapon raised toward a wave of rusted machines climbing out of the fog at the edges of the platform; amber muzzle light and sparks, cold blue-grey fog, strong silhouette, the Core the brightest point. Keep the Core and the defender in the right-centre two thirds and leave calm fog or sky in the left third and the top fifth for a logo. No text, no logo, no watermark, no UI.
+
+### Asset 115 - Key Art, Portrait
+
+Target: Docs/Steam/store_art/source/key_art_portrait.png
+
+**Status:** NOT DELIVERED · the vertical and library capsules are portrait crops of the landscape art
+meanwhile, with the logo over the rocks at the bottom.
+
+Prompt:
+
+Create a tall key art illustration (1800 x 2700) of the same scene as Corebound's landscape key art: the glowing amber Core crystal on its steel-blue platform with towers around it, the armored defender in the foreground with weapon raised, rusted machines climbing out of the fog below, painted and slightly stylized, cold blue-grey fog and amber light. Compose vertically: the Core in the middle third, the defender in the lower-middle, and clear fog or dark sky across the top quarter for a logo. No text, no logo, no watermark, no UI.
+
+### Asset 116 - Game Icon
+
+Target: Docs/Steam/store_art/source/game_icon_1024.png
+
+**Status:** NOT DELIVERED · the exe still shows Unity's icon and the community icon is cut from the
+logo's crystal. On delivery: Unity *Player Settings > Icon*, and a 32/256 px `.ico` for the Steam
+client icon.
+
+Prompt:
+
+Create a square app icon (1024 x 1024) for a game called Corebound: the amber Core crystal from its logo inside an octagonal steel-blue frame with copper rivets, a soft amber glow, a dark slate background, bold and readable at 32 x 32 pixels. No text, no letters, no watermark.
+
+### Asset 117 - Achievement Icon Set
+
+Target: Docs/Steam/store_art/achievements/<API name>.png (256 x 256 each)
+
+**Status:** NOT DELIVERED · 40 achievements are specified in `Docs/STEAM_PAGE.md` §1, with API names.
+Steam needs an achieved and an unachieved icon per achievement; the unachieved one can be the same
+image desaturated and darkened, so only the achieved set has to be drawn.
+
+Prompt (one per achievement, with the subject swapped in):
+
+Create a square achievement badge (256 x 256) for the sci-fantasy defense game Corebound: a beveled steel-blue octagonal medallion with a thin amber energy rim, and in its centre a single bold emblem of [SUBJECT], painted in the game's style with amber highlights on dark metal, readable at 64 x 64 pixels. No text, no numbers, no watermark.
+
+Subjects by group: the five bosses (their silhouettes), the Core crystal (story, ending, Core Logs,
+untouched Core), the five class figures (unlocks and clears), a card fan (cards), six weapons in a
+ring (Full Arsenal), a tower (tower mastery), a factory gear with a tier mark (Factory chain), a
+shield with a cracked edge (close calls), a clock (fast clear), a skull count (kills).
