@@ -1,22 +1,70 @@
 # Corebound in Steamworks — step by step
 
-Version 1.1 · 2026-10-13 (reviewed against the live pages) · App **5420920** · Store item **1372998**
+Version 1.2 · 2026-10-13 (changes applied in Steamworks) · App **5420920** · Store item **1372998**
 
 - App admin: <https://partner.steamgames.com/apps/view/5420920>
 - Store page: <https://partner.steamgames.com/admin/game/edit/1372998>
 
-**Why this is a guide and not done:** both pages sit behind a Steamworks sign-in with Steam Guard,
-and an agent has no session there — fetching them returns the sign-in page. Several answers also
-have to come from you as the account owner (the content survey, the AI-content disclosure, price,
-release date, your name as developer). Everything that can be prepared is prepared below: paste the
-text, upload the files, run the scripts.
-
-Steamworks moves and renames its tabs now and then; the names here are the ones in use in 2025.
+Steamworks moves and renames its tabs now and then; the names here are the ones in use in 2026.
 If a field is somewhere else, the Steamworks search box finds it by name.
 
 ---
 
-## Review of the live pages — 2026-10-13
+## Status — 2026-10-13, after the changes
+
+The owner signed in to Steamworks in a separate browser window and authorised the changes; the agent
+made them there and re-read every page after saving. Result: Valve's **store checklist is complete**
+("Checkliste abgeschlossen"); the build checklist still lacks a price and a build.
+
+**Done and verified on the live pages:**
+
+| Where | What |
+| --- | --- |
+| Release date | **20 Jan 2027, 19:00 CET** (10:00 PST, a Wednesday), shown as "Coming soon" |
+| Languages | English and German: interface only (full audio unticked) |
+| Genres / features | **Early Access** ticked; *Steam Achievements* unticked until the game unlocks them |
+| System requirements | OS "Windows 10 64-bit" (leading space gone), memory 4 GB, DirectX 11; German OS and graphics lines added |
+| Controller questionnaire | Full controller support, Xbox controllers. PlayStation: no (the game shows Xbox glyphs A/B/X/RT). Steam Input API: no |
+| Accessibility questionnaire | Camera comfort (screen shake to 0), custom volume controls (music/SFX/UI), playable without quick-time events. Not claimed: adjustable text size (HUD Scale covers the HUD only), directional audio (all audio is 2D) |
+| Support information | Support website `https://steamcommunity.com/app/5420920/discussions/` — no e-mail entered (see below) |
+| Description | "About This Game" EN was pasted into the visual editor as literal BBCode (it would have shown `[h2]` tags); replaced with clean BBCode in raw mode. German "About" and both short descriptions (EN 247, DE 265 characters) added — the German store localization item is now done |
+| Early Access tab | All six answers in EN and DE (texts in 2.4) |
+| Library assets | Library header (920 × 430) uploaded; library logo position saved (Steam's default, lower left) |
+| Content survey | Completed and **ratings published**: Brazil 10, Germany USK 12, both for violence. Answers: cartoon/fantasy violence, fighting without blood with weapons; nothing else. AI disclosure EN (yours) + DE added |
+| Client images | App icon 184 × 184 JPG and shortcut icon ICO uploaded |
+| Launch option | `Corebound.exe`, Launch (default), Windows, 64-bit only |
+| Depot | Main languages English **and German** |
+| Steam Cloud | 10 MB / 200 files; Auto-Cloud `WinAppDataLocalLow` / `DefaultCompany/Corebound` / `*.json`, recursive, Windows. Steam set **"developer only"** on saving — leave it until tested (below) |
+
+**Waiting for you:**
+
+1. **Publish the app-admin changes** — apps/publishing/5420920: *Auf Veröffentlichung vorbereiten* →
+   *Auf Steam veröffentlichen*. The agent's click was stopped by its own safety rule as a production
+   change. Until this is done, the launch option, icons, depot languages and cloud are not in
+   effect, and **no build can be uploaded** (Steam refuses content for a depot whose configuration
+   was never published).
+2. **Upload the build.** The zip is ready: `Builds/Steam/corebound_depot_5420921.zip` (177 MB,
+   318 files, the 2026-10-12 build without `*.pdb` and the Burst debug folder). SteamPipe →
+   *Web-Uploads* (apps/depotuploads/5420920) → depot 5420921 → *Standard* → *Hochladen*. Then
+   SteamPipe → Builds: set it live on a password `beta` branch to test, on `default` for the review.
+   SteamCMD (3.3) works as well.
+3. **Price** for package "Corebound - 1871267" (Pricing → propose) — yours to choose.
+4. **Submit the store page for review** (store page → *Veröffentlichen*). Valve needs 2–3 working
+   days per round, and the page must be public as "Coming soon" for 14 days before release — for
+   20 January, submit by **mid-December** at the latest.
+5. **Support e-mail** (optional — the discussions URL already satisfies the field). Your personal
+   address was deliberately not entered on a public page.
+6. **Steam Cloud:** after the build is on a beta branch, play once on this PC, check the cloud icon
+   in the library, then untick *Cloud-Unterstützung nur für Entwickler aktivieren* and tick
+   *Steam Cloud* among the store page features. If you ever change the Unity company name
+   (section 1), change the Auto-Cloud subdirectory with it.
+7. **Worth a second look:** the violence answers (the survey's *Tötungen* item was left unticked —
+   enemies are machines and fantasy creatures), and whether HUD Scale should count as adjustable
+   text size.
+
+---
+
+## Review of the live pages — 2026-10-13 (before the changes; all items handled above)
 
 Read in a separate browser window you signed into; nothing was clicked or saved. Steamworks shows
 its labels in German for this account, so they are given as you see them.
@@ -75,9 +123,7 @@ both); release date 24 Dec 2026, 19:00 CET, shown as "Bald verfügbar"; Steam In
 Veröffentlichen (3.8). Store-page edits are saved per tab and reviewed when you submit the page.
 
 **Worth a second thought:** 24 December falls inside Steam's Winter Sale, when new releases are
-easily buried, and the store page has to be approved and public by 10 December for the two-week
-"Coming soon" rule. A date in January or February gives the review rounds room and the launch more
-visibility.
+easily buried. *(Resolved: moved to 20 January 2027.)*
 
 ---
 
@@ -180,25 +226,30 @@ The makers built the Works to rebuild a dead world and put its last seed in a si
 Controller-first, with full mouse and keyboard. English and German.
 ```
 
-### 2.4 Early Access questions (drafts — edit the brackets)
+### 2.4 Early Access questions (as submitted 2026-10-13; the German versions are on the page)
 
-**Why Early Access?** "Corebound is built by one developer. The core loop — combat, towers,
-cards, the Factory and five stages with bosses — is complete and playable, and the next steps
+Phrased as plans, not promises — Valve's own hint on the tab asks for that. No Discord is named
+because none exists yet; add it to the community answer once it does.
+
+**Why Early Access?** "Corebound is built by one developer. The core loop - combat, towers,
+cards, the Factory and five stages with bosses - is complete and playable, and the next steps
 (balance, difficulty and more content) are best shaped by the people playing it."
 
-**How long?** "[About 6–12 months.]"
+**How long?** "About 6 to 12 months, depending on what players report."
 
-**How will the full version differ?** "More stages, enemies and bosses; deeper class skill trees;
-higher difficulty tiers; achievements and Steam Cloud from the start of Early Access, Steam Deck
-support; balance based on player feedback."
+**How will the full version differ?** "The plan is more stages, enemies and bosses; deeper class
+skill trees; higher difficulty tiers; Steam achievements and Steam Cloud saves; Steam Deck support;
+and balance shaped by player feedback."
 
 **Current state?** "Five stages with five bosses, five playable classes, nine weapons, four tower
 types, 52 cards, a Factory production chain, account progression with Paragon and Ascension, a
 guided first run, English and German."
 
-**Price during and after?** "[The price will rise moderately for the full release.]"
+**Price during and after?** "The price is expected to rise moderately when the full version
+releases."
 
-**Community?** "[Steam discussions and a Discord; patch notes for every update.]"
+**Community?** "Through the Steam discussions and reviews. Every update comes with patch notes, and
+reported bugs and balance problems go first into the next update."
 
 ### 2.5 Content survey and AI disclosure (answer yourself)
 
@@ -298,7 +349,16 @@ The default depot is **5420921 "Corebound Content"** (checked 2026-10-13). Opera
 Windows; language: all languages. Under *Verwaltung der Hauptsprachen* tick **English and German** —
 the build carries both, and Steam tells the game which one the player uses.
 
-### 3.3 Upload the build with SteamCMD
+### 3.3 Upload the build
+
+**Without SteamCMD (simplest, up to 2 GB zipped):** SteamPipe → *Web-Uploads*
+(apps/depotuploads/5420920), depot 5420921, option *Standard*, choose the zip, *Hochladen*. The zip
+must hold the contents of `Builds/Windows/` at its root (`Corebound.exe` at the top level), without
+`*.pdb` and without `Corebound_BurstDebugInformation_DoNotShip`;
+`Builds/Steam/corebound_depot_5420921.zip` is exactly that, made 2026-10-13. The depot configuration
+must have been published once (3.8) before the page accepts a file.
+
+**With SteamCMD:**
 
 1. Download the **Steamworks SDK** (Steamworks → *Downloads*) and unpack it, e.g. to `C:\steamworks_sdk`.
 2. In `C:\steamworks_sdk\tools\ContentBuilder\scripts\` create `app_build_5420920.vdf`:

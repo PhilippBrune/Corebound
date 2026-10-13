@@ -1,10 +1,18 @@
 # Open Topics — Corebound
 
-Version 2.5 · 2026-10-12 · **The single live list.** Closed topics are deleted, not archived — git
+Version 2.6 · 2026-10-13 · **The single live list.** Closed topics are deleted, not archived — git
 history holds what was fixed and why. Do not start a new report file; add here.
 
 `08_IMPLEMENTATION_BACKLOG.md` is the plan. This is the punch list. Every open point carries a
 suggestion; points that need an owner decision are marked **Decide**.
+
+**Closed 2026-10-13:**
+- **Steamworks store checklist complete.** Release date 20 Jan 2027; languages, Early Access genre,
+  system requirements, descriptions EN + DE, Early Access answers, support URL, controller and
+  accessibility questionnaires, library header and logo position, content survey with published
+  ratings (USK 12, Brazil 10), client icons, launch option, German depot language, Steam Cloud.
+  Everything verified by re-reading the pages; the list is at the top of
+  `Docs/Steam/STEAMWORKS_GUIDE.md` (v1.2). What is still open is 1.4 below.
 
 **Closed 2026-10-12:**
 - **Protecting the Core (old 1.1), decided P1-1, P2-1, P3-1, P4-1 and built:** threat lines, the
@@ -93,6 +101,20 @@ Each class tree is the Vanguard's tree with one class keystone inserted; the con
   `.ollama/` folder, if you no longer use them.
 - **`Profile_01`**, the old test profile (last written 2026-09-29).
 **Suggestion:** delete the scaffold; your call on the other two.
+
+### 1.4 Steam release — **Do / Decide** (only you can)
+
+Store checklist complete; the build checklist waits on these, in this order:
+1. **Publish the app-admin changes** (apps/publishing/5420920 → *Auf Veröffentlichung vorbereiten* →
+   *Auf Steam veröffentlichen*). The agent's safety rule stopped its own click as a production change.
+   Nothing below works before it.
+2. **Upload** `Builds/Steam/corebound_depot_5420921.zip` via SteamPipe → *Web-Uploads*, then set the
+   build live on a password `beta` branch and test it from Steam.
+3. **Price** for package 1871267 — **Decide**.
+4. **Submit the store page for review** by mid-December (two weeks of "Coming soon" before 20 Jan).
+5. Steam Cloud is "developer only" until tested on the beta branch; then untick it and tick the
+   *Steam Cloud* store feature.
+**Suggestion:** do 1–2 in one sitting (ten minutes); the agent can take over again after step 1.
 
 ---
 
@@ -190,6 +212,15 @@ Verified to compile and, where an autopilot run reaches it, to run — but not p
 ---
 
 ## Session log
+
+**2026-10-13 (later).** With the owner's go-ahead, applied the review in Steamworks (signed-in
+window, every page re-read after saving): release date 20 Jan 2027 and the rest listed at the top
+of `Docs/Steam/STEAMWORKS_GUIDE.md` (v1.2). Found on the way: the English "About This Game" had been
+pasted into the visual editor and would have shown literal `[h2]` tags — replaced with clean BBCode.
+German store texts written from the game's own German terms (Kern, Werk, Erbauer, Schrott, Fabrik,
+Stage). Content survey answered from the code (no blood, all audio 2D, no text input, Xbox glyphs)
+and published. Publishing the app-admin changes was blocked by the agent's own production-change
+rule, which also blocks the build upload — 1.4. Build zip prepared in `Builds/Steam/`.
 
 **2026-10-13.** Reviewed the live Steamworks pages (App 5420920, store item 1372998) in a separate
 browser window the owner signed into; read only, window and profile deleted afterwards. Fourteen
