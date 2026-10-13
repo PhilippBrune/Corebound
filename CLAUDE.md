@@ -70,7 +70,9 @@ found 16 finished sprites and 4 finished boss loops that nothing referenced.
   `ScreenCapture` keeps only the last capture of a frame, so two shots in one frame lose the first.
 - **Windows player build without a dialog:** write `windows` into `BuildRequest.txt` (or
   *Corebound > Build > Windows Player*); it syncs the art mirror, builds `Builds/Windows/` and logs
-  `[Build] Succeeded/Failed`. Anything behind `#if UNITY_STANDALONE_WIN && !UNITY_EDITOR` (the
+  `[Build] Succeeded/Failed`. `windows 0.1.1` sets the version first (shown in the main menu; raise
+  it for every Steam upload). The build also flips `UnityConnectSettings.asset` `m_Enabled` to 1 —
+  revert that file afterwards, it is not a change anyone made. Anything behind `#if UNITY_STANDALONE_WIN && !UNITY_EDITOR` (the
   frameless window) only compiles and runs there. The player reads the **active profile** from
   `LocalLow/DefaultCompany/Corebound/profile.json` like the Editor does - set it to 2 before
   launching a test build and restore it afterwards; its log is `Player.log` in the same folder.

@@ -43,8 +43,8 @@ made them there and re-read every page after saving. Result: Valve's **store che
    change. Until this is done, the launch option, icons, depot languages and cloud are not in
    effect, and **no build can be uploaded** (Steam refuses content for a depot whose configuration
    was never published).
-2. **Upload the build.** The zip is ready: `Builds/Steam/corebound_depot_5420921.zip` (177 MB,
-   318 files, the 2026-10-12 build without `*.pdb` and the Burst debug folder). SteamPipe →
+2. **Upload the build.** The zip is ready: `Builds/Steam/corebound_0.1.0_depot_5420921.zip` (177 MB,
+   318 files, build 0.1.0 of 2026-10-13, without `*.pdb` and the Burst debug folder). SteamPipe →
    *Web-Uploads* (apps/depotuploads/5420920) → depot 5420921 → *Standard* → *Hochladen*. Then
    SteamPipe → Builds: set it live on a password `beta` branch to test, on `default` for the review.
    SteamCMD (3.3) works as well.
@@ -152,8 +152,9 @@ unlock them.
 
 Open **Edit > Project Settings > Player** in Unity.
 
-1. **Version** (`bundleVersion`, now `1.0`): set `0.1.0` for the first Early Access build and raise
-   it with every upload, so a bug report names its build.
+1. **Version** (`bundleVersion`): **0.1.0** since 2026-10-13, shown in the main menu under the
+   profile badge. Raise it with every upload, so a bug report names its build — write
+   `windows 0.1.1` (etc.) into `BuildRequest.txt` and the build tool sets it before building.
 2. **Company Name** (now `DefaultCompany`): the save folder is
    `%USERPROFILE%/AppData/LocalLow/<Company Name>/Corebound`. Change it *before* anyone else plays,
    and **copy your own `DefaultCompany/Corebound` folder to the new name first**, or your Profile 3
@@ -355,7 +356,7 @@ the build carries both, and Steam tells the game which one the player uses.
 (apps/depotuploads/5420920), depot 5420921, option *Standard*, choose the zip, *Hochladen*. The zip
 must hold the contents of `Builds/Windows/` at its root (`Corebound.exe` at the top level), without
 `*.pdb` and without `Corebound_BurstDebugInformation_DoNotShip`;
-`Builds/Steam/corebound_depot_5420921.zip` is exactly that, made 2026-10-13. The depot configuration
+`Builds/Steam/corebound_0.1.0_depot_5420921.zip` is exactly that (build 0.1.0, 2026-10-13). The depot configuration
 must have been published once (3.8) before the page accepts a file.
 
 **With SteamCMD:**

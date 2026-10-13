@@ -42,7 +42,7 @@ namespace Corebound.EditorTools
                 options = BuildOptions.None
             };
 
-            Debug.Log("[Build] Windows player: " + scenes.Length + " scenes, active target " + EditorUserBuildSettings.activeBuildTarget
+            Debug.Log("[Build] Windows player " + PlayerSettings.bundleVersion + ": " + scenes.Length + " scenes, active target " + EditorUserBuildSettings.activeBuildTarget
                 + ", to " + options.locationPathName);
             var report = BuildPipeline.BuildPlayer(options);
             var summary = report.summary;
@@ -94,15 +94,40 @@ namespace Corebound.EditorTools
                 return;
             }
 
-            if (command == "windows")
+            var parts = command.Split((char[])null, System.StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length >= 1 && parts[0] == "windows")
             {
+                // "windows 0.1.0" sets the version first. Through PlayerSettings and SaveAssets, so
+                // the Editor writes ProjectSettings.asset itself - editing that file by hand while
+                // the Editor is open gets overwritten by its next save.
+                if (parts.Length >= 2 && !SetVersion(parts[1]))
+                {
+                    return;
+                }
+
                 // After this update tick: a build started inside the poll would block it.
                 EditorApplication.delayCall += BuildWindowsPlayer;
             }
             else
             {
-                Debug.LogWarning("[Build] unknown request '" + command + "' in " + RequestFilePath + " - use 'windows'");
+                Debug.LogWarning("[Build] unknown request '" + command + "' in " + RequestFilePath + " - use 'windows' or 'windows <version>'");
             }
+        }
+
+        // The main menu shows Application.version, so this is what players and bug reports see.
+        private static bool SetVersion(string version)
+        {
+            if (!System.Text.RegularExpressions.Regex.IsMatch(version, @"^\d+(\.\d+){1,3}$"))
+            {
+                Debug.LogError("[Build] '" + version + "' is not a version like 0.1.0 - nothing built");
+                return false;
+            }
+
+            PlayerSettings.bundleVersion = version;
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Build] version set to " + PlayerSettings.bundleVersion);
+            return true;
         }
     }
 }

@@ -154,3 +154,6 @@ nicht mehr auf den Bildschirm. Owner-Entscheidung 2026-09-22: **zweistufiges Lay
 - Die sekundäre Reihe bricht auf zwei Zeilen um, wenn die Breite pro Eintrag unter 150 px fiele.
 - Das Profil (siehe [SaveSystem.md](SaveSystem.md), "Drei Profile") steht als Kopfzeile über der
   primären Stufe und wird über eine eigene Route gewechselt.
+- Direkt unter dem Profil steht die Build-Version („Version 0.1.0“, aus *Player Settings > Version*),
+  damit Screenshots und Fehlerberichte den Build nennen. Gesetzt wird sie beim Bauen
+  (`windows 0.1.0` in `BuildRequest.txt`), seit dem ersten Steam-Upload 2026-10-13.

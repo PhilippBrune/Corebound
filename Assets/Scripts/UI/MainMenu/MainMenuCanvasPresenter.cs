@@ -29,6 +29,9 @@ namespace Corebound.UI.MainMenu
         private const float ProfileBadgeTop = 60f;
         private const float ProfileBadgeWidth = 360f;
         private const float ProfileBadgeHeight = 76f;
+        private const float VersionLabelGap = 8f;
+        private const float VersionLabelHeight = 28f;
+        private const int VersionFontSize = 18;
         private const float SecondaryRowBottom = 118f;
         private const float SecondaryRowHeight = 96f;
         private const float SecondaryRowSpacing = 12f;
@@ -210,6 +213,15 @@ namespace Corebound.UI.MainMenu
             SetAnchoredBox(profilePanel.rectTransform, new Vector2(1f, 1f), new Vector2(-HeaderLeft - ProfileBadgeWidth, -ProfileBadgeTop), new Vector2(ProfileBadgeWidth, ProfileBadgeHeight));
             _profileText = CreateText("ProfileLabel", profilePanel.rectTransform, StatusFontSize, TextAnchor.MiddleCenter, ResolvePromptTextColor());
             StretchToParent(_profileText.rectTransform, Vector2.zero, Vector2.one, new Vector2(40f, 16f), new Vector2(-40f, -16f));
+
+            // The build's version (Player Settings > Version, set by the build tool), right under
+            // the profile badge, so a screenshot or bug report names the build it came from - the
+            // first Steam upload is 0.1.0 (2026-10-13). The same text in both languages.
+            var versionText = CreateText("VersionLabel", _rootRect, VersionFontSize, TextAnchor.MiddleRight, ResolveStatusTextColor());
+            SetAnchoredBox(versionText.rectTransform, new Vector2(1f, 1f),
+                new Vector2(-HeaderLeft - ProfileBadgeWidth, -(ProfileBadgeTop + ProfileBadgeHeight + VersionLabelGap)),
+                new Vector2(ProfileBadgeWidth, VersionLabelHeight));
+            versionText.text = "Version " + Application.version;
 
             var glyphHintObject = new GameObject("GlyphHints", typeof(RectTransform), typeof(MainMenuGlyphHintBar));
             glyphHintObject.transform.SetParent(_rootRect, false);

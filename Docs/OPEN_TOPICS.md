@@ -108,7 +108,7 @@ Store checklist complete; the build checklist waits on these, in this order:
 1. **Publish the app-admin changes** (apps/publishing/5420920 → *Auf Veröffentlichung vorbereiten* →
    *Auf Steam veröffentlichen*). The agent's safety rule stopped its own click as a production change.
    Nothing below works before it.
-2. **Upload** `Builds/Steam/corebound_depot_5420921.zip` via SteamPipe → *Web-Uploads*, then set the
+2. **Upload** `Builds/Steam/corebound_0.1.0_depot_5420921.zip` (build 0.1.0) via SteamPipe → *Web-Uploads*, then set the
    build live on a password `beta` branch and test it from Steam.
 3. **Price** for package 1871267 — **Decide**.
 4. **Submit the store page for review** by mid-December (two weeks of "Coming soon" before 20 Jan).
@@ -212,6 +212,11 @@ Verified to compile and, where an autopilot run reaches it, to run — but not p
 ---
 
 ## Session log
+
+**2026-10-13 (evening).** Build **0.1.0**: the version now shows in the main menu under the profile
+badge ("Version 0.1.0", `Application.version`), and `BuildRequest.txt` takes `windows <version>`.
+Built, and the label checked in the player itself on Profile 2 (profile restored to 3). Zip for the
+web upload in `Builds/Steam/`. The upload itself still waits for the app-admin publish (1.4).
 
 **2026-10-13 (later).** With the owner's go-ahead, applied the review in Steamworks (signed-in
 window, every page re-read after saving): release date 20 Jan 2027 and the rest listed at the top
